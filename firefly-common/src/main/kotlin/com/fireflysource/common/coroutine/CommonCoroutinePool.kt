@@ -3,8 +3,7 @@ package com.fireflysource.common.coroutine
 import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
 import com.fireflysource.common.coroutine.CoroutineDispatchers.awaitTerminationTimeout
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -64,6 +63,9 @@ object CoroutineDispatchers {
             Thread(it, "firefly-scheduler-thread")
         }
     }
+
+    val supervisor: CompletableJob = SupervisorJob()
+    val scope: CoroutineScope = CoroutineScope(supervisor)
 
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(

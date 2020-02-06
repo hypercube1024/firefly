@@ -87,7 +87,7 @@ fun readAllBytesAsync(file: Path) = asyncGlobally(ioBlocking) {
 /**
  * Performs [AsynchronousFileChannel.read] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
- * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * If the [Job] of the current coroutine cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 suspend fun AsynchronousFileChannel.readAwait(
