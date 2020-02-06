@@ -108,19 +108,13 @@ class TestHttpClient {
     @Test
     @DisplayName("should send the HTTP request with content using chucked encoding successfully")
     fun testContentWithChunkedEncoding() = runBlocking {
+        val httpClient = HttpClientFactory.create()
+
         val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
         println("data length: ${data.remaining()}")
-
-        val httpClient = HttpClientFactory.create()
         val response = httpClient
             .post("http://${address.hostName}:${address.port}/testChunkedEncoding")
-            .contentProvider(object : ByteBufferContentProvider(data) {
-
-                override fun length(): Long = -1
-
-                override fun isOpen(): Boolean = buffer.hasRemaining()
-
-            }).submit().await()
+            .contentProvider(MockChunkByteBufferContentProvider(data)).submit().await()
 
         assertEquals(HttpStatus.OK_200, response.status)
         assertEquals("test chunked encoding success", response.stringBody)
@@ -129,22 +123,24 @@ class TestHttpClient {
     @Test
     @DisplayName("should send the HTTP request with content and content length successfully")
     fun testContentWithoutChunkedEncoding() = runBlocking {
-        val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
-        val length = data.remaining()
-        println("data length: $length")
-
         val httpClient = HttpClientFactory.create()
-        val response = httpClient
-            .post("http://${address.hostName}:${address.port}/testNoChunkedEncoding")
-            .contentProvider(object : ByteBufferContentProvider(data) {
 
-                override fun length(): Long = length.toLong()
+        (1..10).map {
+            val data = ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))
+            val length = data.remaining()
+            println("data length: $length")
+            httpClient.post("http://${address.hostName}:${address.port}/testNoChunkedEncoding")
+                .contentProvider(ByteBufferContentProvider(data))
+                .submit()
+        }.forEach {
+            val response = it.await()
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("test no chunked encoding success", response.stringBody)
+            assertEquals(32, response.contentLength)
+        }
+    }
 
-                override fun isOpen(): Boolean = buffer.hasRemaining()
-
-            }).submit().await()
-
-        assertEquals(HttpStatus.OK_200, response.status)
-        assertEquals("test no chunked encoding success", response.stringBody)
+    class MockChunkByteBufferContentProvider(content: ByteBuffer) : ByteBufferContentProvider(content) {
+        override fun length(): Long = -1
     }
 }

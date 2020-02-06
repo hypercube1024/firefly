@@ -13,7 +13,7 @@ import java.util.function.Supplier
 
 class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
-    private var response: MetaData.Response? = null
+    private val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
     var contentHandler: HttpClientContentHandler? = null
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
@@ -23,18 +23,21 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun startResponse(version: HttpVersion, status: Int, reason: String): Boolean {
-        response = MetaData.Response(version, status, reason, HttpFields(), -1)
+        response.httpVersion = version
+        response.status = status
+        response.reason = reason
+//        response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
         return false
     }
 
     override fun parsedHeader(field: HttpField) {
-        response?.fields?.add(field)
+        response.fields.add(field)
     }
 
     override fun headerComplete(): Boolean {
         val resp = MetaData.Response(
-            response?.httpVersion, response?.status ?: 0, response?.reason,
-            HttpFields(response?.fields), response?.contentLength ?: -1
+            response.httpVersion, response.status, response.reason,
+            HttpFields(response.fields), response.contentLength
         )
         httpClientResponse = AsyncHttpClientResponse(resp, contentHandler)
         return false
@@ -72,7 +75,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     fun reset() {
-        response?.recycle()
+        response.recycle()
         contentHandler = null
         trailers.clear()
     }

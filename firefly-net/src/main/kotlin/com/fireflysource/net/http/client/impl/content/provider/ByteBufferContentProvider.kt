@@ -8,7 +8,8 @@ import kotlin.math.min
 
 open class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClientContentProvider {
 
-    protected val buffer = content.duplicate()
+    private val buffer = content.duplicate()
+    private val length = content.remaining().toLong()
     private var open = true
 
     override fun isOpen(): Boolean = open
@@ -17,15 +18,21 @@ open class ByteBufferContentProvider(private val content: ByteBuffer) : HttpClie
         open = false
     }
 
-    override fun length(): Long = buffer.remaining().toLong()
+    override fun length(): Long = length
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
         if (!isOpen) {
             return endStream()
         }
 
-        if (!byteBuffer.hasRemaining()) {
+        if (!content.hasRemaining()) {
             return endStream()
+        }
+
+        if (!byteBuffer.hasRemaining()) {
+            val future = CompletableFuture<Int>()
+            future.complete(0)
+            return future
         }
 
         val len = min(content.remaining(), byteBuffer.remaining())

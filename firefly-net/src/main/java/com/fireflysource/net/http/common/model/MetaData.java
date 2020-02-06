@@ -2,6 +2,7 @@ package com.fireflysource.net.http.common.model;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class MetaData implements Iterable<HttpField> {
@@ -26,6 +27,7 @@ public class MetaData implements Iterable<HttpField> {
             fields.clear();
         }
         contentLength = Long.MIN_VALUE;
+        trailers = null;
     }
 
     public boolean isRequest() {
@@ -70,12 +72,13 @@ public class MetaData implements Iterable<HttpField> {
      */
     public long getContentLength() {
         if (contentLength == Long.MIN_VALUE) {
-            if (fields != null) {
-                HttpField field = fields.getField(HttpHeader.CONTENT_LENGTH);
-                contentLength = field == null ? -1 : field.getLongValue();
-            }
+            return Optional.ofNullable(fields.getField(HttpHeader.CONTENT_LENGTH))
+                           .map(HttpField::getValue)
+                           .map(Long::parseLong)
+                           .orElse(Long.MIN_VALUE);
+        } else {
+            return contentLength;
         }
-        return contentLength;
     }
 
     /**

@@ -2,7 +2,6 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
@@ -97,7 +96,7 @@ class Http1ClientConnection(
                 COMMITTED -> generateContent(requestMessage)
                 COMPLETING -> completeContent()
                 END -> {
-                    requestMessage.contentProvider?.closeAsync()
+                    requestMessage.contentProvider?.closeFuture()?.await()
                     break@genLoop
                 }
                 else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")

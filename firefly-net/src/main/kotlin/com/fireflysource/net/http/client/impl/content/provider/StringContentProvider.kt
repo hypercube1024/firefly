@@ -5,10 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.CompletableFuture
 
-class StringContentProvider(
-    val content: String,
-    val charset: Charset
-) : HttpClientContentProvider {
+class StringContentProvider(val content: String, val charset: Charset) : HttpClientContentProvider {
 
     private var open = true
     private var index = 0
@@ -20,7 +17,6 @@ class StringContentProvider(
     }
 
     override fun length(): Long = content.length.toLong()
-
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
         if (!isOpen) {
@@ -38,7 +34,7 @@ class StringContentProvider(
             return future
         }
 
-        val endIndex = Math.min(index + byteBuffer.remaining(), len)
+        val endIndex = (index + byteBuffer.remaining()).coerceAtMost(len)
         val bytes = content.substring(index, endIndex).toByteArray(charset)
         byteBuffer.put(bytes)
         index += bytes.size
