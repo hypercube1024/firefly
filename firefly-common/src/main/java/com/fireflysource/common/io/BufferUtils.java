@@ -1012,6 +1012,4 @@ public class BufferUtils {
         newBuffer.position(buffer.position());
         return newBuffer;
     }
-
-
 }

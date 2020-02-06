@@ -2,7 +2,7 @@ package com.fireflysource.net.tcp.secure
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
 import com.fireflysource.common.coroutine.launchGlobally
-import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
@@ -38,15 +38,13 @@ abstract class AbstractAsyncSecureEngine(
     override fun beginHandshake(result: Consumer<Result<Void?>>) {
         if (beginHandshake.compareAndSet(false, true)) {
             tcpConnection.startReading()
-            startTlsJob(result)
+            launchHandshakeJob(result)
         } else {
             result.accept(Result.createFailedResult(SecureNetException("The handshake has begun, do not invoke it method repeatedly.")))
         }
     }
 
-    override fun isClientMode(): Boolean = sslEngine.useClientMode
-
-    private fun startTlsJob(result: Consumer<Result<Void?>>) = tcpConnection.coroutineScope.launch {
+    private fun launchHandshakeJob(result: Consumer<Result<Void?>>) = tcpConnection.coroutineScope.launch {
         try {
             initHandshakeStatus()
             doHandshake()
@@ -105,26 +103,16 @@ abstract class AbstractAsyncSecureEngine(
             val tlsProtocol = sslEngine.session.protocol
             val cipherSuite = sslEngine.session.cipherSuite
             log.info(
-                "Connection handshake success. id: {}, protocol: {} {}, cipher: {}",
-                tcpConnection.id, applicationProtocol, tlsProtocol, cipherSuite
+                "Connection handshake success. id: {}, protocol: {} {}, cipher: {}, status: {}",
+                tcpConnection.id, applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus
             )
         }
     }
 
-
-    private fun newBuffer(size: Int) = ByteBuffer.allocate(size)
-
-    private fun newAppBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(sslEngine.session.applicationBufferSize)
-    }
-
-    private fun newPacketBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(sslEngine.session.packetBufferSize)
-    }
-
     override fun encrypt(outAppBuffer: ByteBuffer): MutableList<ByteBuffer> {
         val outPacketBuffers = LinkedList<ByteBuffer>()
-        var outPacketBuffer = newPacketBuffer()
+        var outPacketBuffer = BufferUtils.allocate(sslEngine.session.packetBufferSize)
+        val pos = outPacketBuffer.flipToFill()
 
         wrap@ while (true) {
             val result = sslEngine.wrap(outAppBuffer, outPacketBuffer)
@@ -134,7 +122,7 @@ abstract class AbstractAsyncSecureEngine(
                     outPacketBuffer = resizePacketBuffer(outPacketBuffer)
                 }
                 OK -> {
-                    outPacketBuffer.flip()
+                    outPacketBuffer.flipToFlush(pos)
                     if (outPacketBuffer.hasRemaining()) {
                         outPacketBuffers.add(outPacketBuffer.duplicate())
                     }
@@ -156,7 +144,8 @@ abstract class AbstractAsyncSecureEngine(
             return EMPTY_BUFFER
         }
 
-        var inAppBuffer = newAppBuffer()
+        var inAppBuffer = BufferUtils.allocate(sslEngine.session.packetBufferSize)
+        val pos = inAppBuffer.flipToFill()
         unwrap@ while (true) {
             val result = sslEngine.unwrap(inPacketBuffer, inAppBuffer)
             handshakeStatus = result.handshakeStatus
@@ -178,7 +167,7 @@ abstract class AbstractAsyncSecureEngine(
                 else -> throw SecureNetException("Unwrap packets state exception. ${result.status}")
             }
         }
-        inAppBuffer.flip()
+        inAppBuffer.flipToFlush(pos)
         return inAppBuffer
     }
 
@@ -193,21 +182,23 @@ abstract class AbstractAsyncSecureEngine(
                         "in packet buffer: ${inPacketBuffer.remaining()}, " +
                         "received buffer: ${receivedBuffer.remaining()}"
             }
-            val buffer = newBuffer(inPacketBuffer.remaining() + receivedBuffer.remaining())
-            buffer.put(inPacketBuffer).put(receivedBuffer).flip()
-            buffer
+
+            val capacity = inPacketBuffer.remaining() + receivedBuffer.remaining()
+            BufferUtils.allocate(capacity).append(inPacketBuffer).append(receivedBuffer)
         } else {
             receivedBuffer
         }
     }
 
     private fun resizeInAppBuffer(appBuffer: ByteBuffer): ByteBuffer {
-        return BufferUtils.addCapacity(appBuffer, sslEngine.session.applicationBufferSize);
+        return appBuffer.addCapacity(sslEngine.session.applicationBufferSize);
     }
 
     private fun resizePacketBuffer(packetBuffer: ByteBuffer): ByteBuffer {
-        return BufferUtils.addCapacity(packetBuffer, sslEngine.session.packetBufferSize)
+        return packetBuffer.addCapacity(sslEngine.session.packetBufferSize)
     }
+
+    override fun isClientMode(): Boolean = sslEngine.useClientMode
 
     override fun getSupportedApplicationProtocols(): MutableList<String> =
         applicationProtocolSelector.supportedApplicationProtocols
