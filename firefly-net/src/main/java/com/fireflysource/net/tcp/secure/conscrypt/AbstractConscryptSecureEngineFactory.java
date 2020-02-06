@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.secure.SecureEngine;
@@ -13,6 +14,7 @@ import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
@@ -86,7 +88,8 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
         ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        return new ConscryptSecureEngine(coroutineScope, sslEngine, selector);
+        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
+        return new ConscryptSecureEngine(scope, sslEngine, selector);
     }
 
     @Override
@@ -95,7 +98,8 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
         ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        return new ConscryptSecureEngine(coroutineScope, sslEngine, selector);
+        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
+        return new ConscryptSecureEngine(scope, sslEngine, selector);
     }
 
     abstract public SSLContext getSSLContext();
