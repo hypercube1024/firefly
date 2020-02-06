@@ -4,7 +4,9 @@ import com.fireflysource.common.sys.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractAioTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.secure.SecureEngine
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.function.Consumer
@@ -24,6 +26,11 @@ class AioSecureTcpConnection(
     }
 
     init {
+        secureEngine.onHandshakeWrite { buffers ->
+            tcpConnection.write(buffers, 0, buffers.size)
+        }.onHandshakeRead {
+            tcpConnection.coroutineScope.async { tcpConnection.inputChannel.receive() }.asCompletableFuture()
+        }
         tcpConnection.onClose { secureEngine.close() }
     }
 
@@ -124,7 +131,7 @@ class AioSecureTcpConnection(
 
     override fun isHandshakeComplete(): Boolean = secureEngine.isHandshakeComplete
 
-    override fun onHandshakeComplete(result: Consumer<Result<String>>): TcpConnection {
+    override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
         secureEngine.beginHandshake()
             .thenAccept {
                 result.accept(Result(true, applicationProtocol, null))

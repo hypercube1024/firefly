@@ -79,7 +79,7 @@ class TestAioServerAndClient {
                     connection.startReading()
 
                     if (connection.isSecureConnection) {
-                        val success = connection.onHandshakeComplete().await()
+                        val success = connection.beginHandshake().await()
                         println("client TLS handshake success. $success")
                     }
 

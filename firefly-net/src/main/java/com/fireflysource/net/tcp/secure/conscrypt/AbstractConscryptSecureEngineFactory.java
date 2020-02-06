@@ -2,9 +2,9 @@ package com.fireflysource.net.tcp.secure.conscrypt;
 
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.SystemLogger;
-import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.SecureEngine;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
+import kotlinx.coroutines.CoroutineScope;
 import org.conscrypt.Conscrypt;
 
 import javax.net.ssl.*;
@@ -64,7 +64,7 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
 
-        // PKIX,SunX509
+        // PKIX, SunX509
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryType == null ? "SunX509" : keyManagerFactoryType);
         kmf.init(ks, keyPassword != null ? keyPassword.toCharArray() : null);
 
@@ -81,19 +81,20 @@ abstract public class AbstractConscryptSecureEngineFactory implements SecureEngi
     }
 
     @Override
-    public SecureEngine create(TcpConnection connection, boolean clientMode, List<String> supportedProtocols) {
+    public SecureEngine create(CoroutineScope coroutineScope, boolean clientMode, List<String> supportedProtocols) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
         ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        return new ConscryptSecureEngine(connection, sslEngine, selector);
+        return new ConscryptSecureEngine(coroutineScope, sslEngine, selector);
     }
 
-    public SecureEngine create(TcpConnection connection, boolean clientMode, String peerHost, int peerPort,
+    @Override
+    public SecureEngine create(CoroutineScope coroutineScope, boolean clientMode, String peerHost, int peerPort,
                                List<String> supportedProtocols) {
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
         ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        return new ConscryptSecureEngine(connection, sslEngine, selector);
+        return new ConscryptSecureEngine(coroutineScope, sslEngine, selector);
     }
 
     abstract public SSLContext getSSLContext();

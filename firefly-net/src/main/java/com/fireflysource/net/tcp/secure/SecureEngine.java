@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.fireflysource.common.sys.Result.futureToConsumer;
 
@@ -34,12 +36,12 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
     /**
      * Begin the TLS handshake.
      *
-     * @param result The handler for consuming TLS handshake result.
+     * @param result The TLS handshake result.
      */
     void beginHandshake(Consumer<Result<Void>> result);
 
     /**
-     * Begin the TLS handshake.ø
+     * Begin the TLS handshake.
      *
      * @return The future for consuming the TLS handshake result.
      */
@@ -48,6 +50,22 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
         beginHandshake(futureToConsumer(future));
         return future;
     }
+
+    /**
+     * Need read data in the handshake process.
+     *
+     * @param supplier The data supplier.
+     * @return The secure engine.
+     */
+    SecureEngine onHandshakeRead(Supplier<CompletableFuture<ByteBuffer>> supplier);
+
+    /**
+     * Need write data in the handshake process.
+     *
+     * @param function The write function.
+     * @return The secure engine.
+     */
+    SecureEngine onHandshakeWrite(Function<List<ByteBuffer>, CompletableFuture<Long>> function);
 
     /**
      * Decrypt the cipher text to the plain text.

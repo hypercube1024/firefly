@@ -259,16 +259,16 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      * @param result The value is the negotiated application layer protocol.
      * @return The current connection.
      */
-    TcpConnection onHandshakeComplete(Consumer<Result<String>> result);
+    TcpConnection beginHandshake(Consumer<Result<String>> result);
 
     /**
      * Listen the TLS handshake complete event.
      *
      * @return The value is the negotiated application layer protocol.
      */
-    default CompletableFuture<String> onHandshakeComplete() {
+    default CompletableFuture<String> beginHandshake() {
         CompletableFuture<String> future = new CompletableFuture<>();
-        onHandshakeComplete(futureToConsumer(future));
+        beginHandshake(futureToConsumer(future));
         return future;
     }
 

@@ -31,7 +31,7 @@ class AioTcpConnection(
         throw UnsupportedOperationException()
     }
 
-    override fun onHandshakeComplete(result: Consumer<Result<String>>): TcpConnection {
+    override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
         throw UnsupportedOperationException()
     }
 }

@@ -70,9 +70,15 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                             socketChannel, getMessageThread(connectionId)
                         )
                         val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
-                            secureEngineFactory.create(tcpConnection, true, peerHost, peerPort, supportedProtocols)
+                            secureEngineFactory.create(
+                                tcpConnection.coroutineScope,
+                                true,
+                                peerHost,
+                                peerPort,
+                                supportedProtocols
+                            )
                         } else {
-                            secureEngineFactory.create(tcpConnection, true, supportedProtocols)
+                            secureEngineFactory.create(tcpConnection.coroutineScope, true, supportedProtocols)
                         }
                         AioSecureTcpConnection(tcpConnection, secureEngine)
                     } else {

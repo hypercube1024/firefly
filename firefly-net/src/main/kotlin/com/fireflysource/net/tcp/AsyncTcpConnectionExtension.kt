@@ -7,7 +7,7 @@ import kotlinx.coroutines.launch
 suspend fun TcpConnection.startReadingAndAwaitHandshake(): TcpConnection {
     this.startReading()
     if (this.isSecureConnection) {
-        this.onHandshakeComplete().await()
+        this.beginHandshake().await()
     }
     return this
 }

@@ -1,8 +1,8 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
-import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.AbstractAsyncSecureEngine;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
+import kotlinx.coroutines.CoroutineScope;
 
 import javax.net.ssl.SSLEngine;
 
@@ -11,9 +11,11 @@ import javax.net.ssl.SSLEngine;
  */
 public class ConscryptSecureEngine extends AbstractAsyncSecureEngine {
 
-    public ConscryptSecureEngine(TcpConnection tcpConnection, SSLEngine sslEngine,
-                                 ApplicationProtocolSelector applicationProtocolSelector) {
-        super(tcpConnection, sslEngine, applicationProtocolSelector);
+    public ConscryptSecureEngine(
+            CoroutineScope coroutineScope,
+            SSLEngine sslEngine,
+            ApplicationProtocolSelector applicationProtocolSelector) {
+        super(coroutineScope, sslEngine, applicationProtocolSelector);
     }
 
 }

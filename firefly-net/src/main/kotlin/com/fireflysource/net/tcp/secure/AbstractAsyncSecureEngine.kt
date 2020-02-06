@@ -6,20 +6,23 @@ import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
+import java.util.function.Function
+import java.util.function.Supplier
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult.HandshakeStatus.*
 import javax.net.ssl.SSLEngineResult.Status.*
 
 abstract class AbstractAsyncSecureEngine(
-    private val tcpConnection: TcpConnection,
+    private val coroutineScope: CoroutineScope,
     private val sslEngine: SSLEngine,
     private val applicationProtocolSelector: ApplicationProtocolSelector
 ) : SecureEngine {
@@ -28,6 +31,9 @@ abstract class AbstractAsyncSecureEngine(
         private val log = SystemLogger.create(AbstractAsyncSecureEngine::class.java)
     }
 
+    private var readSupplier: Supplier<CompletableFuture<ByteBuffer>>? = null
+    private var writeFunction: Function<List<ByteBuffer>, CompletableFuture<Long>>? = null
+
     private var inPacketBuffer = EMPTY_BUFFER
 
     private val closed = AtomicBoolean(false)
@@ -35,16 +41,25 @@ abstract class AbstractAsyncSecureEngine(
     private val handshakeFinished = AtomicBoolean(false)
     private val beginHandshake = AtomicBoolean(false)
 
+    override fun onHandshakeRead(supplier: Supplier<CompletableFuture<ByteBuffer>>): SecureEngine {
+        this.readSupplier = supplier
+        return this
+    }
+
+    override fun onHandshakeWrite(function: Function<List<ByteBuffer>, CompletableFuture<Long>>): SecureEngine {
+        this.writeFunction = function
+        return this
+    }
+
     override fun beginHandshake(result: Consumer<Result<Void?>>) {
         if (beginHandshake.compareAndSet(false, true)) {
-            tcpConnection.startReading()
             launchHandshakeJob(result)
         } else {
             result.accept(Result.createFailedResult(SecureNetException("The handshake has begun, do not invoke it method repeatedly.")))
         }
     }
 
-    private fun launchHandshakeJob(result: Consumer<Result<Void?>>) = tcpConnection.coroutineScope.launch {
+    private fun launchHandshakeJob(result: Consumer<Result<Void?>>) = coroutineScope.launch {
         try {
             initHandshakeStatus()
             doHandshake()
@@ -80,13 +95,15 @@ abstract class AbstractAsyncSecureEngine(
     private suspend fun doHandshakeWrap() {
         val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.isNotEmpty()) {
-            tcpConnection.write(bufferList, 0, bufferList.size).await()
+            writeFunction?.apply(bufferList)?.await()
         }
     }
 
     private suspend fun doHandshakeUnwrap() {
-        val receivedBuffer = tcpConnection.inputChannel.receive()
-        decrypt(receivedBuffer)
+        val receivedBuffer = readSupplier?.get()?.await()
+        if (receivedBuffer != null) {
+            decrypt(receivedBuffer)
+        }
     }
 
     private suspend fun runDelegatedTasks() {
@@ -103,8 +120,8 @@ abstract class AbstractAsyncSecureEngine(
             val tlsProtocol = sslEngine.session.protocol
             val cipherSuite = sslEngine.session.cipherSuite
             log.info(
-                "Connection handshake success. id: {}, protocol: {} {}, cipher: {}, status: {}",
-                tcpConnection.id, applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus
+                "Connection handshake success. protocol: {} {}, cipher: {}, status: {}",
+                applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus
             )
         }
     }
@@ -178,7 +195,6 @@ abstract class AbstractAsyncSecureEngine(
         inPacketBuffer = if (inPacketBuffer.hasRemaining()) {
             log.debug {
                 "Connection merge received packet buffer. " +
-                        "id: ${tcpConnection.id}, " +
                         "in packet buffer: ${inPacketBuffer.remaining()}, " +
                         "received buffer: ${receivedBuffer.remaining()}"
             }

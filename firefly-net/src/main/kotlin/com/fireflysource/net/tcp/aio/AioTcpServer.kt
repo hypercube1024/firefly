@@ -28,6 +28,16 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
     private var peerHost: String = ""
     private var peerPort: Int = 0
     private lateinit var serverSocketChannel: AsynchronousServerSocketChannel
+    private val acceptSocketConnectionCompletionHandler =
+        object : CompletionHandler<AsynchronousSocketChannel, Int> {
+            override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
+                onAcceptCompleted(socketChannel, connectionId)
+            }
+
+            override fun failed(e: Throwable, connectionId: Int) {
+                onAcceptFailed(e, connectionId)
+            }
+        }
 
     override fun getTcpConnectionChannel(): Channel<TcpConnection> = connChannel
 
@@ -86,62 +96,60 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
 
     private fun accept() {
         try {
-            serverSocketChannel.accept(
-                id.getAndIncrement(),
-                object : CompletionHandler<AsynchronousSocketChannel, Int> {
-                    override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
-                        try {
-                            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
-                            socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
-                            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
-                            val tcpConnection = AioTcpConnection(
-                                connectionId, config.timeout,
-                                socketChannel, getMessageThread(connectionId)
-                            )
-                            if (config.enableSecureConnection) {
-                                val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
-                                    secureEngineFactory.create(
-                                        tcpConnection, false,
-                                        peerHost, peerPort,
-                                        supportedProtocols
-                                    )
-                                } else {
-                                    secureEngineFactory.create(tcpConnection, false, supportedProtocols)
-                                }
-                                val secureConnection =
-                                    AioSecureTcpConnection(tcpConnection, secureEngine)
-                                connectionConsumer.accept(secureConnection)
-                            } else {
-                                connectionConsumer.accept(tcpConnection)
-                            }
-                            log.debug { "accept the client connection. $connectionId" }
-                        } catch (e: Exception) {
-                            log.warn(e) { "accept connection exception. $connectionId" }
-                        } finally {
-                            accept()
-                        }
-                    }
-
-                    override fun failed(e: Throwable, connectionId: Int) {
-                        when (e) {
-                            is ClosedChannelException -> {
-                                log.info { "The server socket channel has been closed." }
-                            }
-                            is ShutdownChannelGroupException -> {
-                                log.info { "the server is shutdown. stop to accept connection." }
-                            }
-                            else -> {
-                                log.warn(e) { "accept connection failure. $connectionId" }
-                                accept()
-                            }
-                        }
-                    }
-                }
-            )
+            serverSocketChannel.accept(id.getAndIncrement(), acceptSocketConnectionCompletionHandler)
         } catch (e: ShutdownChannelGroupException) {
             log.info { "the channel group is shutdown." }
         } catch (e: Exception) {
             log.error(e) { "accept socket channel exception." }
+        }
+    }
+
+    private fun onAcceptCompleted(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
+        try {
+            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
+            socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
+            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
+            val tcpConnection = AioTcpConnection(
+                connectionId, config.timeout,
+                socketChannel, getMessageThread(connectionId)
+            )
+            if (config.enableSecureConnection) {
+                val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
+                    secureEngineFactory.create(
+                        tcpConnection.coroutineScope,
+                        false,
+                        peerHost,
+                        peerPort,
+                        supportedProtocols
+                    )
+                } else {
+                    secureEngineFactory.create(tcpConnection.coroutineScope, false, supportedProtocols)
+                }
+                val secureConnection = AioSecureTcpConnection(tcpConnection, secureEngine)
+                connectionConsumer.accept(secureConnection)
+            } else {
+                connectionConsumer.accept(tcpConnection)
+            }
+            log.debug { "accept the client connection. $connectionId" }
+        } catch (e: Exception) {
+            log.warn(e) { "accept connection exception. $connectionId" }
+        } finally {
+            accept()
+        }
+    }
+
+    private fun onAcceptFailed(e: Throwable, connectionId: Int) {
+        when (e) {
+            is ClosedChannelException -> {
+                log.info { "The server socket channel has been closed." }
+            }
+            is ShutdownChannelGroupException -> {
+                log.info { "the server is shutdown. stop to accept connection." }
+            }
+            else -> {
+                log.warn(e) { "accept connection failure. $connectionId" }
+                accept()
+            }
         }
     }
 
