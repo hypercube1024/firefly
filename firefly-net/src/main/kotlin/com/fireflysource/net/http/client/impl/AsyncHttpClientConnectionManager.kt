@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.coroutine.asyncSingle
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -65,7 +64,7 @@ class AsyncHttpClientConnectionManager(
         return tcpConnection
     }
 
-    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncGlobally(singleThread) {
+    override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> = asyncSingle {
         val port: Int = if (request.uri.port > 0) {
             request.uri.port
         } else {

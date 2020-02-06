@@ -3,7 +3,7 @@ package com.fireflysource.common.pool
 import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
-import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.coroutine.launchTask
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
@@ -64,7 +64,7 @@ class AsyncBoundObjectPool<T>(
         return future
     }
 
-    private fun launchPollObjectJob(): Job = launchGlobally(objectPoolDispatcher) {
+    private fun launchPollObjectJob(): Job = launchTask(objectPoolDispatcher) {
         while (true) {
             val future = pollTaskChannel.receive()
             try {
@@ -127,7 +127,7 @@ class AsyncBoundObjectPool<T>(
 
 
     // release task
-    private fun launchReleaseObjectJob(): Job = launchGlobally(objectPoolDispatcher) {
+    private fun launchReleaseObjectJob(): Job = launchTask(objectPoolDispatcher) {
         while (true) {
             val message = releaseTaskChannel.receive()
             val pooledObject = message.pooledObject

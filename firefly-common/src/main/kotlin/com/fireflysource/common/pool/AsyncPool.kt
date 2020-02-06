@@ -1,7 +1,7 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.`object`.Assert
-import com.fireflysource.common.coroutine.asyncGlobally
+import com.fireflysource.common.coroutine.asyncTask
 import com.fireflysource.common.func.Callback
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.future.asCompletableFuture
@@ -35,7 +35,7 @@ class AsyncPoolBuilder<T> {
     fun objectFactory(createPooledObject: suspend (pool: AsyncPool<T>) -> PooledObject<T>) {
         objectFactory = Pool.ObjectFactory { pool ->
             require(pool is AsyncPool<T>)
-            asyncGlobally(pool.getCoroutineDispatcher()) { createPooledObject.invoke(pool) }.asCompletableFuture()
+            asyncTask(pool.getCoroutineDispatcher()) { createPooledObject.invoke(pool) }.asCompletableFuture()
         }
     }
 

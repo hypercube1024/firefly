@@ -66,7 +66,7 @@ class TestCoroutineLocal {
     fun testCancelChannel(): Unit = runBlocking {
         val count = AtomicInteger()
         val channel = Channel<Int>()
-        val job = launchGlobally {
+        val job = launchTask {
             while (true) {
                 val i = channel.receive()
                 println("test: $i")
@@ -74,7 +74,7 @@ class TestCoroutineLocal {
             }
         }
 
-        launchGlobally {
+        launchTask {
             (1..10).forEach {
                 delay(100)
                 channel.offer(it)

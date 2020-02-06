@@ -155,7 +155,7 @@ fun <T> asyncWithAttr(
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
-fun <T> asyncGlobally(
+fun <T> asyncTask(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
@@ -178,12 +178,24 @@ fun launchWithAttr(
     return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
-fun launchGlobally(
+fun launchTask(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
     return GlobalScope.launch(context) { block.invoke(this) }
 }
+
+fun launchBlocking(block: suspend CoroutineScope.() -> Unit): Job =
+    launchTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+
+fun <T> asyncBlocking(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    asyncTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+
+fun launchSingle(block: suspend CoroutineScope.() -> Unit): Job =
+    launchTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
+
+fun <T> asyncSingle(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    asyncTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
 /**
  * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.

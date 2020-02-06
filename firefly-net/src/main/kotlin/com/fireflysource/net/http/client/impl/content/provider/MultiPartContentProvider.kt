@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.coroutine.launchSingle
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.net.http.client.HttpClientContentProvider
@@ -55,7 +54,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        readJob = launchGlobally(singleThread) {
+        readJob = launchSingle {
             readMessageLoop@ while (true) {
                 when (val readMultiPartMessage = readChannel.receive()) {
                     is ReadMultiPartRequest -> {
@@ -133,14 +132,14 @@ class MultiPartContentProvider : HttpClientContentProvider {
         throw UnsupportedOperationException("The multi part content does not support this method")
     }
 
-    suspend fun closeAwait() {
+    private suspend fun closeAwait() {
         close()
         readJob.join()
     }
 
     override fun closeFuture(): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        launchGlobally(singleThread) {
+        launchSingle {
             closeAwait()
             future.complete(null)
         }

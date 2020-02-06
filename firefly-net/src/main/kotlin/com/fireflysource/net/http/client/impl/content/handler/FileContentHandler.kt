@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers.singleThread
-import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.coroutine.launchSingle
 import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
@@ -20,7 +19,7 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
     private val writeJob: Job
 
     init {
-        writeJob = launchGlobally(singleThread) {
+        writeJob = launchSingle {
             val fileChannel = openFileChannelAsync(path, *options).await()
             var pos = 0L
             writeMessageLoop@ while (true) {

@@ -1,7 +1,6 @@
 package com.fireflysource.net.tcp.secure
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlocking
-import com.fireflysource.common.coroutine.launchGlobally
+import com.fireflysource.common.coroutine.launchBlocking
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
@@ -110,7 +109,7 @@ abstract class AbstractAsyncSecureEngine(
         // Conscrypt delegated tasks are always null
         var runnable: Runnable
         while (sslEngine.delegatedTask.also { runnable = it } != null) {
-            launchGlobally(ioBlocking) { runnable.run() }.join()
+            launchBlocking { runnable.run() }.join()
         }
         handshakeStatus = sslEngine.handshakeStatus
     }
