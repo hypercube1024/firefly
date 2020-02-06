@@ -65,7 +65,7 @@ object CoroutineDispatchers {
     }
 
     val supervisor: CompletableJob = SupervisorJob()
-    val scope: CoroutineScope = CoroutineScope(supervisor)
+    val computationScope: CoroutineScope = CoroutineScope(computation + supervisor)
 
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
