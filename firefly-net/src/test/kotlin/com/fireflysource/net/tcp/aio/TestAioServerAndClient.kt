@@ -11,6 +11,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -45,6 +46,7 @@ class TestAioServerAndClient {
 
     @ParameterizedTest
     @MethodSource("testParametersProvider")
+    @DisplayName("should send and receive messages successfully.")
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
         val port = 4001
@@ -146,6 +148,7 @@ class TestAioServerAndClient {
     }
 
     @Test
+    @DisplayName("should close when the connection is timeout.")
     fun testTimeout() = runBlocking {
         val host = "localhost"
         val port = 4001
