@@ -232,19 +232,19 @@ abstract class AbstractAioTcpConnection(
                     }
                 }
             } catch (e: InterruptedByTimeoutException) {
-                log.warn { "Tcp connection reading timeout. $id" }
+                log.warn { "The TCP connection reading timeout. $id" }
                 suspendReading()
                 closeNow()
                 break
             } catch (e: Exception) {
-                log.warn(e) { "Tcp connection reading exception. $id" }
+                log.warn(e) { "The TCP connection reading exception. $id" }
                 suspendReading()
                 closeNow()
                 break
             }
         }
 
-        log.info { "The TCP connection $id stops receiving messages." }
+        log.info { "The TCP connection stops receiving messages. $id" }
     }
 
     override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
@@ -328,10 +328,10 @@ abstract class AbstractAioTcpConnection(
             try {
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.warn(e) { "Close callback exception. $id" }
+                log.warn(e) { "The TCP connection close callback exception. $id" }
             }
 
-            log.info { "TCP connection close success. $id" }
+            log.info { "The TCP connection close success. $id" }
         }
         return this
     }

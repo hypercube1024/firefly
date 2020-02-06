@@ -47,28 +47,26 @@ class Http1ClientConnection(
 
 
     init {
-        acceptRequestJob()
+        generateRequestAndParseResponseJob()
     }
 
-    private fun acceptRequestJob() {
-        tcpConnection.coroutineScope.launch {
-            while (true) {
-                val requestMessage = requestChannel.receive()
+    private fun generateRequestAndParseResponseJob() = tcpConnection.coroutineScope.launch {
+        while (true) {
+            val requestMessage = requestChannel.receive()
 
-                try {
-                    encodeRequestAndFlushData(requestMessage)
+            try {
+                generateRequestAndFlushData(requestMessage)
 
-                    // receive response data
-                    handler.contentHandler = requestMessage.contentHandler
-                    val response = parseResponse()
-                    requestMessage.response.complete(response)
-                } catch (e: Exception) {
-                    requestMessage.response.completeExceptionally(e)
-                } finally {
-                    handler.reset()
-                    parser.reset()
-                    generator.reset()
-                }
+                // receive response data
+                handler.contentHandler = requestMessage.contentHandler
+                val response = parseResponse()
+                requestMessage.response.complete(response)
+            } catch (e: Exception) {
+                requestMessage.response.completeExceptionally(e)
+            } finally {
+                handler.reset()
+                parser.reset()
+                generator.reset()
             }
         }
     }
@@ -92,7 +90,7 @@ class Http1ClientConnection(
         return handler.toHttpClientResponse()
     }
 
-    private suspend fun encodeRequestAndFlushData(requestMessage: RequestMessage) {
+    private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
         genLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
