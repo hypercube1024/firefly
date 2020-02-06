@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.secure
 
+import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.coroutine.launchBlocking
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
@@ -60,7 +61,6 @@ abstract class AbstractAsyncSecureEngine(
 
     private fun launchHandshakeJob(result: Consumer<Result<Void?>>) = coroutineScope.launch {
         try {
-            initHandshakeStatus()
             doHandshake()
             result.accept(Result.createSuccessResult())
         } catch (e: Exception) {
@@ -68,15 +68,8 @@ abstract class AbstractAsyncSecureEngine(
         }
     }
 
-    private fun initHandshakeStatus() {
-        handshakeStatus = if (isClientMode) {
-            NEED_WRAP
-        } else {
-            NEED_UNWRAP
-        }
-    }
-
     private suspend fun doHandshake() {
+        begin()
         handshakeLoop@ while (true) {
             when (handshakeStatus) {
                 NEED_WRAP -> doHandshakeWrap()
@@ -91,16 +84,30 @@ abstract class AbstractAsyncSecureEngine(
         }
     }
 
+    private fun begin() {
+        sslEngine.beginHandshake()
+        handshakeStatus = sslEngine.handshakeStatus
+        val packetBufferSize = sslEngine.session.packetBufferSize
+        val applicationBufferSize = sslEngine.session.applicationBufferSize
+        log.info {
+            "Begin TLS handshake. mode: ${getMode()}, status: ${handshakeStatus}, " +
+                    "packetSize: ${packetBufferSize}, appSize: $applicationBufferSize"
+        }
+    }
+
     private suspend fun doHandshakeWrap() {
         val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.isNotEmpty()) {
-            writeFunction?.apply(bufferList)?.await()
+            val length = writeFunction?.apply(bufferList)?.await()
+            log.info { "Write TLS handshake data. mode: ${getMode()}, length: $length" }
         }
     }
 
     private suspend fun doHandshakeUnwrap() {
         val receivedBuffer = readSupplier?.get()?.await()
         if (receivedBuffer != null) {
+            val length = receivedBuffer.remaining()
+            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: $length" }
             decrypt(receivedBuffer)
         }
     }
@@ -118,9 +125,11 @@ abstract class AbstractAsyncSecureEngine(
         if (handshakeFinished.compareAndSet(false, true)) {
             val tlsProtocol = sslEngine.session.protocol
             val cipherSuite = sslEngine.session.cipherSuite
+            val inPacketBufferRemaining = inPacketBuffer.remaining()
+            Assert.isTrue(inPacketBufferRemaining == 0, "Received handshake data must be not remaining")
             log.info(
-                "Connection handshake success. protocol: {} {}, cipher: {}, status: {}",
-                applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus
+                "TLS handshake success. mode: ${getMode()}, protocol: {} {}, cipher: {}, status: {}, inPacketRemaining: {}",
+                applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus, inPacketBufferRemaining
             )
         }
     }
@@ -191,9 +200,10 @@ abstract class AbstractAsyncSecureEngine(
         if (!receivedBuffer.hasRemaining()) {
             return
         }
+
         inPacketBuffer = if (inPacketBuffer.hasRemaining()) {
             log.debug {
-                "Connection merge received packet buffer. " +
+                "Merge received packet buffer. mode: ${getMode()}, " +
                         "in packet buffer: ${inPacketBuffer.remaining()}, " +
                         "received buffer: ${receivedBuffer.remaining()}"
             }
@@ -212,6 +222,8 @@ abstract class AbstractAsyncSecureEngine(
     private fun resizePacketBuffer(packetBuffer: ByteBuffer): ByteBuffer {
         return packetBuffer.addCapacity(sslEngine.session.packetBufferSize)
     }
+
+    private fun getMode(): String = if (isClientMode) "Client" else "Server"
 
     override fun isClientMode(): Boolean = sslEngine.useClientMode
 
