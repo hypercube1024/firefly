@@ -15,7 +15,7 @@ import java.util.function.Consumer
 /**
  * @author Pengtao Qiu
  */
-class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpServer {
+class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpServer {
 
     companion object {
         private val log = SystemLogger.create(AioTcpServer::class.java)
@@ -111,7 +111,7 @@ class AioTcpServer(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
             val tcpConnection = AioTcpConnection(
                 connectionId, config.timeout,
-                socketChannel, getMessageThread(connectionId)
+                socketChannel, getDispatcher(connectionId)
             )
             if (config.enableSecureConnection) {
                 val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {

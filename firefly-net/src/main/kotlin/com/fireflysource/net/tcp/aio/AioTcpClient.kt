@@ -67,7 +67,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                     val tcpConnection = if (config.enableSecureConnection) {
                         val tcpConnection = AioTcpConnection(
                             connectionId, config.timeout,
-                            socketChannel, getMessageThread(connectionId)
+                            socketChannel, getDispatcher(connectionId)
                         )
                         val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
                             secureEngineFactory.create(
@@ -82,7 +82,7 @@ class AioTcpClient(val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelG
                         }
                         AioSecureTcpConnection(tcpConnection, secureEngine)
                     } else {
-                        AioTcpConnection(connectionId, config.timeout, socketChannel, getMessageThread(connectionId))
+                        AioTcpConnection(connectionId, config.timeout, socketChannel, getDispatcher(connectionId))
                     }
                     future.complete(tcpConnection)
                 } catch (e: Exception) {

@@ -26,12 +26,12 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
     protected val id: AtomicInteger = AtomicInteger(0)
     protected val group: AsynchronousChannelGroup =
         AsynchronousChannelGroup.withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
-    private val messageThreadGroup: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
+    private val dispatchers: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
         newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
     }
 
-    protected fun getMessageThread(connectionId: Int): CoroutineDispatcher {
-        return messageThreadGroup[abs(connectionId % defaultPoolSize)]
+    protected fun getDispatcher(connectionId: Int): CoroutineDispatcher {
+        return dispatchers[abs(connectionId % defaultPoolSize)]
     }
 
     abstract fun getThreadName(): String
