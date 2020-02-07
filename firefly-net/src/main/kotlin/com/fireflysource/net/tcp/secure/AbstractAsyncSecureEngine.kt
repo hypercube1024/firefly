@@ -174,7 +174,10 @@ abstract class AbstractAsyncSecureEngine(
                         break@wrap
                     }
                 }
-                CLOSED -> sslEngine.closeOutbound()
+                CLOSED -> {
+                    sslEngine.closeOutbound()
+                    break@wrap
+                }
                 else -> throw SecureNetException("Wrap app data state exception. ${result.status}")
             }
         }
@@ -214,7 +217,10 @@ abstract class AbstractAsyncSecureEngine(
                         break@unwrap
                     }
                 }
-                CLOSED -> sslEngine.closeInbound()
+                CLOSED -> {
+                    sslEngine.closeInbound()
+                    break@unwrap
+                }
                 else -> throw SecureNetException("Unwrap packets state exception. ${result.status}")
             }
         }

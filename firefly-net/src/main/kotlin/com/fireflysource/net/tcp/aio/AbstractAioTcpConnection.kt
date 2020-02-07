@@ -100,6 +100,7 @@ abstract class AbstractAioTcpConnection(
                 val length = outputBuffers.getCurrentLength()
                 val writtenLength =
                     socketChannel.writeAwait(outputBuffers.getBuffers(), offset, length, maxIdleTime, timeUnit)
+                log.debug { "TCP connection writes data. id: ${id}, offset: ${offset}, currentOffset: ${outputBuffers.getCurrentOffset()}, writtenLength: $writtenLength" }
                 if (writtenLength < 0) {
                     success = false
                     exception = closedChannelException
@@ -362,7 +363,7 @@ class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : Output
 
 open class Buffers(
     private val buffers: Array<ByteBuffer>,
-    private val offset: Int,
+    offset: Int,
     length: Int,
     private val result: Consumer<Result<Long>>
 ) : OutputMessage() {
@@ -376,6 +377,7 @@ open class Buffers(
 
     private val maxSize = offset + length
     private val lastIndex = maxSize - 1
+    private var currentOffset = offset
 
     fun getBuffers(): Array<ByteBuffer> = buffers
 
@@ -383,8 +385,9 @@ open class Buffers(
 
     fun getCurrentOffset(): Int {
         val buffers = getBuffers()
-        for (i in offset..lastIndex) {
+        for (i in currentOffset..lastIndex) {
             if (buffers[i].hasRemaining()) {
+                currentOffset = i
                 return i
             }
         }
