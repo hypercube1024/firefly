@@ -6,6 +6,9 @@ package com.fireflysource.net.tcp.aio
 class AdaptiveBufferSize {
     companion object {
         private val sizeArray = arrayOf(
+            128,
+            256,
+            512,
             1 * 1024,
             2 * 1024,
             4 * 1024,
@@ -14,9 +17,6 @@ class AdaptiveBufferSize {
             8 * 1024,
             8 * 1024,
             16 * 1024,
-            16 * 1024,
-            16 * 1024,
-            32 * 1024,
             32 * 1024,
             64 * 1024,
             128 * 1024,
