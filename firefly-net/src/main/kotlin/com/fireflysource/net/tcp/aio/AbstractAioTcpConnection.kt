@@ -1,9 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.func.Callback
-import com.fireflysource.common.io.closeAsync
-import com.fireflysource.common.io.readAwait
-import com.fireflysource.common.io.writeAwait
+import com.fireflysource.common.io.*
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
@@ -100,15 +98,15 @@ abstract class AbstractAioTcpConnection(
             try {
                 val offset = outputBuffers.getCurrentOffset()
                 val length = outputBuffers.getCurrentLength()
-                val writtenLen =
+                val writtenLength =
                     socketChannel.writeAwait(outputBuffers.getBuffers(), offset, length, maxIdleTime, timeUnit)
-                if (writtenLen < 0) {
+                if (writtenLength < 0) {
                     success = false
                     exception = closedChannelException
                     break
                 } else {
-                    writtenBytes += writtenLen
-                    totalLength += writtenLen
+                    writtenBytes += writtenLength
+                    totalLength += writtenLength
                 }
             } catch (e: Exception) {
                 log.warn(e) { "The TCP connection writing exception. id: $id" }
@@ -132,14 +130,14 @@ abstract class AbstractAioTcpConnection(
         var exception: Exception? = null
         while (outputMessage.buffer.hasRemaining()) {
             try {
-                val writtenLen = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
-                if (writtenLen < 0) {
+                val writtenLength = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
+                if (writtenLength < 0) {
                     success = false
                     exception = closedChannelException
                     break
                 } else {
-                    writtenBytes += writtenLen
-                    totalLength += writtenLen
+                    writtenBytes += writtenLength
+                    totalLength += writtenLength
                 }
             } catch (e: Exception) {
                 log.warn(e) { "The TCP connection writing exception. id: $id" }
@@ -213,20 +211,24 @@ abstract class AbstractAioTcpConnection(
         log.info { "The TCP connection starts reading automatically. id: $id" }
 
         while (isReading) {
-            val buf = ByteBuffer.allocate(adaptiveBufferSize.getBufferSize())
             try {
+                val bufferSize = adaptiveBufferSize.getBufferSize()
+                val buffer = BufferUtils.allocate(bufferSize)
+                val position = buffer.flipToFill()
+                log.debug { "Allocate TCP read buffer size: $bufferSize" }
+
                 lastReadTime = System.currentTimeMillis()
-                val count = socketChannel.readAwait(buf, maxIdleTime, timeUnit)
-                if (count < 0) {
+                val readLength = socketChannel.readAwait(buffer, maxIdleTime, timeUnit)
+                if (readLength < 0) {
                     suspendReading()
                     closeNow()
                     break
                 } else {
-                    adaptiveBufferSize.update(count)
-                    readBytes += count
-                    buf.flip()
+                    adaptiveBufferSize.update(readLength)
+                    readBytes += readLength
+                    buffer.flipToFlush(position)
                     try {
-                        receivedMessageConsumer.accept(buf)
+                        receivedMessageConsumer.accept(buffer)
                     } catch (e: Exception) {
                         exceptionConsumers.forEach { it.accept(e) }
                     }
@@ -314,7 +316,7 @@ abstract class AbstractAioTcpConnection(
         if (socketChannelClosed.compareAndSet(false, true)) {
             closeTime = System.currentTimeMillis()
             try {
-                socketChannel.closeAsync()
+                socketChannel.close()
             } catch (e: Exception) {
                 log.warn(e) { "Close socket channel exception. $id" }
             }
