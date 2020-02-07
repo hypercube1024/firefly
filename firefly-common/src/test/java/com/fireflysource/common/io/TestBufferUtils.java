@@ -154,14 +154,23 @@ class TestBufferUtils {
         assertEquals("1234567890", BufferUtils.toString(to));
 
         from = BufferUtils.toBuffer("1234");
-        to = BufferUtils.allocate(from.remaining());
+        to = BufferUtils.allocate(from.remaining() * 2);
+        assertEquals(0, to.position());
+        assertEquals(0, to.limit());
         assertEquals(0, from.position());
         assertEquals(4, from.limit());
+
         BufferUtils.append(to, from);
         assertEquals(0, to.position());
         assertEquals(4, to.limit());
         assertEquals(4, from.position());
         assertEquals(4, from.limit());
+
+        to.get();
+        from = BufferUtils.toBuffer("1234");
+        BufferUtils.append(to, from);
+        assertEquals(1, to.position());
+        assertEquals(8, to.limit());
     }
 
 
