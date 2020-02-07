@@ -5,8 +5,13 @@ import com.fireflysource.common.coroutine.launchBlocking
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.aio.AdaptiveBufferSize
+import com.fireflysource.net.tcp.buffer.Buffer
+import com.fireflysource.net.tcp.buffer.BufferList
+import com.fireflysource.net.tcp.buffer.Buffers
+import com.fireflysource.net.tcp.buffer.OutputMessage
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -36,7 +41,8 @@ abstract class AbstractAsyncSecureEngine(
     private var writeFunction: Function<List<ByteBuffer>, CompletableFuture<Long>>? = null
 
     private var inPacketBuffer = EMPTY_BUFFER
-    private val adaptiveBufferSize = AdaptiveBufferSize()
+    private val inAppAdaptiveBufferSize = AdaptiveBufferSize()
+    private val outPacketAdaptiveBufferSize = AdaptiveBufferSize()
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -136,24 +142,52 @@ abstract class AbstractAsyncSecureEngine(
         }
     }
 
-    private fun allocate(): ByteBuffer {
-        val size = adaptiveBufferSize.getBufferSize()
-        log.debug { "Allocate buffer size: $size" }
+    private fun allocateInApp(): ByteBuffer {
+        val size = inAppAdaptiveBufferSize.getBufferSize()
+        log.debug { "Allocate in app buffer size: $size" }
         return BufferUtils.allocate(size)
     }
 
-    private fun updateBufferSize(size: Int) {
-        adaptiveBufferSize.update(size)
+    private fun updateInAppBufferSize(size: Int) {
+        inAppAdaptiveBufferSize.update(size)
         log.debug { "In app size: $size" }
     }
 
-    override fun encrypt(outAppBuffer: ByteBuffer): MutableList<ByteBuffer> {
+    private fun allocateOutPacket(): ByteBuffer {
+        val size = outPacketAdaptiveBufferSize.getBufferSize()
+        log.debug { "Allocate out packet buffer size: $size" }
+        return BufferUtils.allocate(size)
+    }
+
+    private fun updateOutPacketBufferSize(size: Int) {
+        outPacketAdaptiveBufferSize.update(size)
+        log.debug { "Out packet size: $size" }
+    }
+
+    override fun encrypt(outAppBuffer: ByteBuffer): List<ByteBuffer> = encryptBuffers(Buffer(outAppBuffer, discard()))
+
+    override fun encrypt(byteBuffers: Array<ByteBuffer>, offset: Int, length: Int): List<ByteBuffer> {
+        return encryptBuffers(Buffers(byteBuffers, offset, length, discard()))
+    }
+
+    override fun encrypt(byteBuffers: MutableList<ByteBuffer>, offset: Int, length: Int): List<ByteBuffer> {
+        return encryptBuffers(BufferList(byteBuffers, offset, length, discard()))
+    }
+
+    private fun encryptBuffers(outAppBuffer: OutputMessage): List<ByteBuffer> {
         val outPacketBuffers = LinkedList<ByteBuffer>()
-        var outPacketBuffer = allocate()
+        var outPacketBuffer = allocateOutPacket()
         var pos = outPacketBuffer.flipToFill()
 
+        fun wrap() = when (outAppBuffer) {
+            is Buffer -> sslEngine.wrap(outAppBuffer.buffer, outPacketBuffer)
+            is Buffers -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
+            is BufferList -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
+            else -> throw SecureNetException("Out app buffer type error.")
+        }
+
         wrap@ while (true) {
-            val result = sslEngine.wrap(outAppBuffer, outPacketBuffer)
+            val result = wrap()
             handshakeStatus = result.handshakeStatus
             when (result.status) {
                 BUFFER_OVERFLOW -> {
@@ -168,7 +202,7 @@ abstract class AbstractAsyncSecureEngine(
                     }
 
                     if (outAppBuffer.hasRemaining()) {
-                        outPacketBuffer = allocate()
+                        outPacketBuffer = allocateOutPacket()
                         pos = outPacketBuffer.flipToFill()
                     } else {
                         break@wrap
@@ -183,7 +217,7 @@ abstract class AbstractAsyncSecureEngine(
         }
 
         val size = outPacketBuffers.sumBy { it.remaining() }
-        updateBufferSize(size)
+        updateOutPacketBufferSize(size)
         return outPacketBuffers
     }
 
@@ -194,7 +228,7 @@ abstract class AbstractAsyncSecureEngine(
             return EMPTY_BUFFER
         }
 
-        var inAppBuffer = allocate()
+        var inAppBuffer = allocateInApp()
         val pos = inAppBuffer.flipToFill()
 
         unwrap@ while (true) {
@@ -226,7 +260,7 @@ abstract class AbstractAsyncSecureEngine(
         }
 
         inAppBuffer.flipToFlush(pos)
-        updateBufferSize(inAppBuffer.remaining())
+        updateInAppBufferSize(inAppBuffer.remaining())
         return inAppBuffer
     }
 

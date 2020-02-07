@@ -1,6 +1,8 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.sys.Result.discard
+import com.fireflysource.net.tcp.buffer.BufferList
+import com.fireflysource.net.tcp.buffer.Buffers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.DisplayName
@@ -35,12 +37,12 @@ class TestMessage {
         val size = 6
         val capacity = 16
         val buffers = Buffers(Array(size) { ByteBuffer.allocate(capacity) }, offset, length, discard())
-        buffers.getBuffers()[offset].putInt(1)
+        buffers.buffers[offset].putInt(1)
         assertEquals(offset, buffers.getCurrentOffset())
         assertEquals(length, buffers.getCurrentLength())
 
-        buffers.getBuffers()[offset].putLong(2)
-        buffers.getBuffers()[offset].putInt(3)
+        buffers.buffers[offset].putLong(2)
+        buffers.buffers[offset].putInt(3)
         assertEquals(offset + 1, buffers.getCurrentOffset())
         assertEquals(length - 1, buffers.getCurrentLength())
     }
@@ -55,7 +57,7 @@ class TestMessage {
 
         val lastIndex = offset + length - 1
         val bytes = ByteArray(capacity)
-        (offset..lastIndex).forEach { i -> buffers.getBuffers()[i].put(bytes) }
+        (offset..lastIndex).forEach { i -> buffers.buffers[i].put(bytes) }
         assertFalse(buffers.hasRemaining())
         assertEquals(0, buffers.getCurrentLength())
         assertEquals(offset + length, buffers.getCurrentOffset())

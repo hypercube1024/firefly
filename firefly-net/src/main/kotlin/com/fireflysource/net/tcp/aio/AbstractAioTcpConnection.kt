@@ -9,6 +9,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import com.fireflysource.net.tcp.buffer.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -77,8 +78,8 @@ abstract class AbstractAioTcpConnection(
     private suspend fun flushData(outputMessage: OutputMessage): Boolean {
         lastWrittenTime = System.currentTimeMillis()
         return when (outputMessage) {
-            is Buffer -> flushBuffer(outputMessage)
-            is Buffers -> flushBuffers(outputMessage)
+            is Buffer,
+            is Buffers,
             is BufferList -> flushBuffers(outputMessage)
             is Shutdown -> shutdown(outputMessage)
         }
@@ -90,17 +91,32 @@ abstract class AbstractAioTcpConnection(
         return false
     }
 
-    private suspend fun flushBuffers(outputBuffers: Buffers): Boolean {
+    private suspend fun write(output: OutputMessage): Long = when (output) {
+        is Buffer -> socketChannel.writeAwait(output.buffer, maxIdleTime, timeUnit).toLong()
+        is Buffers -> socketChannel.writeAwait(
+            output.buffers,
+            output.getCurrentOffset(),
+            output.getCurrentLength(),
+            maxIdleTime,
+            timeUnit
+        )
+        is BufferList -> socketChannel.writeAwait(
+            output.buffers,
+            output.getCurrentOffset(),
+            output.getCurrentLength(),
+            maxIdleTime,
+            timeUnit
+        )
+        else -> throw IllegalArgumentException("The output message type can not write.")
+    }
+
+    private suspend fun flushBuffers(outputBuffers: OutputMessage): Boolean {
         var totalLength = 0L
         var success = true
         var exception: Exception? = null
         while (outputBuffers.hasRemaining()) {
             try {
-                val offset = outputBuffers.getCurrentOffset()
-                val length = outputBuffers.getCurrentLength()
-                val writtenLength =
-                    socketChannel.writeAwait(outputBuffers.getBuffers(), offset, length, maxIdleTime, timeUnit)
-                log.debug { "TCP connection writes data. id: ${id}, offset: ${offset}, currentOffset: ${outputBuffers.getCurrentOffset()}, writtenLength: $writtenLength" }
+                val writtenLength = write(outputBuffers)
                 if (writtenLength < 0) {
                     success = false
                     exception = closedChannelException
@@ -116,44 +132,31 @@ abstract class AbstractAioTcpConnection(
                 break
             }
         }
+
+        fun complete() {
+            when (outputBuffers) {
+                is Buffer -> outputBuffers.result.accept(Result(true, totalLength.toInt(), null))
+                is Buffers -> outputBuffers.result.accept(Result(true, totalLength, null))
+                is BufferList -> outputBuffers.result.accept(Result(true, totalLength, null))
+            }
+        }
+
+        fun failed() {
+            when (outputBuffers) {
+                is Buffer -> outputBuffers.result.accept(Result(false, -1, exception))
+                is Buffers -> outputBuffers.result.accept(Result(false, -1, exception))
+                is BufferList -> outputBuffers.result.accept(Result(false, -1, exception))
+            }
+        }
+
         if (success) {
-            outputBuffers.getResult().accept(Result(true, totalLength, null))
+            log.debug { "TCP connection writes buffers total length: $totalLength" }
+            complete()
         } else {
             shutdownOutputAndInput()
-            outputBuffers.getResult().accept(Result(false, -1, exception))
+            failed()
         }
         return success
-    }
-
-    private suspend fun flushBuffer(outputMessage: Buffer): Boolean {
-        var totalLength = 0
-        var success = true
-        var exception: Exception? = null
-        while (outputMessage.buffer.hasRemaining()) {
-            try {
-                val writtenLength = socketChannel.writeAwait(outputMessage.buffer, maxIdleTime, timeUnit)
-                if (writtenLength < 0) {
-                    success = false
-                    exception = closedChannelException
-                    break
-                } else {
-                    writtenBytes += writtenLength
-                    totalLength += writtenLength
-                }
-            } catch (e: Exception) {
-                log.warn(e) { "The TCP connection writing exception. id: $id" }
-                success = false
-                exception = e
-                break
-            }
-        }
-        if (success) {
-            outputMessage.result.accept(Result(true, totalLength, null))
-        } else {
-            shutdownOutputAndInput()
-            outputMessage.result.accept(Result(false, -1, exception))
-        }
-        return true
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
@@ -355,61 +358,3 @@ abstract class AbstractAioTcpConnection(
 class CloseRequestException : IllegalStateException("The close request has been sent")
 
 class StartReadingException : IllegalStateException("The connection has started reading.")
-
-
-sealed class OutputMessage
-
-class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage()
-
-open class Buffers(
-    private val buffers: Array<ByteBuffer>,
-    offset: Int,
-    length: Int,
-    private val result: Consumer<Result<Long>>
-) : OutputMessage() {
-
-    init {
-        require(offset >= 0) { "The offset must be greater than or equal the 0" }
-        require(length > 0) { "The length must be greater than 0" }
-        require(offset < buffers.size) { "The offset must be less than the buffer size" }
-        require((offset + length) <= buffers.size) { "The length must be less than or equal the buffer size" }
-    }
-
-    private val maxSize = offset + length
-    private val lastIndex = maxSize - 1
-    private var currentOffset = offset
-
-    fun getBuffers(): Array<ByteBuffer> = buffers
-
-    fun getResult(): Consumer<Result<Long>> = result
-
-    fun getCurrentOffset(): Int {
-        val buffers = getBuffers()
-        for (i in currentOffset..lastIndex) {
-            if (buffers[i].hasRemaining()) {
-                currentOffset = i
-                return i
-            }
-        }
-        return maxSize
-    }
-
-    fun getCurrentLength(): Int {
-        return maxSize - getCurrentOffset()
-    }
-
-    fun hasRemaining(): Boolean {
-        return getCurrentOffset() < maxSize
-    }
-
-    fun getLastIndex(): Int = lastIndex
-}
-
-class BufferList(
-    bufferList: List<ByteBuffer>,
-    offset: Int,
-    length: Int,
-    result: Consumer<Result<Long>>
-) : Buffers(bufferList.toTypedArray(), offset, length, result)
-
-class Shutdown(val result: Consumer<Result<Void>>) : OutputMessage()

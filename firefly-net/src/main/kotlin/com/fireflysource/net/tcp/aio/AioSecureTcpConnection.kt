@@ -3,6 +3,7 @@ package com.fireflysource.net.tcp.aio
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AbstractAioTcpConnection.Companion.startReadingException
+import com.fireflysource.net.tcp.buffer.*
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -63,14 +64,13 @@ class AioSecureTcpConnection(
         }
     }
 
-    private fun encryptAndFlushBuffers(buffers: Buffers) {
-        val offset = buffers.getCurrentOffset()
-        val lastIndex = buffers.getLastIndex()
-        val bufferArray = buffers.getBuffers()
-        val encryptedBuffers = (offset..lastIndex)
-            .map { i -> secureEngine.encrypt(bufferArray[i]) }
-            .flatten()
-        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, buffers.getResult())
+    private fun encryptAndFlushBuffers(outputMessage: Buffers) {
+        val encryptedBuffers = secureEngine.encrypt(
+            outputMessage.buffers,
+            outputMessage.getCurrentOffset(),
+            outputMessage.getCurrentLength()
+        )
+        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
     }
 
     private fun encryptAndFlushBuffer(outputMessage: Buffer) {

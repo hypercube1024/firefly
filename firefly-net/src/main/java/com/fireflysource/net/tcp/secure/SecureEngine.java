@@ -83,4 +83,8 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      */
     List<ByteBuffer> encrypt(ByteBuffer byteBuffer);
 
+    List<ByteBuffer> encrypt(ByteBuffer[] byteBuffers, int offset, int length);
+
+    List<ByteBuffer> encrypt(List<ByteBuffer> byteBuffers, int offset, int length);
+
 }
