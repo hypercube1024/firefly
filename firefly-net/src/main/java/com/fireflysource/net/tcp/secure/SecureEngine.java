@@ -83,8 +83,30 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      */
     List<ByteBuffer> encrypt(ByteBuffer byteBuffer);
 
+    /**
+     * Encrypt the plain text to the cipher text.
+     *
+     * @param byteBuffers The plain text data.
+     * @param offset      The offset within the buffer array of the first buffer into which
+     *                    bytes are to be transferred; must be non-negative and no larger than
+     *                    byteBuffers.length.
+     * @param length      The maximum number of buffers to be accessed; must be non-negative
+     *                    and no larger than byteBuffers.length - offset.
+     * @return The cipher text byte buffer list.
+     */
     List<ByteBuffer> encrypt(ByteBuffer[] byteBuffers, int offset, int length);
 
+    /**
+     * Encrypt the plain text to the cipher text.
+     *
+     * @param byteBuffers The plain text data.
+     * @param offset      The offset within the buffer array of the first buffer into which
+     *                    bytes are to be transferred; must be non-negative and no larger than
+     *                    byteBuffers.length.
+     * @param length      The maximum number of buffers to be accessed; must be non-negative
+     *                    and no larger than byteBuffers.length - offset.
+     * @return The cipher text byte buffer list.
+     */
     List<ByteBuffer> encrypt(List<ByteBuffer> byteBuffers, int offset, int length);
 
 }

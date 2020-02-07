@@ -183,7 +183,7 @@ abstract class AbstractAsyncSecureEngine(
             is Buffer -> sslEngine.wrap(outAppBuffer.buffer, outPacketBuffer)
             is Buffers -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
             is BufferList -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
-            else -> throw SecureNetException("Out app buffer type error.")
+            else -> throw IllegalArgumentException("Out app buffer type error.")
         }
 
         wrap@ while (true) {

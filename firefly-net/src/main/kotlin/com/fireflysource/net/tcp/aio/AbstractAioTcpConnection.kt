@@ -78,9 +78,7 @@ abstract class AbstractAioTcpConnection(
     private suspend fun flushData(outputMessage: OutputMessage): Boolean {
         lastWrittenTime = System.currentTimeMillis()
         return when (outputMessage) {
-            is Buffer,
-            is Buffers,
-            is BufferList -> flushBuffers(outputMessage)
+            is Buffer, is Buffers, is BufferList -> flushBuffers(outputMessage)
             is Shutdown -> shutdown(outputMessage)
         }
     }

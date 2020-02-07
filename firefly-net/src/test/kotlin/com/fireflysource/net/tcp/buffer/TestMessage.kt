@@ -1,8 +1,6 @@
-package com.fireflysource.net.tcp.aio
+package com.fireflysource.net.tcp.buffer
 
 import com.fireflysource.common.sys.Result.discard
-import com.fireflysource.net.tcp.buffer.BufferList
-import com.fireflysource.net.tcp.buffer.Buffers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.DisplayName

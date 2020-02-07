@@ -27,13 +27,12 @@ class AioSecureTcpConnection(
     }
 
     init {
-        secureEngine.onHandshakeWrite { buffers ->
-            tcpConnection.write(buffers, 0, buffers.size)
-        }.onHandshakeRead {
-            tcpConnection.coroutineScope.async { tcpConnection.inputChannel.receive() }.asCompletableFuture()
-        }
+        secureEngine.onHandshakeWrite { tcpConnection.write(it, 0, it.size) }.onHandshakeRead { read() }
         tcpConnection.onClose { secureEngine.close() }
     }
+
+    private fun read() =
+        tcpConnection.coroutineScope.async { tcpConnection.inputChannel.receive() }.asCompletableFuture()
 
     private fun launchDecryptionJob() = tcpConnection.coroutineScope.launch {
         val input = tcpConnection.inputChannel

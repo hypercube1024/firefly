@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers.availableProcessors
 import com.fireflysource.common.coroutine.launchTask
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
@@ -22,6 +23,7 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.math.roundToLong
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 
@@ -49,10 +51,13 @@ class TestAioServerAndClient {
     @DisplayName("should send and receive messages successfully.")
     fun test(bufType: String, enableSecure: Boolean) = runBlocking {
         val host = "localhost"
-        val port = 4001
-        val maxMsgCount = 1_000
-        val connectionNum = 4
-        val msgCount = AtomicInteger()
+        val port = Random.nextInt(10000, 20000)
+
+        val connectionCount = availableProcessors
+        val maxMessageCountPerOneConnection = 1_000
+        val expectMessageCount = maxMessageCountPerOneConnection * connectionCount
+
+        val messageCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
@@ -63,8 +68,6 @@ class TestAioServerAndClient {
 
                 readBufLoop@ while (buf.hasRemaining()) {
                     val num = buf.int
-                    msgCount.incrementAndGet()
-
                     val newBuf = ByteBuffer.allocate(4)
                     newBuf.putInt(num).flip()
                     connection.write(newBuf, discard())
@@ -74,8 +77,7 @@ class TestAioServerAndClient {
 
         val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
-            val maxCount = maxMsgCount / connectionNum
-            val jobs = (1..connectionNum).map {
+            val jobs = (1..connectionCount).map {
                 launchTask {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
@@ -88,9 +90,9 @@ class TestAioServerAndClient {
 
                             readBufLoop@ while (buf.hasRemaining()) {
                                 val num = buf.int
-                                msgCount.incrementAndGet()
+                                messageCount.incrementAndGet()
 
-                                if (num == maxCount) {
+                                if (num == maxMessageCountPerOneConnection) {
                                     connection.closeFuture().await()
                                     break@recvLoop
                                 }
@@ -100,14 +102,14 @@ class TestAioServerAndClient {
 
                     when (bufType) {
                         "single" -> {
-                            (1..maxCount).forEach { i ->
+                            (1..maxMessageCountPerOneConnection).forEach { i ->
                                 val buf = ByteBuffer.allocate(4)
                                 buf.putInt(i).flip()
                                 connection.write(buf, discard())
                             }
                         }
                         "array" -> {
-                            val bufArray = Array<ByteBuffer>(maxCount) { index ->
+                            val bufArray = Array<ByteBuffer>(maxMessageCountPerOneConnection) { index ->
                                 val buf = ByteBuffer.allocate(4)
                                 buf.putInt(index + 1).flip()
                                 buf
@@ -115,7 +117,7 @@ class TestAioServerAndClient {
                             connection.write(bufArray, 0, bufArray.size, discard())
                         }
                         "list" -> {
-                            val bufList = List<ByteBuffer>(maxCount) { index ->
+                            val bufList = List<ByteBuffer>(maxMessageCountPerOneConnection) { index ->
                                 val buf = ByteBuffer.allocate(4)
                                 buf.putInt(index + 1).flip()
                                 buf
@@ -136,10 +138,12 @@ class TestAioServerAndClient {
 
             jobs.forEach { it.join() }
 
-            assertEquals(maxMsgCount * 2, msgCount.get())
+            assertEquals(expectMessageCount, messageCount.get())
         }
-        val throughput = maxMsgCount / (time / 1000.00)
+
+        val throughput = expectMessageCount / (time / 1000.00)
         println("success. $time ms, ${throughput.roundToLong()} qps")
+        println("connection: ${connectionCount}, messageCount: $expectMessageCount")
 
         val stopTime = measureTimeMillis {
             stopAll()
