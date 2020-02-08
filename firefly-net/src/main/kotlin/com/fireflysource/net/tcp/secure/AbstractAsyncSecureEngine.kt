@@ -83,7 +83,7 @@ abstract class AbstractAsyncSecureEngine(
                 NEED_WRAP -> doHandshakeWrap()
                 NEED_UNWRAP -> doHandshakeUnwrap()
                 NEED_TASK -> runDelegatedTasks()
-                NOT_HANDSHAKING, FINISHED -> {
+                FINISHED -> {
                     handshakeComplete()
                     break@handshakeLoop
                 }
@@ -97,8 +97,9 @@ abstract class AbstractAsyncSecureEngine(
         handshakeStatus = sslEngine.handshakeStatus
         val packetBufferSize = sslEngine.session.packetBufferSize
         val applicationBufferSize = sslEngine.session.applicationBufferSize
+        val status = handshakeStatus
         log.info {
-            "Begin TLS handshake. mode: ${getMode()}, status: ${handshakeStatus}, " +
+            "Begin TLS handshake. mode: ${getMode()}, status: ${status}, " +
                     "packetSize: ${packetBufferSize}, appSize: $applicationBufferSize"
         }
     }
@@ -134,7 +135,10 @@ abstract class AbstractAsyncSecureEngine(
             val tlsProtocol = sslEngine.session.protocol
             val cipherSuite = sslEngine.session.cipherSuite
             val inPacketBufferRemaining = inPacketBuffer.remaining()
-            Assert.isTrue(inPacketBufferRemaining == 0, "Received handshake data must be not remaining")
+            Assert.isTrue(
+                inPacketBufferRemaining == 0,
+                "Received handshake data must be not remaining. length: $inPacketBufferRemaining"
+            )
             log.info(
                 "TLS handshake success. mode: ${getMode()}, protocol: {} {}, cipher: {}, status: {}, inPacketRemaining: {}",
                 applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus, inPacketBufferRemaining
