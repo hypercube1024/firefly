@@ -23,9 +23,10 @@ public class FixedTimeLeakDetector<T> extends AbstractLifeCycle {
     private final Callback noLeakCallback;
     private final Map<T, TrackedObject> registeredMap = Collections.synchronizedMap(new IdentityHashMap<>());
 
-    public FixedTimeLeakDetector(ScheduledExecutorService scheduler,
-                                 long initialDelay, long delay, long releaseTimeout, TimeUnit unit,
-                                 Callback noLeakCallback) {
+    public FixedTimeLeakDetector(
+            ScheduledExecutorService scheduler,
+            long initialDelay, long delay, long releaseTimeout, TimeUnit unit,
+            Callback noLeakCallback) {
         this.scheduler = scheduler;
         this.initialDelay = initialDelay;
         this.delay = delay;
@@ -46,24 +47,30 @@ public class FixedTimeLeakDetector<T> extends AbstractLifeCycle {
         registeredMap.remove(object);
     }
 
+    private void checkLeak() {
+        boolean leaked = false;
+        for (Map.Entry<T, TrackedObject> e : registeredMap.entrySet()) {
+            T obj = e.getKey();
+            TrackedObject trackedObject = e.getValue();
+            long releaseTimeoutMillis = unit.toMillis(releaseTimeout);
+            long currentTime = System.currentTimeMillis();
+            if ((currentTime - trackedObject.registeredTime) >= releaseTimeoutMillis) {
+                leaked = true;
+                trackedObject.leakCallback.accept(obj);
+            }
+        }
+        if (!leaked) {
+            noLeakCallback.call();
+        }
+
+        if (!isStopped()) {
+            scheduler.schedule(this::checkLeak, delay, unit);
+        }
+    }
+
     @Override
     protected void init() {
-        scheduler.scheduleWithFixedDelay(() -> {
-            boolean leaked = false;
-            for (Map.Entry<T, TrackedObject> e : registeredMap.entrySet()) {
-                T obj = e.getKey();
-                TrackedObject trackedObject = e.getValue();
-                long releaseTimeoutMillis = unit.toMillis(releaseTimeout);
-                long currentTime = System.currentTimeMillis();
-                if ((currentTime - trackedObject.registeredTime) >= releaseTimeoutMillis) {
-                    leaked = true;
-                    trackedObject.leakCallback.accept(obj);
-                }
-            }
-            if (!leaked) {
-                noLeakCallback.call();
-            }
-        }, initialDelay, delay, unit);
+        scheduler.schedule(this::checkLeak, initialDelay, unit);
     }
 
     @Override
