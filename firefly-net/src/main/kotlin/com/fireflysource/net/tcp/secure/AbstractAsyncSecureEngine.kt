@@ -42,6 +42,7 @@ abstract class AbstractAsyncSecureEngine(
     private var inPacketBuffer = EMPTY_BUFFER
     private val inAppAdaptiveBufferSize = AdaptiveBufferSize()
     private val outPacketAdaptiveBufferSize = AdaptiveBufferSize()
+    private val inAppBuffers = LinkedList<ByteBuffer>()
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -58,20 +59,28 @@ abstract class AbstractAsyncSecureEngine(
         return this
     }
 
-    override fun beginHandshake(result: Consumer<Result<Void?>>) {
+    override fun beginHandshake(result: Consumer<Result<HandshakeResult?>>) {
         if (beginHandshake.compareAndSet(false, true)) {
             launchHandshakeJob(result)
         } else {
-            result.accept(Result.createFailedResult(SecureNetException("The handshake has begun, do not invoke it method repeatedly.")))
+            result.accept(
+                Result(
+                    false, null,
+                    SecureNetException("The handshake has begun, do not invoke it method repeatedly.")
+                )
+            )
         }
     }
 
-    private fun launchHandshakeJob(result: Consumer<Result<Void?>>) = coroutineScope.launch {
+    private fun launchHandshakeJob(result: Consumer<Result<HandshakeResult?>>) = coroutineScope.launch {
         try {
             doHandshake()
-            result.accept(Result.createSuccessResult())
+            val handshakeResult = HandshakeResult()
+            handshakeResult.applicationProtocol = applicationProtocol
+            handshakeResult.inAppBuffers = inAppBuffers
+            result.accept(Result(true, handshakeResult, null))
         } catch (e: Exception) {
-            result.accept(Result.createFailedResult(e))
+            result.accept(Result(false, null, e))
         }
     }
 
@@ -115,8 +124,12 @@ abstract class AbstractAsyncSecureEngine(
         val receivedBuffer = readSupplier?.get()?.await()
         if (receivedBuffer != null) {
             val length = receivedBuffer.remaining()
-            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: $length" }
-            decrypt(receivedBuffer)
+            val inAppBuffer = decrypt(receivedBuffer)
+            val remaining = inAppBuffer.remaining()
+            if (remaining > 0) {
+                inAppBuffers.add(inAppBuffer)
+            }
+            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, inAppBufferRemaining: $remaining" }
         }
     }
 

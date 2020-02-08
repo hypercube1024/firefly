@@ -133,7 +133,8 @@ class AioSecureTcpConnection(
     override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
         secureEngine.beginHandshake()
             .thenAccept {
-                result.accept(Result(true, applicationProtocol, null))
+                result.accept(Result(true, it.applicationProtocol, null))
+                it.inAppBuffers.forEach(receivedMessageConsumer::accept)
                 launchWritingEncryptedMessageJob()
                 launchDecryptionJob()
             }.exceptionally { e ->

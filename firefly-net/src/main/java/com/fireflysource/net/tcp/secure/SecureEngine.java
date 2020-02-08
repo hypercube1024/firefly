@@ -38,15 +38,15 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *
      * @param result The TLS handshake result.
      */
-    void beginHandshake(Consumer<Result<Void>> result);
+    void beginHandshake(Consumer<Result<HandshakeResult>> result);
 
     /**
      * Begin the TLS handshake.
      *
      * @return The future for consuming the TLS handshake result.
      */
-    default CompletableFuture<Void> beginHandshake() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    default CompletableFuture<HandshakeResult> beginHandshake() {
+        CompletableFuture<HandshakeResult> future = new CompletableFuture<>();
         beginHandshake(futureToConsumer(future));
         return future;
     }
