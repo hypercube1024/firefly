@@ -84,7 +84,7 @@ class TestHttpClient {
     @DisplayName("should send the HTTP request no content successfully")
     fun testNoContent() = runBlocking {
         val httpClient = HttpClientFactory.create()
-        val count = 1_000
+        val count = 200_000
 
         val time = measureTimeMillis {
             (1..count).map { httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit() }
