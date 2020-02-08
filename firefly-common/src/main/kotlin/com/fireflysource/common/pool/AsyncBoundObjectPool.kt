@@ -17,6 +17,7 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 
 /**
  * @author Pengtao Qiu
@@ -79,7 +80,7 @@ class AsyncBoundObjectPool<T>(
     }
 
     private fun initPooledObject(pooledObject: PooledObject<T>) {
-        leakDetector.register(pooledObject) {
+        leakDetector.register(pooledObject, Consumer {
             try {
                 pooledObject.leakCallback.accept(it)
             } catch (e: Exception) {
@@ -87,7 +88,7 @@ class AsyncBoundObjectPool<T>(
             } finally {
                 destroyPooledObject(it)
             }
-        }
+        })
         pooledObject.released.set(false)
     }
 
