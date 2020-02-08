@@ -1,7 +1,7 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
-import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDispatcher
+import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
 import com.fireflysource.common.coroutine.launchTask
 import com.fireflysource.common.func.Callback
@@ -35,7 +35,7 @@ class AsyncBoundObjectPool<T>(
 
     companion object {
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
-        private val objectPoolDispatcher: CoroutineDispatcher = newSingleThreadDispatcher("firefly-object-pool-thread")
+        private val objectPoolDispatcher: CoroutineDispatcher = CoroutineDispatchers.singleThread
     }
 
     private val createdCount = AtomicInteger(0)
