@@ -43,6 +43,8 @@ class Http1ClientConnection(
     private val parser = HttpParser(handler)
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+    var upgradeHttpClientConnection: HttpClientConnection? = null
+    var sendHttp2UpgradeHeaders: Boolean = true
 
 
     init {
@@ -204,14 +206,14 @@ class Http1ClientConnection(
         requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, request.contentHandler, future))
         return future
     }
-}
 
-private data class RequestMessage(
-    val request: MetaData.Request,
-    val contentProvider: HttpClientContentProvider?,
-    val contentHandler: HttpClientContentHandler?,
-    val response: CompletableFuture<HttpClientResponse>
-)
+    private data class RequestMessage(
+        val request: MetaData.Request,
+        val contentProvider: HttpClientContentProvider?,
+        val contentHandler: HttpClientContentHandler?,
+        val response: CompletableFuture<HttpClientResponse>
+    )
+}
 
 fun prepareHttp1Headers(request: HttpClientRequest) {
     if (request.httpFields.getValuesList(HttpHeader.HOST.value).isEmpty()) {
