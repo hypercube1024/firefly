@@ -50,32 +50,21 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private suspend fun createConnection(address: Address): TcpConnection {
-        val tcpConnection = if (address.secure) {
-            secureTcpClient.connect(address.socketAddress).await()
-        } else {
-            tcpClient.connect(address.socketAddress).await()
-        }
-        tcpConnection.startReading()
-        return tcpConnection
-    }
-
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request)
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose { pooledObject -> pooledObject.use { send(request, it.getObject()) } }
+            .thenCompose { pooledObject ->
+                pooledObject.use { it.getObject().sendRequest(request) }
+            }
     }
 
-    private fun send(
-        request: HttpClientRequest,
-        httpConnection: HttpClientConnection
-    ): CompletableFuture<HttpClientResponse> {
+    private fun HttpClientConnection.sendRequest(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         return when {
-            httpConnection.isSecureConnection -> httpConnection.send(request)
-            httpConnection is Http1ClientConnection -> httpConnection.sendRequestTryToUpgradeHttp2(request)
-            else -> httpConnection.send(request)
+            this.isSecureConnection -> this.send(request)
+            this is Http1ClientConnection -> this.sendRequestTryToUpgradeHttp2(request)
+            else -> this.send(request)
         }
     }
 
@@ -97,7 +86,7 @@ class AsyncHttpClientConnectionManager(
         releaseTimeout = config.releaseTimeout
 
         objectFactory { pool ->
-            val connection = createConnection(address)
+            val connection = createTcpConnection(address)
             val httpConnection = if (connection.isSecureConnection) {
                 when (connection.beginHandshake().await()) {
                     SupportedProtocolEnum.H2.value -> createHttp2ClientConnection(connection)
@@ -121,6 +110,14 @@ class AsyncHttpClientConnectionManager(
         noLeakCallback {
             log.info("no leak TCP connection pool.")
         }
+    }
+
+    private suspend fun createTcpConnection(address: Address): TcpConnection {
+        return if (address.secure) {
+            secureTcpClient.connect(address.socketAddress).await()
+        } else {
+            tcpClient.connect(address.socketAddress).await()
+        }.also { it.startReading() }
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {

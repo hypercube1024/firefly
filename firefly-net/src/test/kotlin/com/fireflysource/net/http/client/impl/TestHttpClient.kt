@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.io.IO
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.client.HttpClientFactory
@@ -33,6 +34,7 @@ class TestHttpClient {
     fun init() {
         address = InetSocketAddress("localhost", Random.nextInt(2000, 5000))
         httpServer = HttpServer.create(address, 1024)
+        httpServer.executor = CoroutineDispatchers.newComputationThreadExecutor("test-http-server")
 
         httpServer.createContext("/testHttpClient") { exg ->
             exg.responseHeaders.add(
