@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.coroutine.launchSingle
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -17,10 +16,10 @@ import com.fireflysource.net.tcp.aio.AioTcpClient
 import com.fireflysource.net.tcp.aio.SupportedProtocolEnum
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 class AsyncHttpClientConnectionManager(
     private val config: HttpConfig = HttpConfig()
@@ -32,9 +31,7 @@ class AsyncHttpClientConnectionManager(
 
     private val tcpClient: TcpClient = AioTcpClient().timeout(config.timeout)
     private val secureTcpClient: TcpClient = createSecureTcpClient()
-    private val connectionPoolMap = HashMap<Address, AsyncPool<HttpClientConnection>>()
-    private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val job = requestJob()
+    private val connectionPoolMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
 
     init {
         start()
@@ -64,21 +61,25 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        val responseFuture = CompletableFuture<HttpClientResponse>()
-        val requestMessage = RequestMessage(request, responseFuture)
-        requestChannel.offer(requestMessage)
-        return responseFuture
+        val address = buildAddress(request)
+        return connectionPoolMap
+            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+            .poll()
+            .thenCompose { pooledObject -> pooledObject.use { send(request, it.getObject()) } }
     }
 
-    private fun requestJob() = launchSingle {
-        while (true) {
-            val request = requestChannel.receive()
-            handleRequestMessage(request)
+    private fun send(
+        request: HttpClientRequest,
+        httpConnection: HttpClientConnection
+    ): CompletableFuture<HttpClientResponse> {
+        return when {
+            httpConnection.isSecureConnection -> httpConnection.send(request)
+            httpConnection is Http1ClientConnection -> httpConnection.sendRequestTryToUpgradeHttp2(request)
+            else -> httpConnection.send(request)
         }
     }
 
-    private suspend fun handleRequestMessage(requestMessage: RequestMessage) {
-        val (request, responseFuture) = requestMessage
+    private fun buildAddress(request: HttpClientRequest): Address {
         val port: Int = if (request.uri.port > 0) {
             request.uri.port
         } else {
@@ -86,36 +87,7 @@ class AsyncHttpClientConnectionManager(
         }
         val socketAddress = InetSocketAddress(request.uri.host, port)
         val secure = isSecureProtocol(request.uri.scheme)
-        val address = Address(socketAddress, secure)
-
-        val pooledObject = connectionPoolMap
-            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-            .takePooledObject()
-
-        fun sendRequest() {
-            pooledObject.use { it.getObject().send(request) }
-                .thenAccept { responseFuture.complete(it) }
-                .exceptionally {
-                    responseFuture.completeExceptionally(it)
-                    null
-                }
-        }
-
-        val httpConnection = pooledObject.getObject()
-        if (httpConnection.isSecureConnection) {
-            sendRequest()
-        } else {
-            if (httpConnection is Http1ClientConnection) {
-                pooledObject.use { httpConnection.sendRequestTryToUpgradeHttp2(request) }
-                    .thenAccept { responseFuture.complete(it) }
-                    .exceptionally {
-                        responseFuture.completeExceptionally(it)
-                        null
-                    }
-            } else {
-                sendRequest()
-            }
-        }
+        return Address(socketAddress, secure)
     }
 
     private fun buildHttpClientConnectionPool(address: Address): AsyncPool<HttpClientConnection> = asyncPool {
@@ -167,12 +139,7 @@ class AsyncHttpClientConnectionManager(
         connectionPoolMap.clear()
         tcpClient.stop()
         secureTcpClient.stop()
-        job.cancel()
     }
 
     private data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)
-    private data class RequestMessage(
-        val request: HttpClientRequest,
-        val response: CompletableFuture<HttpClientResponse>
-    )
 }
