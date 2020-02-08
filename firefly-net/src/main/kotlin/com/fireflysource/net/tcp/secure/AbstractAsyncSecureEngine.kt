@@ -1,6 +1,5 @@
 package com.fireflysource.net.tcp.secure
 
-import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.coroutine.launchBlocking
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
@@ -135,10 +134,6 @@ abstract class AbstractAsyncSecureEngine(
             val tlsProtocol = sslEngine.session.protocol
             val cipherSuite = sslEngine.session.cipherSuite
             val inPacketBufferRemaining = inPacketBuffer.remaining()
-            Assert.isTrue(
-                inPacketBufferRemaining == 0,
-                "Received handshake data must be not remaining. length: $inPacketBufferRemaining"
-            )
             log.info(
                 "TLS handshake success. mode: ${getMode()}, protocol: {} {}, cipher: {}, status: {}, inPacketRemaining: {}",
                 applicationProtocol, tlsProtocol, cipherSuite, handshakeStatus, inPacketBufferRemaining
