@@ -1,6 +1,8 @@
 package com.fireflysource.net.common.v2.stream
 
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
+import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.net.URL
 import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
 import kotlin.system.measureTimeMillis
 
 class TestAsyncHttp2Connection {
@@ -34,7 +37,7 @@ class TestAsyncHttp2Connection {
     @Test
     fun testPriority() = runBlocking {
         val host = "localhost"
-        val port = 4025
+        val port = 4026
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
@@ -352,6 +355,91 @@ class TestAsyncHttp2Connection {
         }
         println("push promise stream time: $time ms")
 
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
+        Unit
+    }
+
+    @Test
+    fun testData(): Unit = runBlocking {
+        val host = "localhost"
+        val port = 4027
+        val tcpConfig = TcpConfig(30, false)
+        val httpConfig = HttpConfig()
+
+        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.startReadingAndAwaitHandshake()
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
+
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        println("Server creates the remote stream: ${stream}. the headers: ${frame}.")
+
+                        val fields = HttpFields()
+                        fields.put("Test-New-Stream-Response", "R1")
+                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
+                        stream.headers(headersFrame) { println("Server response header success.") }
+
+                        val data = BufferUtils.toBuffer("test data frame.")
+                        val dataFrame = DataFrame(stream.id, data, true)
+                        stream.data(dataFrame) { println("Server response data success.") }
+
+                        return Stream.Listener.Adapter()
+                    }
+                }
+            )
+        }.listen(host, port)
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.startReadingAndAwaitHandshake()
+        val http2Connection: Http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
+            createClientHttp2ConnectionListener()
+        )
+
+        val newStreamChannel = Channel<Stream>(UNLIMITED)
+        val dataFrameChannel = Channel<DataFrame>(UNLIMITED)
+        val headersFrame = createRequestHeadersFrame()
+        http2Connection.newStream(headersFrame,
+            {
+                if (it.isSuccess) {
+                    val success = newStreamChannel.offer(it.value)
+                    println("offer new stream success: $success .")
+                } else {
+                    println("new a stream failed")
+                    it.throwable?.printStackTrace()
+                }
+            },
+            object : Stream.Listener.Adapter() {
+                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                    println("Client received headers: $frame")
+                }
+
+                override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
+                    println("Client received data frame: $frame")
+                    dataFrameChannel.offer(frame)
+                    result.accept(Result.SUCCESS)
+                }
+            })
+        val time = measureTimeMillis {
+            val newStream = newStreamChannel.receive()
+            val dataFrame = dataFrameChannel.receive()
+            assertEquals(1, newStream.id)
+            assertFalse(newStream.isReset)
+            assertEquals("test data frame.", BufferUtils.toString(dataFrame.data))
+        }
+
+        println("receive data time: $time")
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
         Unit
     }
