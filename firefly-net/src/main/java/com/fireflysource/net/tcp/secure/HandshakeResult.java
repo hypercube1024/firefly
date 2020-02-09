@@ -3,24 +3,20 @@ package com.fireflysource.net.tcp.secure;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class HandshakeResult {
+public interface HandshakeResult {
 
-    private List<ByteBuffer> inAppBuffers;
-    private String applicationProtocol;
+    /**
+     * Get the stashed application buffers during the handshake process.
+     *
+     * @return The stashed application buffers.
+     */
+    List<ByteBuffer> getStashedAppBuffers();
 
-    public List<ByteBuffer> getInAppBuffers() {
-        return inAppBuffers;
-    }
+    /**
+     * The application protocol negotiation result.
+     *
+     * @return The application protocol negotiation result.
+     */
+    String getApplicationProtocol();
 
-    public void setInAppBuffers(List<ByteBuffer> inAppBuffers) {
-        this.inAppBuffers = inAppBuffers;
-    }
-
-    public String getApplicationProtocol() {
-        return applicationProtocol;
-    }
-
-    public void setApplicationProtocol(String applicationProtocol) {
-        this.applicationProtocol = applicationProtocol;
-    }
 }

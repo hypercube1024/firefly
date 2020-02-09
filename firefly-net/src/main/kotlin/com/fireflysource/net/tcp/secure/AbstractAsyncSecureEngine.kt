@@ -13,6 +13,7 @@ import com.fireflysource.net.tcp.buffer.Buffers
 import com.fireflysource.net.tcp.buffer.OutputMessage
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -42,7 +43,6 @@ abstract class AbstractAsyncSecureEngine(
     private var inPacketBuffer = EMPTY_BUFFER
     private val inAppAdaptiveBufferSize = AdaptiveBufferSize()
     private val outPacketAdaptiveBufferSize = AdaptiveBufferSize()
-    private val inAppBuffers = LinkedList<ByteBuffer>()
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -74,22 +74,20 @@ abstract class AbstractAsyncSecureEngine(
 
     private fun launchHandshakeJob(result: Consumer<Result<HandshakeResult?>>) = coroutineScope.launch {
         try {
-            doHandshake()
-            val handshakeResult = HandshakeResult()
-            handshakeResult.applicationProtocol = applicationProtocol
-            handshakeResult.inAppBuffers = inAppBuffers
-            result.accept(Result(true, handshakeResult, null))
+            val stashedAppBuffers = LinkedList<ByteBuffer>()
+            doHandshake(stashedAppBuffers)
+            result.accept(Result(true, HandshakeData(stashedAppBuffers, applicationProtocol), null))
         } catch (e: Exception) {
             result.accept(Result(false, null, e))
         }
     }
 
-    private suspend fun doHandshake() {
+    private suspend fun doHandshake(stashedAppBuffers: MutableList<ByteBuffer>) {
         begin()
         handshakeLoop@ while (true) {
             when (handshakeStatus) {
                 NEED_WRAP -> doHandshakeWrap()
-                NEED_UNWRAP -> doHandshakeUnwrap()
+                NEED_UNWRAP -> doHandshakeUnwrap(stashedAppBuffers)
                 NEED_TASK -> runDelegatedTasks()
                 NOT_HANDSHAKING, FINISHED -> {
                     handshakeComplete()
@@ -120,25 +118,27 @@ abstract class AbstractAsyncSecureEngine(
         }
     }
 
-    private suspend fun doHandshakeUnwrap() {
+    private suspend fun doHandshakeUnwrap(stashedAppBuffers: MutableList<ByteBuffer>) {
         val receivedBuffer = readSupplier?.get()?.await()
         if (receivedBuffer != null) {
             val length = receivedBuffer.remaining()
             val inAppBuffer = decrypt(receivedBuffer)
             val remaining = inAppBuffer.remaining()
             if (remaining > 0) {
-                inAppBuffers.add(inAppBuffer)
+                stashedAppBuffers.add(inAppBuffer)
             }
-            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, inAppBufferRemaining: $remaining" }
+            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
         }
     }
 
     private suspend fun runDelegatedTasks() {
         // Conscrypt delegated tasks are always null
         var runnable: Runnable
+        val jobs = LinkedList<Job>()
         while (sslEngine.delegatedTask.also { runnable = it } != null) {
-            launchBlocking { runnable.run() }.join()
+            jobs.add(launchBlocking { runnable.run() })
         }
+        jobs.forEach { it.join() }
         handshakeStatus = sslEngine.handshakeStatus
     }
 
@@ -312,5 +312,13 @@ abstract class AbstractAsyncSecureEngine(
     }
 
     override fun isHandshakeComplete(): Boolean = handshakeFinished.get()
+
+    private class HandshakeData(
+        private val stashedAppBuffers: MutableList<ByteBuffer>,
+        private val applicationProtocol: String
+    ) : HandshakeResult {
+        override fun getApplicationProtocol(): String = applicationProtocol
+        override fun getStashedAppBuffers(): MutableList<ByteBuffer> = stashedAppBuffers
+    }
 
 }

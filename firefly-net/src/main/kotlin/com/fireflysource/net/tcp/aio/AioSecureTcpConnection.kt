@@ -34,7 +34,7 @@ class AioSecureTcpConnection(
     private fun read() =
         tcpConnection.coroutineScope.async { tcpConnection.inputChannel.receive() }.asCompletableFuture()
 
-    private fun launchDecryptionJob() = tcpConnection.coroutineScope.launch {
+    private fun launchDecryptingJob() = tcpConnection.coroutineScope.launch {
         val input = tcpConnection.inputChannel
         recvLoop@ while (tcpConnection.isReading) {
             val buf = input.receive()
@@ -48,13 +48,13 @@ class AioSecureTcpConnection(
         }
     }
 
-    private fun launchWritingEncryptedMessageJob() = tcpConnection.coroutineScope.launch {
+    private fun launchEncryptingAndFlushJob() = tcpConnection.coroutineScope.launch {
         while (!isShutdownOutput) {
-            writeEncryptedMessage(encryptedOutChannel.receive())
+            encryptMessageAndFlush(encryptedOutChannel.receive())
         }
     }
 
-    private fun writeEncryptedMessage(outputMessage: OutputMessage) {
+    private fun encryptMessageAndFlush(outputMessage: OutputMessage) {
         when (outputMessage) {
             is Buffer -> encryptAndFlushBuffer(outputMessage)
             is Buffers -> encryptAndFlushBuffers(outputMessage)
@@ -134,9 +134,9 @@ class AioSecureTcpConnection(
         secureEngine.beginHandshake()
             .thenAccept {
                 result.accept(Result(true, it.applicationProtocol, null))
-                it.inAppBuffers.forEach(receivedMessageConsumer::accept)
-                launchWritingEncryptedMessageJob()
-                launchDecryptionJob()
+                it.stashedAppBuffers.forEach(receivedMessageConsumer::accept)
+                launchEncryptingAndFlushJob()
+                launchDecryptingJob()
             }.exceptionally { e ->
                 result.accept(Result(false, "", e))
                 null
