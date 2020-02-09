@@ -539,15 +539,15 @@ abstract class AsyncHttp2Connection(
         // The flow control length includes the padding bytes.
         val flowControlLength = frame.remaining() + frame.padding()
         flowControl.onDataReceived(this, stream, flowControlLength)
-        val dataResult = Consumer<Result<Void>> { r ->
-            flowControl.onDataConsumed(this@AsyncHttp2Connection, stream, flowControlLength)
-            result.accept(r)
-        }
 
         if (stream != null) {
             if (getRecvWindow() < 0) {
                 onConnectionFailure(ErrorCode.FLOW_CONTROL_ERROR.code, "session_window_exceeded", result)
             } else {
+                val dataResult = Consumer<Result<Void>> { r ->
+                    flowControl.onDataConsumed(this@AsyncHttp2Connection, stream, flowControlLength)
+                    result.accept(r)
+                }
                 val http2Stream = stream as AsyncHttp2Stream
                 http2Stream.process(frame, dataResult)
             }

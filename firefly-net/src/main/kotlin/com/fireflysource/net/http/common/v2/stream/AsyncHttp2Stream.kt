@@ -156,7 +156,7 @@ class AsyncHttp2Stream(
         notifyData(this, frame, result)
     }
 
-    private fun isRemotelyClosed(): Boolean {
+    fun isRemotelyClosed(): Boolean {
         val state = closeState.get()
         return state === REMOTELY_CLOSED || state === CLOSING
     }

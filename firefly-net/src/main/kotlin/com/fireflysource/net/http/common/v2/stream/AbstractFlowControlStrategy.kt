@@ -20,6 +20,9 @@ abstract class AbstractFlowControlStrategy(
         http2Stream.updateRecvWindow(initialStreamRecvWindow)
     }
 
+    override fun onStreamDestroyed(stream: Stream) {
+    }
+
     override fun updateInitialStreamWindow(
         http2Connection: Http2Connection,
         initialStreamWindow: Int,
@@ -57,5 +60,36 @@ abstract class AbstractFlowControlStrategy(
         } else {
             (http2Connection as AsyncHttp2Connection).updateSendWindow(frame.windowDelta)
         }
+    }
+
+    override fun onDataReceived(http2Connection: Http2Connection, stream: Stream?, length: Int) {
+        val connection = http2Connection as AsyncHttp2Connection
+        var oldSize: Int = connection.updateRecvWindow(-length)
+        log.debug { "Data received, $length bytes, updated session recv window $oldSize -> ${oldSize - length} for $connection" }
+
+        if (stream != null && stream is AsyncHttp2Stream) {
+            oldSize = stream.updateRecvWindow(-length)
+            log.debug { "Data received, $length bytes, updated stream recv window $oldSize -> ${oldSize - length} for $stream" }
+        }
+    }
+
+    override fun onDataSending(stream: Stream, length: Int) {
+        if (length == 0) return
+
+        val http2Stream = stream as AsyncHttp2Stream
+        val connection = http2Stream.http2Connection as AsyncHttp2Connection
+        val oldSessionWindow = connection.updateSendWindow(-length)
+        val newSessionWindow = oldSessionWindow - length
+        log.debug { "Sending, session send window $oldSessionWindow -> $newSessionWindow for $connection" }
+
+        val oldStreamWindow = http2Stream.updateSendWindow(-length)
+        val newStreamWindow = oldStreamWindow - length
+        log.debug { "Sending, stream send window $oldStreamWindow -> $newStreamWindow for $stream" }
+    }
+
+    override fun onDataSent(stream: Stream, length: Int) {
+    }
+
+    override fun windowUpdate(http2Connection: Http2Connection, stream: Stream?, frame: WindowUpdateFrame) {
     }
 }
