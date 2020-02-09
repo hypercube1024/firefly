@@ -164,8 +164,11 @@ abstract class AsyncHttp2Connection(
             frameEntryChannel.offer(WindowEntry(stream, frame))
         }
 
-        private fun onWindowUpdateEntry(frameEntry: WindowEntry) {
-            flowControl.onWindowUpdate(this@AsyncHttp2Connection, frameEntry.stream, frameEntry.frame)
+        private suspend fun onWindowUpdateEntry(frameEntry: WindowEntry) {
+            val frame = frameEntry.frame
+            flowControl.onWindowUpdate(this@AsyncHttp2Connection, frameEntry.stream, frame)
+            flushStashedDataFrameEntries()
+            log.debug { "Update send window and flush stashed data frame success. frame: $frame" }
         }
 
         private suspend fun flushControlFrameEntry(frameEntry: ControlFrameEntry) {
