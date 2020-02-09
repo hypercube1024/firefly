@@ -112,7 +112,12 @@ class AsyncHttp2Stream(
 
     // data frame
     override fun data(frame: DataFrame, result: Consumer<Result<Void>>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        asyncHttp2Connection.sendDataFrame(this, frame)
+            .thenAccept { result.accept(Result.SUCCESS) }
+            .exceptionally {
+                result.accept(Result.createFailedResult(it))
+                null
+            }
     }
 
     private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {

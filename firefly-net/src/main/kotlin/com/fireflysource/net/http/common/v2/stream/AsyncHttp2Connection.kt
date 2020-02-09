@@ -20,11 +20,13 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
+import kotlin.collections.HashMap
 import kotlin.math.min
 
 abstract class AsyncHttp2Connection(
@@ -66,6 +68,7 @@ abstract class AsyncHttp2Connection(
     private inner class FrameEntryFlusher {
 
         private val frameEntryChannel = Channel<FrameEntry>(Channel.UNLIMITED)
+        private val stashedDataFrames = LinkedList<DataFrameEntry>()
 
         init {
             launchEntryFlushJob()
@@ -75,11 +78,69 @@ abstract class AsyncHttp2Connection(
             while (true) {
                 when (val frameEntry = frameEntryChannel.receive()) {
                     is ControlFrameEntry -> flushControlFrameEntry(frameEntry)
-                    is DataFrameEntry -> {
-                        // TODO
-                    }
+                    is DataFrameEntry -> flushDataFrameEntryWithStashed(frameEntry)
                     is WindowEntry -> onWindowUpdateEntry(frameEntry)
                 }
+            }
+        }
+
+        private suspend fun flushDataFrameEntryWithStashed(frameEntry: DataFrameEntry) {
+            flushStashedDataFrameEntries()
+            val success = flushDataFrameEntry(frameEntry)
+            if (!success) {
+                stashedDataFrames.offer(frameEntry)
+            }
+        }
+
+        private suspend fun flushStashedDataFrameEntries() {
+            flush@ while (stashedDataFrames.isNotEmpty()) {
+                val stashedFrameEntry = stashedDataFrames.peek()
+                if (stashedFrameEntry != null) {
+                    val success = flushDataFrameEntry(stashedFrameEntry)
+                    if (success) {
+                        stashedDataFrames.poll()
+                    } else {
+                        break@flush
+                    }
+                } else {
+                    break@flush
+                }
+            }
+        }
+
+        private suspend fun flushDataFrameEntry(frameEntry: DataFrameEntry): Boolean {
+            val dataFrame = frameEntry.frame
+            val stream = frameEntry.stream as AsyncHttp2Stream
+            val dataRemaining = frameEntry.dataRemaining
+
+            val sessionSendWindow = getSendWindow()
+            val streamSendWindow: Int = stream.updateSendWindow(0)
+            val window = min(streamSendWindow, sessionSendWindow)
+            if (window <= 0 && dataRemaining > 0) {
+                return false
+            }
+
+            val length = min(dataRemaining, window)
+            val frameBytes = generator.data(dataFrame, length)
+            val dataLength = frameBytes.dataLength
+
+            flowControl.onDataSending(stream, dataLength)
+            stream.updateClose(dataFrame.isEndStream, CloseState.Event.BEFORE_SEND)
+
+            val writtenBytes = tcpConnection.write(frameBytes.byteBuffers, 0, frameBytes.byteBuffers.size).await()
+            frameEntry.dataRemaining -= dataLength
+            frameEntry.writtenBytes += writtenBytes
+
+            flowControl.onDataSent(stream, dataLength)
+            return if (frameEntry.dataRemaining == 0) {
+                // Only now we can update the close state and eventually remove the stream.
+                if (stream.updateClose(dataFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
+                    removeStream(stream)
+                }
+                frameEntry.result.accept(Result(true, frameEntry.writtenBytes, null))
+                true
+            } else {
+                false
             }
         }
 
@@ -173,8 +234,13 @@ abstract class AsyncHttp2Connection(
 
         fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> {
             val future = CompletableFuture<Long>()
-            val frameEntry = ControlFrameEntry(stream, arrayOf(*frames), futureToConsumer(future))
-            frameEntryChannel.offer(frameEntry)
+            frameEntryChannel.offer(ControlFrameEntry(stream, arrayOf(*frames), futureToConsumer(future)))
+            return future
+        }
+
+        fun sendDataFrame(stream: Stream, frame: DataFrame): CompletableFuture<Long> {
+            val future = CompletableFuture<Long>()
+            frameEntryChannel.offer(DataFrameEntry(stream, frame, futureToConsumer(future)))
             return future
         }
     }
@@ -480,6 +546,8 @@ abstract class AsyncHttp2Connection(
             else onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_data_frame", result)
         }
     }
+
+    fun sendDataFrame(stream: Stream, frame: DataFrame) = flusher.sendDataFrame(stream, frame)
 
 
     // priority frame
@@ -810,7 +878,9 @@ sealed class FrameEntry
 class ControlFrameEntry(val stream: Stream?, val frames: Array<Frame>, val result: Consumer<Result<Long>>) :
     FrameEntry()
 
-class DataFrameEntry(val stream: Stream, val frames: Array<DataFrame>, val result: Consumer<Result<Long>>) :
-    FrameEntry()
+class DataFrameEntry(val stream: Stream, val frame: DataFrame, val result: Consumer<Result<Long>>) : FrameEntry() {
+    var dataRemaining = frame.remaining()
+    var writtenBytes: Long = 0
+}
 
 class WindowEntry(val stream: Stream?, val frame: WindowUpdateFrame) : FrameEntry()
