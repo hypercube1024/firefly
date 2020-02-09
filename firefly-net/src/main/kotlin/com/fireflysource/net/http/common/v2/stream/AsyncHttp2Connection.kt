@@ -273,6 +273,8 @@ abstract class AsyncHttp2Connection(
 
     private fun getNextStreamId(): Int = localStreamId.getAndAdd(2)
 
+    private fun getCurrentLocalStreamId(): Int = localStreamId.get()
+
     protected fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
         checkMaxLocalStreams()
         val stream = AsyncHttp2Stream(this, streamId, true, listener)
@@ -369,7 +371,7 @@ abstract class AsyncHttp2Connection(
     }
 
     protected fun isLocalStreamClosed(streamId: Int): Boolean {
-        return streamId <= this.localStreamId.get()
+        return streamId <= getCurrentLocalStreamId()
     }
 
     protected fun isRemoteStreamClosed(streamId: Int): Boolean {
@@ -443,7 +445,40 @@ abstract class AsyncHttp2Connection(
 
     // data frame
     override fun onData(frame: DataFrame) {
-        // TODO
+        onData(frame, discard())
+    }
+
+    private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {
+        log.debug { "Received $frame" }
+        val streamId = frame.streamId
+        val stream = getStream(streamId)
+
+        // SPEC: the session window must be updated even if the stream is null.
+        // The flow control length includes the padding bytes.
+        val flowControlLength = frame.remaining() + frame.padding()
+        flowControl.onDataReceived(this, stream, flowControlLength)
+        val dataResult = Consumer<Result<Void>> { r ->
+            flowControl.onDataConsumed(this@AsyncHttp2Connection, stream, flowControlLength)
+            result.accept(r)
+        }
+
+        if (stream != null) {
+            if (getRecvWindow() < 0) {
+                onConnectionFailure(ErrorCode.FLOW_CONTROL_ERROR.code, "session_window_exceeded", result)
+            } else {
+                val http2Stream = stream as AsyncHttp2Stream
+                http2Stream.process(frame, dataResult)
+            }
+        } else {
+            log.debug("Stream #{} not found", streamId)
+            // We must enlarge the session flow control window,
+            // otherwise other requests will be stalled.
+            flowControl.onDataConsumed(this, null, flowControlLength)
+            val local = (streamId and 1) == (getCurrentLocalStreamId() and 1)
+            val closed = if (local) isLocalStreamClosed(streamId) else isRemoteStreamClosed(streamId)
+            if (closed) reset(ResetFrame(streamId, ErrorCode.STREAM_CLOSED_ERROR.code), result)
+            else onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_data_frame", result)
+        }
     }
 
 
@@ -613,6 +648,7 @@ abstract class AsyncHttp2Connection(
     }
 
     override fun onPing(frame: PingFrame) {
+        log.debug { "Received $frame" }
         if (frame.isReply) {
             notifyPing(this, frame)
         } else {

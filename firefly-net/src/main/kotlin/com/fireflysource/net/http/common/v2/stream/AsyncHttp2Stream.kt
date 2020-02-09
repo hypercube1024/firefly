@@ -2,6 +2,7 @@ package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.MetaData
@@ -9,6 +10,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.Event.*
 import java.io.Closeable
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -114,7 +116,53 @@ class AsyncHttp2Stream(
     }
 
     private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {
-        // TODO
+        if (getRecvWindow() < 0) {
+            // It's a bad client, it does not deserve to be treated gently by just resetting the stream.
+            asyncHttp2Connection.close(ErrorCode.FLOW_CONTROL_ERROR.code, "stream_window_exceeded", discard())
+            result.accept(Result.createFailedResult(IOException("stream_window_exceeded")))
+            return
+        }
+
+        // SPEC: remotely closed streams must be replied with a reset.
+        if (isRemotelyClosed()) {
+            reset(ResetFrame(id, ErrorCode.STREAM_CLOSED_ERROR.code), discard())
+            result.accept(Result.createFailedResult(IOException("stream_closed")))
+            return
+        }
+
+        if (isReset) { // Just drop the frame.
+            result.accept(Result.createFailedResult(IOException("stream_reset")))
+            return
+        }
+
+        if (dataLength != Long.MIN_VALUE) {
+            dataLength -= frame.remaining()
+            if (frame.isEndStream && dataLength != 0L) {
+                reset(ResetFrame(id, ErrorCode.PROTOCOL_ERROR.code), discard())
+                result.accept(Result.createFailedResult(IOException("invalid_data_length")))
+                return
+            }
+        }
+
+        if (updateClose(frame.isEndStream, RECEIVED)) {
+            asyncHttp2Connection.removeStream(this)
+        }
+
+        notifyData(this, frame, result)
+    }
+
+    private fun isRemotelyClosed(): Boolean {
+        val state = closeState.get()
+        return state === REMOTELY_CLOSED || state === CLOSING
+    }
+
+    private fun notifyData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
+        try {
+            listener.onData(stream, frame, result)
+        } catch (e: Throwable) {
+            log.error(e) { "Failure while notifying listener $listener" }
+            result.accept(Result.createFailedResult(e))
+        }
     }
 
 
