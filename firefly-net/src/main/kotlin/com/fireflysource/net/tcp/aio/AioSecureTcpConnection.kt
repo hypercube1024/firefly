@@ -131,16 +131,26 @@ class AioSecureTcpConnection(
     override fun isHandshakeComplete(): Boolean = secureEngine.isHandshakeComplete
 
     override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
-        secureEngine.beginHandshake()
-            .thenAccept {
-                result.accept(Result(true, it.applicationProtocol, null))
-                it.stashedAppBuffers.forEach(receivedMessageConsumer::accept)
-                launchEncryptingAndFlushJob()
-                launchDecryptingJob()
-            }.exceptionally { e ->
-                result.accept(Result(false, "", e))
-                null
-            }
+        if (tcpConnection.isReading) {
+            secureEngine.beginHandshake()
+                .thenAccept {
+                    result.accept(Result(true, it.applicationProtocol, null))
+                    it.stashedAppBuffers.forEach(receivedMessageConsumer::accept)
+                    launchEncryptingAndFlushJob()
+                    launchDecryptingJob()
+                }.exceptionally { e ->
+                    result.accept(Result(false, "", e))
+                    null
+                }
+        } else {
+            result.accept(
+                Result(
+                    false,
+                    "",
+                    IllegalStateException("The connection must start reading before TLS handshake.")
+                )
+            )
+        }
         return this
     }
 
