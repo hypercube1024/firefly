@@ -85,10 +85,17 @@ abstract class AsyncHttp2Connection(
         }
 
         private suspend fun flushDataFrameEntryWithStashed(frameEntry: DataFrameEntry) {
-            flushStashedDataFrameEntries()
-            val success = flushDataFrameEntry(frameEntry)
-            if (!success) {
-                stashedDataFrames.offer(frameEntry)
+            try {
+                flushStashedDataFrameEntries()
+                val success = flushDataFrameEntry(frameEntry)
+                if (!success) {
+                    stashedDataFrames.offer(frameEntry)
+                    val dataRemaining = frameEntry.dataRemaining
+                    log.debug { "Stash a data frame. remaining: $dataRemaining" }
+                }
+            } catch (e: Exception) {
+                log.error(e) { "flush data frame exception." }
+                frameEntry.result.accept(createFailedResult(-1L, e))
             }
         }
 
@@ -98,7 +105,10 @@ abstract class AsyncHttp2Connection(
                 if (stashedFrameEntry != null) {
                     val success = flushDataFrameEntry(stashedFrameEntry)
                     if (success) {
-                        stashedDataFrames.poll()
+                        val entry = stashedDataFrames.poll()
+                        val dataRemaining = entry.dataRemaining
+                        val writtenBytes = entry.writtenBytes
+                        log.debug { "Un stash a data frame. remaining: ${dataRemaining}, written: $writtenBytes" }
                     } else {
                         break@flush
                     }
@@ -114,8 +124,10 @@ abstract class AsyncHttp2Connection(
             val dataRemaining = frameEntry.dataRemaining
 
             val sessionSendWindow = getSendWindow()
-            val streamSendWindow: Int = stream.updateSendWindow(0)
+            val streamSendWindow = stream.getSendWindow()
             val window = min(streamSendWindow, sessionSendWindow)
+
+            log.debug { "Flush data frame. window: $window, remaining: $dataRemaining" }
             if (window <= 0 && dataRemaining > 0) {
                 return false
             }
@@ -123,6 +135,7 @@ abstract class AsyncHttp2Connection(
             val length = min(dataRemaining, window)
             val frameBytes = generator.data(dataFrame, length)
             val dataLength = frameBytes.dataLength
+            log.debug { "Before flush data frame. window: $window, remaining: $dataRemaining, dataLength: $dataLength" }
 
             flowControl.onDataSending(stream, dataLength)
             stream.updateClose(dataFrame.isEndStream, CloseState.Event.BEFORE_SEND)
@@ -132,6 +145,9 @@ abstract class AsyncHttp2Connection(
             frameEntry.writtenBytes += writtenBytes
 
             flowControl.onDataSent(stream, dataLength)
+            val currentRemaining = frameEntry.dataRemaining
+            log.debug { "After flush data frame. window: $window, remaining: $currentRemaining, dataLength: $dataLength" }
+
             return if (frameEntry.dataRemaining == 0) {
                 // Only now we can update the close state and eventually remove the stream.
                 if (stream.updateClose(dataFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
