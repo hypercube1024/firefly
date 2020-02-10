@@ -50,7 +50,7 @@ object CoroutineLocalContext {
     /**
      * Convert the attributes to the coroutine context element.
      *
-     * @param attributes The attributes runs through in the coroutine scope.
+     * @param attributes The attributes run through in the coroutine scope.
      * @return The coroutine context element.
      */
     fun asElement(attributes: MutableMap<String, Any>): ThreadContextElement<MutableMap<String, Any>> {
@@ -64,7 +64,7 @@ object CoroutineLocalContext {
     /**
      * Merge the attributes into the parent coroutine context element.
      *
-     * @param attributes The attributes are merged into the parent coroutine context element.
+     * @param attributes The attributes merge into the parent coroutine context element.
      * @return The coroutine context element.
      */
     fun inheritParentElement(attributes: MutableMap<String, Any>? = null): ThreadContextElement<MutableMap<String, Any>> {
@@ -90,7 +90,7 @@ object CoroutineLocalContext {
     /**
      * Get an attribute in the current coroutine scope.
      *
-     * @param name The attribute name.
+     * @param name The name of attribute.
      * @return An attribute in the current coroutine scope.
      */
     inline fun <reified T> getAttr(name: String): T? {
@@ -101,7 +101,7 @@ object CoroutineLocalContext {
     /**
      * Get an attribute in the current coroutine scope, if the value is null return the default value.
      *
-     * @param name The attribute name.
+     * @param name The name of attribute.
      * @param func Get the default value lazily.
      * @return An attribute in the current coroutine scope or the default value.
      */
@@ -123,7 +123,7 @@ object CoroutineLocalContext {
     }
 
     /**
-     * If the specified attribute name is not already associated with a value (or is mapped
+     * If the specified attribute name does not already associate with a value (or is mapped
      * to null), attempts to compute its value using the given mapping
      * function and enters it into this map unless null.
      *
@@ -143,11 +143,11 @@ object CoroutineLocalContext {
  * Starts an asynchronous task and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes are merged into the parent coroutine context element.
+ * @param attributes The attributes merged into the parent coroutine context element.
  * @param block The coroutine code block.
  * @return The deferred task result.
  */
-fun <T> asyncWithAttr(
+fun <T> runWithAttributesAsync(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
@@ -155,7 +155,7 @@ fun <T> asyncWithAttr(
     return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
-fun <T> asyncTask(
+fun <T> runAsync(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
@@ -166,11 +166,11 @@ fun <T> asyncTask(
  * Starts an asynchronous task without the return value and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes are merged into the parent coroutine context element.
+ * @param attributes The attributes merged into the parent coroutine context element.
  * @param block The coroutine code block.
  * @return The current job.
  */
-fun launchWithAttr(
+fun launchWithAttributes(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> Unit
@@ -185,17 +185,17 @@ fun launchTask(
     return GlobalScope.launch(context) { block.invoke(this) }
 }
 
-fun launchBlocking(block: suspend CoroutineScope.() -> Unit): Job =
+fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
     launchTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
 
-fun <T> asyncBlocking(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    asyncTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    runAsync(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
 
 fun event(block: suspend CoroutineScope.() -> Unit): Job =
     launchTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
-fun <T> asyncEvent(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    asyncTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
+fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    runAsync(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
 /**
  * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.

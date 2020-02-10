@@ -1,8 +1,8 @@
 package com.fireflysource.common.io
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingThreadPool
-import com.fireflysource.common.coroutine.asyncBlocking
-import com.fireflysource.common.coroutine.launchBlocking
+import com.fireflysource.common.coroutine.blocking
+import com.fireflysource.common.coroutine.blockingAsync
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import java.io.Closeable
@@ -68,17 +68,17 @@ suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
 /**
  * Close in the I/O blocking coroutine dispatcher
  */
-fun Closeable.closeAsync() = launchBlocking {
+fun Closeable.closeAsync() = blocking {
     @Suppress("BlockingMethodInNonBlockingContext")
     close()
 }
 
-fun openFileChannelAsync(file: Path, vararg options: OpenOption) = asyncBlocking {
+fun openFileChannelAsync(file: Path, vararg options: OpenOption) = blockingAsync {
     @Suppress("BlockingMethodInNonBlockingContext")
     AsynchronousFileChannel.open(file, setOf(*options), ioBlockingThreadPool)
 }
 
-fun readAllBytesAsync(file: Path) = asyncBlocking {
+fun readAllBytesAsync(file: Path) = blockingAsync {
     @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAllBytes(file)
 }

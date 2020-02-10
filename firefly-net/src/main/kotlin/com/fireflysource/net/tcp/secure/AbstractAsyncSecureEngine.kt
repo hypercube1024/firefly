@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.secure
 
-import com.fireflysource.common.coroutine.launchBlocking
+import com.fireflysource.common.coroutine.blocking
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
@@ -136,7 +136,7 @@ abstract class AbstractAsyncSecureEngine(
         var runnable: Runnable
         val jobs = LinkedList<Job>()
         while (sslEngine.delegatedTask.also { runnable = it } != null) {
-            jobs.add(launchBlocking { runnable.run() })
+            jobs.add(blocking { runnable.run() })
         }
         jobs.forEach { it.join() }
         handshakeStatus = sslEngine.handshakeStatus
