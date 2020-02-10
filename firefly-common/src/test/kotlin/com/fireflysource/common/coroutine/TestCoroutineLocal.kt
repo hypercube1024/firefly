@@ -51,7 +51,7 @@ class TestCoroutineLocal {
         delay(2000)
     }
 
-    private suspend fun testLocalAttr(key: String, i: Int) = withAttr {
+    private suspend fun testLocalAttr(key: String, i: Int) = withAttributes {
         launchWithAttributes {
             delay(100)
             assertEquals(i, CoroutineLocalContext.getAttr(key)!!)

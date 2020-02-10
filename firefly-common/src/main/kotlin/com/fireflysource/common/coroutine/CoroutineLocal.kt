@@ -103,7 +103,7 @@ object CoroutineLocalContext {
      *
      * @param name The name of attribute.
      * @param func Get the default value lazily.
-     * @return An attribute in the current coroutine scope or the default value.
+     * @return An attribute in the current coroutine scope, or the default value.
      */
     inline fun <reified T> getAttrOrDefault(name: String, func: (String) -> T): T {
         val value = getAttributes()?.get(name)
@@ -143,7 +143,7 @@ object CoroutineLocalContext {
  * Starts an asynchronous task and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes merged into the parent coroutine context element.
+ * @param attributes The attributes merge into the parent coroutine context element.
  * @param block The coroutine code block.
  * @return The deferred task result.
  */
@@ -166,7 +166,7 @@ fun <T> runAsync(
  * Starts an asynchronous task without the return value and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes merged into the parent coroutine context element.
+ * @param attributes The attributes merge into the parent coroutine context element.
  * @param block The coroutine code block.
  * @return The current job.
  */
@@ -201,11 +201,11 @@ fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
  * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.
  *
  * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes are merged into the parent coroutine context element.
+ * @param attributes The attributes merge into the parent coroutine context element.
  * @param block The coroutine code block.
  * @return The result.
  */
-suspend fun <T> withAttr(
+suspend fun <T> withAttributes(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
