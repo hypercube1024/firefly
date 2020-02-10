@@ -75,21 +75,25 @@ abstract class AsyncHttp2Connection(
             while (true) {
                 when (val frameEntry = frameEntryChannel.receive()) {
                     is ControlFrameEntry -> flushControlFrameEntry(frameEntry)
-                    is DataFrameEntry -> flushDataFrameEntryWithStashed(frameEntry)
+                    is DataFrameEntry -> flushOrStashDataFrameEntry(frameEntry)
                     is WindowEntry -> onWindowUpdateEntry(frameEntry)
                 }
             }
         }
 
-        private suspend fun flushDataFrameEntryWithStashed(frameEntry: DataFrameEntry) {
+        private suspend fun flushOrStashDataFrameEntry(frameEntry: DataFrameEntry) {
             try {
                 val http2Stream = frameEntry.stream as AsyncHttp2Stream
-                http2Stream.flushStashedDataFrameEntries()
-                val success = flushDataFrameEntry(frameEntry)
-                if (!success) {
+                val noStashedDataFrame = http2Stream.flushStashedDataFrameEntries()
+                if (noStashedDataFrame) {
+                    val success = flushDataFrame(frameEntry)
+                    if (!success) {
+                        http2Stream.stashFrameEntry(frameEntry)
+                        val dataRemaining = frameEntry.dataRemaining
+                        log.debug { "Stash a data frame. remaining: $dataRemaining" }
+                    }
+                } else {
                     http2Stream.stashFrameEntry(frameEntry)
-                    val dataRemaining = frameEntry.dataRemaining
-                    log.debug { "Stash a data frame. remaining: $dataRemaining" }
                 }
             } catch (e: Exception) {
                 log.error(e) { "flush data frame exception." }
@@ -101,12 +105,12 @@ abstract class AsyncHttp2Connection(
             this.stashedDataFrames.offer(frameEntry)
         }
 
-        private suspend fun AsyncHttp2Stream.flushStashedDataFrameEntries() {
+        private suspend fun AsyncHttp2Stream.flushStashedDataFrameEntries(): Boolean {
             val stashedDataFrames = this.stashedDataFrames
             flush@ while (stashedDataFrames.isNotEmpty()) {
                 val stashedFrameEntry = stashedDataFrames.peek()
                 if (stashedFrameEntry != null) {
-                    val success = flushDataFrameEntry(stashedFrameEntry)
+                    val success = flushDataFrame(stashedFrameEntry)
                     if (success) {
                         val entry = stashedDataFrames.poll()
                         val dataRemaining = entry.dataRemaining
@@ -119,9 +123,10 @@ abstract class AsyncHttp2Connection(
                     break@flush
                 }
             }
+            return stashedDataFrames.isEmpty()
         }
 
-        private suspend fun flushDataFrameEntry(frameEntry: DataFrameEntry): Boolean {
+        private suspend fun flushDataFrame(frameEntry: DataFrameEntry): Boolean {
             val dataFrame = frameEntry.frame
             val stream = frameEntry.stream as AsyncHttp2Stream
             val dataRemaining = frameEntry.dataRemaining
