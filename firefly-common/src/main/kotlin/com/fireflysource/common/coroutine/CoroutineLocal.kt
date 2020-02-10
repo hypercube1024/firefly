@@ -191,10 +191,10 @@ fun launchBlocking(block: suspend CoroutineScope.() -> Unit): Job =
 fun <T> asyncBlocking(block: suspend CoroutineScope.() -> T): Deferred<T> =
     asyncTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
 
-fun launchSingle(block: suspend CoroutineScope.() -> Unit): Job =
+fun event(block: suspend CoroutineScope.() -> Unit): Job =
     launchTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
-fun <T> asyncSingle(block: suspend CoroutineScope.() -> T): Deferred<T> =
+fun <T> asyncEvent(block: suspend CoroutineScope.() -> T): Deferred<T> =
     asyncTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
 /**

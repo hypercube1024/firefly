@@ -1,6 +1,6 @@
 package com.fireflysource.common.track
 
-import com.fireflysource.common.coroutine.launchSingle
+import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
@@ -27,19 +27,19 @@ class FixedTimeLeakDetector<T>(
 
     private val registeredMap = IdentityHashMap<T, TrackedObject>()
 
-    fun register(obj: T, leakCallback: Consumer<T>) = launchSingle {
+    fun register(obj: T, leakCallback: Consumer<T>) = event {
         val trackedObject = TrackedObject()
         trackedObject.leakCallback = leakCallback
         trackedObject.registeredTime = System.currentTimeMillis()
         registeredMap[obj] = trackedObject
     }
 
-    fun clear(obj: T) = launchSingle {
+    fun clear(obj: T) = event {
         registeredMap.remove(obj)
     }
 
     private fun checkLeak() {
-        launchSingle {
+        event {
             var leaked = false
             for ((obj, trackedObject) in registeredMap) {
                 val releaseTimeoutMillis = unit.toMillis(releaseTimeout)

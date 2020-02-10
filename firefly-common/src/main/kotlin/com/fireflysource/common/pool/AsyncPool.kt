@@ -1,9 +1,8 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.`object`.Assert
-import com.fireflysource.common.coroutine.asyncTask
+import com.fireflysource.common.coroutine.asyncEvent
 import com.fireflysource.common.func.Callback
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.future.asCompletableFuture
 
 /**
@@ -14,8 +13,6 @@ interface AsyncPool<T> : Pool<T> {
     suspend fun takePooledObject(): PooledObject<T>
 
     suspend fun putPooledObject(pooledObject: PooledObject<T>)
-
-    fun getCoroutineDispatcher(): CoroutineDispatcher
 
 }
 
@@ -35,7 +32,7 @@ class AsyncPoolBuilder<T> {
     fun objectFactory(createPooledObject: suspend (pool: AsyncPool<T>) -> PooledObject<T>) {
         objectFactory = Pool.ObjectFactory { pool ->
             require(pool is AsyncPool<T>)
-            asyncTask(pool.getCoroutineDispatcher()) { createPooledObject.invoke(pool) }.asCompletableFuture()
+            asyncEvent { createPooledObject.invoke(pool) }.asCompletableFuture()
         }
     }
 

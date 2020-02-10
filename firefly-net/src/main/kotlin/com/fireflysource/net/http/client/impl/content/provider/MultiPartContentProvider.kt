@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
-import com.fireflysource.common.coroutine.launchSingle
+import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.net.http.client.HttpClientContentProvider
@@ -54,7 +54,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        readJob = launchSingle {
+        readJob = event {
             readMessageLoop@ while (true) {
                 when (val readMultiPartMessage = readChannel.receive()) {
                     is ReadMultiPartRequest -> {
@@ -139,7 +139,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     override fun closeFuture(): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        launchSingle {
+        event {
             closeAwait()
             future.complete(null)
         }

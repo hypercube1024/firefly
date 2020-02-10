@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
-import com.fireflysource.common.coroutine.launchSingle
+import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.openFileChannelAsync
@@ -25,7 +25,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
     private var closed: Boolean = false
 
     init {
-        readJob = launchSingle {
+        readJob = event {
             val fileChannel = openFileChannelAsync(path, *options).await()
 
             readMessageLoop@ while (true) {
@@ -67,7 +67,7 @@ class FileContentProvider(val path: Path, vararg options: OpenOption) : HttpClie
 
     override fun closeFuture(): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        launchSingle {
+        event {
             closeAwait()
             future.complete(null)
         }

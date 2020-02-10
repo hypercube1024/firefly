@@ -1,14 +1,12 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.concurrent.Atomics
-import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
-import com.fireflysource.common.coroutine.launchTask
+import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
@@ -35,7 +33,6 @@ class AsyncBoundObjectPool<T>(
 
     companion object {
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
-        private val objectPoolDispatcher: CoroutineDispatcher = CoroutineDispatchers.singleThread
     }
 
     private val createdCount = AtomicInteger(0)
@@ -65,7 +62,7 @@ class AsyncBoundObjectPool<T>(
         return future
     }
 
-    private fun launchPollObjectJob(): Job = launchTask(objectPoolDispatcher) {
+    private fun launchPollObjectJob(): Job = event {
         while (true) {
             val future = pollTaskChannel.receive()
             try {
@@ -128,7 +125,7 @@ class AsyncBoundObjectPool<T>(
 
 
     // release task
-    private fun launchReleaseObjectJob(): Job = launchTask(objectPoolDispatcher) {
+    private fun launchReleaseObjectJob(): Job = event {
         while (true) {
             val message = releaseTaskChannel.receive()
             val pooledObject = message.pooledObject
@@ -168,8 +165,6 @@ class AsyncBoundObjectPool<T>(
     override fun isEmpty(): Boolean {
         return size() == 0
     }
-
-    override fun getCoroutineDispatcher(): CoroutineDispatcher = objectPoolDispatcher
 
     override fun getLeakDetector(): FixedTimeLeakDetector<PooledObject<T>> = leakDetector
 
