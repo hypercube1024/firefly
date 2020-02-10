@@ -28,7 +28,7 @@ import java.util.function.Consumer
 import kotlin.math.min
 
 abstract class AsyncHttp2Connection(
-    initStreamId: Int,
+    private val initStreamId: Int,
     private val config: HttpConfig,
     private val tcpConnection: TcpConnection,
     private val flowControl: FlowControl,
@@ -370,11 +370,11 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun getNextStreamId(): Int = getAndIncreaseStreamId(localStreamId)
+    private fun getNextStreamId(): Int = getAndIncreaseStreamId(localStreamId, initStreamId)
 
     private fun getCurrentLocalStreamId(): Int = localStreamId.get()
 
-    protected fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
+    private fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
         checkMaxLocalStreams()
         val stream = AsyncHttp2Stream(this, streamId, true, listener)
         if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
@@ -465,7 +465,7 @@ abstract class AsyncHttp2Connection(
 
     fun isClientStream(streamId: Int) = (streamId and 1 == 1)
 
-    protected fun getLastRemoteStreamId(): Int {
+    private fun getLastRemoteStreamId(): Int {
         return lastRemoteStreamId.get()
     }
 
@@ -571,7 +571,7 @@ abstract class AsyncHttp2Connection(
         } else {
             log.debug("Stream #{} not found", streamId)
             // We must enlarge the session flow control window,
-            // otherwise other requests will be stalled.
+            // otherwise, the other requests will be stalled.
             flowControl.onDataConsumed(this, null, flowControlLength)
             val local = (streamId and 1) == (getCurrentLocalStreamId() and 1)
             val closed = if (local) isLocalStreamClosed(streamId) else isRemoteStreamClosed(streamId)
@@ -674,7 +674,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    protected fun notifySettings(connection: Http2Connection, frame: SettingsFrame) {
+    private fun notifySettings(connection: Http2Connection, frame: SettingsFrame) {
         try {
             listener.onSettings(connection, frame)
         } catch (e: Exception) {
@@ -757,7 +757,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    protected fun notifyPing(connection: Http2Connection, frame: PingFrame) {
+    private fun notifyPing(connection: Http2Connection, frame: PingFrame) {
         try {
             listener.onPing(connection, frame)
         } catch (e: Exception) {
@@ -851,7 +851,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    protected fun notifyClose(connection: Http2Connection, frame: GoAwayFrame, consumer: Consumer<Result<Void>>) {
+    private fun notifyClose(connection: Http2Connection, frame: GoAwayFrame, consumer: Consumer<Result<Void>>) {
         try {
             listener.onClose(connection, frame, consumer)
         } catch (e: Exception) {
@@ -877,7 +877,7 @@ abstract class AsyncHttp2Connection(
             Consumer { close(error, reason, result) })
     }
 
-    protected fun notifyFailure(connection: Http2Connection, throwable: Throwable, consumer: Consumer<Result<Void>>) {
+    private fun notifyFailure(connection: Http2Connection, throwable: Throwable, consumer: Consumer<Result<Void>>) {
         try {
             listener.onFailure(connection, throwable, consumer)
         } catch (e: Exception) {
@@ -906,11 +906,9 @@ abstract class AsyncHttp2Connection(
     }
 }
 
-fun getAndIncreaseStreamId(id: AtomicInteger) = id.getAndUpdate { prev ->
+fun getAndIncreaseStreamId(id: AtomicInteger, initStreamId: Int) = id.getAndUpdate { prev ->
     val currentId = prev + 2
-    if (currentId == 0) {
-        currentId + 2
-    } else currentId
+    if (currentId <= 0) initStreamId else currentId
 }
 
 sealed class FlushFrameMessage

@@ -67,16 +67,14 @@ class TestAsyncHttp2Stream {
     }
 
     @Test
-    @DisplayName("should get the current id and increase 2 and skip 0")
+    @DisplayName("should get the initial stream id when the id exceeds max integer")
     fun testStreamIdIncrease() {
-        val id = AtomicInteger(-4)
-        assertEquals(-4, getAndIncreaseStreamId(id))
-        assertEquals(-2, getAndIncreaseStreamId(id))
-        assertEquals(2, getAndIncreaseStreamId(id))
+        val id1 = AtomicInteger(Integer.MAX_VALUE)
+        assertEquals(Integer.MAX_VALUE, getAndIncreaseStreamId(id1, 3))
+        assertEquals(3, getAndIncreaseStreamId(id1, 3))
 
-        val id2 = AtomicInteger(-3)
-        assertEquals(-3, getAndIncreaseStreamId(id2))
-        assertEquals(-1, getAndIncreaseStreamId(id2))
-        assertEquals(1, getAndIncreaseStreamId(id2))
+        val id2 = AtomicInteger(Integer.MAX_VALUE - 1)
+        assertEquals(Integer.MAX_VALUE - 1, getAndIncreaseStreamId(id2, 2))
+        assertEquals(2, getAndIncreaseStreamId(id2, 2))
     }
 }
