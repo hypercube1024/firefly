@@ -65,7 +65,7 @@ abstract class AsyncHttp2Connection(
 
     private inner class FrameEntryFlusher {
 
-        private val frameEntryChannel = Channel<FrameEntry>(Channel.UNLIMITED)
+        private val frameEntryChannel = Channel<FlushFrameMessage>(Channel.UNLIMITED)
 
         init {
             launchEntryFlushJob()
@@ -76,7 +76,7 @@ abstract class AsyncHttp2Connection(
                 when (val frameEntry = frameEntryChannel.receive()) {
                     is ControlFrameEntry -> flushControlFrameEntry(frameEntry)
                     is DataFrameEntry -> flushOrStashDataFrameEntry(frameEntry)
-                    is WindowEntry -> onWindowUpdateEntry(frameEntry)
+                    is OnWindowUpdateMessage -> onWindowUpdateMessage(frameEntry)
                 }
             }
         }
@@ -169,12 +169,11 @@ abstract class AsyncHttp2Connection(
         }
 
         fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
-            frameEntryChannel.offer(WindowEntry(stream, frame))
+            frameEntryChannel.offer(OnWindowUpdateMessage(stream, frame))
         }
 
-        private suspend fun onWindowUpdateEntry(frameEntry: WindowEntry) {
-            val frame = frameEntry.frame
-            val stream = frameEntry.stream
+        private suspend fun onWindowUpdateMessage(onWindowUpdateMessage: OnWindowUpdateMessage) {
+            val (stream, frame) = onWindowUpdateMessage
             flowControl.onWindowUpdate(this@AsyncHttp2Connection, stream, frame)
             if (stream != null) {
                 val http2Stream = stream as AsyncHttp2Stream
@@ -182,7 +181,7 @@ abstract class AsyncHttp2Connection(
                 http2Stream.flushStashedDataFrameEntries()
             } else {
                 if (frame.streamId == 0) {
-                    log.debug { "Flush session stashed data frames. id: ${tcpConnection.id}" }
+                    log.debug { "Flush all streams stashed data frames. id: ${tcpConnection.id}" }
                     streams.map { it as AsyncHttp2Stream }.forEach { it.flushStashedDataFrameEntries() }
                 }
             }
@@ -911,13 +910,14 @@ abstract class AsyncHttp2Connection(
 }
 
 
-sealed class FrameEntry
+sealed class FlushFrameMessage
 class ControlFrameEntry(val stream: Stream?, val frames: Array<Frame>, val result: Consumer<Result<Long>>) :
-    FrameEntry()
+    FlushFrameMessage()
 
-class DataFrameEntry(val stream: Stream, val frame: DataFrame, val result: Consumer<Result<Long>>) : FrameEntry() {
+class DataFrameEntry(val stream: Stream, val frame: DataFrame, val result: Consumer<Result<Long>>) :
+    FlushFrameMessage() {
     var dataRemaining = frame.remaining()
     var writtenBytes: Long = 0
 }
 
-class WindowEntry(val stream: Stream?, val frame: WindowUpdateFrame) : FrameEntry()
+data class OnWindowUpdateMessage(val stream: Stream?, val frame: WindowUpdateFrame) : FlushFrameMessage()
