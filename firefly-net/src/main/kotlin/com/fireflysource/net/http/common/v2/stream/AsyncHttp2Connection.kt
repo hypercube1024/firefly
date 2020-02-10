@@ -180,7 +180,7 @@ abstract class AsyncHttp2Connection(
                 log.debug { "Flush stream stashed data frames. stream: $http2Stream" }
                 http2Stream.flushStashedDataFrameEntries()
             } else {
-                if (frame.streamId == 0) {
+                if (frame.isSessionWindowUpdate) {
                     log.debug { "Flush all streams stashed data frames. id: ${tcpConnection.id}" }
                     streams.map { it as AsyncHttp2Stream }.forEach { it.flushStashedDataFrameEntries() }
                 }
@@ -688,7 +688,7 @@ abstract class AsyncHttp2Connection(
         log.debug { "Received $frame" }
         val streamId = frame.streamId
         val windowDelta = frame.windowDelta
-        if (streamId > 0) {
+        if (frame.isStreamWindowUpdate) {
             val stream = getStream(streamId)
             if (stream != null && stream is AsyncHttp2Stream) {
                 val streamSendWindow: Int = stream.updateSendWindow(0)
@@ -704,7 +704,7 @@ abstract class AsyncHttp2Connection(
                 }
             }
         } else {
-            val sessionSendWindow = updateSendWindow(0)
+            val sessionSendWindow = getSendWindow()
             if (MathUtils.sumOverflows(sessionSendWindow, windowDelta)) {
                 onConnectionFailure(ErrorCode.FLOW_CONTROL_ERROR.code, "invalid_flow_control_window")
             } else {

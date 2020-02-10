@@ -52,7 +52,7 @@ abstract class AbstractFlowControlStrategy(
     }
 
     override fun onWindowUpdate(http2Connection: Http2Connection, stream: Stream?, frame: WindowUpdateFrame) {
-        if (frame.streamId > 0) {
+        if (frame.isStreamWindowUpdate) {
             // The stream may have been removed concurrently.
             if (stream != null && stream is AsyncHttp2Stream) {
                 stream.updateSendWindow(frame.windowDelta)

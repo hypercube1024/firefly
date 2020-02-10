@@ -20,6 +20,14 @@ public class WindowUpdateFrame extends Frame {
         return windowDelta;
     }
 
+    public boolean isStreamWindowUpdate() {
+        return streamId != 0;
+    }
+
+    public boolean isSessionWindowUpdate() {
+        return streamId == 0;
+    }
+
     @Override
     public String toString() {
         return String.format("%s#%d,delta=%d", super.toString(), streamId, windowDelta);
