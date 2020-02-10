@@ -7,18 +7,22 @@ import com.fireflysource.net.http.common.v2.frame.ResetFrame
 import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Connection
 import com.fireflysource.net.http.common.v2.stream.AsyncHttp2Stream
 import com.fireflysource.net.http.common.v2.stream.Stream
+import com.fireflysource.net.http.common.v2.stream.getAndIncreaseStreamId
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 class TestAsyncHttp2Stream {
 
     private val asyncHttp2Connection = Mockito.mock(AsyncHttp2Connection::class.java)
 
     @Test
+    @DisplayName("should update stream window successfully")
     fun testWindowUpdate() {
         val stream = AsyncHttp2Stream(asyncHttp2Connection, 1, true, Stream.Listener.Adapter())
         val initRecvWindow = stream.updateRecvWindow(25)
@@ -31,6 +35,7 @@ class TestAsyncHttp2Stream {
     }
 
     @Test
+    @DisplayName("should close stream after the stream remote close and local close")
     fun testCloseStream() {
         val stream = AsyncHttp2Stream(asyncHttp2Connection, 1, true, Stream.Listener.Adapter())
         assertFalse(stream.isClosed)
@@ -47,6 +52,7 @@ class TestAsyncHttp2Stream {
     }
 
     @Test
+    @DisplayName("should stream reset when the reset frame sent")
     fun testReset() {
         val stream = AsyncHttp2Stream(asyncHttp2Connection, 1, true, Stream.Listener.Adapter())
         assertFalse(stream.isReset)
@@ -58,5 +64,19 @@ class TestAsyncHttp2Stream {
         stream.reset(frame, discard())
         verify(asyncHttp2Connection).sendControlFrame(stream, frame)
         assertTrue(stream.isReset)
+    }
+
+    @Test
+    @DisplayName("should get the current id and increase 2 and skip 0")
+    fun testStreamIdIncrease() {
+        val id = AtomicInteger(-4)
+        assertEquals(-4, getAndIncreaseStreamId(id))
+        assertEquals(-2, getAndIncreaseStreamId(id))
+        assertEquals(2, getAndIncreaseStreamId(id))
+
+        val id2 = AtomicInteger(-3)
+        assertEquals(-3, getAndIncreaseStreamId(id2))
+        assertEquals(-1, getAndIncreaseStreamId(id2))
+        assertEquals(1, getAndIncreaseStreamId(id2))
     }
 }

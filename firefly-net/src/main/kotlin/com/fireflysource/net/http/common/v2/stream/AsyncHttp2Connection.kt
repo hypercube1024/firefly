@@ -330,21 +330,9 @@ abstract class AsyncHttp2Connection(
     override fun newStream(headersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
         try {
             val frameStreamId = headersFrame.streamId
-            if (frameStreamId <= 0) {
-                val nextStreamId = getNextStreamId()
-                val priority = if (headersFrame.priority == null) {
-                    null
-                } else {
-                    PriorityFrame(
-                        nextStreamId,
-                        headersFrame.priority.parentStreamId,
-                        headersFrame.priority.weight,
-                        headersFrame.priority.isExclusive
-                    )
-                }
-                val newHeadersFrame =
-                    HeadersFrame(nextStreamId, headersFrame.metaData, priority, headersFrame.isEndStream)
-                val stream = createLocalStream(nextStreamId, listener)
+            if (frameStreamId == 0) {
+                val newHeadersFrame = copyHeadersFrameAndSetCurrentStreamId(headersFrame)
+                val stream = createLocalStream(newHeadersFrame.streamId, listener)
                 sendNewHeadersFrame(stream, newHeadersFrame, promise)
             } else {
                 val stream = createLocalStream(frameStreamId, listener)
@@ -353,6 +341,15 @@ abstract class AsyncHttp2Connection(
         } catch (e: Exception) {
             promise.accept(Result(false, null, e))
         }
+    }
+
+    private fun copyHeadersFrameAndSetCurrentStreamId(headersFrame: HeadersFrame): HeadersFrame {
+        val nextStreamId = getNextStreamId()
+        val priority = headersFrame.priority
+        val priorityFrame = if (priority != null) {
+            PriorityFrame(nextStreamId, priority.parentStreamId, priority.weight, priority.isExclusive)
+        } else null
+        return HeadersFrame(nextStreamId, headersFrame.metaData, priorityFrame, headersFrame.isEndStream)
     }
 
     private fun sendNewHeadersFrame(stream: Stream, newHeadersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>) {
@@ -373,7 +370,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun getNextStreamId(): Int = localStreamId.getAndAdd(2)
+    private fun getNextStreamId(): Int = getAndIncreaseStreamId(localStreamId)
 
     private fun getCurrentLocalStreamId(): Int = localStreamId.get()
 
@@ -909,6 +906,12 @@ abstract class AsyncHttp2Connection(
     }
 }
 
+fun getAndIncreaseStreamId(id: AtomicInteger) = id.getAndUpdate { prev ->
+    val currentId = prev + 2
+    if (currentId == 0) {
+        currentId + 2
+    } else currentId
+}
 
 sealed class FlushFrameMessage
 class ControlFrameEntry(val stream: Stream?, val frames: Array<Frame>, val result: Consumer<Result<Long>>) :

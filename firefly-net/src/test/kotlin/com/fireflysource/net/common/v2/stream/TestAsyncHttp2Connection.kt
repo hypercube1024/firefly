@@ -26,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.net.URL
 import java.util.concurrent.CompletableFuture
@@ -152,6 +153,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should reset stream successfully after the stream sends reset frame")
     fun testResetFrame() = runBlocking {
         val host = "localhost"
         val port = 4025
@@ -175,7 +177,7 @@ class TestAsyncHttp2Connection {
                     }
 
                     override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
-                        println("Server receives reset frame for unknown stream. frame: $frame")
+                        println("Server receives reset frame for an unknown stream. frame: $frame")
                         resetFrameChannel.offer(frame)
                     }
 
@@ -259,6 +261,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should create server push stream successfully")
     fun testPushPromise() = runBlocking {
         val host = "localhost"
         val port = 4024
@@ -285,8 +288,7 @@ class TestAsyncHttp2Connection {
                     }
 
                     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
-                        println("Server creates the remote stream: $stream . the headers: $frame .")
-
+                        println("Server creates the remote stream. stream: ${stream}, headers: $frame")
 
                         val fields = HttpFields()
                         fields.put("Test-Push-Promise-Stream", "P1")
@@ -294,7 +296,7 @@ class TestAsyncHttp2Connection {
                         val pushPromiseFrame = PushPromiseFrame(stream.id, 0, response)
                         stream.push(pushPromiseFrame, {
                             if (it.isSuccess) {
-                                println("new push stream success: ${it.value} .")
+                                println("Server creates new push stream success. stream: ${it.value}")
                             } else {
                                 println("new a push stream failed")
                                 it.throwable?.printStackTrace()
@@ -322,7 +324,7 @@ class TestAsyncHttp2Connection {
         http2Connection.newStream(headersFrame,
             {
                 if (it.isSuccess) {
-                    println("new stream success: ${it.value} .")
+                    println("Client creates new stream success. stream: ${it.value}")
                 } else {
                     println("new a stream failed")
                     it.throwable?.printStackTrace()
@@ -360,6 +362,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should send data frame successfully after the stream creates.")
     fun testData(): Unit = runBlocking {
         val host = "localhost"
         val port = 4027
@@ -414,7 +417,7 @@ class TestAsyncHttp2Connection {
             {
                 if (it.isSuccess) {
                     val success = newStreamChannel.offer(it.value)
-                    println("offer new stream success: $success .")
+                    println("Client creates new stream success. $success, stream: ${it.value}.")
                 } else {
                     println("new a stream failed")
                     it.throwable?.printStackTrace()
@@ -445,6 +448,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should create new stream successfully")
     fun testNewStream() = runBlocking {
         val host = "localhost"
         val port = 4023
@@ -567,6 +571,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should send go away frame successfully")
     fun testGoAway() = runBlocking {
         val host = "localhost"
         val port = 4022
@@ -609,6 +614,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should send settings frame successfully")
     fun testSettings() = runBlocking {
         val host = "localhost"
         val port = 4021
@@ -676,6 +682,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
+    @DisplayName("should send ping frame successfully")
     fun testPing() = runBlocking {
         val host = "localhost"
         val port = 4020
