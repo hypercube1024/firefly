@@ -885,11 +885,6 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-
-    open fun onFrame(frame: Frame) {
-        onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "upgrade")
-    }
-
     override fun toString(): String {
         return java.lang.String.format(
             "%s@%x{l:%s <-> r:%s,sendWindow=%s,recvWindow=%s,streams=%d,%s,%s}",

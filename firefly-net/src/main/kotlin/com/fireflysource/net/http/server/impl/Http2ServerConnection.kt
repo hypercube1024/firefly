@@ -47,15 +47,13 @@ class Http2ServerConnection(
         }
     }
 
-    override fun onFrame(frame: Frame) {
+    // SPEC: the required reply to these SETTINGS frame is the 101 response.
+    fun onStandardUpgradeFrame(frame: Frame) {
         when (frame.type) {
             FrameType.PREFACE -> onPreface()
-            FrameType.SETTINGS -> onSettings(
-                (frame as SettingsFrame),
-                false
-            ) // SPEC: the required reply to these SETTINGS frame is the 101 response.
+            FrameType.SETTINGS -> onSettings((frame as SettingsFrame), false)
             FrameType.HEADERS -> onHeaders((frame as HeadersFrame))
-            else -> super.onFrame(frame)
+            else -> onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "upgrade")
         }
     }
 
