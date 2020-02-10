@@ -1,7 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
-import com.fireflysource.common.coroutine.launchTask
+import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.onAcceptAsync
@@ -54,7 +54,7 @@ class TestAioServerAndClient {
         val port = Random.nextInt(10000, 20000)
 
         val connectionCount = defaultPoolSize
-        val maxMessageCountPerOneConnection = 1_000
+        val maxMessageCountPerOneConnection = 100
         val expectMessageCount = maxMessageCountPerOneConnection * connectionCount
 
         val messageCount = AtomicInteger()
@@ -78,7 +78,7 @@ class TestAioServerAndClient {
         val client = AioTcpClient(tcpConfig)
         val time = measureTimeMillis {
             val jobs = (1..connectionCount).map {
-                launchTask {
+                event {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
                     connection.startReadingAndAwaitHandshake()
