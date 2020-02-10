@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.v2.frame.CloseState.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.Event.*
 import java.io.Closeable
 import java.io.IOException
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -39,6 +40,7 @@ class AsyncHttp2Stream(
     private var localReset = false
     private var remoteReset = false
     private var idleTimeout = asyncHttp2Connection.maxIdleTime
+    val stashedDataFrames = LinkedList<DataFrameEntry>()
 
     override fun getId(): Int = id
 
