@@ -145,8 +145,7 @@ class AioSecureTcpConnection(
         } else {
             result.accept(
                 Result(
-                    false,
-                    "",
+                    false, "",
                     IllegalStateException("The connection must start reading before TLS handshake.")
                 )
             )

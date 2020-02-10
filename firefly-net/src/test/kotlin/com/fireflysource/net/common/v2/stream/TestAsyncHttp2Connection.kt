@@ -36,6 +36,7 @@ import kotlin.system.measureTimeMillis
 class TestAsyncHttp2Connection {
 
     @Test
+    @DisplayName("should send priority frame successfully")
     fun testPriority() = runBlocking {
         val host = "localhost"
         val port = 4026
@@ -410,32 +411,21 @@ class TestAsyncHttp2Connection {
             createClientHttp2ConnectionListener()
         )
 
-        val newStreamChannel = Channel<Stream>(UNLIMITED)
         val dataFrameChannel = Channel<DataFrame>(UNLIMITED)
         val headersFrame = createRequestHeadersFrame()
-        http2Connection.newStream(headersFrame,
-            {
-                if (it.isSuccess) {
-                    val success = newStreamChannel.offer(it.value)
-                    println("Client creates new stream success. $success, stream: ${it.value}.")
-                } else {
-                    println("new a stream failed")
-                    it.throwable?.printStackTrace()
-                }
-            },
-            object : Stream.Listener.Adapter() {
-                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                    println("Client received headers: $frame")
-                }
+        val future = http2Connection.newStream(headersFrame, object : Stream.Listener.Adapter() {
+            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                println("Client received headers: $frame")
+            }
 
-                override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-                    println("Client received data frame: $frame")
-                    dataFrameChannel.offer(frame)
-                    result.accept(Result.SUCCESS)
-                }
-            })
+            override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
+                println("Client received data frame: $frame")
+                dataFrameChannel.offer(frame)
+                result.accept(Result.SUCCESS)
+            }
+        })
         val time = measureTimeMillis {
-            val newStream = newStreamChannel.receive()
+            val newStream = future.await()
             val dataFrame = dataFrameChannel.receive()
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
@@ -448,7 +438,7 @@ class TestAsyncHttp2Connection {
     }
 
     @Test
-    @DisplayName("should create new stream successfully")
+    @DisplayName("should create a new stream successfully")
     fun testNewStream() = runBlocking {
         val host = "localhost"
         val port = 4023
@@ -497,27 +487,16 @@ class TestAsyncHttp2Connection {
             createClientHttp2ConnectionListener()
         )
 
-        val newStreamChannel = Channel<Stream>(UNLIMITED)
         val headersFrame = createRequestHeadersFrame()
-        http2Connection.newStream(headersFrame,
-            {
-                if (it.isSuccess) {
-                    val success = newStreamChannel.offer(it.value)
-                    println("offer new stream success: $success .")
-                } else {
-                    println("new a stream failed")
-                    it.throwable?.printStackTrace()
-                }
-            },
-            object : Stream.Listener.Adapter() {
-                override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                    println("Client received headers: $frame")
-                    responseHeadersChannel.offer(frame)
-                }
-            })
+        val future = http2Connection.newStream(headersFrame, object : Stream.Listener.Adapter() {
+            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                println("Client received headers: $frame")
+                responseHeadersChannel.offer(frame)
+            }
+        })
 
         val time = measureTimeMillis {
-            val newStream = newStreamChannel.receive()
+            val newStream = future.await()
             assertEquals(1, newStream.id)
             assertFalse(newStream.isReset)
             if (newStream is AsyncHttp2Stream) {

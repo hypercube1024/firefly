@@ -6,6 +6,7 @@ import com.fireflysource.net.http.common.v2.frame.HeadersFrame;
 import com.fireflysource.net.http.common.v2.frame.PushPromiseFrame;
 import com.fireflysource.net.http.common.v2.frame.ResetFrame;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -33,79 +34,92 @@ public interface Stream {
     Http2Connection getHttp2Connection();
 
     /**
-     * <p>Sends the given HEADERS {@code frame} representing a HTTP response.</p>
+     * <p>Sends the given HEADERS {@code frame} representing an HTTP response.</p>
      *
-     * @param frame  the HEADERS frame to send
-     * @param result the result that gets notified when the frame has been sent
+     * @param frame  The HEADERS frame to send
+     * @param result The result that gets notified when the frame has been sent
      */
     void headers(HeadersFrame frame, Consumer<Result<Void>> result);
 
     /**
      * <p>Sends the given PUSH_PROMISE {@code frame}.</p>
      *
-     * @param frame    the PUSH_PROMISE frame to send
-     * @param promise  the promise that gets notified of the pushed stream creation
-     * @param listener the listener that gets notified of stream events
+     * @param frame    The PUSH_PROMISE frame to send
+     * @param promise  The promise that gets notified of the pushed stream creation
+     * @param listener The listener that gets notified of stream events
      */
     void push(PushPromiseFrame frame, Consumer<Result<Stream>> promise, Listener listener);
 
     /**
+     * <p>Sends the given PUSH_PROMISE {@code frame}.</p>
+     *
+     * @param frame    he PUSH_PROMISE frame to send
+     * @param listener The listener that gets notified of stream events
+     * @return The future which gets notified of the pushed stream creation
+     */
+    default CompletableFuture<Stream> push(PushPromiseFrame frame, Listener listener) {
+        CompletableFuture<Stream> future = new CompletableFuture<>();
+        push(frame, Result.futureToConsumer(future), listener);
+        return future;
+    }
+
+    /**
      * <p>Sends the given DATA {@code frame}.</p>
      *
-     * @param frame  the DATA frame to send
-     * @param result the result that gets notified when the frame has been sent
+     * @param frame  The DATA frame to send
+     * @param result The result that gets notified when the frame has been sent
      */
     void data(DataFrame frame, Consumer<Result<Void>> result);
 
     /**
      * <p>Sends the given RST_STREAM {@code frame}.</p>
      *
-     * @param frame  the RST_FRAME to send
-     * @param result the result that gets notified when the frame has been sent
+     * @param frame  The RST_FRAME to send
+     * @param result The result that gets notified when the frame has been sent
      */
     void reset(ResetFrame frame, Consumer<Result<Void>> result);
 
     /**
      * @param key the attribute key
-     * @return an arbitrary object associated with the given key to this stream
+     * @return An arbitrary object associated with the given key to this stream
      * or null if no object can be found for the given key.
      * @see #setAttribute(String, Object)
      */
     Object getAttribute(String key);
 
     /**
-     * @param key   the attribute key
-     * @param value an arbitrary object to associate with the given key to this stream
+     * @param key   The attribute key
+     * @param value An arbitrary object to associate with the given key to this stream
      * @see #getAttribute(String)
      * @see #removeAttribute(String)
      */
     void setAttribute(String key, Object value);
 
     /**
-     * @param key the attribute key
-     * @return the arbitrary object associated with the given key to this stream
+     * @param key The attribute key
+     * @return The arbitrary object associated with the given key to this stream
      * @see #setAttribute(String, Object)
      */
     Object removeAttribute(String key);
 
     /**
-     * @return whether this stream has been reset
+     * @return If true this stream has been reset
      */
     boolean isReset();
 
     /**
-     * @return whether this stream closed, both locally and remotely.
+     * @return If true this stream closed, both locally and remotely.
      */
     boolean isClosed();
 
     /**
-     * @return the stream idle timeout
+     * @return The stream idle timeout
      * @see #setIdleTimeout(long)
      */
     long getIdleTimeout();
 
     /**
-     * @param idleTimeout the stream idle timeout
+     * @param idleTimeout The stream idle timeout
      * @see #getIdleTimeout()
      * @see Stream.Listener#onIdleTimeout(Stream, Throwable)
      */
@@ -121,35 +135,35 @@ public interface Stream {
         /**
          * <p>Callback method invoked when a HEADERS frame representing the HTTP response has been received.</p>
          *
-         * @param stream the stream
-         * @param frame  the HEADERS frame received
+         * @param stream The stream
+         * @param frame  The HEADERS frame received
          */
         void onHeaders(Stream stream, HeadersFrame frame);
 
         /**
          * <p>Callback method invoked when a PUSH_PROMISE frame has been received.</p>
          *
-         * @param stream the stream
-         * @param frame  the PUSH_PROMISE frame received
-         * @return a Stream.Listener that will be notified of pushed stream events
+         * @param stream The stream
+         * @param frame  The PUSH_PROMISE frame received
+         * @return A Stream.Listener that will be notified of pushed stream events
          */
         Listener onPush(Stream stream, PushPromiseFrame frame);
 
         /**
          * <p>Callback method invoked when a DATA frame has been received.</p>
          *
-         * @param stream the stream
-         * @param frame  the DATA frame received
-         * @param result the result to complete when the bytes of the DATA frame have been consumed
+         * @param stream The stream
+         * @param frame  The DATA frame received
+         * @param result The result to complete when the bytes of the DATA frame have been consumed
          */
         void onData(Stream stream, DataFrame frame, Consumer<Result<Void>> result);
 
         /**
          * <p>Callback method invoked when an RST_STREAM frame has been received for this stream.</p>
          *
-         * @param stream the stream
-         * @param frame  the RST_FRAME received
-         * @param result the result to complete when the reset has been handled
+         * @param stream The stream
+         * @param frame  The RST_FRAME received
+         * @param result The result to complete when the reset has been handled
          */
         default void onReset(Stream stream, ResetFrame frame, Consumer<Result<Void>> result) {
             try {
@@ -161,10 +175,10 @@ public interface Stream {
         }
 
         /**
-         * <p>Callback method invoked when a RST_STREAM frame has been received for this stream.</p>
+         * <p>Callback method invoked when an RST_STREAM frame has been received for this stream.</p>
          *
-         * @param stream the stream
-         * @param frame  the RST_FRAME received
+         * @param stream The stream
+         * @param frame  The RST_FRAME received
          * @see Http2Connection.Listener#onReset(Http2Connection, ResetFrame)
          */
         default void onReset(Stream stream, ResetFrame frame) {
@@ -174,9 +188,9 @@ public interface Stream {
         /**
          * <p>Callback method invoked when the stream exceeds its idle timeout.</p>
          *
-         * @param stream the stream
-         * @param x      the timeout failure
-         * @return true to reset the stream, false to ignore the idle timeout
+         * @param stream The stream
+         * @param x      The timeout failure
+         * @return If true to reset the stream, false to ignore the idle timeout
          * @see #getIdleTimeout()
          */
         default boolean onIdleTimeout(Stream stream, Throwable x) {
@@ -186,10 +200,10 @@ public interface Stream {
         /**
          * <p>Callback method invoked when the stream failed.</p>
          *
-         * @param stream the stream
-         * @param error  the error code
-         * @param reason the error reason, or null
-         * @param result the result to complete when the failure has been handled
+         * @param stream The stream
+         * @param error  The error code
+         * @param reason The error reason, or null
+         * @param result The result to complete when the failure has been handled
          */
         default void onFailure(Stream stream, int error, String reason, Consumer<Result<Void>> result) {
             result.accept(Result.SUCCESS);
@@ -198,7 +212,7 @@ public interface Stream {
         /**
          * <p>Callback method invoked after the stream has been closed.</p>
          *
-         * @param stream the stream
+         * @param stream The stream
          */
         default void onClosed(Stream stream) {
         }
