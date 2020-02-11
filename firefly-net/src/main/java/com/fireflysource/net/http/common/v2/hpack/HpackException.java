@@ -1,14 +1,13 @@
 package com.fireflysource.net.http.common.v2.hpack;
 
-@SuppressWarnings("serial")
-public abstract class HpackException extends Exception {
+public abstract class HpackException extends RuntimeException {
     HpackException(String messageFormat, Object... args) {
         super(String.format(messageFormat, args));
     }
 
     /**
      * A Stream HPACK exception.
-     * <p>Stream exceptions are not fatal to the connection and the
+     * <p>Stream exceptions are not fatal to the connection, and the
      * hpack state is complete and able to continue handling other
      * decoding/encoding for the session.
      * </p>
@@ -21,7 +20,7 @@ public abstract class HpackException extends Exception {
 
     /**
      * A Session HPACK Exception.
-     * <p>Session exceptions are fatal for the stream and the HPACK
+     * <p>Session exceptions are fatal for the stream, and the HPACK
      * state is unable to decode/encode further. </p>
      */
     public static class SessionException extends HpackException {

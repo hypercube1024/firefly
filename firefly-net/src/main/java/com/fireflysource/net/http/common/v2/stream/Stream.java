@@ -72,6 +72,18 @@ public interface Stream {
     void data(DataFrame frame, Consumer<Result<Void>> result);
 
     /**
+     * <p>Sends the given DATA {@code frame}.</p>
+     *
+     * @param frame The DATA frame to send
+     * @return The result that gets notified when the frame has been sent
+     */
+    default CompletableFuture<Void> data(DataFrame frame) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        data(frame, Result.futureToConsumer(future));
+        return future;
+    }
+
+    /**
      * <p>Sends the given RST_STREAM {@code frame}.</p>
      *
      * @param frame  The RST_FRAME to send

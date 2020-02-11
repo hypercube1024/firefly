@@ -26,7 +26,6 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         response.httpVersion = version
         response.status = status
         response.reason = reason
-//        response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
         return false
     }
 

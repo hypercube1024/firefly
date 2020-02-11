@@ -140,11 +140,13 @@ public enum HttpHeader {
     }
 
     private final String value;
+    private final String lowerCaseValue;
     private final byte[] bytes;
     private final byte[] bytesColonSpace;
 
     HttpHeader(String value) {
         this.value = value;
+        this.lowerCaseValue = StringUtils.asciiToLowerCase(value);
         bytes = StringUtils.getUtf8Bytes(value);
         bytesColonSpace = StringUtils.getUtf8Bytes(value + ": ");
     }
@@ -163,6 +165,10 @@ public enum HttpHeader {
 
     public String getValue() {
         return value;
+    }
+
+    public String getLowerCaseValue() {
+        return lowerCaseValue;
     }
 
     @Override

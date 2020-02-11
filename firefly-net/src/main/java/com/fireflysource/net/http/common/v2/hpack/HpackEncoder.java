@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.model.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,45 +19,49 @@ import static com.fireflysource.net.http.common.v2.hpack.HpackContext.StaticEntr
 
 public class HpackEncoder {
     private static final LazyLogger LOG = SystemLogger.create(HpackEncoder.class);
+
     private static final HttpField[] STATUSES = new HttpField[599];
-    static final EnumSet<HttpHeader> DO_NOT_HUFFMAN =
-            EnumSet.of(
-                    HttpHeader.AUTHORIZATION,
-                    HttpHeader.CONTENT_MD5,
-                    HttpHeader.PROXY_AUTHENTICATE,
-                    HttpHeader.PROXY_AUTHORIZATION);
-    static final EnumSet<HttpHeader> DO_NOT_INDEX =
-            EnumSet.of(
-                    // HttpHeader.C_PATH,  // TODO more data needed
-                    // HttpHeader.DATE,    // TODO more data needed
-                    HttpHeader.AUTHORIZATION,
-                    HttpHeader.CONTENT_MD5,
-                    HttpHeader.CONTENT_RANGE,
-                    HttpHeader.ETAG,
-                    HttpHeader.IF_MODIFIED_SINCE,
-                    HttpHeader.IF_UNMODIFIED_SINCE,
-                    HttpHeader.IF_NONE_MATCH,
-                    HttpHeader.IF_RANGE,
-                    HttpHeader.IF_MATCH,
-                    HttpHeader.LOCATION,
-                    HttpHeader.RANGE,
-                    HttpHeader.RETRY_AFTER,
-                    // HttpHeader.EXPIRES,
-                    HttpHeader.LAST_MODIFIED,
-                    HttpHeader.SET_COOKIE,
-                    HttpHeader.SET_COOKIE2);
-    static final EnumSet<HttpHeader> NEVER_INDEX =
-            EnumSet.of(
-                    HttpHeader.AUTHORIZATION,
-                    HttpHeader.SET_COOKIE,
-                    HttpHeader.SET_COOKIE2);
+    static final EnumSet<HttpHeader> DO_NOT_HUFFMAN = EnumSet.of(
+            HttpHeader.AUTHORIZATION,
+            HttpHeader.CONTENT_MD5,
+            HttpHeader.PROXY_AUTHENTICATE,
+            HttpHeader.PROXY_AUTHORIZATION);
+    static final EnumSet<HttpHeader> DO_NOT_INDEX = EnumSet.of(
+            // HttpHeader.C_PATH,  // TODO more data needed
+            // HttpHeader.DATE,    // TODO more data needed
+            HttpHeader.AUTHORIZATION,
+            HttpHeader.CONTENT_MD5,
+            HttpHeader.CONTENT_RANGE,
+            HttpHeader.ETAG,
+            HttpHeader.IF_MODIFIED_SINCE,
+            HttpHeader.IF_UNMODIFIED_SINCE,
+            HttpHeader.IF_NONE_MATCH,
+            HttpHeader.IF_RANGE,
+            HttpHeader.IF_MATCH,
+            HttpHeader.LOCATION,
+            HttpHeader.RANGE,
+            HttpHeader.RETRY_AFTER,
+            // HttpHeader.EXPIRES,
+            HttpHeader.LAST_MODIFIED,
+            HttpHeader.SET_COOKIE,
+            HttpHeader.SET_COOKIE2);
+    static final EnumSet<HttpHeader> NEVER_INDEX = EnumSet.of(
+            HttpHeader.AUTHORIZATION,
+            HttpHeader.SET_COOKIE,
+            HttpHeader.SET_COOKIE2);
     private static final EnumSet<HttpHeader> IGNORED_HEADERS = EnumSet.of(HttpHeader.CONNECTION, HttpHeader.KEEP_ALIVE,
             HttpHeader.PROXY_CONNECTION, HttpHeader.TRANSFER_ENCODING, HttpHeader.UPGRADE);
     private static final PreEncodedHttpField TE_TRAILERS = new PreEncodedHttpField(HttpHeader.TE, "trailers");
+    private static final PreEncodedHttpField C_SCHEME_HTTP = new PreEncodedHttpField(HttpHeader.C_SCHEME, "http");
+    private static final PreEncodedHttpField C_SCHEME_HTTPS = new PreEncodedHttpField(HttpHeader.C_SCHEME, "https");
+    private static final EnumMap<HttpMethod, PreEncodedHttpField> C_METHODS = new EnumMap<>(HttpMethod.class);
 
     static {
         for (HttpStatus.Code code : HttpStatus.Code.values()) {
             STATUSES[code.getCode()] = new PreEncodedHttpField(HttpHeader.C_STATUS, Integer.toString(code.getCode()));
+        }
+        for (HttpMethod method : HttpMethod.values()) {
+            C_METHODS.put(method, new PreEncodedHttpField(HttpHeader.C_METHOD, method.getValue()));
         }
     }
 
@@ -66,6 +71,7 @@ public class HpackEncoder {
     private int localMaxDynamicTableSize;
     private int maxHeaderListSize;
     private int headerListSize;
+    private boolean validateEncoding = true;
 
     public HpackEncoder() {
         this(4096, 4096, -1);
@@ -107,71 +113,102 @@ public class HpackEncoder {
         this.localMaxDynamicTableSize = localMaxDynamicTableSize;
     }
 
-    public void encode(ByteBuffer buffer, MetaData metadata) {
-        if (LOG.isDebugEnabled())
-            LOG.debug(String.format("CtxTbl[%x] encoding", context.hashCode()));
+    public boolean isValidateEncoding() {
+        return validateEncoding;
+    }
 
-        headerListSize = 0;
-        int pos = buffer.position();
+    public void setValidateEncoding(boolean validateEncoding) {
+        this.validateEncoding = validateEncoding;
+    }
 
-        // Check the dynamic table sizes!
-        int maxDynamicTableSize = Math.min(remoteMaxDynamicTableSize, localMaxDynamicTableSize);
-        if (maxDynamicTableSize != context.getMaxDynamicTableSize())
-            encodeMaxDynamicTableSize(buffer, maxDynamicTableSize);
-
-        // Add Request/response meta fields
-        if (metadata.isRequest()) {
-            MetaData.Request request = (MetaData.Request) metadata;
-
-            // TODO optimise these to avoid HttpField creation
-            String scheme = request.getURI().getScheme();
-            encode(buffer, new HttpField(HttpHeader.C_SCHEME, scheme == null ? HttpScheme.HTTP.getValue() : scheme));
-            encode(buffer, new HttpField(HttpHeader.C_METHOD, request.getMethod()));
-            encode(buffer, new HttpField(HttpHeader.C_AUTHORITY, request.getURI().getAuthority()));
-            encode(buffer, new HttpField(HttpHeader.C_PATH, request.getURI().getPathQuery()));
-        } else if (metadata.isResponse()) {
-            MetaData.Response response = (MetaData.Response) metadata;
-            int code = response.getStatus();
-            HttpField status = code < STATUSES.length ? STATUSES[code] : null;
-            if (status == null)
-                status = new HttpField.IntValueHttpField(HttpHeader.C_STATUS, code);
-            encode(buffer, status);
-        }
-
-        // Remove fields as specified in RFC 7540, 8.1.2.2.
-        HttpFields fields = metadata.getFields();
-        if (fields != null) {
-            // For example: Connection: Close, TE, Upgrade, Custom.
-            Set<String> hopHeaders = null;
-            for (String value : fields.getCSV(HttpHeader.CONNECTION, false)) {
-                if (hopHeaders == null)
-                    hopHeaders = new HashSet<>();
-                hopHeaders.add(StringUtils.asciiToLowerCase(value));
-            }
-            for (HttpField field : fields) {
-                HttpHeader header = field.getHeader();
-                if (header != null && IGNORED_HEADERS.contains(header))
-                    continue;
-                if (header == HttpHeader.TE) {
-                    if (field.contains("trailers"))
-                        encode(buffer, TE_TRAILERS);
-                    continue;
-                }
-                if (hopHeaders != null && hopHeaders.contains(StringUtils.asciiToLowerCase(field.getName())))
-                    continue;
-                encode(buffer, field);
-            }
-        }
-
-        // Check size
-        if (maxHeaderListSize > 0 && headerListSize > maxHeaderListSize) {
-            LOG.warn("Header list size too large {} > {} for {}", headerListSize, maxHeaderListSize);
+    public void encode(ByteBuffer buffer, MetaData metadata) throws HpackException {
+        try {
             if (LOG.isDebugEnabled())
-                LOG.debug("metadata={}", metadata);
-        }
+                LOG.debug(String.format("CtxTbl[%x] encoding", context.hashCode()));
 
-        if (LOG.isDebugEnabled())
-            LOG.debug(String.format("CtxTbl[%x] encoded %d octets", context.hashCode(), buffer.position() - pos));
+            HttpFields fields = metadata.getFields();
+            // Verify that we can encode without errors.
+            if (isValidateEncoding() && fields != null) {
+                for (HttpField field : fields) {
+                    String name = field.getName();
+                    char firstChar = name.charAt(0);
+                    if (firstChar <= ' ' || firstChar == ':')
+                        throw new HpackException.StreamException("Invalid header name: '%s'", name);
+                }
+            }
+
+            headerListSize = 0;
+            int pos = buffer.position();
+
+            // Check the dynamic table sizes!
+            int maxDynamicTableSize = Math.min(remoteMaxDynamicTableSize, localMaxDynamicTableSize);
+            if (maxDynamicTableSize != context.getMaxDynamicTableSize())
+                encodeMaxDynamicTableSize(buffer, maxDynamicTableSize);
+
+            // Add Request/response meta fields
+            if (!metadata.isOnlyTrailer()) {
+                if (metadata.isRequest()) {
+                    MetaData.Request request = (MetaData.Request) metadata;
+
+                    String scheme = request.getURI().getScheme();
+                    encode(buffer, HttpScheme.HTTPS.is(scheme) ? C_SCHEME_HTTPS : C_SCHEME_HTTP);
+                    String method = request.getMethod();
+                    HttpMethod httpMethod = method == null ? null : HttpMethod.from(method);
+                    HttpField methodField = C_METHODS.get(httpMethod);
+                    encode(buffer, methodField == null ? new HttpField(HttpHeader.C_METHOD, method) : methodField);
+                    encode(buffer, new HttpField(HttpHeader.C_AUTHORITY, request.getURI().getAuthority()));
+                    encode(buffer, new HttpField(HttpHeader.C_PATH, request.getURI().getPathQuery()));
+                } else if (metadata.isResponse()) {
+                    MetaData.Response response = (MetaData.Response) metadata;
+                    int code = response.getStatus();
+                    HttpField status = code < STATUSES.length ? STATUSES[code] : null;
+                    if (status == null)
+                        status = new HttpField.IntValueHttpField(HttpHeader.C_STATUS, code);
+                    encode(buffer, status);
+                }
+            }
+
+            // Remove fields as specified in RFC 7540, 8.1.2.2.
+            if (fields != null) {
+                // For example: Connection: Close, TE, Upgrade, Custom.
+                Set<String> hopHeaders = null;
+                for (String value : fields.getCSV(HttpHeader.CONNECTION, false)) {
+                    if (hopHeaders == null)
+                        hopHeaders = new HashSet<>();
+                    hopHeaders.add(StringUtils.asciiToLowerCase(value));
+                }
+                for (HttpField field : fields) {
+                    HttpHeader header = field.getHeader();
+                    if (header != null && IGNORED_HEADERS.contains(header))
+                        continue;
+                    if (header == HttpHeader.TE) {
+                        if (field.contains("trailers"))
+                            encode(buffer, TE_TRAILERS);
+                        continue;
+                    }
+                    String name = field.getLowerCaseName();
+                    if (hopHeaders != null && hopHeaders.contains(name))
+                        continue;
+                    encode(buffer, field);
+                }
+            }
+
+            // Check size
+            if (maxHeaderListSize > 0 && headerListSize > maxHeaderListSize) {
+                LOG.warn("Header list size too large {} > {} for {}", headerListSize, maxHeaderListSize);
+                if (LOG.isDebugEnabled())
+                    LOG.debug("metadata={}", metadata);
+            }
+
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("CtxTbl[%x] encoded %d octets", context.hashCode(), buffer.position() - pos));
+        } catch (HpackException x) {
+            throw x;
+        } catch (Throwable x) {
+            HpackException.SessionException failure = new HpackException.SessionException("Could not hpack encode %s", metadata);
+            failure.initCause(x);
+            throw failure;
+        }
     }
 
     public void encodeMaxDynamicTableSize(ByteBuffer buffer, int maxDynamicTableSize) {

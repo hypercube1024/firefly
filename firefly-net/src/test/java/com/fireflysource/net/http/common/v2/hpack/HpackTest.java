@@ -19,7 +19,7 @@ class HpackTest {
     final static HttpField Date = new PreEncodedHttpField(HttpHeader.DATE, DateGenerator.formatDate(TimeUnit.NANOSECONDS.toMillis(System.nanoTime())));
 
     @Test
-    void encodeDecodeResponseTest() throws Exception {
+    void encodeDecodeResponseTest() {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 8192);
         ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
@@ -71,7 +71,7 @@ class HpackTest {
     }
 
     @Test
-    void encodeDecodeTooLargeTest() throws Exception {
+    void encodeDecodeTooLargeTest() {
         HpackEncoder encoder = new HpackEncoder();
         HpackDecoder decoder = new HpackDecoder(4096, 164);
         ByteBuffer buffer = ByteBuffer.allocateDirect(16 * 1024);
@@ -106,7 +106,7 @@ class HpackTest {
     }
 
     @Test
-    void evictReferencedFieldTest() throws Exception {
+    void evictReferencedFieldTest() {
         HpackEncoder encoder = new HpackEncoder(200, 200);
         HpackDecoder decoder = new HpackDecoder(200, 1024);
         ByteBuffer buffer = ByteBuffer.allocate(16 * 1024);
@@ -157,8 +157,8 @@ class HpackTest {
         assertHttpFieldsSame("Metadata.fields", expected.getFields(), actual.getFields());
     }
 
-    private void assertHttpFieldsSame(String msg, HttpFields expected, HttpFields actual) {
-        assertEquals(expected.size(), actual.size(), msg);
+    private void assertHttpFieldsSame(String message, HttpFields expected, HttpFields actual) {
+        assertEquals(expected.size(), actual.size(), message);
 
         for (HttpField actualField : actual) {
             if ("DATE".equalsIgnoreCase(actualField.getName())) {
@@ -166,7 +166,7 @@ class HpackTest {
                 // during testing.
                 continue;
             }
-            assertTrue(expected.contains(actualField), msg + ".contains(" + actualField + ")");
+            assertTrue(expected.contains(actualField), message + ".contains(" + actualField + ")");
         }
     }
 }

@@ -39,6 +39,10 @@ public class HttpField {
         return name;
     }
 
+    public String getLowerCaseName() {
+        return header != null ? header.getLowerCaseValue() : StringUtils.asciiToLowerCase(name);
+    }
+
     public String getValue() {
         return value;
     }

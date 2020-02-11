@@ -10,6 +10,7 @@ public class MetaData implements Iterable<HttpField> {
     private HttpVersion httpVersion;
     private long contentLength;
     private Supplier<HttpFields> trailers;
+    private boolean onlyTrailer;
 
     public MetaData(HttpVersion version, HttpFields fields) {
         this(version, fields, Long.MIN_VALUE);
@@ -61,6 +62,14 @@ public class MetaData implements Iterable<HttpField> {
 
     public Supplier<HttpFields> getTrailerSupplier() {
         return trailers;
+    }
+
+    public boolean isOnlyTrailer() {
+        return onlyTrailer;
+    }
+
+    public void setOnlyTrailer(boolean onlyTrailer) {
+        this.onlyTrailer = onlyTrailer;
     }
 
     public void setTrailerSupplier(Supplier<HttpFields> trailers) {

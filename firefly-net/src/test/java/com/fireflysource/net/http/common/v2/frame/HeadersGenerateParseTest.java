@@ -18,6 +18,43 @@ import static org.junit.jupiter.api.Assertions.*;
 class HeadersGenerateParseTest {
 
     @Test
+    void testGenerateTrailer() {
+        HeadersGenerator generator = new HeadersGenerator(new HeaderGenerator(), new HpackEncoder());
+
+        int streamId = 13;
+        HttpFields fields = new HttpFields();
+        fields.put("trailer1", "foo");
+        fields.put("trailer2", "bar");
+        MetaData.Request metaData = new MetaData.Request(fields);
+        metaData.setOnlyTrailer(true);
+
+        final List<HeadersFrame> frames = new ArrayList<>();
+        Parser parser = new Parser(new Parser.Listener.Adapter() {
+            @Override
+            public void onHeaders(HeadersFrame frame) {
+                frames.add(frame);
+            }
+        }, 4096, 8192);
+        parser.init(UnaryOperator.identity());
+
+        FrameBytes frameBytes = generator.generateHeaders(streamId, metaData, null, true);
+
+        frames.clear();
+        for (ByteBuffer buffer : frameBytes.getByteBuffers()) {
+            while (buffer.hasRemaining()) {
+                parser.parse(buffer);
+            }
+        }
+
+        assertEquals(1, frames.size());
+        HeadersFrame frame = frames.get(0);
+        assertEquals(streamId, frame.getStreamId());
+        assertTrue(frame.isEndStream());
+        assertEquals("foo", frame.getMetaData().getFields().get("trailer1"));
+        assertEquals("bar", frame.getMetaData().getFields().get("trailer2"));
+    }
+
+    @Test
     void testGenerateParse() {
         HeadersGenerator generator = new HeadersGenerator(new HeaderGenerator(), new HpackEncoder());
 

@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common.v2.hpack;
 
 
+import com.fireflysource.common.io.BufferUtils;
 import com.fireflysource.net.http.common.model.HttpField;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpVersion;
@@ -45,7 +46,7 @@ class HpackEncoderTest {
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // All are in the dynamic table
@@ -68,7 +69,7 @@ class HpackEncoderTest {
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // max dynamic table size reached
@@ -84,7 +85,7 @@ class HpackEncoderTest {
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // max dynamic table size reached
@@ -98,7 +99,7 @@ class HpackEncoderTest {
         buffer.clear();
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // max dynamic table size reached
@@ -114,7 +115,7 @@ class HpackEncoderTest {
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // max dynamic table size reached
@@ -147,7 +148,7 @@ class HpackEncoderTest {
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
         buffer.flip();
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // empty dynamic table
@@ -157,42 +158,48 @@ class HpackEncoderTest {
 
 
     @Test
-    void testFieldLargerThanTable() {
+    public void testFieldLargerThanTable() {
         HttpFields fields = new HttpFields();
 
         HpackEncoder encoder = new HpackEncoder(128);
-        ByteBuffer buffer0 = ByteBuffer.allocate(4096);
+        ByteBuffer buffer0 = BufferUtils.allocate(4096);
+        int pos = BufferUtils.flipToFill(buffer0);
         encoder.encode(buffer0, new MetaData(HttpVersion.HTTP_2, fields));
-        buffer0.flip();
+        BufferUtils.flipToFlush(buffer0, pos);
 
         encoder = new HpackEncoder(128);
-        fields.add(new HttpField("user-agent", "firefly/test"));
-        ByteBuffer buffer1 = ByteBuffer.allocate(4096);
+        fields.add(new HttpField("user-agent", "jetty/test"));
+        ByteBuffer buffer1 = BufferUtils.allocate(4096);
+        pos = BufferUtils.flipToFill(buffer1);
         encoder.encode(buffer1, new MetaData(HttpVersion.HTTP_2, fields));
-        buffer1.flip();
+        BufferUtils.flipToFlush(buffer1, pos);
 
         encoder = new HpackEncoder(128);
+        encoder.setValidateEncoding(false);
         fields.add(new HttpField(":path",
                 "This is a very large field, whose size is larger than the dynamic table so it should not be indexed as it will not fit in the table ever!" +
                         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " +
                         "YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY " +
                         "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ "));
-        ByteBuffer buffer2 = ByteBuffer.allocate(4096);
+        ByteBuffer buffer2 = BufferUtils.allocate(4096);
+        pos = BufferUtils.flipToFill(buffer2);
         encoder.encode(buffer2, new MetaData(HttpVersion.HTTP_2, fields));
-        buffer2.flip();
+        BufferUtils.flipToFlush(buffer2, pos);
 
         encoder = new HpackEncoder(128);
+        encoder.setValidateEncoding(false);
         fields.add(new HttpField("host", "somehost"));
-        ByteBuffer buffer = ByteBuffer.allocate(4096);
+        ByteBuffer buffer = BufferUtils.allocate(4096);
+        pos = BufferUtils.flipToFill(buffer);
         encoder.encode(buffer, new MetaData(HttpVersion.HTTP_2, fields));
-        buffer.flip();
+        BufferUtils.flipToFlush(buffer, pos);
 
         //System.err.println(BufferUtils.toHexString(buffer0));
         //System.err.println(BufferUtils.toHexString(buffer1));
         //System.err.println(BufferUtils.toHexString(buffer2));
         //System.err.println(BufferUtils.toHexString(buffer));
 
-        // something was encoded!
+        // something encoded!
         assertTrue(buffer.remaining() > 0);
 
         // check first field is static index name and dynamic index body
@@ -209,9 +216,7 @@ class HpackEncoderTest {
         assertEquals(2, context.size());
         assertEquals("host", context.get(HpackContext.STATIC_SIZE + 1).getHttpField().getName());
         assertEquals("user-agent", context.get(HpackContext.STATIC_SIZE + 2).getHttpField().getName());
-        assertEquals(context.getDynamicTableSize(),
-                context.get(HpackContext.STATIC_SIZE + 1).getSize() + context.get(HpackContext.STATIC_SIZE + 2).getSize());
-
+        assertEquals(context.get(HpackContext.STATIC_SIZE + 1).getSize() + context.get(HpackContext.STATIC_SIZE + 2).getSize(), context.getDynamicTableSize());
     }
 
     @Test

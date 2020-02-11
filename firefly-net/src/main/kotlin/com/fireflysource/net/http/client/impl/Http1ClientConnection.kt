@@ -2,6 +2,8 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.flipToFill
+import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
@@ -24,6 +26,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -39,9 +42,9 @@ class Http1ClientConnection(
     private val generator = HttpGenerator()
 
     // generator buffer
-    private val headerBuffer = BufferUtils.allocateDirect(config.requestHeaderBufferSize)
-    private val contentBuffer = BufferUtils.allocateDirect(config.contentBufferSize)
-    private val chunkBuffer = BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE)
+    private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.requestHeaderBufferSize) }
+    private val contentBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.contentBufferSize) }
+    private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
 
     // parser
     private val handler = Http1ClientResponseHandler()
@@ -122,9 +125,9 @@ class Http1ClientConnection(
 
     private suspend fun generateContent(requestMessage: RequestMessage) {
         requireNotNull(requestMessage.contentProvider)
-        val pos = BufferUtils.flipToFill(contentBuffer)
+        val pos = contentBuffer.flipToFill()
         val len = requestMessage.contentProvider.read(contentBuffer).await()
-        BufferUtils.flipToFlush(contentBuffer, pos)
+        contentBuffer.flipToFlush(pos)
 
         val last = (len == -1)
 

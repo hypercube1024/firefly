@@ -20,42 +20,42 @@ public interface HttpClientRequest {
     /**
      * Get the HTTP method.
      *
-     * @return the HTTP method.
+     * @return The HTTP method.
      */
     String getMethod();
 
     /**
      * Set the HTTP method.
      *
-     * @param method the HTTP method to set
+     * @param method The HTTP method.
      */
     void setMethod(String method);
 
     /**
      * Get the HTTP URI.
      *
-     * @return the HTTP URI.
+     * @return The HTTP URI.
      */
     HttpURI getURI();
 
     /**
      * Set the HTTP URI.
      *
-     * @param uri the HTTP URI
+     * @param uri The HTTP URI.
      */
     void setURI(HttpURI uri);
 
     /**
      * Get the HTTP version.
      *
-     * @return the HTTP version.
+     * @return The HTTP version.
      */
     HttpVersion getHttpVersion();
 
     /**
      * Set the HTTP version.
      *
-     * @param httpVersion the HTTP version.
+     * @param httpVersion The HTTP version.
      */
     void setHttpVersion(HttpVersion httpVersion);
 
@@ -97,7 +97,7 @@ public interface HttpClientRequest {
     /**
      * Set the HTTP header fields.
      *
-     * @param httpFields the HTTP header fields.
+     * @param httpFields The HTTP header fields.
      */
     void setHttpFields(HttpFields httpFields);
 
@@ -111,7 +111,7 @@ public interface HttpClientRequest {
     /**
      * Set the HTTP cookies.
      *
-     * @param cookies the HTTP cookies.
+     * @param cookies The HTTP cookies.
      */
     void setCookies(List<Cookie> cookies);
 
