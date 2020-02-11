@@ -14,17 +14,18 @@ import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.tcp.TcpConnection
-import kotlinx.coroutines.channels.Channel
+import com.fireflysource.net.tcp.aio.AdaptiveBufferSize
+import kotlinx.coroutines.async
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
+import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
-    private val config: HttpConfig,
+    config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
     listener: Http2Connection.Listener = defaultHttp2ConnectionListener
@@ -34,111 +35,13 @@ class Http2ClientConnection(
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
     }
 
-    private val streamsOpened = AtomicLong()
-    private val streamsClosed = AtomicLong()
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
-
-    private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+    private val adaptiveBufferSize = AdaptiveBufferSize()
 
     init {
         parser.init(UnaryOperator.identity())
         sendConnectionPreface()
         launchParserJob(parser)
-        launchHttpExchangeJob()
-    }
-
-    private fun launchHttpExchangeJob() = tcpConnection.coroutineScope.launch {
-        while (true) {
-            val requestMessage = requestChannel.receive()
-            try {
-                doHttpExchange(requestMessage)
-            } catch (e: Exception) {
-                requestMessage.response.completeExceptionally(e)
-            }
-        }
-    }
-
-    private suspend fun doHttpExchange(requestMessage: RequestMessage) {
-        val metaDataRequest = requestMessage.request
-        val trailer = metaDataRequest.trailerSupplier?.get()
-        val contentProvider = requestMessage.contentProvider
-        val contentHandler = requestMessage.contentHandler
-        val future = requestMessage.response
-        val lastHeaders = contentProvider == null && trailer == null
-        val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
-
-        val response = AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
-        val metaDataResponse = response.response
-
-        val newStream = newStream(headersFrame, object : Stream.Listener.Adapter() {
-            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                val fields = frame.metaData.fields
-                metaDataResponse.fields.addAll(fields)
-                Optional.ofNullable(fields[HttpHeader.C_STATUS]).map { it.toInt() }.ifPresent { status ->
-                    metaDataResponse.status = status
-                    metaDataResponse.reason = HttpStatus.getMessage(status)
-                }
-                if (frame.isEndStream) {
-                    future.complete(response)
-                }
-            }
-
-            override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-
-                if (frame.isEndStream) {
-                    future.complete(response)
-                }
-            }
-
-            override fun onReset(stream: Stream, frame: ResetFrame) {
-                val error = ErrorCode.toString(frame.error, "http2_request_error")
-                val exception = IllegalStateException(error)
-                future.completeExceptionally(exception)
-            }
-
-            override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {
-                val exception = IllegalStateException("http2_stream_timeout")
-                future.completeExceptionally(exception)
-                return true
-            }
-        }).await()
-
-        generateContent(contentProvider, trailer, newStream)
-        generateTrailer(trailer, newStream)
-    }
-
-    private suspend fun generateContent(
-        contentProvider: HttpClientContentProvider?,
-        trailer: HttpFields?,
-        newStream: Stream
-    ) {
-        if (contentProvider != null) {
-            val contentBuffer = BufferUtils.allocate(config.contentBufferSize)
-            readLoop@ while (true) {
-                val pos = contentBuffer.flipToFill()
-                val length = contentProvider.read(contentBuffer).await()
-                contentBuffer.flipToFlush(pos)
-
-                when {
-                    length > 0 -> {
-                        val lastData = length > 0 && trailer == null
-                        val dataFrame = DataFrame(newStream.id, contentBuffer, lastData)
-                        newStream.data(dataFrame).await()
-                        BufferUtils.clear(contentBuffer)
-                    }
-                    length < 0 -> break@readLoop
-                }
-            }
-        }
-    }
-
-    private fun generateTrailer(trailer: HttpFields?, newStream: Stream) {
-        if (trailer != null) {
-            val trailerMetaData = MetaData.Request(trailer)
-            trailerMetaData.isOnlyTrailer = true
-            val headersFrameTrailer = HeadersFrame(trailerMetaData, null, true)
-            newStream.headers(headersFrameTrailer, discard())
-        }
     }
 
     private fun sendConnectionPreface() {
@@ -238,33 +141,91 @@ class Http2ClientConnection(
         }
     }
 
-    override fun onStreamOpened(stream: Stream) {
-        super.onStreamOpened(stream)
-        streamsOpened.incrementAndGet()
-    }
-
-    override fun onStreamClosed(stream: Stream) {
-        super.onStreamClosed(stream)
-        streamsClosed.incrementAndGet()
-    }
-
-    fun getStreamsOpened() = streamsOpened.get()
-
-    fun getStreamsClosed() = streamsClosed.get()
-
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val future = CompletableFuture<HttpClientResponse>()
         val contentProvider: HttpClientContentProvider? = request.contentProvider
         val contentHandler: HttpClientContentHandler? = request.contentHandler
-        val metaDataRequest = toMetaDataRequest(request)
-        requestChannel.offer(RequestMessage(metaDataRequest, contentProvider, contentHandler, future))
+        val metaDataRequest: MetaData.Request = toMetaDataRequest(request)
+
+        val lastHeaders = contentProvider == null && metaDataRequest.trailerSupplier == null
+        val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
+
+        val response = AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
+        val metaDataResponse = response.response
+
+        val streamListener = object : Stream.Listener.Adapter() {
+            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                val fields = frame.metaData.fields
+                metaDataResponse.fields.addAll(fields)
+                Optional.ofNullable(fields[HttpHeader.C_STATUS]).map { it.toInt() }.ifPresent { status ->
+                    metaDataResponse.status = status
+                    metaDataResponse.reason = HttpStatus.getMessage(status)
+                }
+                if (frame.isEndStream) future.complete(response)
+            }
+
+            override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
+                contentHandler?.accept(frame.data, response)
+                if (frame.isEndStream) future.complete(response)
+            }
+
+            override fun onReset(stream: Stream, frame: ResetFrame) {
+                val error = ErrorCode.toString(frame.error, "http2_request_error")
+                val exception = IllegalStateException(error)
+                future.completeExceptionally(exception)
+            }
+
+            override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {
+                val exception = IllegalStateException("http2_stream_timeout")
+                future.completeExceptionally(exception)
+                return true
+            }
+        }
+        newStream(headersFrame, streamListener)
+            .thenCompose { newStream -> generateContent(contentProvider, metaDataRequest, newStream) }
+            .thenAccept { newStream -> generateTrailer(metaDataRequest, newStream) }
         return future
     }
 
-    private data class RequestMessage(
-        val request: MetaData.Request,
-        val contentProvider: HttpClientContentProvider?,
-        val contentHandler: HttpClientContentHandler?,
-        val response: CompletableFuture<HttpClientResponse>
-    )
+    private fun generateContent(
+        contentProvider: HttpClientContentProvider?,
+        metaDataRequest: MetaData.Request,
+        newStream: Stream
+    ) = tcpConnection.coroutineScope.async {
+        if (contentProvider != null) {
+            val byteBuffers = LinkedList<ByteBuffer>()
+            readLoop@ while (true) {
+                val contentBuffer = BufferUtils.allocate(adaptiveBufferSize.getBufferSize())
+                val pos = contentBuffer.flipToFill()
+                val length = contentProvider.read(contentBuffer).await()
+                contentBuffer.flipToFlush(pos)
+                adaptiveBufferSize.update(length)
+
+                when {
+                    length > 0 -> byteBuffers.offer(contentBuffer)
+                    length < 0 -> break@readLoop
+                }
+
+                if (byteBuffers.size > 1) {
+                    val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), false)
+                    newStream.data(dataFrame)
+                }
+            }
+            val last = metaDataRequest.trailerSupplier == null
+            val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), last)
+            newStream.data(dataFrame)
+            contentProvider.closeFuture()
+        }
+        newStream
+    }.asCompletableFuture()
+
+    private fun generateTrailer(metaDataRequest: MetaData.Request, newStream: Stream) {
+        val trailerSupplier = metaDataRequest.trailerSupplier
+        if (trailerSupplier != null) {
+            val trailerMetaData = MetaData.Request(trailerSupplier.get())
+            trailerMetaData.isOnlyTrailer = true
+            val headersFrameTrailer = HeadersFrame(trailerMetaData, null, true)
+            newStream.headers(headersFrameTrailer, discard())
+        }
+    }
 }
