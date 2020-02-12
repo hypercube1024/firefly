@@ -9,7 +9,10 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
-import com.fireflysource.net.http.common.model.*
+import com.fireflysource.net.http.common.model.HttpFields
+import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
@@ -153,15 +156,61 @@ class Http2ClientConnection(
         val response = AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
         val metaDataResponse = response.response
 
+        val expect100Continue = expect100Continue(request)
+        val serverAccept = CompletableFuture<Boolean>()
+        var theFirstHeader = true
+
         val streamListener = object : Stream.Listener.Adapter() {
-            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                val fields = frame.metaData.fields
-                metaDataResponse.fields.addAll(fields)
-                Optional.ofNullable(fields[HttpHeader.C_STATUS]).map { it.toInt() }.ifPresent { status ->
-                    metaDataResponse.status = status
-                    metaDataResponse.reason = HttpStatus.getMessage(status)
+            fun copyResponse(frame: HeadersFrame) {
+                when (val metaData = frame.metaData) {
+                    is MetaData.Response -> {
+                        metaDataResponse.status = metaData.status
+                        metaDataResponse.reason = metaData.reason
+                        metaDataResponse.fields.addAll(metaData.fields)
+                    }
+                    is MetaData.Request -> {
+                    }
+                    else -> metaDataResponse.fields.addAll(metaData.fields)
                 }
                 if (frame.isEndStream) future.complete(response)
+            }
+
+            fun resetStreamWhenTheFirstHeaderNot100Continue(stream: Stream) {
+                val resetFrame = ResetFrame(stream.id, ErrorCode.INTERNAL_ERROR.code)
+                stream.reset(resetFrame) {
+                    val exception = IllegalStateException("Except the server responses 100 continue.")
+                    future.completeExceptionally(exception)
+                }
+            }
+
+            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                if (theFirstHeader) {
+                    theFirstHeader = false
+                    val metaData = frame.metaData
+                    if (metaData is MetaData.Response) {
+                        if (expect100Continue) {
+                            if (metaData.status == HttpStatus.CONTINUE_100) {
+                                serverAccept.complete(true)
+                            } else {
+                                serverAccept.complete(false)
+                                copyResponse(frame)
+                            }
+                        } else {
+                            if (metaData.status == HttpStatus.CONTINUE_100) {
+                                serverAccept.complete(false)
+                                resetStreamWhenTheFirstHeaderNot100Continue(stream)
+                            } else {
+                                serverAccept.complete(true)
+                                copyResponse(frame)
+                            }
+                        }
+                    } else {
+                        serverAccept.complete(false)
+                        resetStreamWhenTheFirstHeaderNot100Continue(stream)
+                    }
+                } else {
+                    copyResponse(frame)
+                }
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
@@ -182,17 +231,19 @@ class Http2ClientConnection(
             }
         }
         newStream(headersFrame, streamListener)
-            .thenCompose { newStream -> generateContent(contentProvider, metaDataRequest, newStream) }
-            .thenAccept { newStream -> generateTrailer(metaDataRequest, newStream) }
+            .thenCompose { newStream -> serverAccept.thenApply { Pair(newStream, it) } }
+            .thenCompose { generateContent(contentProvider, metaDataRequest, it.first, it.second) }
+            .thenAccept { generateTrailer(metaDataRequest, it.first, it.second) }
         return future
     }
 
     private fun generateContent(
         contentProvider: HttpClientContentProvider?,
         metaDataRequest: MetaData.Request,
-        newStream: Stream
+        newStream: Stream,
+        serverAccept: Boolean
     ) = tcpConnection.coroutineScope.async {
-        if (contentProvider != null) {
+        if (contentProvider != null && serverAccept) {
             val byteBuffers = LinkedList<ByteBuffer>()
             readLoop@ while (true) {
                 val contentBuffer = BufferUtils.allocate(adaptiveBufferSize.getBufferSize())
@@ -216,12 +267,12 @@ class Http2ClientConnection(
             newStream.data(dataFrame)
             contentProvider.closeFuture()
         }
-        newStream
+        Pair(newStream, serverAccept)
     }.asCompletableFuture()
 
-    private fun generateTrailer(metaDataRequest: MetaData.Request, newStream: Stream) {
+    private fun generateTrailer(metaDataRequest: MetaData.Request, newStream: Stream, serverAccept: Boolean) {
         val trailerSupplier = metaDataRequest.trailerSupplier
-        if (trailerSupplier != null) {
+        if (trailerSupplier != null && serverAccept) {
             val trailerMetaData = MetaData.Request(trailerSupplier.get())
             trailerMetaData.isOnlyTrailer = true
             val headersFrameTrailer = HeadersFrame(trailerMetaData, null, true)

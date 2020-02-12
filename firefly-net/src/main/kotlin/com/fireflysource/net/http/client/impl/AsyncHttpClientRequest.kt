@@ -158,3 +158,8 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
 
     return metaDataReq
 }
+
+fun expect100Continue(request: HttpClientRequest): Boolean {
+    val expectValue = request.httpFields[HttpHeader.EXPECT]
+    return HttpHeaderValue.CONTINUE.`is`(expectValue)
+}
