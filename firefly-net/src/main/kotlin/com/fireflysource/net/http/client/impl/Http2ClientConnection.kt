@@ -147,8 +147,8 @@ class Http2ClientConnection(
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val future = CompletableFuture<HttpClientResponse>()
         val contentProvider: HttpClientContentProvider? = request.contentProvider
-        val contentHandler: HttpClientContentHandler? = request.contentHandler
         val metaDataRequest: MetaData.Request = toMetaDataRequest(request)
+        val contentHandler: HttpClientContentHandler? = request.contentHandler
 
         val lastHeaders = contentProvider == null && metaDataRequest.trailerSupplier == null
         val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
@@ -214,8 +214,12 @@ class Http2ClientConnection(
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-                contentHandler?.accept(frame.data, response)
-                if (frame.isEndStream) future.complete(response)
+                try {
+                    contentHandler?.accept(frame.data, response)
+                    if (frame.isEndStream) future.complete(response)
+                } finally {
+                    result.accept(Result.SUCCESS)
+                }
             }
 
             override fun onReset(stream: Stream, frame: ResetFrame) {

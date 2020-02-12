@@ -195,7 +195,7 @@ public class HpackEncoder {
 
             // Check size
             if (maxHeaderListSize > 0 && headerListSize > maxHeaderListSize) {
-                LOG.warn("Header list size too large {} > {} for {}", headerListSize, maxHeaderListSize);
+                LOG.warn("Header list size too large {} > {}", headerListSize, maxHeaderListSize);
                 if (LOG.isDebugEnabled())
                     LOG.debug("metadata={}", metadata);
             }

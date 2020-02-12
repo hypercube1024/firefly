@@ -13,10 +13,11 @@ class SimpleFlowControlStrategy(
     }
 
     override fun onDataConsumed(http2Connection: Http2Connection, stream: Stream?, length: Int) {
+        log.debug { "Data consumed. length: $length, id: ${http2Connection.id}, stream: $stream" }
         if (length <= 0) return
 
         // This is the simple algorithm for flow control.
-        // This method is called when a whole flow controlled frame has been consumed.
+        // This method called when a whole flow controlled frame has been consumed.
         // We send a WindowUpdate every time, even if the frame was very small.
         val connection = http2Connection as AsyncHttp2Connection
         val sessionFrame = WindowUpdateFrame(0, length)

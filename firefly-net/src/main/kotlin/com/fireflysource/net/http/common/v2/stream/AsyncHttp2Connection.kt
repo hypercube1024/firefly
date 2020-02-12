@@ -137,6 +137,7 @@ abstract class AsyncHttp2Connection(
 
             log.debug { "Flush data frame. window: $window, remaining: $dataRemaining" }
             if (window <= 0 && dataRemaining > 0) {
+                log.debug { "The sending window not enough. stream: $stream" }
                 return false
             }
 
@@ -156,14 +157,16 @@ abstract class AsyncHttp2Connection(
             val currentRemaining = frameEntry.dataRemaining
             log.debug { "After flush data frame. window: $window, remaining: $currentRemaining, dataLength: $dataLength" }
 
-            return if (frameEntry.dataRemaining == 0) {
+            return if (currentRemaining == 0) {
                 // Only now we can update the close state and eventually remove the stream.
                 if (stream.updateClose(dataFrame.isEndStream, CloseState.Event.AFTER_SEND)) {
                     removeStream(stream)
                 }
                 frameEntry.result.accept(Result(true, frameEntry.writtenBytes, null))
+                log.debug { "Flush all data success. stream: $stream" }
                 true
             } else {
+                log.debug { "Flush data success. stream: $stream, remaining: $currentRemaining" }
                 false
             }
         }

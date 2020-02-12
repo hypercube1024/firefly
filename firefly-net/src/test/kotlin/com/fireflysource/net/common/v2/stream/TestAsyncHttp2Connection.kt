@@ -367,7 +367,7 @@ class TestAsyncHttp2Connection {
     fun testData(): Unit = runBlocking {
         val host = "localhost"
         val port = 4027
-        val tcpConfig = TcpConfig(30, false)
+        val tcpConfig = TcpConfig(30, true)
         val httpConfig = HttpConfig()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
@@ -442,7 +442,7 @@ class TestAsyncHttp2Connection {
     fun testNewStream() = runBlocking {
         val host = "localhost"
         val port = 4023
-        val tcpConfig = TcpConfig(30, false)
+        val tcpConfig = TcpConfig(30, true)
         val httpConfig = HttpConfig()
 
         val requestHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
