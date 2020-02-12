@@ -146,10 +146,10 @@ class Http2ClientConnection(
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val future = CompletableFuture<HttpClientResponse>()
-        val contentProvider: HttpClientContentProvider? = request.contentProvider
         val metaDataRequest: MetaData.Request = toMetaDataRequest(request)
-        val contentHandler: HttpClientContentHandler? = request.contentHandler
 
+        val contentProvider: HttpClientContentProvider? = request.contentProvider
+        val contentHandler: HttpClientContentHandler? = request.contentHandler
         val lastHeaders = contentProvider == null && metaDataRequest.trailerSupplier == null
         val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
 
