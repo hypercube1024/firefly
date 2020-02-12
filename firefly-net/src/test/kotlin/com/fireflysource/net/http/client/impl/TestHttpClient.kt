@@ -14,12 +14,14 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -89,18 +91,22 @@ class TestHttpClient {
         val count = 100
 
         val time = measureTimeMillis {
-            (1..count).map { httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit() }
-                .forEach { future ->
-                    val response = future.await()
+            val futures =
+                (1..count).map { httpClient.get("http://${address.hostName}:${address.port}/testHttpClient").submit() }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
 
-                    assertEquals(HttpStatus.OK_200, response.status)
-                    assertEquals(14L, response.contentLength)
-                    assertEquals("test client ok", response.stringBody)
+            val response = futures[0].await()
 
-                    assertEquals(2, response.cookies.size)
-                    assertEquals("value1", response.cookies.filter { it.name == "cookie1" }.map { it.value }[0])
-                    assertEquals("value2", response.cookies.filter { it.name == "cookie2" }.map { it.value }[0])
-                }
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals(14L, response.contentLength)
+            assertEquals("test client ok", response.stringBody)
+
+            assertEquals(2, response.cookies.size)
+            assertEquals("value1", response.cookies.filter { it.name == "cookie1" }.map { it.value }[0])
+            assertEquals("value2", response.cookies.filter { it.name == "cookie2" }.map { it.value }[0])
+
         }
 
         val throughput = count / (time / 1000.00)

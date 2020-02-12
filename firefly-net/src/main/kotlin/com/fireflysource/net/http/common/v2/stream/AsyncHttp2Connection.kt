@@ -321,7 +321,7 @@ abstract class AsyncHttp2Connection(
     private fun newDefaultSettings(): MutableMap<Int, Int> {
         val settings = HashMap(SettingsFrame.DEFAULT_SETTINGS_FRAME.settings)
         settings[SettingsFrame.INITIAL_WINDOW_SIZE] = config.initialStreamRecvWindow
-        settings[SettingsFrame.MAX_CONCURRENT_STREAMS] = config.maxConcurrentPushedStreams
+        settings[SettingsFrame.MAX_CONCURRENT_STREAMS] = config.maxConcurrentStreams
         return settings
     }
 
@@ -392,15 +392,19 @@ abstract class AsyncHttp2Connection(
     }
 
     private fun checkMaxLocalStreams() {
-        while (true) {
-            val localCount = localStreamCount.get()
-            val maxCount = maxLocalStreams
-            if (maxCount in 0..localCount) {
-                throw IllegalStateException("Max local stream count $localCount exceeded $maxCount")
+        val maxCount = maxLocalStreams
+        if (maxCount > 0) {
+            while (true) {
+                val localCount = localStreamCount.get()
+                if (localCount >= maxCount) {
+                    throw IllegalStateException("Max local stream count $localCount exceeded $maxCount")
+                }
+                if (localStreamCount.compareAndSet(localCount, localCount + 1)) {
+                    break
+                }
             }
-            if (localStreamCount.compareAndSet(localCount, localCount + 1)) {
-                break
-            }
+        } else {
+            localStreamCount.incrementAndGet()
         }
     }
 

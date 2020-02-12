@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
@@ -7,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
+import com.fireflysource.net.http.common.v2.frame.DataFrame
 import com.fireflysource.net.http.common.v2.frame.GoAwayFrame
 import com.fireflysource.net.http.common.v2.frame.HeadersFrame
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
@@ -20,9 +22,11 @@ import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -36,7 +40,7 @@ class TestHttp2ClientConnection {
         val port = Random.nextInt(20000, 30000)
         val tcpConfig = TcpConfig(3000, true)
         val httpConfig = HttpConfig()
-        val count = 10
+        val count = 100
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.startReadingAndAwaitHandshake()
@@ -53,23 +57,17 @@ class TestHttp2ClientConnection {
                     }
 
                     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
-//                        println("Server creates the remote stream: ${stream}. the headers: ${frame}. request: ${frame.metaData}")
-//                        val request = frame.metaData as MetaData.Request
-//                        println("Server receive: ${request.uri}")
-
                         val fields = HttpFields()
                         fields.put("Test-Http-Exchange", "R1")
                         val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
-                        val headersFrame = HeadersFrame(stream.id, response, null, true)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
                         stream.headers(headersFrame) {}
 
-//                        val data = BufferUtils.toBuffer("http exchange success.")
-//                        val dataFrame = DataFrame(stream.id, data, true)
-//                        stream.data(dataFrame) {}
+                        val data = BufferUtils.toBuffer("http exchange success.")
+                        val dataFrame = DataFrame(stream.id, data, true)
+                        stream.data(dataFrame) {}
 
-                        return object : Stream.Listener.Adapter() {
-
-                        }
+                        return Stream.Listener.Adapter()
                     }
                 }
             )
@@ -78,12 +76,15 @@ class TestHttp2ClientConnection {
         val httpClient = HttpClientFactory.create()
 
         val time = measureTimeMillis {
-            (1..count).map { i -> Pair(httpClient.get("https://${host}:${port}/test/$i").submit(), i) }.forEach {
-                val response = it.first.await()
-                assertEquals(HttpStatus.OK_200, response.status)
-//                assertEquals("http exchange success.", response.stringBody)
-                println("${it.second} success.")
-            }
+            val futures = (1..count).map { i -> httpClient.get("https://${host}:${port}/test/$i").submit() }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+
+            val allDone = futures.all { it.isDone }
+            Assertions.assertTrue(allDone)
+
+            val response = futures[0].await()
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("http exchange success.", response.stringBody)
         }
 
         val throughput = count / (time / 1000.00)

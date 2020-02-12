@@ -19,10 +19,8 @@ public class HttpConfig {
     private int maxHeaderSize = 32 * 1024;
     private int maxHeaderBlockFragment = 0;
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
-    private int maxConcurrentPushedStreams = 32;
+    private int maxConcurrentStreams = -1;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
-    private int maxLocalStreams = -1;
-    private int maxRemoteStreams = -1;
 
     public long getTimeout() {
         return timeout;
@@ -112,12 +110,12 @@ public class HttpConfig {
         this.initialStreamRecvWindow = initialStreamRecvWindow;
     }
 
-    public int getMaxConcurrentPushedStreams() {
-        return maxConcurrentPushedStreams;
+    public int getMaxConcurrentStreams() {
+        return maxConcurrentStreams;
     }
 
-    public void setMaxConcurrentPushedStreams(int maxConcurrentPushedStreams) {
-        this.maxConcurrentPushedStreams = maxConcurrentPushedStreams;
+    public void setMaxConcurrentStreams(int maxConcurrentStreams) {
+        this.maxConcurrentStreams = maxConcurrentStreams;
     }
 
     public int getInitialSessionRecvWindow() {
@@ -126,22 +124,6 @@ public class HttpConfig {
 
     public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
         this.initialSessionRecvWindow = initialSessionRecvWindow;
-    }
-
-    public int getMaxLocalStreams() {
-        return maxLocalStreams;
-    }
-
-    public void setMaxLocalStreams(int maxLocalStreams) {
-        this.maxLocalStreams = maxLocalStreams;
-    }
-
-    public int getMaxRemoteStreams() {
-        return maxRemoteStreams;
-    }
-
-    public void setMaxRemoteStreams(int maxRemoteStreams) {
-        this.maxRemoteStreams = maxRemoteStreams;
     }
 
     @Override
@@ -158,7 +140,7 @@ public class HttpConfig {
                 ", maxHeaderSize=" + maxHeaderSize +
                 ", maxHeaderBlockFragment=" + maxHeaderBlockFragment +
                 ", initialStreamRecvWindow=" + initialStreamRecvWindow +
-                ", maxConcurrentPushedStreams=" + maxConcurrentPushedStreams +
+                ", maxConcurrentPushedStreams=" + maxConcurrentStreams +
                 ", initialSessionRecvWindow=" + initialSessionRecvWindow +
                 '}';
     }

@@ -62,16 +62,16 @@ class Http2ClientConnection(
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
             updateRecvWindow(windowDelta)
             sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame)
-                .thenAccept { log.info { "send connection preface success. $it" } }
+                .thenAccept { log.info { "send connection preface success. id: $id" } }
                 .exceptionally {
-                    log.error(it) { "send connection preface exception" }
+                    log.error(it) { "send connection preface exception. id: $id" }
                     null
                 }
         } else {
             sendControlFrame(null, prefaceFrame, settingsFrame)
-                .thenAccept { log.info { "send connection preface success. $it" } }
+                .thenAccept { log.info { "send connection preface success. id: $id" } }
                 .exceptionally {
-                    log.error(it) { "send connection preface exception" }
+                    log.error(it) { "send connection preface exception. id: $id" }
                     null
                 }
         }
@@ -238,6 +238,11 @@ class Http2ClientConnection(
             .thenCompose { newStream -> serverAccept.thenApply { Pair(newStream, it) } }
             .thenCompose { generateContent(contentProvider, metaDataRequest, it.first, it.second) }
             .thenAccept { generateTrailer(metaDataRequest, it.first, it.second) }
+            .exceptionally {
+                log.error(it) { "The HTTP2 client connection creates local stream failure. id: $id " }
+                future.completeExceptionally(it)
+                null
+            }
         return future
     }
 
