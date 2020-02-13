@@ -158,9 +158,16 @@ class Http2ClientConnection(
 
         val expect100Continue = expect100Continue(request)
         val serverAccept = CompletableFuture<Boolean>()
+        val trailer = HttpFields()
         var theFirstHeader = true
+        var receivedData = false
 
         val streamListener = object : Stream.Listener.Adapter() {
+
+            fun onMessageComplete() {
+                future.complete(response)
+            }
+
             fun copyResponse(frame: HeadersFrame) {
                 when (val metaData = frame.metaData) {
                     is MetaData.Response -> {
@@ -170,9 +177,16 @@ class Http2ClientConnection(
                     }
                     is MetaData.Request -> {
                     }
-                    else -> metaDataResponse.fields.addAll(metaData.fields)
+                    else -> {
+                        if (receivedData) {
+                            if (metaDataResponse.trailerSupplier == null) {
+                                metaDataResponse.setTrailerSupplier { trailer }
+                            }
+                            trailer.addAll(metaData.fields)
+                        } else metaDataResponse.fields.addAll(metaData.fields)
+                    }
                 }
-                if (frame.isEndStream) future.complete(response)
+                if (frame.isEndStream) onMessageComplete()
             }
 
             fun resetStreamWhenTheFirstHeaderNot100Continue(stream: Stream) {
@@ -190,6 +204,7 @@ class Http2ClientConnection(
                     if (metaData is MetaData.Response) {
                         if (expect100Continue) {
                             if (metaData.status == HttpStatus.CONTINUE_100) {
+                                log.debug { "Client received 100 continue response. stream: $stream" }
                                 serverAccept.complete(true)
                             } else {
                                 serverAccept.complete(false)
@@ -215,8 +230,9 @@ class Http2ClientConnection(
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
                 try {
+                    receivedData = true
                     contentHandler?.accept(frame.data, response)
-                    if (frame.isEndStream) future.complete(response)
+                    if (frame.isEndStream) onMessageComplete()
                 } finally {
                     result.accept(Result.SUCCESS)
                 }
@@ -284,7 +300,7 @@ class Http2ClientConnection(
         if (trailerSupplier != null && serverAccept) {
             val trailerMetaData = MetaData.Request(trailerSupplier.get())
             trailerMetaData.isOnlyTrailer = true
-            val headersFrameTrailer = HeadersFrame(trailerMetaData, null, true)
+            val headersFrameTrailer = HeadersFrame(newStream.id, trailerMetaData, null, true)
             newStream.headers(headersFrameTrailer, discard())
         }
     }

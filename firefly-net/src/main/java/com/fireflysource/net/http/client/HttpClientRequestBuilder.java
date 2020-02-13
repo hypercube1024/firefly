@@ -27,7 +27,7 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder cookies(List<Cookie> cookies);
 
     /**
-     * Put an HTTP field. It will replace existed field.
+     * Put an HTTP field. It will replace the existed field.
      *
      * @param name The field name.
      * @param list The field values.
@@ -36,25 +36,25 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder put(String name, List<String> list);
 
     /**
-     * Put an HTTP field. It will replace existed field.
+     * Put an HTTP field. It will replace the existed field.
      *
      * @param header The field name.
-     * @param value  The field value.
+     * @param value  The value.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder put(HttpHeader header, String value);
 
     /**
-     * Put an HTTP field. It will replace existed field.
+     * Put an HTTP field. It will replace the existed field.
      *
      * @param name  The field name.
-     * @param value The field value.
+     * @param value The value.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder put(String name, String value);
 
     /**
-     * Put an HTTP field. It will replace existed field.
+     * Put an HTTP field. It will replace the existed field.
      *
      * @param field The HTTP field.
      * @return RequestBuilder
@@ -187,7 +187,7 @@ public interface HttpClientRequestBuilder {
      * Add a value in an existed query parameter.
      *
      * @param name  The parameter name.
-     * @param value The parameter value.
+     * @param value The value.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder addQueryParam(String name, String value);
@@ -205,7 +205,7 @@ public interface HttpClientRequestBuilder {
      * Put a parameter in the query parameter.
      *
      * @param name  The parameter name.
-     * @param value The parameter value.
+     * @param value The value.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder putQueryParam(String name, String value);
