@@ -1,7 +1,8 @@
-package com.fireflysource.net.http.client;
+package com.fireflysource.net.http.server;
 
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
+import com.fireflysource.net.http.common.model.HttpURI;
 import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.nio.ByteBuffer;
@@ -10,28 +11,30 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
+ * The HTTP request.
+ *
  * @author Pengtao Qiu
  */
-public interface HttpClientResponse {
+public interface HttpServerRequest {
 
     /**
-     * Get the HTTP response status code.
+     * Get the HTTP method.
      *
-     * @return The HTTP response status code.
+     * @return The HTTP method.
      */
-    int getStatus();
+    String getMethod();
 
     /**
-     * Get the textual description associated with the numeric status code.
+     * Get the HTTP URI.
      *
-     * @return The textual description associated with the numeric status code.
+     * @return The HTTP URI.
      */
-    String getReason();
+    HttpURI getURI();
 
     /**
-     * Get the HTTP version of the current HTTP connection.
+     * Get the HTTP version.
      *
-     * @return The HTTP version of the current HTTP connection.
+     * @return The HTTP version.
      */
     HttpVersion getHttpVersion();
 
@@ -43,9 +46,9 @@ public interface HttpClientResponse {
     HttpFields getHttpFields();
 
     /**
-     * Get the cookies.
+     * Get the HTTP cookies.
      *
-     * @return The cookies.
+     * @return The HTTP cookies.
      */
     List<Cookie> getCookies();
 
@@ -57,9 +60,9 @@ public interface HttpClientResponse {
     long getContentLength();
 
     /**
-     * Get the HTTP trailer fields.
+     * Get the HTTP trailers.
      *
-     * @return The HTTP trailer fields.
+     * @return The HTTP trailers.
      */
     Supplier<HttpFields> getTrailerSupplier();
 
@@ -84,4 +87,21 @@ public interface HttpClientResponse {
      * @return The HTTP body raw binary data.
      */
     List<ByteBuffer> getBody();
+
+    /**
+     * Get the HTTP content receiving handler.
+     *
+     * @return The HTTP content receiving callback. When the HTTP server receives the HTTP body data,
+     * it will execute this action. It will be executed many times.
+     */
+    HttpServerContentHandler getContentHandler();
+
+    /**
+     * Set the HTTP content receiving handler.
+     *
+     * @param contentHandler The HTTP content receiving handler. When the HTTP sever receives the HTTP body data,
+     *                       it will execute this action. It will be executed many times.
+     */
+    void setContentHandler(HttpServerContentHandler contentHandler);
+
 }

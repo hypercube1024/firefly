@@ -144,10 +144,10 @@ public interface HttpClientRequest {
     HttpClientContentProvider getContentProvider();
 
     /**
-     * Set the HTTP content receiving callback.
+     * Set the HTTP content receiving handler.
      *
-     * @param contentHandler The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
-     *                       it will execute this action. This action will be executed many times.
+     * @param contentHandler The HTTP content receiving handler. When the HTTP client receives the HTTP body data,
+     *                       it will execute this action. It be executed many times.
      */
     void setContentHandler(HttpClientContentHandler contentHandler);
 
@@ -155,7 +155,7 @@ public interface HttpClientRequest {
      * Get the HTTP content receiving callback.
      *
      * @return The HTTP content receiving callback. When the HTTP client receives the HTTP body data,
-     * it will execute this action. This action will be executed many times.
+     * it will execute this action. It will be executed many times.
      */
     HttpClientContentHandler getContentHandler();
 
