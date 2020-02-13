@@ -25,7 +25,7 @@ public interface HttpServerOutputChannel extends OutputChannel {
      * Write the message to the remote endpoint.
      *
      * @param byteBufferList The byte buffer list.
-     * @param offset         The offset within the buffer array of the first buffer into which
+     * @param offset         The offset within the buffer list of the first buffer into which
      *                       bytes are to be transferred; must be non-negative and no larger than
      *                       byteBufferList.length.
      * @param length         The maximum number of buffers to be accessed; must be non-negative
