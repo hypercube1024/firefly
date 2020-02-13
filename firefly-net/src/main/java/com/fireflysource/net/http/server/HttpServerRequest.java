@@ -6,7 +6,6 @@ import com.fireflysource.net.http.common.model.HttpURI;
 import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -74,14 +73,6 @@ public interface HttpServerRequest {
     String getStringBody();
 
     /**
-     * Get the HTTP body and convert the specified charset string.
-     *
-     * @param charset The charset of the HTTP body string.
-     * @return The HTTP body string.
-     */
-    String getStringBody(Charset charset);
-
-    /**
      * Get the HTTP body raw binary data.
      *
      * @return The HTTP body raw binary data.
@@ -89,19 +80,18 @@ public interface HttpServerRequest {
     List<ByteBuffer> getBody();
 
     /**
-     * Get the HTTP content receiving handler.
+     * Get HTTP request multi-part content.
      *
-     * @return The HTTP content receiving callback. When the HTTP server receives the HTTP body data,
-     * it will execute this action. It will be executed many times.
+     * @param name The part name.
+     * @return The HTTP request multi-part content.
      */
-    HttpServerContentHandler getContentHandler();
+    MultiPart getPart(String name);
 
     /**
-     * Set the HTTP content receiving handler.
+     * Get all HTTP request multi-part content.
      *
-     * @param contentHandler The HTTP content receiving handler. When the HTTP sever receives the HTTP body data,
-     *                       it will execute this action. It will be executed many times.
+     * @return All HTTP request multi-part content.
      */
-    void setContentHandler(HttpServerContentHandler contentHandler);
+    List<MultiPart> getParts();
 
 }

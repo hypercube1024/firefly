@@ -138,11 +138,34 @@ public interface RoutingContext {
     Map<String, List<String>> getFormInputs();
 
     /**
-     * Get HTTP body.
+     * Get the HTTP body and convert it to the UTF-8 string.
      *
-     * @return The HTTP body.
+     * @return The HTTP body string.
      */
-    String getBody();
+    String getStringBody();
+
+    /**
+     * Get the HTTP body raw binary data.
+     *
+     * @return The HTTP body raw binary data.
+     */
+    List<ByteBuffer> getBody();
+
+    /**
+     * Get HTTP request multi-part content.
+     *
+     * @param name The part name.
+     * @return The HTTP request multi-part content.
+     */
+    MultiPart getPart(String name);
+
+    /**
+     * Get all HTTP request multi-part content.
+     *
+     * @return All HTTP request multi-part content.
+     */
+    List<MultiPart> getParts();
+
 
     /**
      * Get HTTP request method.
@@ -315,6 +338,14 @@ public interface RoutingContext {
     }
 
     /**
+     * Set the HTTP response content provider.
+     *
+     * @param contentProvider HTTP response content provider.
+     * @return The routing context.
+     */
+    RoutingContext contentProvider(HttpServerContentProvider contentProvider);
+
+    /**
      * Write string to the client.
      *
      * @param value The response content.
@@ -395,5 +426,11 @@ public interface RoutingContext {
      */
     <T> CompletableFuture<T> next();
 
+    /**
+     * Get the HTTP server connection.
+     *
+     * @return The HTTP server connection.
+     */
+    HttpServerConnection getConnection();
 
 }

@@ -73,7 +73,7 @@ class TestAsyncHttp2Connection {
                         return Stream.Listener.Adapter()
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
 
@@ -199,7 +199,7 @@ class TestAsyncHttp2Connection {
                         }
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
 
@@ -307,7 +307,7 @@ class TestAsyncHttp2Connection {
                         return Stream.Listener.Adapter()
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
 
@@ -400,7 +400,7 @@ class TestAsyncHttp2Connection {
                         return Stream.Listener.Adapter()
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
@@ -475,7 +475,7 @@ class TestAsyncHttp2Connection {
                         return Stream.Listener.Adapter()
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
 
@@ -571,7 +571,7 @@ class TestAsyncHttp2Connection {
                         println("Server receives go away frame: $frame")
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
@@ -631,7 +631,7 @@ class TestAsyncHttp2Connection {
                         }
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)
@@ -682,7 +682,7 @@ class TestAsyncHttp2Connection {
                         failure.printStackTrace()
                     }
                 }
-            )
+            ).begin()
         }.listen(host, port)
 
         val client = AioTcpClient(tcpConfig)

@@ -68,7 +68,7 @@ class TestHttp2ClientConnection {
                     return Stream.Listener.Adapter()
                 }
             }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener)
+            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
         }.listen(host, port)
 
         val httpClient = HttpClientFactory.create()
@@ -175,7 +175,7 @@ class TestHttp2ClientConnection {
                     }
                 }
             }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener)
+            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
         }.listen(host, port)
 
         val httpClient = HttpClientFactory.create()
@@ -293,7 +293,7 @@ class TestHttp2ClientConnection {
                     }
                 }
             }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener)
+            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
         }.listen(host, port)
 
         val httpClient = HttpClientFactory.create()
