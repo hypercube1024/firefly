@@ -23,8 +23,8 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var method: String = defaultMethod
     private var uri: HttpURI = defaultHttpUri
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
-    private var queryParameters: UrlEncoded? = null
-    private var formParameters: UrlEncoded? = null
+    private var queryStrings: UrlEncoded? = null
+    private var formInputs: UrlEncoded? = null
     private var httpFields: HttpFields = HttpFields()
     private var cookies: MutableList<Cookie>? = null
     private var trailerSupplier: Supplier<HttpFields>? = null
@@ -50,26 +50,34 @@ class AsyncHttpClientRequest : HttpClientRequest {
         this.httpVersion = httpVersion
     }
 
-    override fun getQueryParameters(): UrlEncoded {
-        if (this.queryParameters == null) {
-            this.queryParameters = UrlEncoded()
+    override fun getQueryStrings(): UrlEncoded {
+        val query = this.queryStrings
+        return if (query != null) {
+            query
+        } else {
+            val urlEncoded = UrlEncoded()
+            this.queryStrings = urlEncoded
+            urlEncoded
         }
-        return this.queryParameters!!
     }
 
-    override fun setQueryParameters(queryParameters: UrlEncoded) {
-        this.queryParameters = queryParameters
+    override fun setQueryStrings(queryStrings: UrlEncoded?) {
+        this.queryStrings = queryStrings
     }
 
-    override fun getFormParameters(): UrlEncoded {
-        if (this.formParameters == null) {
-            this.formParameters = UrlEncoded()
+    override fun getFormInputs(): UrlEncoded {
+        val form = this.formInputs
+        return if (form != null) {
+            form
+        } else {
+            val urlEncoded = UrlEncoded()
+            this.formInputs = urlEncoded
+            urlEncoded
         }
-        return this.formParameters!!
     }
 
-    override fun setFormParameters(formParameters: UrlEncoded?) {
-        this.formParameters = formParameters
+    override fun setFormInputs(formInputs: UrlEncoded?) {
+        this.formInputs = formInputs
     }
 
     override fun getHttpFields(): HttpFields = httpFields
@@ -111,8 +119,8 @@ class AsyncHttpClientRequest : HttpClientRequest {
 }
 
 fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
-    if (request.formParameters.size > 0) {
-        val formStr = request.formParameters.encode(StandardCharsets.UTF_8, true)
+    if (request.formInputs.size > 0) {
+        val formStr = request.formInputs.encode(StandardCharsets.UTF_8, true)
         val stringContentProvider = StringContentProvider(formStr, StandardCharsets.UTF_8)
         request.contentProvider = stringContentProvider
         request.httpFields.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.value)
@@ -136,11 +144,11 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
         }
     }
 
-    if (request.queryParameters.size > 0) {
+    if (request.queryStrings.size > 0) {
         if (StringUtils.hasText(request.uri.query)) {
-            request.uri.query = request.uri.query + "&" + request.queryParameters.encode(StandardCharsets.UTF_8, true)
+            request.uri.query = request.uri.query + "&" + request.queryStrings.encode(StandardCharsets.UTF_8, true)
         } else {
-            request.uri.query = request.queryParameters.encode(StandardCharsets.UTF_8, true)
+            request.uri.query = request.queryStrings.encode(StandardCharsets.UTF_8, true)
         }
     }
 

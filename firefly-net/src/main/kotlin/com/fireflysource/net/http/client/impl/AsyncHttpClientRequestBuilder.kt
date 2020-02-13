@@ -101,53 +101,53 @@ class AsyncHttpClientRequestBuilder(
         return this
     }
 
-    override fun addFormParam(name: String, value: String): HttpClientRequestBuilder {
-        httpRequest.formParameters.add(name, value)
+    override fun addFormInput(name: String, value: String): HttpClientRequestBuilder {
+        httpRequest.formInputs.add(name, value)
         return this
     }
 
-    override fun addFormParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        httpRequest.formParameters.addValues(name, values)
+    override fun addFormInputs(name: String, values: MutableList<String>): HttpClientRequestBuilder {
+        httpRequest.formInputs.addValues(name, values)
         return this
     }
 
-    override fun putFormParam(name: String, value: String): HttpClientRequestBuilder {
-        httpRequest.formParameters.put(name, value)
+    override fun putFormInput(name: String, value: String): HttpClientRequestBuilder {
+        httpRequest.formInputs.put(name, value)
         return this
     }
 
-    override fun putFormParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        httpRequest.formParameters.putValues(name, values)
+    override fun putFormInputs(name: String, values: MutableList<String>): HttpClientRequestBuilder {
+        httpRequest.formInputs.putValues(name, values)
         return this
     }
 
-    override fun removeFormParam(name: String): HttpClientRequestBuilder {
-        httpRequest.formParameters.remove(name)
+    override fun removeFormInput(name: String): HttpClientRequestBuilder {
+        httpRequest.formInputs.remove(name)
         return this
     }
 
-    override fun addQueryParam(name: String, value: String): HttpClientRequestBuilder {
-        httpRequest.queryParameters.add(name, value)
+    override fun addQueryString(name: String, value: String): HttpClientRequestBuilder {
+        httpRequest.queryStrings.add(name, value)
         return this
     }
 
-    override fun addQueryParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        httpRequest.queryParameters.addValues(name, values)
+    override fun addQueryStrings(name: String, values: MutableList<String>): HttpClientRequestBuilder {
+        httpRequest.queryStrings.addValues(name, values)
         return this
     }
 
-    override fun putQueryParam(name: String, value: String): HttpClientRequestBuilder {
-        httpRequest.queryParameters.put(name, value)
+    override fun putQueryString(name: String, value: String): HttpClientRequestBuilder {
+        httpRequest.queryStrings.put(name, value)
         return this
     }
 
-    override fun putQueryParam(name: String, values: MutableList<String>): HttpClientRequestBuilder {
-        httpRequest.queryParameters[name] = values
+    override fun putQueryStrings(name: String, values: MutableList<String>): HttpClientRequestBuilder {
+        httpRequest.queryStrings[name] = values
         return this
     }
 
-    override fun removeQueryParam(name: String): HttpClientRequestBuilder {
-        httpRequest.queryParameters.remove(name)
+    override fun removeQueryString(name: String): HttpClientRequestBuilder {
+        httpRequest.queryStrings.remove(name)
         return this
     }
 

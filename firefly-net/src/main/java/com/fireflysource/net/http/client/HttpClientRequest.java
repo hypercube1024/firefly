@@ -60,32 +60,32 @@ public interface HttpClientRequest {
     void setHttpVersion(HttpVersion httpVersion);
 
     /**
-     * Get the query parameters.
+     * Get URL query strings.
      *
-     * @return The query parameters.
+     * @return The URL query strings.
      */
-    UrlEncoded getQueryParameters();
+    UrlEncoded getQueryStrings();
 
     /**
-     * Set the query parameters.
+     * Set URL query strings.
      *
-     * @param queryParameters The query parameters.
+     * @param queryStrings The URL query strings.
      */
-    void setQueryParameters(UrlEncoded queryParameters);
+    void setQueryStrings(UrlEncoded queryStrings);
 
     /**
-     * Get the form parameters.
+     * Get the web form inputs.
      *
-     * @return The form parameters.
+     * @return The web form inputs.
      */
-    UrlEncoded getFormParameters();
+    UrlEncoded getFormInputs();
 
     /**
-     * Set the form parameters
+     * Set the web form inputs
      *
-     * @param formParameters The form parameters.
+     * @param formInputs The web form inputs.
      */
-    void setFormParameters(UrlEncoded formParameters);
+    void setFormInputs(UrlEncoded formInputs);
 
     /**
      * Get the HTTP header fields.

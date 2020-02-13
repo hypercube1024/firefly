@@ -122,8 +122,8 @@ public interface HttpClientRequestBuilder {
      * Add a multi-part mime content. Such as a file.
      *
      * @param name    The content name.
-     * @param content The ContentProvider that helps you read the content.
-     * @param fields  The header fields of the content.
+     * @param content Content provider.
+     * @param fields  Multi-part content header fields.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder addFieldPart(String name, HttpClientContentProvider content, HttpFields fields);
@@ -133,99 +133,99 @@ public interface HttpClientRequestBuilder {
      *
      * @param name     The content name.
      * @param fileName The content file name.
-     * @param content  The ContentProvider that helps you read the content.
-     * @param fields   The header fields of the content.
+     * @param content  Content provider.
+     * @param fields   Multi-part content header fields.
      * @return RequestBuilder
      */
     HttpClientRequestBuilder addFilePart(String name, String fileName, HttpClientContentProvider content, HttpFields fields);
 
     /**
-     * Add a value in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
+     * Add a web form input.
      *
-     * @param name  The parameter name.
-     * @param value The parameter value.
+     * @param name  Input name.
+     * @param value Input value.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder addFormParam(String name, String value);
+    HttpClientRequestBuilder addFormInput(String name, String value);
 
     /**
-     * Add some values in an existed form parameter. The form content type is "application/x-www-form-urlencoded".
+     * Add web form inputs.
      *
-     * @param name   The parameter name.
-     * @param values The parameter values.
+     * @param name   Input name.
+     * @param values Input values.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder addFormParam(String name, List<String> values);
+    HttpClientRequestBuilder addFormInputs(String name, List<String> values);
 
     /**
-     * Put a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+     * Put a web form input.
      *
-     * @param name  The parameter name.
-     * @param value The parameter value.
+     * @param name  Input name.
+     * @param value Input value.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder putFormParam(String name, String value);
+    HttpClientRequestBuilder putFormInput(String name, String value);
 
     /**
-     * Put a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+     * Put a web form inputs.
      *
-     * @param name   The parameter name.
-     * @param values The parameter values.
+     * @param name   Input name.
+     * @param values Input values.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder putFormParam(String name, List<String> values);
+    HttpClientRequestBuilder putFormInputs(String name, List<String> values);
 
     /**
-     * Remove a parameter in the form content. The form content type is "application/x-www-form-urlencoded".
+     * Remove web form input.
      *
-     * @param name The parameter name.
+     * @param name Input name.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder removeFormParam(String name);
+    HttpClientRequestBuilder removeFormInput(String name);
 
     /**
-     * Add a value in an existed query parameter.
-     *
-     * @param name  The parameter name.
-     * @param value The value.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder addQueryParam(String name, String value);
-
-    /**
-     * Add some values in an existed query parameter.
-     *
-     * @param name   The parameter name.
-     * @param values The parameter values.
-     * @return RequestBuilder
-     */
-    HttpClientRequestBuilder addQueryParam(String name, List<String> values);
-
-    /**
-     * Put a parameter in the query parameter.
+     * Add a value in an existed URL query strings.
      *
      * @param name  The parameter name.
      * @param value The value.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder putQueryParam(String name, String value);
+    HttpClientRequestBuilder addQueryString(String name, String value);
 
     /**
-     * Put a parameter in the query parameter.
+     * Add some values in an existed URL query strings.
      *
      * @param name   The parameter name.
      * @param values The parameter values.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder putQueryParam(String name, List<String> values);
+    HttpClientRequestBuilder addQueryStrings(String name, List<String> values);
 
     /**
-     * Remove a parameter in the query parameter.
+     * Put a value in the URL query strings.
+     *
+     * @param name  The parameter name.
+     * @param value The value.
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder putQueryString(String name, String value);
+
+    /**
+     * Put a value in the URL query strings.
+     *
+     * @param name   The parameter name.
+     * @param values The parameter values.
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder putQueryStrings(String name, List<String> values);
+
+    /**
+     * Remove a parameter in the URL query strings.
      *
      * @param name The parameter name.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder removeQueryParam(String name);
+    HttpClientRequestBuilder removeQueryString(String name);
 
     /**
      * Set the HTTP content receiving callback.

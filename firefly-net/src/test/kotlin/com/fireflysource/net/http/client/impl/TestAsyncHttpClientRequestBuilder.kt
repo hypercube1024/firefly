@@ -53,11 +53,11 @@ class TestAsyncHttpClientRequestBuilder {
     fun testPostFormData() {
         val uri = HttpURI("https://www.fireflysource.com")
         val builder = AsyncHttpClientRequestBuilder(connectionManager, HttpMethod.POST.value, uri, HttpVersion.HTTP_1_1)
-        builder.putFormParam("p1", "v1")
-            .putFormParam("p2", "v2")
-            .addFormParam("p3", "v3")
-            .addFormParam("p3", listOf("v31", "v32"))
-            .putFormParam("p4", listOf())
+        builder.putFormInput("p1", "v1")
+            .putFormInput("p2", "v2")
+            .addFormInput("p3", "v3")
+            .addFormInputs("p3", listOf("v31", "v32"))
+            .putFormInputs("p4", listOf())
 
         val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
@@ -79,9 +79,9 @@ class TestAsyncHttpClientRequestBuilder {
     fun testQueryParam() {
         val uri = HttpURI("https://www.fireflysource.com")
         val builder = AsyncHttpClientRequestBuilder(connectionManager, HttpMethod.GET.value, uri, HttpVersion.HTTP_1_1)
-        builder.putQueryParam("q1", "v1")
-            .putQueryParam("q2", "v2")
-            .addQueryParam("q2", "v22")
+        builder.putQueryString("q1", "v1")
+            .putQueryString("q2", "v2")
+            .addQueryString("q2", "v22")
 
         val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
@@ -96,10 +96,10 @@ class TestAsyncHttpClientRequestBuilder {
     fun testQueryParam2() {
         val uri = HttpURI(URL("https://www.fireflysource.com?a1=c1&q1=v1").toURI())
         val builder = AsyncHttpClientRequestBuilder(connectionManager, HttpMethod.GET.value, uri, HttpVersion.HTTP_1_1)
-        builder.putQueryParam("q1", "v1")
-            .putQueryParam("q2", "v2")
-            .addQueryParam("q2", "v22")
-            .putQueryParam("q3", listOf("v31", "v32", "v33"))
+        builder.putQueryString("q1", "v1")
+            .putQueryString("q2", "v2")
+            .addQueryString("q2", "v22")
+            .putQueryStrings("q3", listOf("v31", "v32", "v33"))
 
         val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
