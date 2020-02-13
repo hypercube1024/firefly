@@ -20,7 +20,6 @@ import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -80,7 +79,7 @@ class TestHttp2ClientConnection {
             }
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
-            Assertions.assertTrue(allDone)
+            assertTrue(allDone)
 
             val response = futures[0].await()
             assertEquals(HttpStatus.OK_200, response.status)
@@ -190,7 +189,7 @@ class TestHttp2ClientConnection {
             }
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
-            Assertions.assertTrue(allDone)
+            assertTrue(allDone)
 
             val response = futures[0].await()
             assertEquals(HttpStatus.OK_200, response.status)
