@@ -13,8 +13,6 @@ public interface HttpServerConnection extends HttpConnection {
 
     HttpServerConnection onHeaderComplete(Consumer<RoutingContext> consumer);
 
-    HttpServerConnection contentHandler(HttpServerContentHandler contentHandler);
-
     HttpServerConnection onHttpRequestComplete(Consumer<RoutingContext> consumer);
 
     void begin();

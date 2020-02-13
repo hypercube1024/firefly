@@ -8,9 +8,7 @@ import com.fireflysource.net.http.common.v2.decoder.ServerParser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.RoutingContext
-import com.fireflysource.net.http.server.impl.content.handler.ByteBufferContentHandler
 import com.fireflysource.net.tcp.TcpConnection
 import java.util.function.Consumer
 import java.util.function.UnaryOperator
@@ -30,7 +28,6 @@ class Http2ServerConnection(
     private val parser: ServerParser = ServerParser(this, config.maxDynamicTableSize, config.maxHeaderSize)
     private var headerCompleteConsumer: Consumer<RoutingContext> = emptyConsumer()
     private var httpRequestConsumer: Consumer<RoutingContext> = emptyConsumer()
-    private var contentHandler: HttpServerContentHandler = ByteBufferContentHandler()
 
 
     init {
@@ -136,11 +133,6 @@ class Http2ServerConnection(
 
     override fun onHeaderComplete(consumer: Consumer<RoutingContext>): HttpServerConnection {
         this.headerCompleteConsumer = consumer
-        return this
-    }
-
-    override fun contentHandler(contentHandler: HttpServerContentHandler): HttpServerConnection {
-        this.contentHandler = contentHandler
         return this
     }
 

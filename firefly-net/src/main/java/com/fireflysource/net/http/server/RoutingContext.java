@@ -166,6 +166,14 @@ public interface RoutingContext {
      */
     List<MultiPart> getParts();
 
+    /**
+     * Set HTTP request content handler.
+     *
+     * @param contentHandler HTTP request content handler.
+     * @return The routing context.
+     */
+    RoutingContext contentHandler(HttpServerContentHandler contentHandler);
+
 
     /**
      * Get HTTP request method.

@@ -94,4 +94,17 @@ public interface HttpServerRequest {
      */
     List<MultiPart> getParts();
 
+    /**
+     * Get HTTP request content handler.
+     *
+     * @return HTTP content handler.
+     */
+    HttpServerContentHandler getContentHandler();
+
+    /**
+     * Set HTTP request content handler.
+     *
+     * @param contentHandler HTTP request content handler.
+     */
+    void setContentHandler(HttpServerContentHandler contentHandler);
 }
