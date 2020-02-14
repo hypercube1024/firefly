@@ -9,7 +9,6 @@ import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.time.delay
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -18,7 +17,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.nio.ByteBuffer
-import java.time.Duration
+import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.math.roundToLong
@@ -164,19 +163,28 @@ class TestAioServerAndClient {
         val port = 4001
 
         AioTcpServer(TcpConfig(1)).onAcceptAsync { conn ->
-            delay(Duration.ofSeconds(2))
-            println("in: ${conn.isShutdownInput}, out: ${conn.isShutdownOutput}")
+            try {
+                conn.read().await()
+                println("Server reads success.")
+            } catch (e: Exception) {
+                println("Server reads failure. ${e.javaClass.name}")
+            }
         }.listen(host, port)
 
         val client = AioTcpClient(TcpConfig(1))
         val connection = client.connect(host, port).await()
         assertEquals(port, connection.remoteAddress.port)
-        val readFuture = connection.read()
 
-        delay(Duration.ofSeconds(2))
+        val success = try {
+            connection.read().await()
+            true
+        } catch (e: Exception) {
+            assertTrue(e is InterruptedByTimeoutException)
+            false
+        }
+        assertFalse(success)
         assertTrue(connection.isShutdownInput)
         assertTrue(connection.duration > 0)
-        assertTrue(readFuture.isDone)
 
         val stopTime = measureTimeMillis {
             stopAll()

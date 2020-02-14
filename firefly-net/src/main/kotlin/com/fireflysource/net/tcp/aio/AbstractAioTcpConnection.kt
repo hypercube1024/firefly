@@ -65,6 +65,18 @@ abstract class AbstractAioTcpConnection(
             outputMessageChannel.offer(output)
         }
 
+        fun shutdownOutput() {
+            if (isOutputShutdown.compareAndSet(false, true)) {
+                try {
+                    socketChannel.shutdownOutput()
+                } catch (e: ClosedChannelException) {
+                    log.warn { "The channel closed. $id" }
+                } catch (e: IOException) {
+                    log.warn { "Shutdown output exception. $id" }
+                }
+            }
+        }
+
         private fun writeJob() = coroutineScope.launch {
             while (true) {
                 handleOutputMessage(outputMessageChannel.receive())
@@ -85,6 +97,8 @@ abstract class AbstractAioTcpConnection(
         }
 
         private fun shutdownOutputAndClose() {
+            if (isClosed) return
+
             shutdownOutput()
             log.info { "TCP connection shutdown output. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownInput) {
@@ -172,6 +186,18 @@ abstract class AbstractAioTcpConnection(
             inputMessageChannel.offer(input)
         }
 
+        fun shutdownInput() {
+            if (isInputShutdown.compareAndSet(false, true)) {
+                try {
+                    socketChannel.shutdownInput()
+                } catch (e: ClosedChannelException) {
+                    log.warn { "The channel closed. $id" }
+                } catch (e: IOException) {
+                    log.warn { "Shutdown input exception. $id" }
+                }
+            }
+        }
+
         private fun readJob() = coroutineScope.launch {
             while (true) {
                 handleInputMessage(inputMessageChannel.receive())
@@ -231,6 +257,8 @@ abstract class AbstractAioTcpConnection(
         }
 
         private fun shutdownInputAndClose() {
+            if (isClosed) return
+
             shutdownInput()
             log.info { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownOutput) {
@@ -320,12 +348,16 @@ abstract class AbstractAioTcpConnection(
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
         if (closeRequest.compareAndSet(false, true)) {
-            outputMessageHandler.sendOutputMessage(ShutdownOutput(Consumer {
-                shutdownInput()
-                inputMessageHandler.sendInputMessage(ShutdownInput(Consumer { r -> result.accept(r) }))
-            }))
+            if (isClosed) {
+                result.accept(Result.SUCCESS)
+            } else {
+                outputMessageHandler.sendOutputMessage(ShutdownOutput(Consumer {
+                    inputMessageHandler.shutdownInput()
+                    inputMessageHandler.sendInputMessage(ShutdownInput(Consumer { r -> result.accept(r) }))
+                }))
+            }
         } else {
-            result.accept(Result.createFailedResult(CloseRequestException()))
+            result.accept(Result.SUCCESS)
         }
         return this
     }
@@ -335,28 +367,12 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun shutdownInput(): TcpConnection {
-        if (isInputShutdown.compareAndSet(false, true)) {
-            try {
-                socketChannel.shutdownInput()
-            } catch (e: ClosedChannelException) {
-                log.warn { "The channel closed. $id" }
-            } catch (e: IOException) {
-                log.warn { "Shutdown input exception. $id" }
-            }
-        }
+        inputMessageHandler.sendInputMessage(ShutdownInput(discard()))
         return this
     }
 
     override fun shutdownOutput(): TcpConnection {
-        if (isOutputShutdown.compareAndSet(false, true)) {
-            try {
-                socketChannel.shutdownOutput()
-            } catch (e: ClosedChannelException) {
-                log.warn { "The channel closed. $id" }
-            } catch (e: IOException) {
-                log.warn { "Shutdown output exception. $id" }
-            }
-        }
+        outputMessageHandler.sendOutputMessage(ShutdownOutput(discard()))
         return this
     }
 
@@ -397,5 +413,3 @@ abstract class AbstractAioTcpConnection(
 
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
 }
-
-class CloseRequestException : IllegalStateException("The close request has been sent")
