@@ -1,16 +1,13 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.sys.Result.discard
-import com.fireflysource.common.sys.Result.emptyConsumer
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.v2.decoder.ServerParser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.tcp.TcpConnection
-import java.util.function.Consumer
 import java.util.function.UnaryOperator
 
 class Http2ServerConnection(
@@ -26,9 +23,7 @@ class Http2ServerConnection(
     }
 
     private val parser: ServerParser = ServerParser(this, config.maxDynamicTableSize, config.maxHeaderSize)
-    private var headerCompleteConsumer: Consumer<RoutingContext> = emptyConsumer()
-    private var httpRequestConsumer: Consumer<RoutingContext> = emptyConsumer()
-
+    private var connectionListener: HttpServerConnection.Listener? = null
 
     init {
         parser.init(UnaryOperator.identity())
@@ -120,7 +115,6 @@ class Http2ServerConnection(
         onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "push_promise")
     }
 
-
     override fun onResetForUnknownStream(frame: ResetFrame) {
         val streamId = frame.streamId
         val closed = if (isClientStream(streamId)) isRemoteStreamClosed(streamId) else isLocalStreamClosed(streamId)
@@ -131,13 +125,8 @@ class Http2ServerConnection(
         }
     }
 
-    override fun onHeaderComplete(consumer: Consumer<RoutingContext>): HttpServerConnection {
-        this.headerCompleteConsumer = consumer
-        return this
-    }
-
-    override fun onHttpRequestComplete(consumer: Consumer<RoutingContext>): HttpServerConnection {
-        this.httpRequestConsumer = consumer
+    override fun listen(listener: HttpServerConnection.Listener): HttpServerConnection {
+        this.connectionListener = listener
         return this
     }
 }

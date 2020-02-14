@@ -12,6 +12,7 @@ import static com.fireflysource.common.func.FunctionInterfaceUtils.createEmptyCo
  */
 public class Result<T> {
 
+    public static final CompletableFuture<Void> DONE = doneFuture();
     public static final Result<Void> SUCCESS = new Result<>(true, null, null);
     private static final Consumer EMPTY = createEmptyConsumer();
 
@@ -23,6 +24,12 @@ public class Result<T> {
         this.success = success;
         this.value = value;
         this.throwable = throwable;
+    }
+
+    private static CompletableFuture<Void> doneFuture() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        future.complete(null);
+        return future;
     }
 
     @SuppressWarnings("unchecked")
