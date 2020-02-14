@@ -385,7 +385,7 @@ abstract class AbstractAioTcpConnection(
                 log.warn(e) { "The TCP connection close callback exception. $id" }
             }
 
-            log.info { "The TCP connection close success. $id" }
+            log.info { "The TCP connection close success. id: $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
         }
         return this
     }
