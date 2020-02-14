@@ -2,6 +2,7 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
 import com.fireflysource.common.coroutine.event
+import com.fireflysource.common.coroutine.eventAsync
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.onAcceptAsync
@@ -9,8 +10,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -182,5 +182,42 @@ class TestAioServerAndClient {
             stopAll()
         }
         println("stop success. $stopTime")
+    }
+
+    @Test
+    @DisplayName("should close connection successfully.")
+    fun testClose(): Unit = runBlocking {
+        val host = "localhost"
+        val port = 4002
+
+        AioTcpServer().onAcceptAsync { conn ->
+            try {
+                conn.read().await()
+                println("Server reads success.")
+            } catch (e: Exception) {
+                println("Server reads failure. ${e.javaClass.name}")
+            }
+        }.listen(host, port)
+
+        val client = AioTcpClient()
+        val connection = client.connect(host, port).await()
+
+        val success = eventAsync {
+            try {
+                connection.read().await()
+                println("Client reads success.")
+                true
+            } catch (e: Exception) {
+                println("Client reads failure. ${e.javaClass.name}")
+                false
+            }
+        }
+
+        connection.closeFuture().await()
+        println("close success")
+        assertTrue(connection.isShutdownOutput)
+        assertTrue(connection.isShutdownInput)
+        assertTrue(connection.isClosed)
+        assertFalse(success.await())
     }
 }
