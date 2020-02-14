@@ -165,16 +165,18 @@ class TestAioServerAndClient {
 
         AioTcpServer(TcpConfig(1)).onAcceptAsync { conn ->
             delay(Duration.ofSeconds(2))
-            assertTrue(conn.isClosed)
+            println("in: ${conn.isShutdownInput}, out: ${conn.isShutdownOutput}")
         }.listen(host, port)
 
         val client = AioTcpClient(TcpConfig(1))
-        val conn = client.connect(host, port).await()
-        assertEquals(port, conn.remoteAddress.port)
+        val connection = client.connect(host, port).await()
+        assertEquals(port, connection.remoteAddress.port)
+        val readFuture = connection.read()
+
         delay(Duration.ofSeconds(2))
-        assertTrue(conn.isClosed)
-        assertTrue(conn.duration > 0)
-        assertTrue(conn.closeTime > 0)
+        assertTrue(connection.isShutdownInput)
+        assertTrue(connection.duration > 0)
+        assertTrue(readFuture.isDone)
 
         val stopTime = measureTimeMillis {
             stopAll()

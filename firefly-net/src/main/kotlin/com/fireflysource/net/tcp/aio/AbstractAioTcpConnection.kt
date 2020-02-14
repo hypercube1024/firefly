@@ -187,7 +187,7 @@ abstract class AbstractAioTcpConnection(
         private suspend fun handleInputMessage(input: InputMessage): Boolean {
             lastReadTime = System.currentTimeMillis()
             return when (input) {
-                is InputBuffer, is InputBuffers -> readBuffers(input)
+                is InputBuffer -> readBuffers(input)
                 is ShutdownInput -> shutdownInputAndClose(input)
             }
         }
@@ -195,7 +195,7 @@ abstract class AbstractAioTcpConnection(
         private suspend fun readBuffers(input: InputMessage): Boolean {
             var success = true
             var exception: Exception? = null
-            var length = 0L
+            var length = 0
             try {
                 length = read(input)
                 if (length < 0) {
@@ -216,8 +216,7 @@ abstract class AbstractAioTcpConnection(
 
             fun complete() {
                 when (input) {
-                    is InputBuffer -> input.result.accept(Result(true, length.toInt(), null))
-                    is InputBuffers -> input.result.accept(Result(true, length, null))
+                    is InputBuffer -> input.result.accept(Result(true, length, null))
                 }
             }
 
@@ -245,22 +244,26 @@ abstract class AbstractAioTcpConnection(
             }
         }
 
-        private suspend fun read(input: InputMessage): Long = when (input) {
-            is InputBuffer -> socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit).toLong()
-            is InputBuffers -> socketChannel.readAwait(input.buffers, input.offset, input.length, maxIdleTime, timeUnit)
+        private suspend fun read(input: InputMessage): Int = when (input) {
+            is InputBuffer -> socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit)
             else -> throw IllegalArgumentException("The input message cannot read.")
         }
 
         private fun failed(input: InputMessage, exception: Exception?) {
             when (input) {
                 is InputBuffer -> input.result.accept(Result(false, -1, exception))
-                is InputBuffers -> input.result.accept(Result(false, -1, exception))
                 is ShutdownInput -> input.result.accept(Result.createFailedResult(exception))
             }
         }
     }
 
     override fun read(): CompletableFuture<ByteBuffer> {
+        if (!isReadable()) {
+            val future = CompletableFuture<ByteBuffer>()
+            future.completeExceptionally(ClosedChannelException())
+            return future
+        }
+
         val future = CompletableFuture<Int>()
 
         val bufferSize = adaptiveBufferSize.getBufferSize()
@@ -276,6 +279,11 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
+        if (!isWriteable()) {
+            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
+            return this
+        }
+
         outputMessageHandler.sendOutputMessage(OutputBuffer(byteBuffer, result))
         return this
     }
@@ -284,6 +292,11 @@ abstract class AbstractAioTcpConnection(
         byteBuffers: Array<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
+        if (!isWriteable()) {
+            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
+            return this
+        }
+
         outputMessageHandler.sendOutputMessage(OutputBuffers(byteBuffers, offset, length, result))
         return this
     }
@@ -292,6 +305,11 @@ abstract class AbstractAioTcpConnection(
         byteBufferList: List<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
+        if (!isWriteable()) {
+            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
+            return this
+        }
+
         outputMessageHandler.sendOutputMessage(OutputBufferList(byteBufferList, offset, length, result))
         return this
     }

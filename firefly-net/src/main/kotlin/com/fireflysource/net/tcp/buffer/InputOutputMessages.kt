@@ -8,11 +8,6 @@ sealed class InputMessage
 
 class InputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : InputMessage()
 
-class InputBuffers(
-    val buffers: Array<ByteBuffer>, val offset: Int, val length: Int,
-    val result: Consumer<Result<Long>>
-) : InputMessage()
-
 class ShutdownInput(val result: Consumer<Result<Void>>) : InputMessage()
 
 
