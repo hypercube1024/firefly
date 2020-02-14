@@ -3,7 +3,6 @@ package com.fireflysource.net.tcp.aio
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.*
 import com.fireflysource.common.sys.Result
-import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
@@ -46,13 +45,13 @@ abstract class AbstractAioTcpConnection(
     }
 
     private val inputChannel: Channel<ByteBuffer> = Channel(UNLIMITED)
-    private val outputChannel: Channel<OutputMessage> = Channel(UNLIMITED)
 
-    private val inputShutdownState: AtomicBoolean = AtomicBoolean(false)
-    private val outputShutdownState: AtomicBoolean = AtomicBoolean(false)
+
+    private val isInputShutdown: AtomicBoolean = AtomicBoolean(false)
+    private val isOutputShutdown: AtomicBoolean = AtomicBoolean(false)
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
-    private val readingState: AtomicBoolean = AtomicBoolean(false)
+    private val isReading: AtomicBoolean = AtomicBoolean(false)
 
     private val adaptiveBufferSize: AdaptiveBufferSize = AdaptiveBufferSize()
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
@@ -62,107 +61,215 @@ abstract class AbstractAioTcpConnection(
         inputChannel.offer(buf)
     }
 
-    init {
-        flushDataJob()
-    }
+    private val outputMessageHandler = OutputMessageHandler()
 
-    private fun flushDataJob() = coroutineScope.launch {
-        while (isWriteable()) {
-            val writeable = flushData(outputChannel.receive())
-            if (!writeable) {
-                break
+    private inner class OutputMessageHandler {
+        private val outputMessageChannel: Channel<OutputMessage> = Channel(UNLIMITED)
+
+        init {
+            writeJob()
+        }
+
+        fun sendOutputMessage(output: OutputMessage) {
+            if (isWriteable()) {
+                outputMessageChannel.offer(output)
+            } else {
+                failed(output, closedChannelException)
+            }
+        }
+
+        private fun writeJob() = coroutineScope.launch {
+            while (isWriteable()) {
+                val writeable = handleOutputMessage(outputMessageChannel.receive())
+                if (!writeable) {
+                    break
+                }
+            }
+        }
+
+        private suspend fun handleOutputMessage(outputMessage: OutputMessage): Boolean {
+            lastWrittenTime = System.currentTimeMillis()
+            return when (outputMessage) {
+                is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(outputMessage)
+                is ShutdownOutput -> shutdownOutputAndClose(outputMessage)
+            }
+        }
+
+        private fun shutdownOutputAndClose(outputMessage: ShutdownOutput): Boolean {
+            shutdownOutputAndClose()
+            outputMessage.result.accept(Result.SUCCESS)
+            return false
+        }
+
+        private fun shutdownOutputAndClose() {
+            shutdownOutput()
+            if (isShutdownInput) {
+                closeNow()
+            }
+        }
+
+        private suspend fun write(output: OutputMessage): Long = when (output) {
+            is OutputBuffer -> socketChannel.writeAwait(output.buffer, maxIdleTime, timeUnit).toLong()
+            is OutputBuffers -> socketChannel.writeAwait(
+                output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
+                maxIdleTime, timeUnit
+            )
+            is OutputBufferList -> socketChannel.writeAwait(
+                output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
+                maxIdleTime, timeUnit
+            )
+            else -> throw IllegalArgumentException("The output message cannot write.")
+        }
+
+        private suspend fun writeBuffers(outputBuffers: OutputMessage): Boolean {
+            var totalLength = 0L
+            var success = true
+            var exception: Exception? = null
+            while (outputBuffers.hasRemaining()) {
+                try {
+                    val writtenLength = write(outputBuffers)
+                    if (writtenLength < 0) {
+                        success = false
+                        exception = closedChannelException
+                        break
+                    } else {
+                        writtenBytes += writtenLength
+                        totalLength += writtenLength
+                    }
+                } catch (e: Exception) {
+                    log.warn(e) { "The TCP connection writing exception. id: $id" }
+                    success = false
+                    exception = e
+                    break
+                }
+            }
+
+            fun complete() {
+                when (outputBuffers) {
+                    is OutputBuffer -> outputBuffers.result.accept(Result(true, totalLength.toInt(), null))
+                    is OutputBuffers -> outputBuffers.result.accept(Result(true, totalLength, null))
+                    is OutputBufferList -> outputBuffers.result.accept(Result(true, totalLength, null))
+                }
+            }
+
+            if (success) {
+                log.debug { "TCP connection writes buffers total length: $totalLength" }
+                complete()
+            } else {
+                shutdownOutputAndClose()
+                failed(outputBuffers, exception)
+            }
+            return success
+        }
+
+        private fun failed(outputBuffers: OutputMessage, exception: Exception?) {
+            when (outputBuffers) {
+                is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
+                is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
+                is OutputBufferList -> outputBuffers.result.accept(Result(false, -1, exception))
+                is ShutdownOutput -> outputBuffers.result.accept(Result.createFailedResult(exception))
             }
         }
     }
 
-    private suspend fun flushData(outputMessage: OutputMessage): Boolean {
-        lastWrittenTime = System.currentTimeMillis()
-        return when (outputMessage) {
-            is Buffer, is Buffers, is BufferList -> flushBuffers(outputMessage)
-            is Shutdown -> shutdown(outputMessage)
+
+    private inner class InputMessageHandler {
+
+        private val inputMessageChannel: Channel<InputMessage> = Channel(UNLIMITED)
+
+        init {
+            readJob()
         }
-    }
 
-    private fun shutdown(outputMessage: Shutdown): Boolean {
-        shutdownOutputAndInput()
-        outputMessage.result.accept(Result.SUCCESS)
-        return false
-    }
+        fun sendInputMessage(input: InputMessage) {
+            if (isReadable()) {
+                inputMessageChannel.offer(input)
+            } else {
+                failed(input, closedChannelException)
+            }
+        }
 
-    private suspend fun write(output: OutputMessage): Long = when (output) {
-        is Buffer -> socketChannel.writeAwait(output.buffer, maxIdleTime, timeUnit).toLong()
-        is Buffers -> socketChannel.writeAwait(
-            output.buffers,
-            output.getCurrentOffset(),
-            output.getCurrentLength(),
-            maxIdleTime,
-            timeUnit
-        )
-        is BufferList -> socketChannel.writeAwait(
-            output.buffers,
-            output.getCurrentOffset(),
-            output.getCurrentLength(),
-            maxIdleTime,
-            timeUnit
-        )
-        else -> throw IllegalArgumentException("The output message type can not write.")
-    }
+        private fun readJob() = coroutineScope.launch {
+            while (isReadable()) {
+                val input = inputMessageChannel.receive()
+                val readable = handleInputMessage(input)
+                if (!readable) {
+                    break
+                }
+            }
+        }
 
-    private suspend fun flushBuffers(outputBuffers: OutputMessage): Boolean {
-        var totalLength = 0L
-        var success = true
-        var exception: Exception? = null
-        while (outputBuffers.hasRemaining()) {
+        private suspend fun handleInputMessage(input: InputMessage): Boolean {
+            lastReadTime = System.currentTimeMillis()
+            return when (input) {
+                is InputBuffer, is InputBuffers -> readBuffers(input)
+                is ShutdownInput -> shutdownInputAndClose()
+            }
+        }
+
+        private suspend fun readBuffers(input: InputMessage): Boolean {
+            var success = true
+            var exception: Exception? = null
+            var length = 0L
             try {
-                val writtenLength = write(outputBuffers)
-                if (writtenLength < 0) {
+
+                length = read(input)
+                if (length < 0) {
                     success = false
                     exception = closedChannelException
-                    break
-                } else {
-                    writtenBytes += writtenLength
-                    totalLength += writtenLength
                 }
-            } catch (e: Exception) {
-                log.warn(e) { "The TCP connection writing exception. id: $id" }
+            } catch (e: InterruptedByTimeoutException) {
+                log.warn { "The TCP connection reading timeout. $id" }
                 success = false
                 exception = e
-                break
+            } catch (e: Exception) {
+                log.warn(e) { "The TCP connection reading exception. $id" }
+                success = false
+                exception = e
             }
+
+            fun complete() {
+                when (input) {
+                    is InputBuffer -> input.result.accept(Result(true, length.toInt(), null))
+                    is InputBuffers -> input.result.accept(Result(true, length, null))
+                }
+            }
+
+            if (success) {
+                log.debug { "TCP connection reads buffers total length: $length" }
+                complete()
+            } else {
+                shutdownInputAndClose()
+                failed(input, exception)
+            }
+            return success
         }
 
-        fun complete() {
-            when (outputBuffers) {
-                is Buffer -> outputBuffers.result.accept(Result(true, totalLength.toInt(), null))
-                is Buffers -> outputBuffers.result.accept(Result(true, totalLength, null))
-                is BufferList -> outputBuffers.result.accept(Result(true, totalLength, null))
+        private fun shutdownInputAndClose(): Boolean {
+            shutdownInput()
+            if (isShutdownOutput) {
+                closeNow()
             }
+            return false
         }
 
-        fun failed() {
-            when (outputBuffers) {
-                is Buffer -> outputBuffers.result.accept(Result(false, -1, exception))
-                is Buffers -> outputBuffers.result.accept(Result(false, -1, exception))
-                is BufferList -> outputBuffers.result.accept(Result(false, -1, exception))
-            }
+        private suspend fun read(input: InputMessage): Long = when (input) {
+            is InputBuffer -> socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit).toLong()
+            is InputBuffers -> socketChannel.readAwait(input.buffers, input.offset, input.length, maxIdleTime, timeUnit)
+            else -> throw IllegalArgumentException("The input message cannot read.")
         }
 
-        if (success) {
-            log.debug { "TCP connection writes buffers total length: $totalLength" }
-            complete()
-        } else {
-            shutdownOutputAndInput()
-            failed()
+        private fun failed(input: InputMessage, exception: Exception?) {
+            when (input) {
+                is InputBuffer -> input.result.accept(Result(false, -1, exception))
+                is InputBuffers -> input.result.accept(Result(false, -1, exception))
+                is ShutdownInput -> input.result.accept(Result.createFailedResult(exception))
+            }
         }
-        return success
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(Buffer(byteBuffer, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
+        outputMessageHandler.sendOutputMessage(OutputBuffer(byteBuffer, result))
         return this
     }
 
@@ -170,11 +277,7 @@ abstract class AbstractAioTcpConnection(
         byteBuffers: Array<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(Buffers(byteBuffers, offset, length, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
+        outputMessageHandler.sendOutputMessage(OutputBuffers(byteBuffers, offset, length, result))
         return this
     }
 
@@ -182,19 +285,16 @@ abstract class AbstractAioTcpConnection(
         byteBufferList: List<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        if (isWriteable()) {
-            outputChannel.offer(BufferList(byteBufferList, offset, length, result))
-        } else {
-            result.accept(createFailedResult(-1, closedChannelException))
-        }
+        outputMessageHandler.sendOutputMessage(OutputBufferList(byteBufferList, offset, length, result))
         return this
     }
 
-    private fun isWriteable() = !outputShutdownState.get() && !socketChannelClosed.get()
+    private fun isWriteable() = !isOutputShutdown.get() && !socketChannelClosed.get()
 
+    private fun isReadable() = !isInputShutdown.get() && !socketChannelClosed.get()
 
     override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        if (!isReading) {
+        if (!isReading()) {
             receivedMessageConsumer = messageConsumer
         } else {
             throw startReadingException
@@ -203,7 +303,7 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun startReading(): TcpConnection {
-        if (readingState.compareAndSet(false, true)) {
+        if (isReading.compareAndSet(false, true)) {
             readJob()
         }
         return this
@@ -212,7 +312,7 @@ abstract class AbstractAioTcpConnection(
     private fun readJob() = coroutineScope.launch {
         log.info { "The TCP connection starts reading automatically. id: $id" }
 
-        while (isReading) {
+        while (isReading()) {
             try {
                 val bufferSize = adaptiveBufferSize.getBufferSize()
                 val buffer = BufferUtils.allocate(bufferSize)
@@ -253,10 +353,10 @@ abstract class AbstractAioTcpConnection(
 
     override fun getInputChannel(): Channel<ByteBuffer> = inputChannel
 
-    override fun isReading(): Boolean = readingState.get()
+    override fun isReading(): Boolean = isReading.get()
 
     override fun suspendReading(): TcpConnection {
-        readingState.set(false)
+        isReading.set(false)
         return this
     }
 
@@ -268,7 +368,7 @@ abstract class AbstractAioTcpConnection(
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
         if (closeRequest.compareAndSet(false, true)) {
-            outputChannel.offer(Shutdown(result))
+            outputMessageHandler.sendOutputMessage(ShutdownOutput(result))
         } else {
             result.accept(closeFailureResult)
         }
@@ -279,13 +379,8 @@ abstract class AbstractAioTcpConnection(
         close(discard())
     }
 
-    private fun shutdownOutputAndInput() {
-        shutdownOutput()
-        shutdownInput()
-    }
-
     override fun shutdownInput(): TcpConnection {
-        if (inputShutdownState.compareAndSet(false, true)) {
+        if (isInputShutdown.compareAndSet(false, true)) {
             try {
                 socketChannel.shutdownInput()
             } catch (e: ClosedChannelException) {
@@ -298,7 +393,7 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun shutdownOutput(): TcpConnection {
-        if (outputShutdownState.compareAndSet(false, true)) {
+        if (isOutputShutdown.compareAndSet(false, true)) {
             try {
                 socketChannel.shutdownOutput()
             } catch (e: ClosedChannelException) {
@@ -310,9 +405,9 @@ abstract class AbstractAioTcpConnection(
         return this
     }
 
-    override fun isShutdownInput(): Boolean = inputShutdownState.get()
+    override fun isShutdownInput(): Boolean = isInputShutdown.get()
 
-    override fun isShutdownOutput(): Boolean = outputShutdownState.get()
+    override fun isShutdownOutput(): Boolean = isOutputShutdown.get()
 
     override fun closeNow(): TcpConnection {
         if (socketChannelClosed.compareAndSet(false, true)) {

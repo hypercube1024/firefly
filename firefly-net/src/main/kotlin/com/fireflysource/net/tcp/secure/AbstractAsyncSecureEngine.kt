@@ -7,9 +7,9 @@ import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.aio.AdaptiveBufferSize
-import com.fireflysource.net.tcp.buffer.Buffer
-import com.fireflysource.net.tcp.buffer.BufferList
-import com.fireflysource.net.tcp.buffer.Buffers
+import com.fireflysource.net.tcp.buffer.OutputBuffer
+import com.fireflysource.net.tcp.buffer.OutputBufferList
+import com.fireflysource.net.tcp.buffer.OutputBuffers
 import com.fireflysource.net.tcp.buffer.OutputMessage
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
 import kotlinx.coroutines.CoroutineScope
@@ -176,14 +176,15 @@ abstract class AbstractAsyncSecureEngine(
         log.debug { "Out packet size: $size" }
     }
 
-    override fun encrypt(outAppBuffer: ByteBuffer): List<ByteBuffer> = encryptBuffers(Buffer(outAppBuffer, discard()))
+    override fun encrypt(outAppBuffer: ByteBuffer): List<ByteBuffer> =
+        encryptBuffers(OutputBuffer(outAppBuffer, discard()))
 
     override fun encrypt(byteBuffers: Array<ByteBuffer>, offset: Int, length: Int): List<ByteBuffer> {
-        return encryptBuffers(Buffers(byteBuffers, offset, length, discard()))
+        return encryptBuffers(OutputBuffers(byteBuffers, offset, length, discard()))
     }
 
     override fun encrypt(byteBuffers: MutableList<ByteBuffer>, offset: Int, length: Int): List<ByteBuffer> {
-        return encryptBuffers(BufferList(byteBuffers, offset, length, discard()))
+        return encryptBuffers(OutputBufferList(byteBuffers, offset, length, discard()))
     }
 
     private fun encryptBuffers(outAppBuffer: OutputMessage): List<ByteBuffer> {
@@ -192,9 +193,9 @@ abstract class AbstractAsyncSecureEngine(
         var pos = outPacketBuffer.flipToFill()
 
         fun wrap() = when (outAppBuffer) {
-            is Buffer -> sslEngine.wrap(outAppBuffer.buffer, outPacketBuffer)
-            is Buffers -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
-            is BufferList -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
+            is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, outPacketBuffer)
+            is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
+            is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
             else -> throw IllegalArgumentException("Out app buffer type error.")
         }
 

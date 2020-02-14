@@ -20,11 +20,11 @@ class TestMessage {
     fun testOutOfBoundException(offset: Int, length: Int) {
         val size = 4
         assertThrows<IllegalArgumentException> {
-            Buffers(Array(size) { ByteBuffer.allocate(16) }, offset, length, discard())
+            OutputBuffers(Array(size) { ByteBuffer.allocate(16) }, offset, length, discard())
         }
 
         assertThrows<IllegalArgumentException> {
-            BufferList(List(size) { ByteBuffer.allocate(16) }, offset, length, discard())
+            OutputBufferList(List(size) { ByteBuffer.allocate(16) }, offset, length, discard())
         }
     }
 
@@ -34,7 +34,7 @@ class TestMessage {
     fun testCurrentOffsetAndLength(offset: Int, length: Int) {
         val size = 6
         val capacity = 16
-        val buffers = Buffers(Array(size) { ByteBuffer.allocate(capacity) }, offset, length, discard())
+        val buffers = OutputBuffers(Array(size) { ByteBuffer.allocate(capacity) }, offset, length, discard())
         buffers.buffers[offset].putInt(1)
         assertEquals(offset, buffers.getCurrentOffset())
         assertEquals(length, buffers.getCurrentLength())
@@ -51,7 +51,7 @@ class TestMessage {
     fun testHasRemaining(offset: Int, length: Int) {
         val size = 6
         val capacity = 16
-        val buffers = Buffers(Array(size) { ByteBuffer.allocate(capacity) }, offset, length, discard())
+        val buffers = OutputBuffers(Array(size) { ByteBuffer.allocate(capacity) }, offset, length, discard())
 
         val lastIndex = offset + length - 1
         val bytes = ByteArray(capacity)

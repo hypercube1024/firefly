@@ -56,14 +56,14 @@ class AioSecureTcpConnection(
 
     private fun encryptMessageAndFlush(outputMessage: OutputMessage) {
         when (outputMessage) {
-            is Buffer -> encryptAndFlushBuffer(outputMessage)
-            is Buffers -> encryptAndFlushBuffers(outputMessage)
-            is BufferList -> encryptAndFlushBuffers(outputMessage)
-            is Shutdown -> tcpConnection.close(outputMessage.result)
+            is OutputBuffer -> encryptAndFlushBuffer(outputMessage)
+            is OutputBuffers -> encryptAndFlushBuffers(outputMessage)
+            is OutputBufferList -> encryptAndFlushBuffers(outputMessage)
+            is ShutdownOutput -> tcpConnection.close(outputMessage.result)
         }
     }
 
-    private fun encryptAndFlushBuffers(outputMessage: Buffers) {
+    private fun encryptAndFlushBuffers(outputMessage: OutputBuffers) {
         val encryptedBuffers = secureEngine.encrypt(
             outputMessage.buffers,
             outputMessage.getCurrentOffset(),
@@ -72,7 +72,7 @@ class AioSecureTcpConnection(
         tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
     }
 
-    private fun encryptAndFlushBuffer(outputMessage: Buffer) {
+    private fun encryptAndFlushBuffer(outputMessage: OutputBuffer) {
         val encryptedBuffers = secureEngine.encrypt(outputMessage.buffer)
         tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
             outputMessage.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
@@ -93,7 +93,7 @@ class AioSecureTcpConnection(
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        encryptedOutChannel.offer(Buffer(byteBuffer, result))
+        encryptedOutChannel.offer(OutputBuffer(byteBuffer, result))
         return this
     }
 
@@ -103,7 +103,7 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(Buffers(byteBuffers, offset, length, result))
+        encryptedOutChannel.offer(OutputBuffers(byteBuffers, offset, length, result))
         return this
     }
 
@@ -113,12 +113,12 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(BufferList(byteBufferList, offset, length, result))
+        encryptedOutChannel.offer(OutputBufferList(byteBufferList, offset, length, result))
         return this
     }
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
-        encryptedOutChannel.offer(Shutdown(result))
+        encryptedOutChannel.offer(ShutdownOutput(result))
         return this
     }
 

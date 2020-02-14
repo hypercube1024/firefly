@@ -4,15 +4,27 @@ import com.fireflysource.common.sys.Result
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 
+sealed class InputMessage
+
+class InputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : InputMessage()
+
+class InputBuffers(
+    val buffers: Array<ByteBuffer>, val offset: Int, val length: Int,
+    val result: Consumer<Result<Long>>
+) : InputMessage()
+
+class ShutdownInput(val result: Consumer<Result<Void>>) : InputMessage()
+
+
 sealed class OutputMessage {
     open fun hasRemaining(): Boolean = false
 }
 
-class Buffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage() {
+class OutputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage() {
     override fun hasRemaining(): Boolean = buffer.hasRemaining()
 }
 
-open class Buffers(
+open class OutputBuffers(
     val buffers: Array<ByteBuffer>,
     val offset: Int,
     val length: Int,
@@ -49,11 +61,11 @@ open class Buffers(
     }
 }
 
-class BufferList(
+class OutputBufferList(
     bufferList: List<ByteBuffer>,
     offset: Int,
     length: Int,
     result: Consumer<Result<Long>>
-) : Buffers(bufferList.toTypedArray(), offset, length, result)
+) : OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
-class Shutdown(val result: Consumer<Result<Void>>) : OutputMessage()
+class ShutdownOutput(val result: Consumer<Result<Void>>) : OutputMessage()
