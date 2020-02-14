@@ -84,7 +84,6 @@ abstract class AbstractAioTcpConnection(
         }
 
         private suspend fun handleOutputMessage(output: OutputMessage) {
-            lastWrittenTime = System.currentTimeMillis()
             when (output) {
                 is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
@@ -120,6 +119,7 @@ abstract class AbstractAioTcpConnection(
         }
 
         private suspend fun writeBuffers(output: OutputMessage): Boolean {
+            lastWrittenTime = System.currentTimeMillis()
             var totalLength = 0L
             var success = true
             var exception: Exception? = null
