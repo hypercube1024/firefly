@@ -40,8 +40,6 @@ abstract class AbstractAioTcpConnection(
 
     companion object {
         private val log = SystemLogger.create(AbstractAioTcpConnection::class.java)
-        private val closeFailureResult = Result<Void>(false, null, CloseRequestException())
-        private val closedChannelException = ClosedChannelException()
         private val timeUnit = TimeUnit.SECONDS
     }
 
@@ -68,31 +66,27 @@ abstract class AbstractAioTcpConnection(
         }
 
         private fun writeJob() = coroutineScope.launch {
-            while (isWriteable()) {
-                val writeable = handleOutputMessage(outputMessageChannel.receive())
-                if (!writeable) {
-                    break
-                }
+            while (true) {
+                handleOutputMessage(outputMessageChannel.receive())
             }
         }
 
-        private suspend fun handleOutputMessage(output: OutputMessage): Boolean {
+        private suspend fun handleOutputMessage(output: OutputMessage) {
             lastWrittenTime = System.currentTimeMillis()
-            return when (output) {
+            when (output) {
                 is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
             }
         }
 
-        private fun shutdownOutputAndClose(output: ShutdownOutput): Boolean {
+        private fun shutdownOutputAndClose(output: ShutdownOutput) {
             shutdownOutputAndClose()
             output.result.accept(Result.SUCCESS)
-            return false
         }
 
         private fun shutdownOutputAndClose() {
             shutdownOutput()
-            log.info { "TCP connection shutdown output. id $id, out: $isOutputShutdown, in: $isInputShutdown" }
+            log.info { "TCP connection shutdown output. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownInput) {
                 closeNow()
             }
@@ -120,12 +114,16 @@ abstract class AbstractAioTcpConnection(
                     val writtenLength = write(output)
                     if (writtenLength < 0) {
                         success = false
-                        exception = closedChannelException
+                        exception = ClosedChannelException()
                         break
                     } else {
                         writtenBytes += writtenLength
                         totalLength += writtenLength
                     }
+                } catch (e: InterruptedByTimeoutException) {
+                    log.warn { "The TCP connection writing timeout. id: $id" }
+                    success = false
+                    exception = e
                 } catch (e: Exception) {
                     log.warn(e) { "The TCP connection writing exception. id: $id" }
                     success = false
@@ -175,24 +173,20 @@ abstract class AbstractAioTcpConnection(
         }
 
         private fun readJob() = coroutineScope.launch {
-            while (isReadable()) {
-                val input = inputMessageChannel.receive()
-                val readable = handleInputMessage(input)
-                if (!readable) {
-                    break
-                }
+            while (true) {
+                handleInputMessage(inputMessageChannel.receive())
             }
         }
 
-        private suspend fun handleInputMessage(input: InputMessage): Boolean {
-            lastReadTime = System.currentTimeMillis()
-            return when (input) {
+        private suspend fun handleInputMessage(input: InputMessage) {
+            when (input) {
                 is InputBuffer -> readBuffers(input)
                 is ShutdownInput -> shutdownInputAndClose(input)
             }
         }
 
         private suspend fun readBuffers(input: InputMessage): Boolean {
+            lastReadTime = System.currentTimeMillis()
             var success = true
             var exception: Exception? = null
             var length = 0
@@ -200,16 +194,16 @@ abstract class AbstractAioTcpConnection(
                 length = read(input)
                 if (length < 0) {
                     success = false
-                    exception = closedChannelException
+                    exception = ClosedChannelException()
                 } else {
                     readBytes += length
                 }
             } catch (e: InterruptedByTimeoutException) {
-                log.warn { "The TCP connection reading timeout. $id" }
+                log.warn { "The TCP connection reading timeout. id: $id" }
                 success = false
                 exception = e
             } catch (e: Exception) {
-                log.warn(e) { "The TCP connection reading exception. $id" }
+                log.warn(e) { "The TCP connection reading exception. id: $id" }
                 success = false
                 exception = e
             }
@@ -225,20 +219,20 @@ abstract class AbstractAioTcpConnection(
                 complete()
             } else {
                 shutdownInputAndClose()
+                closeFuture()
                 failed(input, exception)
             }
             return success
         }
 
-        private fun shutdownInputAndClose(input: ShutdownInput): Boolean {
+        private fun shutdownInputAndClose(input: ShutdownInput) {
             shutdownInputAndClose()
             input.result.accept(Result.SUCCESS)
-            return false
         }
 
         private fun shutdownInputAndClose() {
             shutdownInput()
-            log.info { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown" }
+            log.info { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownOutput) {
                 closeNow()
             }
@@ -314,9 +308,9 @@ abstract class AbstractAioTcpConnection(
         return this
     }
 
-    private fun isWriteable() = !isOutputShutdown.get() && !socketChannelClosed.get()
+    private fun isWriteable() = !isOutputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()
 
-    private fun isReadable() = !isInputShutdown.get() && !socketChannelClosed.get()
+    private fun isReadable() = !isInputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()
 
 
     override fun onClose(callback: Callback): TcpConnection {
@@ -328,12 +322,10 @@ abstract class AbstractAioTcpConnection(
         if (closeRequest.compareAndSet(false, true)) {
             outputMessageHandler.sendOutputMessage(ShutdownOutput(Consumer {
                 shutdownInput()
-                inputMessageHandler.sendInputMessage(ShutdownInput(Consumer { r ->
-                    result.accept(r)
-                }))
+                inputMessageHandler.sendInputMessage(ShutdownInput(Consumer { r -> result.accept(r) }))
             }))
         } else {
-            result.accept(closeFailureResult)
+            result.accept(Result.createFailedResult(CloseRequestException()))
         }
         return this
     }
