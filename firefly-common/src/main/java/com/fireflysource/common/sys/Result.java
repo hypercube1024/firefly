@@ -26,7 +26,11 @@ public class Result<T> {
         this.throwable = throwable;
     }
 
-    private static CompletableFuture<Void> doneFuture() {
+    public static void done(CompletableFuture<Void> future) {
+        future.complete(null);
+    }
+
+    public static CompletableFuture<Void> doneFuture() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         future.complete(null);
         return future;

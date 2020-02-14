@@ -4,16 +4,17 @@ import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import java.io.Closeable
 import java.nio.ByteBuffer
 import java.nio.file.OpenOption
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 
-class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClientContentHandler, Closeable {
+class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClientContentHandler {
 
     private val inputChannel: Channel<WriteFileMessage> = Channel(Channel.UNLIMITED)
     private val writeJob: Job
@@ -36,7 +37,12 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
                         }
                     }
                     is EndWriteFile -> {
-                        fileChannel.closeAsync()
+                        try {
+                            fileChannel.closeAsync().join()
+                            Result.done(writeFileMessage.future)
+                        } catch (e: Exception) {
+                            writeFileMessage.future.completeExceptionally(e)
+                        }
                         break@writeMessageLoop
                     }
                 }
@@ -48,16 +54,17 @@ class FileContentHandler(val path: Path, vararg options: OpenOption) : HttpClien
         inputChannel.offer(WriteFileRequest(buffer))
     }
 
-    override fun close() {
-        inputChannel.offer(EndWriteFile)
+    override fun closeFuture(): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        inputChannel.offer(EndWriteFile(future))
+        return future
     }
 
-    suspend fun closeAwait() {
-        close()
-        writeJob.join()
+    override fun close() {
+        closeFuture()
     }
 }
 
 sealed class WriteFileMessage
-data class WriteFileRequest(val buffer: ByteBuffer) : WriteFileMessage()
-object EndWriteFile : WriteFileMessage()
+class WriteFileRequest(val buffer: ByteBuffer) : WriteFileMessage()
+class EndWriteFile(val future: CompletableFuture<Void>) : WriteFileMessage()

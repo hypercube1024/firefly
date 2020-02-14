@@ -165,7 +165,10 @@ class Http2ClientConnection(
         val streamListener = object : Stream.Listener.Adapter() {
 
             fun onMessageComplete() {
-                future.complete(response)
+                if (contentHandler != null)
+                    contentHandler.closeFuture().thenAccept { future.complete(response) }
+                else
+                    future.complete(response)
             }
 
             fun copyResponse(frame: HeadersFrame) {

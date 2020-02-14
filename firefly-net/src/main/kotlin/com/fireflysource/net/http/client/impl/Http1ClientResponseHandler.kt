@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
 import java.util.function.Supplier
 
@@ -69,8 +70,9 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         throw IllegalStateException("Early EOF")
     }
 
-    fun toHttpClientResponse(): HttpClientResponse {
-        return httpClientResponse!!
+    suspend fun toHttpClientResponse(): HttpClientResponse {
+        contentHandler?.closeFuture()?.await()
+        return httpClientResponse ?: throw IllegalStateException("Not received response.")
     }
 
     fun reset() {
