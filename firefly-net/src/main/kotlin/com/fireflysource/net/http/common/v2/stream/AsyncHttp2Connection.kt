@@ -287,14 +287,15 @@ abstract class AsyncHttp2Connection(
     fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> =
         flusher.sendControlFrame(stream, *frames)
 
-    fun launchParserJob(parser: Parser) {
-        tcpConnection.coroutineScope.launch {
-            val inputChannel = tcpConnection.inputChannel
-            recvLoop@ while (true) {
-                val buffer = inputChannel.receive()
-                parsingLoop@ while (buffer.hasRemaining()) {
-                    parser.parse(buffer)
-                }
+    fun launchParserJob(parser: Parser) = tcpConnection.coroutineScope.launch {
+        recvLoop@ while (true) {
+            val buffer = try {
+                tcpConnection.read().await()
+            } catch (e: Exception) {
+                break@recvLoop
+            }
+            parsingLoop@ while (buffer.hasRemaining()) {
+                parser.parse(buffer)
             }
         }
     }

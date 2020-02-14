@@ -2,14 +2,14 @@ package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.AbstractAioTcpConnection.Companion.startReadingException
 import com.fireflysource.net.tcp.buffer.*
 import com.fireflysource.net.tcp.secure.SecureEngine
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
 /**
@@ -20,31 +20,31 @@ class AioSecureTcpConnection(
     private val secureEngine: SecureEngine
 ) : TcpConnection by tcpConnection {
 
-    private val decryptedInChannel: Channel<ByteBuffer> = Channel(Channel.UNLIMITED)
     private val encryptedOutChannel: Channel<OutputMessage> = Channel(Channel.UNLIMITED)
-    private var receivedMessageConsumer: Consumer<ByteBuffer> = Consumer { buf ->
-        decryptedInChannel.offer(buf)
-    }
+    private val stashedBuffers = LinkedList<ByteBuffer>()
+    private val beginHandshake = AtomicBoolean(false)
 
     init {
-        secureEngine.onHandshakeWrite { tcpConnection.write(it, 0, it.size) }.onHandshakeRead { read() }
+        secureEngine
+            .onHandshakeWrite { tcpConnection.write(it, 0, it.size) }
+            .onHandshakeRead { tcpConnection.read() }
         tcpConnection.onClose { secureEngine.close() }
     }
 
-    private fun read() =
-        tcpConnection.coroutineScope.async { tcpConnection.inputChannel.receive() }.asCompletableFuture()
+    override fun read(): CompletableFuture<ByteBuffer> {
+        if (!beginHandshake.get()) {
+            val future = CompletableFuture<ByteBuffer>()
+            future.completeExceptionally(IllegalStateException("The TLS handshake has not begun"))
+            return future
+        }
 
-    private fun launchDecryptingJob() = tcpConnection.coroutineScope.launch {
-        val input = tcpConnection.inputChannel
-        recvLoop@ while (tcpConnection.isReading) {
-            val buf = input.receive()
-
-            readBufLoop@ while (buf.hasRemaining()) {
-                val decryptedBuf = secureEngine.decrypt(buf)
-                if (decryptedBuf.hasRemaining()) {
-                    receivedMessageConsumer.accept(decryptedBuf)
-                }
-            }
+        val stashedBuf: ByteBuffer? = stashedBuffers.poll()
+        return if (stashedBuf != null) {
+            val future = CompletableFuture<ByteBuffer>()
+            future.complete(stashedBuf)
+            future
+        } else {
+            tcpConnection.read().thenApply(secureEngine::decrypt)
         }
     }
 
@@ -77,19 +77,6 @@ class AioSecureTcpConnection(
         tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
             outputMessage.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
         }
-    }
-
-    override fun onRead(messageConsumer: Consumer<ByteBuffer>): TcpConnection {
-        if (tcpConnection.isReading) {
-            throw startReadingException
-        }
-
-        receivedMessageConsumer = messageConsumer
-        return this
-    }
-
-    override fun getInputChannel(): Channel<ByteBuffer> {
-        return decryptedInChannel
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
@@ -131,24 +118,18 @@ class AioSecureTcpConnection(
     override fun isHandshakeComplete(): Boolean = secureEngine.isHandshakeComplete
 
     override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
-        if (tcpConnection.isReading) {
+        if (beginHandshake.compareAndSet(false, true)) {
             secureEngine.beginHandshake()
                 .thenAccept {
                     result.accept(Result(true, it.applicationProtocol, null))
-                    it.stashedAppBuffers.forEach(receivedMessageConsumer::accept)
+                    it.stashedAppBuffers.forEach { b -> stashedBuffers.add(b) }
                     launchEncryptingAndFlushJob()
-                    launchDecryptingJob()
                 }.exceptionally { e ->
                     result.accept(Result(false, "", e))
                     null
                 }
         } else {
-            result.accept(
-                Result(
-                    false, "",
-                    IllegalStateException("The connection must start reading before TLS handshake.")
-                )
-            )
+            result.accept(Result(false, "", IllegalStateException("The handshake has begun")))
         }
         return this
     }

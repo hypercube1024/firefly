@@ -16,7 +16,6 @@ import com.fireflysource.net.http.server.impl.Http2ServerConnection
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
-import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -43,7 +42,7 @@ class TestHttp2ClientConnection {
         val count = 100
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
                 override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
@@ -100,7 +99,7 @@ class TestHttp2ClientConnection {
         val count = 100
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
                 override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
@@ -210,7 +209,7 @@ class TestHttp2ClientConnection {
         val count = 100
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
                 override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {

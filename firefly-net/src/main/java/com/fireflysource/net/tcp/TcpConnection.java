@@ -5,7 +5,6 @@ import com.fireflysource.common.io.AsyncCloseable;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
-import kotlinx.coroutines.channels.Channel;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -26,57 +25,12 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     /**
-     * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
-     *
-     * @param messageConsumer Receiving message consumer.
-     * @return The current connection.
-     */
-    TcpConnection onRead(Consumer<ByteBuffer> messageConsumer);
-
-    /**
-     * If you start automatic message reading, the net framework sends the received the data to the message consumer callback automatically.
-     * The default message consumer will send data to the channel.
-     *
-     * @return The receiving data channel.
-     */
-    Channel<ByteBuffer> getInputChannel();
-
-    /**
-     * Start automatic message reading.
-     *
-     * @return The current connection.
-     */
-    TcpConnection startReading();
-
-    /**
-     * If return true, the tcp connection is reading messages.
-     *
-     * @return If return true, the tcp connection is reading messages.
-     */
-    boolean isReading();
-
-    /**
-     * Suspend automatic reading messages.
-     *
-     * @return The current connection.
-     */
-    TcpConnection suspendReading();
-
-    /**
      * Register a connection close event callback. When the connection close, the framework will invoke this function.
      *
      * @param callback The connection close event callback.
      * @return The current connection.
      */
     TcpConnection onClose(Callback callback);
-
-    /**
-     * If the automatic message reading callback throws the exception, the framework will call this function.
-     *
-     * @param exception If the automatic message reading callback throws the exception, the framework will call this function.
-     * @return The current connection.
-     */
-    TcpConnection onException(Consumer<Throwable> exception);
 
     /**
      * Close the current connection and wait the remaining messages of the channel have been sent completely.
@@ -128,7 +82,14 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     TcpConnection shutdownOutput();
 
     /**
-     * Write the message to the remote endpoint.
+     * Read data from the remote endpoint.
+     *
+     * @return The future data.
+     */
+    CompletableFuture<ByteBuffer> read();
+
+    /**
+     * Write the data to the remote endpoint.
      *
      * @param byteBuffer The byte buffer.
      * @param result     The handler for consuming the result.
@@ -137,7 +98,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     TcpConnection write(ByteBuffer byteBuffer, Consumer<Result<Integer>> result);
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param byteBuffers The byte buffer array.
      * @param offset      The offset within the buffer array of the first buffer into which
@@ -151,7 +112,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     TcpConnection write(ByteBuffer[] byteBuffers, int offset, int length, Consumer<Result<Long>> result);
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param byteBufferList The byte buffer list.
      * @param offset         The offset within the buffer array of the first buffer into which
@@ -165,7 +126,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     TcpConnection write(List<ByteBuffer> byteBufferList, int offset, int length, Consumer<Result<Long>> result);
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param byteBuffer The byte buffer.
      * @return The future for consuming the result.
@@ -177,7 +138,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param byteBuffers The byte buffer array.
      * @param offset      The offset within the buffer array of the first buffer into which
@@ -194,7 +155,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param byteBufferList The byte buffer list.
      * @param offset         The offset within the buffer array of the first buffer into which
@@ -211,7 +172,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param bytes  The byte array.
      * @param result The handler for consuming the result.
@@ -222,7 +183,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
-     * Write the message to the remote endpoint.
+     * Write the data to the remote endpoint.
      *
      * @param string The string.
      * @param result The handler for consuming the result.

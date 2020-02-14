@@ -117,7 +117,7 @@ class AsyncHttpClientConnectionManager(
             secureTcpClient.connect(address.socketAddress).await()
         } else {
             tcpClient.connect(address.socketAddress).await()
-        }.also { it.startReading() }
+        }
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {

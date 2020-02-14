@@ -84,9 +84,12 @@ class Http1ClientConnection(
     private suspend fun parseResponse(): HttpClientResponse {
         Assert.state(parser.isState(HttpParser.State.START), "The parser state error. ${parser.state}")
 
-        val inputChannel = tcpConnection.inputChannel
         recvLoop@ while (!parser.isState(HttpParser.State.END)) {
-            val buffer = inputChannel.receive()
+            val buffer = try {
+                tcpConnection.read().await()
+            } catch (e: Exception) {
+                break@recvLoop
+            }
 
             var remaining = buffer.remaining()
             readBufLoop@ while (!parser.isState(HttpParser.State.END) && remaining > 0) {

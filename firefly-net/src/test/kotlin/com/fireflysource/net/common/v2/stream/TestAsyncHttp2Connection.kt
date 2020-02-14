@@ -18,7 +18,6 @@ import com.fireflysource.net.tcp.aio.AioTcpClient
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.TcpConfig
 import com.fireflysource.net.tcp.onAcceptAsync
-import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.future.await
@@ -44,7 +43,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -79,7 +78,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
@@ -164,7 +163,7 @@ class TestAsyncHttp2Connection {
         val resetFrameChannel = Channel<ResetFrame>(UNLIMITED)
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -205,7 +204,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
@@ -270,7 +269,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -313,7 +312,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
@@ -371,7 +370,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -405,7 +404,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
@@ -449,7 +448,7 @@ class TestAsyncHttp2Connection {
         val responseHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -481,7 +480,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
@@ -558,7 +557,7 @@ class TestAsyncHttp2Connection {
         val httpConfig = HttpConfig()
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -576,7 +575,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {
@@ -613,7 +612,7 @@ class TestAsyncHttp2Connection {
         )
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -636,7 +635,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {
@@ -673,7 +672,7 @@ class TestAsyncHttp2Connection {
 
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
-            connection.startReadingAndAwaitHandshake()
+            connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
@@ -687,7 +686,7 @@ class TestAsyncHttp2Connection {
 
         val client = AioTcpClient(tcpConfig)
         val connection = client.connect(host, port).await()
-        connection.startReadingAndAwaitHandshake()
+        connection.beginHandshake().await()
         val http2Connection = Http2ClientConnection(
             httpConfig, connection, SimpleFlowControlStrategy(),
             object : Http2Connection.Listener.Adapter() {

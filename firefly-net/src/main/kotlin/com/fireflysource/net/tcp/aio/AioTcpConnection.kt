@@ -23,15 +23,12 @@ class AioTcpConnection(
         throw UnsupportedOperationException()
     }
 
-    override fun isHandshakeComplete(): Boolean {
-        throw UnsupportedOperationException()
-    }
+    override fun isHandshakeComplete(): Boolean = true
 
-    override fun getSupportedApplicationProtocols(): List<String> {
-        throw UnsupportedOperationException()
-    }
+    override fun getSupportedApplicationProtocols(): List<String> = listOf()
 
     override fun beginHandshake(result: Consumer<Result<String>>): TcpConnection {
-        throw UnsupportedOperationException()
+        result.accept(Result(true, "", null))
+        return this
     }
 }

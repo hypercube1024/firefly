@@ -5,7 +5,6 @@ import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.onAcceptAsync
-import com.fireflysource.net.tcp.startReadingAndAwaitHandshake
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -62,9 +61,13 @@ class TestAioServerAndClient {
 
         AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
-            val inputChannel = connection.startReadingAndAwaitHandshake().inputChannel
+            connection.beginHandshake().await()
             recvLoop@ while (true) {
-                val buf = inputChannel.receive()
+                val buf = try {
+                    connection.read().await()
+                } catch (e: Exception) {
+                    break@recvLoop
+                }
 
                 readBufLoop@ while (buf.hasRemaining()) {
                     val num = buf.int
@@ -81,12 +84,15 @@ class TestAioServerAndClient {
                 event {
                     val connection = client.connect(host, port).await()
                     println("create connection. ${connection.id}")
-                    connection.startReadingAndAwaitHandshake()
+                    connection.beginHandshake().await()
 
                     val readingJob = connection.coroutineScope.launch {
-                        val inputChannel = connection.inputChannel
                         recvLoop@ while (true) {
-                            val buf = inputChannel.receive()
+                            val buf = try {
+                                connection.read().await()
+                            } catch (e: Exception) {
+                                break@recvLoop
+                            }
 
                             readBufLoop@ while (buf.hasRemaining()) {
                                 val num = buf.int
@@ -158,14 +164,12 @@ class TestAioServerAndClient {
         val port = 4001
 
         AioTcpServer(TcpConfig(1)).onAcceptAsync { conn ->
-            conn.startReading()
             delay(Duration.ofSeconds(2))
             assertTrue(conn.isClosed)
         }.listen(host, port)
 
         val client = AioTcpClient(TcpConfig(1))
         val conn = client.connect(host, port).await()
-        conn.startReading()
         assertEquals(port, conn.remoteAddress.port)
         delay(Duration.ofSeconds(2))
         assertTrue(conn.isClosed)
