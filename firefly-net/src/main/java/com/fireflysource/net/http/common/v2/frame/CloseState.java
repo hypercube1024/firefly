@@ -37,7 +37,7 @@ public enum CloseState {
      */
     REMOTELY_CLOSED,
     /**
-     * A half-close frame has been received and a half-close frame has been generated, but not yet sent.
+     * A half-close frame has been received, and a half-close frame has been generated, but not yet sent.
      */
     CLOSING,
     /**

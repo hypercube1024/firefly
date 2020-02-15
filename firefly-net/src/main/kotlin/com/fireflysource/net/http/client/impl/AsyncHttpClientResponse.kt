@@ -51,11 +51,11 @@ class AsyncHttpClientResponse(
         }
     }
 
-    override fun getBody(): MutableList<ByteBuffer> {
+    override fun getBody(): List<ByteBuffer> {
         return if (contentHandler != null && contentHandler is ByteBufferContentHandler) {
-            contentHandler.byteBufferList
+            contentHandler.getByteBuffers()
         } else {
-            mutableListOf()
+            listOf()
         }
     }
 }

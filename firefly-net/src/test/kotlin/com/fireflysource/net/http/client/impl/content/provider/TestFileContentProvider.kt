@@ -1,6 +1,9 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
-import com.fireflysource.common.io.*
+import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.openFileChannelAsync
+import com.fireflysource.common.io.useAwait
+import com.fireflysource.common.io.writeAwait
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -33,7 +36,7 @@ class TestFileContentProvider {
 
     @Test
     @DisplayName("should read file successfully")
-    fun test() = runBlocking {
+    fun test(): Unit = runBlocking {
         val capacity = 24
         val fileChannel = openFileChannelAsync(tmpFile, WRITE).await()
         fileChannel.useAwait {
@@ -57,6 +60,7 @@ class TestFileContentProvider {
         (1..6).forEach { i ->
             assertEquals(i, readBuffer.int)
         }
-        provider.closeAwait()
+        provider.closeFuture().await()
+        Unit
     }
 }
