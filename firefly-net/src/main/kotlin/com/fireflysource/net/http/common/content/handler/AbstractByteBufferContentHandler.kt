@@ -29,6 +29,8 @@ abstract class AbstractByteBufferContentHandler<T> : AsyncCloseable, BiConsumer<
     fun getByteBuffers(): List<ByteBuffer> = byteBufferList
 
     fun toString(charset: Charset): String {
+        if (byteBufferList.isEmpty()) return ""
+
         val size = byteBufferList.map { it.remaining() }.sum()
         if (size <= 0) {
             return ""

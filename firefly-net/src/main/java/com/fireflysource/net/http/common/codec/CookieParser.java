@@ -44,6 +44,9 @@ abstract public class CookieParser {
                 case "max-age":
                     cookie.setMaxAge(Integer.parseInt(value));
                     break;
+                case "path":
+                    cookie.setPath(value);
+                    break;
                 case "secure":
                     cookie.setSecure(true);
                     break;
