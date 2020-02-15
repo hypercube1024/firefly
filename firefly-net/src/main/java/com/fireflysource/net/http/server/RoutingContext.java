@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server;
 import com.fireflysource.net.http.common.model.*;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -142,14 +143,28 @@ public interface RoutingContext {
      *
      * @return The HTTP body string.
      */
-    String getStringBody();
+    default String getStringBody() {
+        return getRequest().getStringBody();
+    }
+
+    /**
+     * Get the HTTP body and convert the specified charset string.
+     *
+     * @param charset The charset of the HTTP body string.
+     * @return The HTTP body string.
+     */
+    default String getStringBody(Charset charset) {
+        return getRequest().getStringBody(charset);
+    }
 
     /**
      * Get the HTTP body raw binary data.
      *
      * @return The HTTP body raw binary data.
      */
-    List<ByteBuffer> getBody();
+    default List<ByteBuffer> getBody() {
+        return getRequest().getBody();
+    }
 
     /**
      * Get HTTP request multi-part content.
