@@ -34,23 +34,27 @@ abstract public class CookieParser {
     public static Cookie parseSetCookie(String cookieStr) {
         final Cookie cookie = new Cookie();
         parseCookies(cookieStr, (name, value) -> {
-            if ("Comment".equalsIgnoreCase(name)) {
-                cookie.setComment(value);
-            } else if ("Domain".equalsIgnoreCase(name)) {
-                cookie.setDomain(value);
-            } else if ("Max-Age".equalsIgnoreCase(name)) {
-                cookie.setMaxAge(Integer.parseInt(value));
-            } else if ("Path".equalsIgnoreCase(name)) {
-                cookie.setPath(value);
-            } else if ("Secure".equalsIgnoreCase(name)) {
-                cookie.setSecure(true);
-            } else if ("Version".equalsIgnoreCase(name)) {
-                cookie.setVersion(Integer.parseInt(value));
-            } else {
-                cookie.setName(name);
-                cookie.setValue(value);
+            switch (name.toLowerCase()) {
+                case "comment":
+                    cookie.setComment(value);
+                    break;
+                case "domain":
+                    cookie.setDomain(value);
+                    break;
+                case "max-age":
+                    cookie.setMaxAge(Integer.parseInt(value));
+                    break;
+                case "secure":
+                    cookie.setSecure(true);
+                    break;
+                case "version":
+                    cookie.setVersion(Integer.parseInt(value));
+                    break;
+                default:
+                    cookie.setName(name);
+                    cookie.setValue(value);
+                    break;
             }
-
         });
         return cookie;
     }

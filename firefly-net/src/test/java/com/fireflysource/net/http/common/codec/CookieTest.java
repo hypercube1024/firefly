@@ -52,6 +52,7 @@ class CookieTest {
             list.add(new Cookie("test" + i, "hello" + i));
         }
         String cookieString = CookieGenerator.generateCookies(list);
+        System.out.println(cookieString);
 
         List<Cookie> ret = CookieParser.parseCookie(cookieString);
         assertEquals(10, ret.size());
