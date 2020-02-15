@@ -14,6 +14,7 @@ import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class Http1ClientConnection(
     private val config: HttpConfig,
     private val tcpConnection: TcpConnection
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, HttpClientConnection, TcpBasedHttpConnection {
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection, HttpClientConnection {
 
     companion object {
         private val log = SystemLogger.create(Http1ClientConnection::class.java)
@@ -82,24 +83,7 @@ class Http1ClientConnection(
     }
 
     private suspend fun parseResponse(): HttpClientResponse {
-        Assert.state(parser.isState(HttpParser.State.START), "The parser state error. ${parser.state}")
-
-        recvLoop@ while (!parser.isState(HttpParser.State.END)) {
-            val buffer = try {
-                tcpConnection.read().await()
-            } catch (e: Exception) {
-                break@recvLoop
-            }
-
-            var remaining = buffer.remaining()
-            readBufLoop@ while (!parser.isState(HttpParser.State.END) && remaining > 0) {
-                val wasRemaining = remaining
-                parser.parseNext(buffer)
-                remaining = buffer.remaining()
-                Assert.state(remaining != wasRemaining, "The received data can not be consumed")
-            }
-        }
-
+        parser.parseAll(tcpConnection)
         return handler.toHttpClientResponse()
     }
 

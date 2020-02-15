@@ -15,8 +15,7 @@ class Http2ServerConnection(
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
     listener: Http2Connection.Listener = defaultHttp2ConnectionListener
-) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), HttpServerConnection,
-    ServerParser.Listener {
+) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), ServerParser.Listener, HttpServerConnection {
 
     companion object {
         private val log = SystemLogger.create(Http2ServerConnection::class.java)
