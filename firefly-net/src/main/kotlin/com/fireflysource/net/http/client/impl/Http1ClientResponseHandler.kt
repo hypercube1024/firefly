@@ -70,7 +70,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         throw IllegalStateException("Early EOF")
     }
 
-    suspend fun toHttpClientResponse(): HttpClientResponse {
+    suspend fun complete(): HttpClientResponse {
         contentHandler?.closeFuture()?.await()
         return httpClientResponse ?: throw IllegalStateException("Not received response.")
     }

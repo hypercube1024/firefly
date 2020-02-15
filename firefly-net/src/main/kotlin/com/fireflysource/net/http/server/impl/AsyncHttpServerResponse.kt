@@ -4,14 +4,13 @@ import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerContentProvider
 import com.fireflysource.net.http.server.HttpServerOutputChannel
 import com.fireflysource.net.http.server.HttpServerResponse
-import java.util.*
 import java.util.function.Supplier
 
 class AsyncHttpServerResponse : HttpServerResponse {
 
     val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, HttpStatus.OK_200, HttpFields())
     private var contentProvider: HttpServerContentProvider? = null
-    private val cookieList: LinkedList<Cookie> by lazy { LinkedList<Cookie>() }
+    private var cookieList: List<Cookie>? = null
 
     override fun getStatus(): Int = response.status
 
@@ -38,11 +37,10 @@ class AsyncHttpServerResponse : HttpServerResponse {
         response.fields.addAll(httpFields)
     }
 
-    override fun getCookies(): List<Cookie> = cookieList
+    override fun getCookies(): List<Cookie> = cookieList ?: listOf()
 
     override fun setCookies(cookies: List<Cookie>) {
-        cookieList.clear()
-        cookieList.addAll(cookies)
+        cookieList = cookies
     }
 
     override fun getContentProvider(): HttpServerContentProvider? = contentProvider
@@ -64,6 +62,12 @@ class AsyncHttpServerResponse : HttpServerResponse {
 
     override fun getOutputChannel(): HttpServerOutputChannel {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    fun reset() {
+        response.recycle()
+        contentProvider = null
+        cookieList = null
     }
 
 }

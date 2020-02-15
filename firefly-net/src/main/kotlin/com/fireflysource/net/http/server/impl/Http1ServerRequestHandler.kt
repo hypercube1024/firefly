@@ -1,46 +1,62 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.net.http.common.model.HttpField
-import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
-import com.fireflysource.net.http.server.HttpServerRequest
+import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.RoutingContext
+import kotlinx.coroutines.future.await
+import java.net.URL
 import java.nio.ByteBuffer
 
-class Http1ServerRequestHandler : HttpParser.RequestHandler {
+class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpParser.RequestHandler {
+
+    var connectionListener: HttpServerConnection.Listener? = null
+    var request = MetaData.Request(HttpFields())
+    var httpServerRequest = AsyncHttpServerRequest(request)
+    var context = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(), connection)
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        request.method = method
+        request.uri = HttpURI(URL(uri).toURI())
+        request.httpVersion = version
+        return false
     }
 
-    override fun getHeaderCacheSize(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getHeaderCacheSize(): Int = 4096
 
     override fun parsedHeader(field: HttpField) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        request.fields.add(field)
     }
 
     override fun headerComplete(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        connectionListener?.onHeaderComplete(context)
+        return false
     }
 
-    override fun content(item: ByteBuffer): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun content(byteBuffer: ByteBuffer): Boolean {
+        httpServerRequest.contentHandler?.accept(byteBuffer, context)
+        return false
     }
 
     override fun contentComplete(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return false
     }
 
     override fun messageComplete(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return true
     }
 
     override fun earlyEOF() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    suspend fun toHttpServerRequest(): HttpServerRequest {
-        TODO("not implemented")
+    suspend fun complete(): RoutingContext {
+        httpServerRequest.contentHandler?.closeFuture()?.await()
+        return context
     }
+
+    fun reset() {
+        connectionListener = null
+        context.reset()
+    }
+
 }

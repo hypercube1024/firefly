@@ -14,15 +14,10 @@ import java.util.function.Supplier
 
 class AsyncHttpServerRequest(
     val request: MetaData.Request,
-    private var contentHandler: HttpServerContentHandler?
+    private var contentHandler: HttpServerContentHandler = StringContentHandler()
 ) : HttpServerRequest {
 
-    private val cookieList: List<Cookie> by lazy {
-        Optional.ofNullable(httpFields[HttpHeader.COOKIE])
-            .filter { it.isNotBlank() }
-            .map { CookieParser.parseCookie(it) }
-            .orElse(listOf())
-    }
+    private var cookieList: List<Cookie>? = null
 
     override fun getMethod(): String = request.method
 
@@ -34,7 +29,19 @@ class AsyncHttpServerRequest(
 
     override fun getContentLength(): Long = request.contentLength
 
-    override fun getCookies(): List<Cookie> = cookieList
+    override fun getCookies(): List<Cookie> {
+        val cookies = cookieList
+        return if (cookies == null) {
+            val list = Optional.ofNullable(httpFields[HttpHeader.COOKIE])
+                .filter { it.isNotBlank() }
+                .map { CookieParser.parseCookie(it) }
+                .orElse(listOf())
+            cookieList = list
+            list
+        } else {
+            cookies
+        }
+    }
 
     override fun getContentHandler(): HttpServerContentHandler? = this.contentHandler
 
@@ -71,4 +78,10 @@ class AsyncHttpServerRequest(
     }
 
     override fun getTrailerSupplier(): Supplier<HttpFields> = request.trailerSupplier
+
+    fun reset() {
+        request.recycle()
+        cookieList = null
+        contentHandler = StringContentHandler()
+    }
 }

@@ -61,7 +61,7 @@ class Http1ClientConnection(
         generateRequestAndParseResponseJob()
     }
 
-    private fun generateRequestAndParseResponseJob() = tcpConnection.coroutineScope.launch {
+    private fun generateRequestAndParseResponseJob() = coroutineScope.launch {
         while (true) {
             val requestMessage = requestChannel.receive()
 
@@ -84,7 +84,7 @@ class Http1ClientConnection(
 
     private suspend fun parseResponse(): HttpClientResponse {
         parser.parseAll(tcpConnection)
-        return handler.toHttpClientResponse()
+        return handler.complete()
     }
 
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
@@ -202,7 +202,7 @@ class Http1ClientConnection(
         }
 
         return if (sendHttp2UpgradeHeaders.get()) {
-            tcpConnection.coroutineScope.async {
+            coroutineScope.async {
                 mutex.withLock {
                     if (sendHttp2UpgradeHeaders.get()) {
                         sendRequestWithHttp2UpgradeHeader(request)

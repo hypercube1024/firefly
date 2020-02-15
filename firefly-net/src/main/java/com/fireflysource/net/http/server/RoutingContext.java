@@ -189,7 +189,6 @@ public interface RoutingContext {
      */
     RoutingContext contentHandler(HttpServerContentHandler contentHandler);
 
-
     /**
      * Get HTTP request method.
      *
