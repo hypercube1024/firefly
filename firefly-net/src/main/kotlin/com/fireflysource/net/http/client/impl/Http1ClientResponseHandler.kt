@@ -35,11 +35,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun headerComplete(): Boolean {
-        val resp = MetaData.Response(
-            response.httpVersion, response.status, response.reason,
-            HttpFields(response.fields), response.contentLength
-        )
-        httpClientResponse = AsyncHttpClientResponse(resp, contentHandler)
+        httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), contentHandler)
         return false
     }
 

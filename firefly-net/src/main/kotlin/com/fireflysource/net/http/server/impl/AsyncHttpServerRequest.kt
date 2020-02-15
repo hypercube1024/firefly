@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.codec.CookieParser
+import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.HttpServerRequest
@@ -18,12 +19,19 @@ class AsyncHttpServerRequest(
 ) : HttpServerRequest {
 
     private var cookieList: List<Cookie>? = null
+    var urlEncoded: UrlEncoded? = null
 
     override fun getMethod(): String = request.method
 
     override fun getURI(): HttpURI = request.uri
 
     override fun getHttpVersion(): HttpVersion = request.httpVersion
+
+    override fun getQueryString(name: String): String = urlEncoded?.getString(name) ?: ""
+
+    override fun getQueryStrings(name: String): List<String> = urlEncoded?.get(name) ?: listOf()
+
+    override fun getQueryStrings(): Map<String, List<String>> = urlEncoded ?: mapOf()
 
     override fun getHttpFields(): HttpFields = request.fields
 
@@ -69,19 +77,14 @@ class AsyncHttpServerRequest(
         .map { it.getByteBuffers() }
         .orElse(listOf())
 
-    override fun getPart(name: String?): MultiPart {
+    override fun getPart(name: String): MultiPart {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getParts(): MutableList<MultiPart> {
+    override fun getParts(): List<MultiPart> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun getTrailerSupplier(): Supplier<HttpFields> = request.trailerSupplier
 
-    fun reset() {
-        request.recycle()
-        cookieList = null
-        contentHandler = StringContentHandler()
-    }
 }

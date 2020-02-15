@@ -110,7 +110,6 @@ public class MetaData implements Iterable<HttpField> {
     public static class Request extends MetaData {
         private String method;
         private HttpURI uri;
-        private volatile Object attachment;
 
         public Request(HttpFields fields) {
             this(null, null, null, fields);
@@ -189,14 +188,6 @@ public class MetaData implements Iterable<HttpField> {
             return uri == null ? null : uri.toString();
         }
 
-        public Object getAttachment() {
-            return attachment;
-        }
-
-        public void setAttachment(Object attachment) {
-            this.attachment = attachment;
-        }
-
         @Override
         public String toString() {
             HttpFields fields = getFields();
@@ -226,6 +217,12 @@ public class MetaData implements Iterable<HttpField> {
             super(version, fields, contentLength);
             this.reason = reason;
             this.status = status;
+        }
+
+        public Response(Response response) {
+            super(response.getHttpVersion(), new HttpFields(response.getFields()), response.getContentLength());
+            this.reason = response.reason;
+            this.status = response.status;
         }
 
         @Override

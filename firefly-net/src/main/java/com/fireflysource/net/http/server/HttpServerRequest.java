@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpVersion;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -37,6 +38,29 @@ public interface HttpServerRequest {
      * @return The HTTP version.
      */
     HttpVersion getHttpVersion();
+
+    /**
+     * Get the URL query string.
+     *
+     * @param name The URL query parameter name.
+     * @return The URL query parameter value.
+     */
+    String getQueryString(String name);
+
+    /**
+     * Get the URL query strings.
+     *
+     * @param name The URL query parameter name.
+     * @return The URL query parameter values.
+     */
+    List<String> getQueryStrings(String name);
+
+    /**
+     * Get all URL query strings.
+     *
+     * @return All URL query strings.
+     */
+    Map<String, List<String>> getQueryStrings();
 
     /**
      * Get the HTTP header fields.

@@ -98,7 +98,9 @@ public interface RoutingContext {
      * @param name The URL query parameter name.
      * @return The URL query parameter value.
      */
-    String getQueryString(String name);
+    default String getQueryString(String name) {
+        return getRequest().getQueryString(name);
+    }
 
     /**
      * Get the URL query strings.
@@ -106,14 +108,18 @@ public interface RoutingContext {
      * @param name The URL query parameter name.
      * @return The URL query parameter values.
      */
-    List<String> getQueryStrings(String name);
+    default List<String> getQueryStrings(String name) {
+        return getRequest().getQueryStrings(name);
+    }
 
     /**
      * Get all URL query strings.
      *
      * @return All URL query strings.
      */
-    Map<String, List<String>> getQueryStrings();
+    default Map<String, List<String>> getQueryStrings() {
+        return getRequest().getQueryStrings();
+    }
 
     /**
      * Get the web form input value.

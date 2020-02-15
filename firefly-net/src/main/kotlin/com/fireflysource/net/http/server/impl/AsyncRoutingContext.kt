@@ -25,18 +25,6 @@ class AsyncRoutingContext(
 
     override fun getResponse(): HttpServerResponse = response
 
-    override fun getQueryString(name: String): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getQueryStrings(name: String?): MutableList<String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getQueryStrings(): MutableMap<String, MutableList<String>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override fun getPathParameter(name: String): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -117,13 +105,4 @@ class AsyncRoutingContext(
 
     override fun getConnection(): HttpServerConnection = connection
 
-    fun reset() {
-        if (request is AsyncHttpServerRequest) {
-            request.reset()
-        }
-        if (response is AsyncHttpServerResponse) {
-            response.reset()
-        }
-        attributes.clear()
-    }
 }

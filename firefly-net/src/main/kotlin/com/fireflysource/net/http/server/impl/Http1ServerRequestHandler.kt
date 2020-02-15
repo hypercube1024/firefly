@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.server.HttpServerConnection
@@ -11,9 +12,8 @@ import java.nio.ByteBuffer
 class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpParser.RequestHandler {
 
     var connectionListener: HttpServerConnection.Listener? = null
-    var request = MetaData.Request(HttpFields())
-    var httpServerRequest = AsyncHttpServerRequest(request)
-    var context = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(), connection)
+    private var request = MetaData.Request(HttpFields())
+    private var context: AsyncRoutingContext? = null
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
         request.method = method
@@ -29,12 +29,24 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
     }
 
     override fun headerComplete(): Boolean {
+        context = newRoutingContext()
         connectionListener?.onHeaderComplete(context)
         return false
     }
 
+    private fun newRoutingContext(): AsyncRoutingContext {
+        val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
+        val query: String? = request.uri.query
+        if (query != null && query.isNotBlank()) {
+            val urlEncoded = UrlEncoded()
+            urlEncoded.decode(query)
+            httpServerRequest.urlEncoded = urlEncoded
+        }
+        return AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(), connection)
+    }
+
     override fun content(byteBuffer: ByteBuffer): Boolean {
-        httpServerRequest.contentHandler?.accept(byteBuffer, context)
+        context?.request?.contentHandler?.accept(byteBuffer, context)
         return false
     }
 
@@ -50,13 +62,13 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
     }
 
     suspend fun complete(): RoutingContext {
-        httpServerRequest.contentHandler?.closeFuture()?.await()
-        return context
+        context?.request?.contentHandler?.closeFuture()?.await()
+        return context!!
     }
 
     fun reset() {
-        connectionListener = null
-        context.reset()
+        request.recycle()
+        context = null
     }
 
 }
