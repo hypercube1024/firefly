@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import java.net.URL
 import java.nio.ByteBuffer
 
-class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpParser.RequestHandler {
+class Http1ServerRequestHandler(val connection: Http1ServerConnection) : HttpParser.RequestHandler {
 
     companion object {
         private val log = SystemLogger.create(Http1ServerRequestHandler::class.java)
@@ -19,32 +19,41 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
 
     var connectionListener: HttpServerConnection.Listener? = null
     private val parserChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
-    private val parserResultChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
-
     private var request = MetaData.Request(HttpFields())
     private var context: AsyncRoutingContext? = null
 
     init {
-        parserJob()
+        handleParserMessageJob()
     }
 
-    private fun parserJob() = connection.coroutineScope.launch {
+    private fun handleParserMessageJob() = connection.coroutineScope.launch {
         parserLoop@ while (true) {
             val message = parserChannel.receive()
             try {
                 onParserMessage(message)
             } catch (e: Exception) {
-                parserResultChannel.offer(ParseException(e))
+                log.error(e) { "Handle HTTP1 server parser message exception." }
+                connectionListener?.onException(context, e)?.await()
             }
         }
+    }
+
+    private fun newRoutingContext() {
+        val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
+        context = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
+    }
+
+    private fun reset() {
+        request.recycle()
+        context = null
     }
 
     private suspend fun onParserMessage(message: ParserMessage) {
         when (message) {
             is HeaderComplete -> {
-                val newContext = newRoutingContext()
-                connectionListener?.onHeaderComplete(newContext)?.await()
-                context = newContext
+                newRoutingContext()
+                connectionListener?.onHeaderComplete(context)?.await()
+                reset()
             }
             is Content -> {
                 context?.request?.contentHandler?.accept(message.byteBuffer, context)
@@ -55,15 +64,16 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
             is MessageComplete -> {
                 context?.request?.isRequestComplete = true
                 connectionListener?.onHttpRequestComplete(context)?.await()
-                parserResultChannel.offer(message)
+                reset()
             }
-            is ParseException -> {
-                connectionListener?.onException(context, message.exception)
-                parserResultChannel.offer(message)
+            is BadMessage -> {
+                log.error(message.exception) { "Receive the bad HTTP1 message. id: ${connection.id}" }
+                connectionListener?.onException(context, message.exception)?.await()
+                reset()
             }
             is EarlyEOF -> {
-                connectionListener?.onException(context, IllegalStateException("Parser early EOF"))
-                parserResultChannel.offer(message)
+                connectionListener?.onException(context, IllegalStateException("Parser early EOF"))?.await()
+                reset()
             }
         }
     }
@@ -86,11 +96,6 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
         return false
     }
 
-    private fun newRoutingContext(): AsyncRoutingContext {
-        val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
-        return AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
-    }
-
     override fun content(byteBuffer: ByteBuffer): Boolean {
         parserChannel.offer(Content(byteBuffer))
         return false
@@ -111,22 +116,9 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
     }
 
     override fun badMessage(failure: BadMessageException) {
-        parserChannel.offer(ParseException(failure))
+        parserChannel.offer(BadMessage(failure))
     }
 
-    suspend fun waitMessageComplete() {
-        when (val message = parserResultChannel.receive()) {
-            is MessageComplete -> log.debug { "HTTP1 server parser success. id: ${connection.id}" }
-            is EarlyEOF -> log.error("HTTP1 server parser early EOF. id: ${connection.id}")
-            is ParseException -> log.error(message.exception) { "HTTP1 server parser exception. id: ${connection.id}" }
-        }
-        reset()
-    }
-
-    private fun reset() {
-        request.recycle()
-        context = null
-    }
 }
 
 sealed class ParserMessage
@@ -135,4 +127,4 @@ class Content(val byteBuffer: ByteBuffer) : ParserMessage()
 object ContentComplete : ParserMessage()
 object MessageComplete : ParserMessage()
 object EarlyEOF : ParserMessage()
-class ParseException(val exception: Exception) : ParserMessage()
+class BadMessage(val exception: Exception) : ParserMessage()

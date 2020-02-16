@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
@@ -19,25 +20,24 @@ class Http1ServerConnection(
     private val tcpConnection: TcpConnection
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection, HttpServerConnection {
 
+    companion object {
+        private val log = SystemLogger.create(Http1ServerConnection::class.java)
+    }
+
     private val handler = Http1ServerRequestHandler(this)
     private val parser = HttpParser(handler)
     private val startParsing = AtomicBoolean(false)
 
     private fun parseRequestJob() = coroutineScope.launch {
-        val listener = handler.connectionListener
-        requireNotNull(listener)
         while (!tcpConnection.isClosed) {
             try {
-                parseRequest()
+                parser.parseAll(tcpConnection)
+            } catch (e: Exception) {
+                log.error(e) { "Parse HTTP1 request exception" }
             } finally {
                 parser.reset()
             }
         }
-    }
-
-    private suspend fun parseRequest() {
-        parser.parseAll(tcpConnection)
-        return handler.waitMessageComplete()
     }
 
     override fun begin() {
