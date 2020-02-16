@@ -1,7 +1,9 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
-import java.nio.ByteBuffer
+import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -42,11 +44,11 @@ class AsyncRoutingContext(
         return this
     }
 
-    override fun getFormInput(name: String?): String {
+    override fun getFormInput(name: String): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getFormInputs(name: String?): MutableList<String> {
+    override fun getFormInputs(name: String): List<String> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -54,7 +56,7 @@ class AsyncRoutingContext(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getPart(name: String?): MultiPart {
+    override fun getPart(name: String): MultiPart {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -63,36 +65,11 @@ class AsyncRoutingContext(
     }
 
     override fun redirect(url: String): CompletableFuture<Void> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun contentProvider(contentProvider: HttpServerContentProvider): RoutingContext {
-        response.contentProvider = contentProvider
-        return this
-    }
-
-    override fun write(value: String): RoutingContext {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun write(byteBuffer: ByteBuffer): RoutingContext {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun write(byteBufferList: MutableList<ByteBuffer>, offset: Int, length: Int): RoutingContext {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun write(byteBuffers: Array<ByteBuffer>, offset: Int, length: Int): RoutingContext {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun end(): CompletableFuture<Void> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun end(value: String): CompletableFuture<Void> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val status = HttpStatus.FOUND_302
+        return setStatus(status)
+            .put(HttpHeader.LOCATION, url)
+            .contentProvider(DefaultContentProvider(status, null))
+            .end()
     }
 
     override fun <T> next(): CompletableFuture<T> {

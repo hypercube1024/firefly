@@ -371,7 +371,10 @@ public interface RoutingContext {
      * @param contentProvider HTTP response content provider.
      * @return The routing context.
      */
-    RoutingContext contentProvider(HttpServerContentProvider contentProvider);
+    default RoutingContext contentProvider(HttpServerContentProvider contentProvider) {
+        getResponse().setContentProvider(contentProvider);
+        return this;
+    }
 
     /**
      * Write string to the client.
@@ -379,7 +382,10 @@ public interface RoutingContext {
      * @param value The response content.
      * @return The routing context.
      */
-    RoutingContext write(String value);
+    default RoutingContext write(String value) {
+        getResponse().commit().thenCompose(ignore -> getResponse().getOutputChannel().write(value));
+        return this;
+    }
 
     /**
      * Write the response content.
@@ -387,7 +393,10 @@ public interface RoutingContext {
      * @param byteBuffer The response content.
      * @return The routing context.
      */
-    RoutingContext write(ByteBuffer byteBuffer);
+    default RoutingContext write(ByteBuffer byteBuffer) {
+        getResponse().commit().thenCompose(ignore -> getResponse().getOutputChannel().write(byteBuffer));
+        return this;
+    }
 
     /**
      * Write the response content.
@@ -400,7 +409,10 @@ public interface RoutingContext {
      *                       and no larger than byteBuffers.length - offset.
      * @return The routing context.
      */
-    RoutingContext write(List<ByteBuffer> byteBufferList, int offset, int length);
+    default RoutingContext write(List<ByteBuffer> byteBufferList, int offset, int length) {
+        getResponse().commit().thenCompose(ignore -> getResponse().getOutputChannel().write(byteBufferList, offset, length));
+        return this;
+    }
 
     /**
      * Write the response content.
@@ -413,14 +425,19 @@ public interface RoutingContext {
      *                    and no larger than byteBuffers.length - offset.
      * @return The routing context.
      */
-    RoutingContext write(ByteBuffer[] byteBuffers, int offset, int length);
+    default RoutingContext write(ByteBuffer[] byteBuffers, int offset, int length) {
+        getResponse().commit().thenCompose(ignore -> getResponse().getOutputChannel().write(byteBuffers, offset, length));
+        return this;
+    }
 
     /**
      * End the HTTP response.
      *
      * @return The response future result.
      */
-    CompletableFuture<Void> end();
+    default CompletableFuture<Void> end() {
+        return getResponse().commit().thenCompose(ignore -> getResponse().closeFuture());
+    }
 
     /**
      * Write the value and end the HTTP response.
@@ -428,7 +445,9 @@ public interface RoutingContext {
      * @param value The HTTP response content.
      * @return The response future result.
      */
-    CompletableFuture<Void> end(String value);
+    default CompletableFuture<Void> end(String value) {
+        return write(value).end();
+    }
 
     /**
      * Write the redirect response to the client.

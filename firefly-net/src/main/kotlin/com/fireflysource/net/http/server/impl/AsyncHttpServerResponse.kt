@@ -128,4 +128,12 @@ class AsyncHttpServerResponse(private val httpServerConnection: HttpServerConnec
         }
     }
 
+    override fun closeFuture(): CompletableFuture<Void> {
+        return serverOutputChannel?.closeFuture() ?: Result.DONE
+    }
+
+    override fun close() {
+        closeFuture()
+    }
+
 }

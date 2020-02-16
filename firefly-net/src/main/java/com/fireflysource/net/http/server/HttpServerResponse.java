@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server;
 
+import com.fireflysource.common.io.AsyncCloseable;
 import com.fireflysource.net.http.common.model.Cookie;
 import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpVersion;
@@ -13,7 +14,7 @@ import java.util.function.Supplier;
  *
  * @author Pengtao Qiu
  */
-public interface HttpServerResponse {
+public interface HttpServerResponse extends AsyncCloseable {
 
     /**
      * Get the HTTP response status code.
