@@ -66,6 +66,8 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
         return context!!
     }
 
+    fun getAsyncRoutingContext() = context
+
     fun reset() {
         request.recycle()
         context = null

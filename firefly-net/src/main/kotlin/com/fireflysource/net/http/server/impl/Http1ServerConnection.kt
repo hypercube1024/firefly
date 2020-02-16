@@ -11,6 +11,7 @@ import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 
 class Http1ServerConnection(
@@ -26,10 +27,17 @@ class Http1ServerConnection(
         val listener = handler.connectionListener
         requireNotNull(listener)
         while (true) {
-            val context = parseRequest()
-            listener.onHttpRequestComplete(context)
-
-            // TODO generate response
+            try {
+                val context = parseRequest()
+                listener.onHttpRequestComplete(context).await()
+            } catch (e: Exception) {
+                listener.onException(handler.getAsyncRoutingContext(), e).await()
+                if (tcpConnection.isClosed) break
+            } finally {
+                handler.reset()
+                parser.reset()
+                generator.reset()
+            }
         }
     }
 

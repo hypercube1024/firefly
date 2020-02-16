@@ -21,6 +21,8 @@ public interface HttpServerConnection extends HttpConnection {
 
         CompletableFuture<Void> onHttpRequestComplete(RoutingContext context);
 
+        CompletableFuture<Void> onException(RoutingContext context, Exception exception);
+
         class Adapter implements Listener {
 
             @Override
@@ -30,6 +32,11 @@ public interface HttpServerConnection extends HttpConnection {
 
             @Override
             public CompletableFuture<Void> onHttpRequestComplete(RoutingContext context) {
+                return Result.DONE;
+            }
+
+            @Override
+            public CompletableFuture<Void> onException(RoutingContext context, Exception exception) {
                 return Result.DONE;
             }
         }
