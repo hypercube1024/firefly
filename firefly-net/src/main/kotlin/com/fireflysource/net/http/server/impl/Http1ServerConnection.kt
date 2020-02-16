@@ -26,13 +26,12 @@ class Http1ServerConnection(
     private fun parseRequestAndGenerateResponseJob() = coroutineScope.launch {
         val listener = handler.connectionListener
         requireNotNull(listener)
-        while (true) {
+        while (!tcpConnection.isClosed) {
             try {
                 val context = parseRequest()
                 listener.onHttpRequestComplete(context).await()
             } catch (e: Exception) {
                 listener.onException(handler.getAsyncRoutingContext(), e).await()
-                if (tcpConnection.isClosed) break
             } finally {
                 handler.reset()
                 parser.reset()
