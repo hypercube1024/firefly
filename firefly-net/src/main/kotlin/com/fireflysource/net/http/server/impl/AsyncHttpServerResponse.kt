@@ -128,10 +128,4 @@ class AsyncHttpServerResponse(private val httpServerConnection: HttpServerConnec
         }
     }
 
-    fun reset() {
-        response.recycle()
-        contentProvider = null
-        cookieList = null
-    }
-
 }
