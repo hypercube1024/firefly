@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import java.net.URL
 import java.nio.ByteBuffer
 
-class Http1ServerRequestHandler(val connection: Http1ServerConnection) : HttpParser.RequestHandler {
+class Http1ServerRequestHandler(private val connection: HttpServerConnection) : HttpParser.RequestHandler {
 
     companion object {
         private val log = SystemLogger.create(Http1ServerRequestHandler::class.java)
@@ -72,6 +72,7 @@ class Http1ServerRequestHandler(val connection: Http1ServerConnection) : HttpPar
                 reset()
             }
             is EarlyEOF -> {
+                log.error { "HTTP1 server parser early EOF. id: ${connection.id}" }
                 connectionListener?.onException(context, IllegalStateException("Parser early EOF"))?.await()
                 reset()
             }
