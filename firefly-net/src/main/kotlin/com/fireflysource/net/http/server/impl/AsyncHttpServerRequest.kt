@@ -16,14 +16,28 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
-class AsyncHttpServerRequest(
-    val request: MetaData.Request,
-    private var contentHandler: HttpServerContentHandler = StringContentHandler()
-) : HttpServerRequest {
+class AsyncHttpServerRequest(val request: MetaData.Request) : HttpServerRequest {
 
     private var cookieList: List<Cookie>? = null
-    var urlEncoded: UrlEncoded? = null
+    private var queryStringMap: UrlEncoded? = null
     private val requestComplete = AtomicBoolean(false)
+    private var contentHandler: HttpServerContentHandler
+
+    init {
+        val query: String? = request.uri.query
+        if (query != null && query.isNotBlank()) {
+            queryStringMap = UrlEncoded(query)
+        }
+        val contentType = request.fields[HttpHeader.CONTENT_TYPE]
+        contentHandler = if (contentType != null) {
+            when {
+                contentType.contains("x-www-form-urlencoded", true) -> FormInputsContentHandler()
+                contentType.contains("multipart/form-data", true) -> MultiPartContentHandler()
+                else -> StringContentHandler()
+            }
+        } else StringContentHandler()
+
+    }
 
     override fun getMethod(): String = request.method
 
@@ -31,11 +45,11 @@ class AsyncHttpServerRequest(
 
     override fun getHttpVersion(): HttpVersion = request.httpVersion
 
-    override fun getQueryString(name: String): String = urlEncoded?.getString(name) ?: ""
+    override fun getQueryString(name: String): String = queryStringMap?.getString(name) ?: ""
 
-    override fun getQueryStrings(name: String): List<String> = urlEncoded?.get(name) ?: listOf()
+    override fun getQueryStrings(name: String): List<String> = queryStringMap?.get(name) ?: listOf()
 
-    override fun getQueryStrings(): Map<String, List<String>> = urlEncoded ?: mapOf()
+    override fun getQueryStrings(): Map<String, List<String>> = queryStringMap ?: mapOf()
 
     override fun getHttpFields(): HttpFields = request.fields
 

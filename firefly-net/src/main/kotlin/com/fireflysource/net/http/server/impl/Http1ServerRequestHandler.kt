@@ -1,12 +1,9 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
-import com.fireflysource.net.http.server.impl.content.handler.FormInputsContentHandler
-import com.fireflysource.net.http.server.impl.content.handler.MultiPartContentHandler
 import kotlinx.coroutines.future.await
 import java.net.URL
 import java.nio.ByteBuffer
@@ -38,32 +35,7 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
 
     private fun newRoutingContext(): AsyncRoutingContext {
         val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
-        decodeQueryString(httpServerRequest)
-        setContentHandler(httpServerRequest)
         return AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
-    }
-
-    private fun setContentHandler(httpServerRequest: AsyncHttpServerRequest) {
-        val contentType = httpServerRequest.httpFields[HttpHeader.CONTENT_TYPE]
-        if (contentType != null) {
-            when {
-                contentType.contains("x-www-form-urlencoded", true) -> {
-                    httpServerRequest.setContentHandler(FormInputsContentHandler())
-                }
-                contentType.contains("multipart/form-data", true) -> {
-                    httpServerRequest.setContentHandler(MultiPartContentHandler())
-                }
-            }
-        }
-    }
-
-    private fun decodeQueryString(httpServerRequest: AsyncHttpServerRequest) {
-        val query: String? = request.uri.query
-        if (query != null && query.isNotBlank()) {
-            val urlEncoded = UrlEncoded()
-            urlEncoded.decode(query)
-            httpServerRequest.urlEncoded = urlEncoded
-        }
     }
 
     override fun content(byteBuffer: ByteBuffer): Boolean {

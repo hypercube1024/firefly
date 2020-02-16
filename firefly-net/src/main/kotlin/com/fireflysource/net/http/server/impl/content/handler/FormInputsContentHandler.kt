@@ -4,11 +4,7 @@ import com.fireflysource.net.http.common.codec.UrlEncoded
 
 class FormInputsContentHandler : StringContentHandler() {
 
-    private val urlEncoded: UrlEncoded by lazy {
-        val encoded = UrlEncoded()
-        encoded.decode(this@FormInputsContentHandler.toString())
-        encoded
-    }
+    private val urlEncoded: UrlEncoded by lazy { UrlEncoded(this@FormInputsContentHandler.toString()) }
 
     fun getFormInput(name: String): String = urlEncoded.getString(name) ?: ""
 
