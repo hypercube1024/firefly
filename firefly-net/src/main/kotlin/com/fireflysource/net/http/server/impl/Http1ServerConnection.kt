@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.`object`.Assert
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
@@ -8,10 +9,8 @@ import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerOutputChannel
-import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -29,21 +28,16 @@ class Http1ServerConnection(
         requireNotNull(listener)
         while (!tcpConnection.isClosed) {
             try {
-                val context = parseRequest()
-                context.request.isRequestComplete = true
-                listener.onHttpRequestComplete(context).await()
-            } catch (e: Exception) {
-                listener.onException(handler.getAsyncRoutingContext(), e).await()
+                parseRequest()
             } finally {
-                handler.reset()
                 parser.reset()
             }
         }
     }
 
-    private suspend fun parseRequest(): RoutingContext {
+    private suspend fun parseRequest() {
         parser.parseAll(tcpConnection)
-        return handler.complete()
+        return handler.waitMessageComplete()
     }
 
     override fun begin() {
@@ -53,6 +47,11 @@ class Http1ServerConnection(
     }
 
     override fun setListener(listener: HttpServerConnection.Listener): HttpServerConnection {
+        Assert.state(
+            !startParsing.get(),
+            "The HTTP request parser has started. Please set listener before begin parsing."
+        )
+
         handler.connectionListener = listener
         return this
     }

@@ -723,7 +723,7 @@ class HttpGeneratorServerTest {
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
-        assertTrue(out.contains("HTTP/1.1 100 Continue"));
+        assertTrue(out.contains("HTTP/1.1 100 Continue\r\n"));
 
         result = gen.generateResponse(null, false, null, null, content0, false);
         assertEquals(HttpGenerator.Result.NEED_INFO, result);
