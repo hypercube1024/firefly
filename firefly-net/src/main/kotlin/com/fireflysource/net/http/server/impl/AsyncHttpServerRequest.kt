@@ -13,6 +13,7 @@ import com.fireflysource.net.http.server.impl.content.handler.StringContentHandl
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
 class AsyncHttpServerRequest(
@@ -22,6 +23,7 @@ class AsyncHttpServerRequest(
 
     private var cookieList: List<Cookie>? = null
     var urlEncoded: UrlEncoded? = null
+    private val requestComplete = AtomicBoolean(false)
 
     override fun getMethod(): String = request.method
 
@@ -59,14 +61,22 @@ class AsyncHttpServerRequest(
         this.contentHandler = contentHandler
     }
 
+    override fun isRequestComplete(): Boolean = requestComplete.get()
+
+    override fun setRequestComplete(requestComplete: Boolean) {
+        this.requestComplete.set(requestComplete)
+    }
+
     override fun getStringBody(): String = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is StringContentHandler }
         .map { it.toString() }
         .orElse("")
 
     override fun getStringBody(charset: Charset): String = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is StringContentHandler }
         .map { it as StringContentHandler }
         .map { it.toString(charset) }
@@ -74,6 +84,7 @@ class AsyncHttpServerRequest(
 
     override fun getBody(): List<ByteBuffer> = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is ByteBufferContentHandler }
         .map { it as ByteBufferContentHandler }
         .map { it.getByteBuffers() }
@@ -81,6 +92,7 @@ class AsyncHttpServerRequest(
 
     override fun getFormInput(name: String): String = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
         .map { it.getFormInput(name) }
@@ -88,6 +100,7 @@ class AsyncHttpServerRequest(
 
     override fun getFormInputs(name: String): List<String> = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
         .map { it.getFormInputs(name) }
@@ -95,6 +108,7 @@ class AsyncHttpServerRequest(
 
     override fun getFormInputs(): Map<String, MutableList<String>> = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
         .map { it.getFormInputs() }
@@ -102,6 +116,7 @@ class AsyncHttpServerRequest(
 
     override fun getPart(name: String): MultiPart? = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is MultiPartContentHandler }
         .map { it as MultiPartContentHandler }
         .map { it.getPart(name) }
@@ -109,6 +124,7 @@ class AsyncHttpServerRequest(
 
     override fun getParts(): List<MultiPart> = Optional
         .ofNullable(contentHandler)
+        .filter { isRequestComplete }
         .filter { it is MultiPartContentHandler }
         .map { it as MultiPartContentHandler }
         .map { it.getParts() }

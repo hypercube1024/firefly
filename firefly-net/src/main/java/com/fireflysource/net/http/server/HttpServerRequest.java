@@ -91,6 +91,20 @@ public interface HttpServerRequest {
     Supplier<HttpFields> getTrailerSupplier();
 
     /**
+     * Set the HTTP request is complete.
+     *
+     * @param requestComplete If true, the HTTP request is complete.
+     */
+    void setRequestComplete(boolean requestComplete);
+
+    /**
+     * Get the HTTP request is complete.
+     *
+     * @return If true, the HTTP request is complete.
+     */
+    boolean isRequestComplete();
+
+    /**
      * Get the HTTP body and convert it to the UTF-8 string.
      *
      * @return The HTTP body string.

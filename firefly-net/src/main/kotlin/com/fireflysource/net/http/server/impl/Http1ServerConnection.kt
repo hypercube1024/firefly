@@ -30,6 +30,7 @@ class Http1ServerConnection(
         while (!tcpConnection.isClosed) {
             try {
                 val context = parseRequest()
+                context.request.isRequestComplete = true
                 listener.onHttpRequestComplete(context).await()
             } catch (e: Exception) {
                 listener.onException(handler.getAsyncRoutingContext(), e).await()
