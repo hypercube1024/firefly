@@ -113,6 +113,29 @@ public interface HttpServerRequest {
     List<ByteBuffer> getBody();
 
     /**
+     * Get the web form input value.
+     *
+     * @param name The form input name.
+     * @return The value.
+     */
+    String getFormInput(String name);
+
+    /**
+     * Get the web form input values.
+     *
+     * @param name The web form input name.
+     * @return The values.
+     */
+    List<String> getFormInputs(String name);
+
+    /**
+     * Get all web form inputs.
+     *
+     * @return All web form inputs.
+     */
+    Map<String, List<String>> getFormInputs();
+
+    /**
      * Get HTTP request multi-part content.
      *
      * @param name The part name.

@@ -127,7 +127,9 @@ public interface RoutingContext {
      * @param name The form input name.
      * @return The value.
      */
-    String getFormInput(String name);
+    default String getFormInput(String name) {
+        return getRequest().getFormInput(name);
+    }
 
     /**
      * Get the web form input values.
@@ -135,14 +137,18 @@ public interface RoutingContext {
      * @param name The web form input name.
      * @return The values.
      */
-    List<String> getFormInputs(String name);
+    default List<String> getFormInputs(String name) {
+        return getRequest().getFormInputs(name);
+    }
 
     /**
      * Get all web form inputs.
      *
      * @return All web form inputs.
      */
-    Map<String, List<String>> getFormInputs();
+    default Map<String, List<String>> getFormInputs() {
+        return getRequest().getFormInputs();
+    }
 
     /**
      * Get the HTTP body and convert it to the UTF-8 string.
@@ -178,14 +184,18 @@ public interface RoutingContext {
      * @param name The part name.
      * @return The HTTP request multi-part content.
      */
-    MultiPart getPart(String name);
+    default MultiPart getPart(String name) {
+        return getRequest().getPart(name);
+    }
 
     /**
      * Get all HTTP request multi-part content.
      *
      * @return All HTTP request multi-part content.
      */
-    List<MultiPart> getParts();
+    default List<MultiPart> getParts() {
+        return getRequest().getParts();
+    }
 
     /**
      * Set HTTP request content handler.
@@ -193,7 +203,10 @@ public interface RoutingContext {
      * @param contentHandler HTTP request content handler.
      * @return The routing context.
      */
-    RoutingContext contentHandler(HttpServerContentHandler contentHandler);
+    default RoutingContext contentHandler(HttpServerContentHandler contentHandler) {
+        getRequest().setContentHandler(contentHandler);
+        return this;
+    }
 
     /**
      * Get HTTP request method.

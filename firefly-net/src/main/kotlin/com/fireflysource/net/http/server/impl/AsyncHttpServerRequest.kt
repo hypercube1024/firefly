@@ -7,6 +7,8 @@ import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.HttpServerRequest
 import com.fireflysource.net.http.server.MultiPart
 import com.fireflysource.net.http.server.impl.content.handler.ByteBufferContentHandler
+import com.fireflysource.net.http.server.impl.content.handler.FormInputsContentHandler
+import com.fireflysource.net.http.server.impl.content.handler.MultiPartContentHandler
 import com.fireflysource.net.http.server.impl.content.handler.StringContentHandler
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -77,13 +79,40 @@ class AsyncHttpServerRequest(
         .map { it.getByteBuffers() }
         .orElse(listOf())
 
-    override fun getPart(name: String): MultiPart {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getFormInput(name: String): String = Optional
+        .ofNullable(contentHandler)
+        .filter { it is FormInputsContentHandler }
+        .map { it as FormInputsContentHandler }
+        .map { it.getFormInput(name) }
+        .orElse("")
 
-    override fun getParts(): List<MultiPart> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getFormInputs(name: String): List<String> = Optional
+        .ofNullable(contentHandler)
+        .filter { it is FormInputsContentHandler }
+        .map { it as FormInputsContentHandler }
+        .map { it.getFormInputs(name) }
+        .orElse(listOf())
+
+    override fun getFormInputs(): Map<String, MutableList<String>> = Optional
+        .ofNullable(contentHandler)
+        .filter { it is FormInputsContentHandler }
+        .map { it as FormInputsContentHandler }
+        .map { it.getFormInputs() }
+        .orElse(mapOf())
+
+    override fun getPart(name: String): MultiPart? = Optional
+        .ofNullable(contentHandler)
+        .filter { it is MultiPartContentHandler }
+        .map { it as MultiPartContentHandler }
+        .map { it.getPart(name) }
+        .orElse(null)
+
+    override fun getParts(): List<MultiPart> = Optional
+        .ofNullable(contentHandler)
+        .filter { it is MultiPartContentHandler }
+        .map { it as MultiPartContentHandler }
+        .map { it.getParts() }
+        .orElse(listOf())
 
     override fun getTrailerSupplier(): Supplier<HttpFields> = request.trailerSupplier
 

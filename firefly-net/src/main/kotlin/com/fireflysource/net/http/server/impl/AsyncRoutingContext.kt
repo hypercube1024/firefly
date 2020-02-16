@@ -2,7 +2,10 @@ package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.server.*
+import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.HttpServerRequest
+import com.fireflysource.net.http.server.HttpServerResponse
+import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -36,31 +39,6 @@ class AsyncRoutingContext(
     }
 
     override fun getPathParameterByRegexGroup(index: Int): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun contentHandler(contentHandler: HttpServerContentHandler): RoutingContext {
-        request.contentHandler = contentHandler
-        return this
-    }
-
-    override fun getFormInput(name: String): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getFormInputs(name: String): List<String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getFormInputs(): MutableMap<String, MutableList<String>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getPart(name: String): MultiPart {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getParts(): MutableList<MultiPart> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

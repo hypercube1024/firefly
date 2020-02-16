@@ -6,7 +6,6 @@ import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parseAll
-import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerOutputChannel
 import com.fireflysource.net.http.server.RoutingContext
@@ -23,7 +22,6 @@ class Http1ServerConnection(
 
     private val handler = Http1ServerRequestHandler(this)
     private val parser = HttpParser(handler)
-    private val generator = HttpGenerator()
     private val startParsing = AtomicBoolean(false)
 
     private fun parseRequestJob() = coroutineScope.launch {
