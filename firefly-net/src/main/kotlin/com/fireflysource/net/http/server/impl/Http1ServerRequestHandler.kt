@@ -42,7 +42,7 @@ class Http1ServerRequestHandler(val connection: HttpServerConnection) : HttpPars
             urlEncoded.decode(query)
             httpServerRequest.urlEncoded = urlEncoded
         }
-        return AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(), connection)
+        return AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
     }
 
     override fun content(byteBuffer: ByteBuffer): Boolean {

@@ -5,6 +5,7 @@ import com.fireflysource.net.http.common.model.HttpFields;
 import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
@@ -107,6 +108,7 @@ public interface HttpServerResponse {
 
     /**
      * Set the content provider. When you commit the response, the HTTP server will send the data that read from the content provider.
+     * If you set content provider after commit response, this method will throw IllegalStateException.
      *
      * @param contentProvider When you commit the response, the HTTP server will send the data that read from the content provider.
      */
@@ -114,6 +116,7 @@ public interface HttpServerResponse {
 
     /**
      * Get the output channel. It can write data to the client.
+     * If you set a content provider or get output channel before commit response, this method will throw IllegalStateException.
      *
      * @return The output channel.
      */
@@ -122,6 +125,15 @@ public interface HttpServerResponse {
     /**
      * Commit the response. If you set the content provider, the server will output the data from the content provider,
      * or else you can write data using the output channel.
+     *
+     * @return The future result.
      */
-    void commit();
+    CompletableFuture<Void> commit();
+
+    /**
+     * If true, the http response has committed.
+     *
+     * @return If true, the http response has committed.
+     */
+    boolean isCommitted();
 }

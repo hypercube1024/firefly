@@ -91,7 +91,7 @@ class AsyncRoutingContext(
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun end(value: String?): CompletableFuture<Void> {
+    override fun end(value: String): CompletableFuture<Void> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

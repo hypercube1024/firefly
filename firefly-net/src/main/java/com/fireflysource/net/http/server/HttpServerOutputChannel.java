@@ -9,6 +9,20 @@ import java.util.concurrent.CompletableFuture;
 public interface HttpServerOutputChannel extends OutputChannel {
 
     /**
+     * Commit the http response.
+     *
+     * @return The future result.
+     */
+    CompletableFuture<Void> commit();
+
+    /**
+     * If true, the http response has committed.
+     *
+     * @return If true, the http response has committed.
+     */
+    boolean isCommitted();
+
+    /**
      * Write the message to the remote endpoint.
      *
      * @param byteBuffers The byte buffer array.

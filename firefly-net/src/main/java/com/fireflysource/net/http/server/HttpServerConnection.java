@@ -12,9 +12,15 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface HttpServerConnection extends HttpConnection {
 
-    HttpServerConnection listen(Listener listener);
 
+    HttpServerConnection setListener(Listener listener);
+
+    /**
+     * Begin to listen the http request.
+     */
     void begin();
+
+    HttpServerOutputChannel createHttpServerOutputChannel();
 
     interface Listener {
         CompletableFuture<Void> onHeaderComplete(RoutingContext context);

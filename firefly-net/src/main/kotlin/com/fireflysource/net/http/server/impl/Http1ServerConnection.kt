@@ -8,11 +8,13 @@ import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.HttpServerOutputChannel
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 
 class Http1ServerConnection(
     private val config: HttpConfig,
@@ -22,8 +24,9 @@ class Http1ServerConnection(
     private val handler = Http1ServerRequestHandler(this)
     private val parser = HttpParser(handler)
     private val generator = HttpGenerator()
+    private val startParsing = AtomicBoolean(false)
 
-    private fun parseRequestAndGenerateResponseJob() = coroutineScope.launch {
+    private fun parseRequestJob() = coroutineScope.launch {
         val listener = handler.connectionListener
         requireNotNull(listener)
         while (!tcpConnection.isClosed) {
@@ -35,7 +38,6 @@ class Http1ServerConnection(
             } finally {
                 handler.reset()
                 parser.reset()
-                generator.reset()
             }
         }
     }
@@ -46,12 +48,18 @@ class Http1ServerConnection(
     }
 
     override fun begin() {
-        parseRequestAndGenerateResponseJob()
+        if (startParsing.compareAndSet(false, true)) {
+            parseRequestJob()
+        }
     }
 
-    override fun listen(listener: HttpServerConnection.Listener): HttpServerConnection {
+    override fun setListener(listener: HttpServerConnection.Listener): HttpServerConnection {
         handler.connectionListener = listener
         return this
+    }
+
+    override fun createHttpServerOutputChannel(): HttpServerOutputChannel {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
