@@ -106,7 +106,7 @@ class AsyncHttpServerRequest(
         .map { it.getFormInputs(name) }
         .orElse(listOf())
 
-    override fun getFormInputs(): Map<String, MutableList<String>> = Optional
+    override fun getFormInputs(): Map<String, List<String>> = Optional
         .ofNullable(contentHandler)
         .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }

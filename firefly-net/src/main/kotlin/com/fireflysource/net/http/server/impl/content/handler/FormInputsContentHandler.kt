@@ -14,5 +14,5 @@ class FormInputsContentHandler : StringContentHandler() {
 
     fun getFormInputs(name: String): List<String> = urlEncoded[name] ?: listOf()
 
-    fun getFormInputs(): Map<String, MutableList<String>> = urlEncoded
+    fun getFormInputs(): Map<String, List<String>> = urlEncoded
 }
