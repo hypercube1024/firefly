@@ -72,17 +72,25 @@ class Http1ServerRequestHandler(private val connection: HttpServerConnection) : 
                 requireNotNull(ctx)
                 ctx.request.isRequestComplete = true
                 notifyHttpRequestComplete(ctx)
-                context = null
+                reset()
             }
             is BadMessage -> {
                 log.error(message.exception) { "Receive the bad HTTP1 message. id: ${connection.id}" }
                 notifyException(context, message.exception)
+                reset()
             }
             is EarlyEOF -> {
                 log.error { "HTTP1 server parser early EOF. id: ${connection.id}" }
                 notifyException(context, IllegalStateException("Parser early EOF"))
+                reset()
             }
         }
+    }
+
+    private fun reset() {
+        context = null
+        connectionListener = HttpServerConnection.EMPTY_LISTENER
+        request.recycle()
     }
 
     private suspend fun notifyHeaderComplete(context: RoutingContext) {

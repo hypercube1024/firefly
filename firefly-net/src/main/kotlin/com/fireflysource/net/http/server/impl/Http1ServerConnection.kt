@@ -42,6 +42,10 @@ class Http1ServerConnection(
 
     override fun begin() {
         if (startParsing.compareAndSet(false, true)) {
+            Assert.state(
+                handler.connectionListener !== HttpServerConnection.EMPTY_LISTENER,
+                "The HTTP1 server connection listener is empty. Please set listener before begin parsing."
+            )
             parseRequestJob()
         }
     }

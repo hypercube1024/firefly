@@ -73,6 +73,7 @@ class Http1ClientConnection(
                 val response = parseResponse()
                 requestMessage.response.complete(response)
             } catch (e: Exception) {
+                log.error(e) { "HTTP1 client handler exception. id: $id" }
                 requestMessage.response.completeExceptionally(e)
             } finally {
                 handler.reset()

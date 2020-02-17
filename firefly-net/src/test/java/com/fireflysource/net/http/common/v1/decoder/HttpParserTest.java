@@ -1094,6 +1094,7 @@ class HttpParserTest {
 
         assertTrue(headerCompleted);
         assertTrue(early);
+        assertFalse(messageCompleted);
     }
 
     @Test
@@ -2003,6 +2004,7 @@ class HttpParserTest {
         HttpParser parser = new HttpParser(handler);
         parser.parseNext(buffer);
         assertTrue(bad.contains("Bad Host"));
+        assertFalse(messageCompleted);
     }
 
     @Test
