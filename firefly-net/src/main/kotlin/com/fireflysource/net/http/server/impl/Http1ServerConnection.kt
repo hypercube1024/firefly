@@ -33,7 +33,7 @@ class Http1ServerConnection(
             try {
                 parser.parseAll(tcpConnection)
             } catch (e: Exception) {
-                log.error(e) { "Parse HTTP1 request exception" }
+                log.error(e) { "Parse HTTP1 request exception. id: $id" }
             } finally {
                 parser.reset()
             }

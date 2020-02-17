@@ -5,6 +5,7 @@ import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -17,7 +18,7 @@ class Http1ServerRequestHandler(private val connection: HttpServerConnection) : 
         private val log = SystemLogger.create(Http1ServerRequestHandler::class.java)
     }
 
-    var connectionListener: HttpServerConnection.Listener? = null
+    var connectionListener: HttpServerConnection.Listener = HttpServerConnection.EMPTY_LISTENER
     private val parserChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
     private var request = MetaData.Request(HttpFields())
     private var context: AsyncRoutingContext? = null
@@ -33,49 +34,80 @@ class Http1ServerRequestHandler(private val connection: HttpServerConnection) : 
                 onParserMessage(message)
             } catch (e: Exception) {
                 log.error(e) { "Handle HTTP1 server parser message exception." }
-                connectionListener?.onException(context, e)?.await()
+                notifyException(context, e)
             }
         }
-    }
-
-    private fun newRoutingContext() {
-        val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
-        context = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
-    }
-
-    private fun reset() {
-        request.recycle()
-        context = null
     }
 
     private suspend fun onParserMessage(message: ParserMessage) {
         when (message) {
             is HeaderComplete -> {
-                newRoutingContext()
-                connectionListener?.onHeaderComplete(context)?.await()
-                reset()
+                val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
+                val ctx = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
+                context = ctx
+                request.recycle()
+                notifyHeaderComplete(ctx)
             }
             is Content -> {
-                context?.request?.contentHandler?.accept(message.byteBuffer, context)
+                try {
+                    val ctx = context
+                    requireNotNull(ctx)
+                    ctx.request.contentHandler.accept(message.byteBuffer, context)
+                    log.debug { "HTTP1 server receives content success. id: ${connection.id}" }
+                } catch (e: Exception) {
+                    log.error(e) { "HTTP1 server accepts content exception. id: ${connection.id}" }
+                }
             }
             is ContentComplete -> {
-                context?.request?.contentHandler?.closeFuture()?.await()
+                try {
+                    val ctx = context
+                    requireNotNull(ctx)
+                    ctx.request.contentHandler.closeFuture().await()
+                } catch (e: Exception) {
+                    log.error(e) { "HTTP1 server completes content exception. id: ${connection.id}" }
+                }
             }
             is MessageComplete -> {
-                context?.request?.isRequestComplete = true
-                connectionListener?.onHttpRequestComplete(context)?.await()
-                reset()
+                val ctx = context
+                requireNotNull(ctx)
+                ctx.request.isRequestComplete = true
+                notifyHttpRequestComplete(ctx)
+                context = null
             }
             is BadMessage -> {
                 log.error(message.exception) { "Receive the bad HTTP1 message. id: ${connection.id}" }
-                connectionListener?.onException(context, message.exception)?.await()
-                reset()
+                notifyException(context, message.exception)
             }
             is EarlyEOF -> {
                 log.error { "HTTP1 server parser early EOF. id: ${connection.id}" }
-                connectionListener?.onException(context, IllegalStateException("Parser early EOF"))?.await()
-                reset()
+                notifyException(context, IllegalStateException("Parser early EOF"))
             }
+        }
+    }
+
+    private suspend fun notifyHeaderComplete(context: RoutingContext) {
+        try {
+            connectionListener.onHeaderComplete(context).await()
+            log.debug { "HTTP1 server handles header complete success. id: ${connection.id}" }
+        } catch (e: Exception) {
+            log.error(e) { "HTTP1 server handles header complete exception. id: ${connection.id}" }
+        }
+    }
+
+    private suspend fun notifyHttpRequestComplete(context: RoutingContext) {
+        try {
+            connectionListener.onHttpRequestComplete(context).await()
+            log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
+        } catch (e: Exception) {
+            log.error(e) { "HTTP1 server handles request exception. id: ${connection.id}" }
+        }
+    }
+
+    private suspend fun notifyException(context: RoutingContext?, exception: Exception) {
+        try {
+            connectionListener.onException(context, exception).await()
+        } catch (e: Exception) {
+            log.error(e) { "HTTP1 server receives the error. id: ${connection.id}" }
         }
     }
 

@@ -1,12 +1,13 @@
 package com.fireflysource.net;
 
-import java.io.Closeable;
+import com.fireflysource.common.io.AsyncCloseable;
+
 import java.net.InetSocketAddress;
 
 /**
  * @author Pengtao Qiu
  */
-public interface Connection extends Closeable {
+public interface Connection extends AsyncCloseable {
 
     Object getAttachment();
 
