@@ -9,7 +9,6 @@ import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.HttpServerOutputChannel
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.launch
@@ -58,10 +57,6 @@ class Http1ServerConnection(
 
         handler.connectionListener = listener
         return this
-    }
-
-    override fun createHttpServerOutputChannel(): HttpServerOutputChannel {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1

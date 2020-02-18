@@ -117,7 +117,7 @@ public interface HttpServerResponse extends AsyncCloseable {
 
     /**
      * Get the output channel. It can write data to the client.
-     * If you set a content provider or get output channel before commit response, this method will throw IllegalStateException.
+     * If you get output channel before commit response, this method will throw IllegalStateException.
      *
      * @return The output channel.
      */

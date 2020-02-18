@@ -20,8 +20,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
-abstract class AbstractAsyncHttpServerResponse(private val httpServerConnection: HttpServerConnection) :
-    HttpServerResponse {
+abstract class AbstractHttpServerResponse(private val httpServerConnection: HttpServerConnection) : HttpServerResponse {
 
     val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, HttpStatus.OK_200, HttpFields())
     private var contentProvider: HttpServerContentProvider? = null
@@ -89,21 +88,30 @@ abstract class AbstractAsyncHttpServerResponse(private val httpServerConnection:
 
     private suspend fun commitResponse() {
         if (committed.compareAndSet(false, true)) {
+            if (response.fields[HttpHeader.CONNECTION] == null && httpVersion == HttpVersion.HTTP_1_1) {
+                response.fields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE)
+            }
+
             cookies.map { CookieGenerator.generateSetCookie(it) }
                 .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
 
-            val outputChannel = createHttpServerOutputChannel(response)
-            serverOutputChannel = outputChannel
-
             val provider = contentProvider
             if (provider != null) {
-                outputChannel.useAwait {
+                if (provider.length() > 0) {
+                    response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
+                }
+            }
+
+            val output = createHttpServerOutputChannel(response)
+            if (provider != null) {
+                output.useAwait {
                     it.commit().await()
                     writeContent(provider, it)
                 }
             } else {
-                outputChannel.commit().await()
+                output.commit().await()
             }
+            this.serverOutputChannel = output
         }
     }
 
