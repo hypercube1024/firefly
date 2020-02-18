@@ -7,7 +7,6 @@ import com.fireflysource.net.http.common.v2.decoder.ServerParser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
 import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.HttpServerOutputChannel
 import com.fireflysource.net.tcp.TcpConnection
 import java.util.function.UnaryOperator
 
@@ -130,7 +129,4 @@ class Http2ServerConnection(
         return this
     }
 
-    override fun createHttpServerOutputChannel(): HttpServerOutputChannel {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 }
