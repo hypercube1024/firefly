@@ -23,16 +23,9 @@ public interface HttpServerConnection extends HttpConnection {
     HttpServerConnection setListener(Listener listener);
 
     /**
-     * Begin to listen the http request.
+     * Begin to receive HTTP request.
      */
     void begin();
-
-    /**
-     * Create the HTTP server output channel. It outputs the HTTP response.
-     *
-     * @return The HTTP server output channel.
-     */
-    HttpServerOutputChannel createHttpServerOutputChannel();
 
     /**
      * The HTTP server connection event listener.

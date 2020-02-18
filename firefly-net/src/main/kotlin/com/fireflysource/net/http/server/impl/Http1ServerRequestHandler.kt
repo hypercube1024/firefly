@@ -43,7 +43,7 @@ class Http1ServerRequestHandler(private val connection: HttpServerConnection) : 
         when (message) {
             is HeaderComplete -> {
                 val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
-                val ctx = AsyncRoutingContext(httpServerRequest, AsyncHttpServerResponse(connection), connection)
+                val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection), connection)
                 context = ctx
                 request.recycle()
                 notifyHeaderComplete(ctx)

@@ -4,7 +4,9 @@ import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerContentProvider
@@ -18,7 +20,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
-class AsyncHttpServerResponse(private val httpServerConnection: HttpServerConnection) : HttpServerResponse {
+abstract class AbstractAsyncHttpServerResponse(private val httpServerConnection: HttpServerConnection) :
+    HttpServerResponse {
 
     val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, HttpStatus.OK_200, HttpFields())
     private var contentProvider: HttpServerContentProvider? = null
@@ -86,19 +89,30 @@ class AsyncHttpServerResponse(private val httpServerConnection: HttpServerConnec
 
     private suspend fun commitResponse() {
         if (committed.compareAndSet(false, true)) {
-            val outputChannel = httpServerConnection.createHttpServerOutputChannel()
-            outputChannel.commit().await()
+            cookies.map { CookieGenerator.generateSetCookie(it) }
+                .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
+
+            val outputChannel = createHttpServerOutputChannel(response)
             serverOutputChannel = outputChannel
+
             val provider = contentProvider
             if (provider != null) {
-                try {
-                    writeContent(provider, outputChannel)
-                } finally {
-                    outputChannel.closeFuture().await()
+                outputChannel.useAwait {
+                    it.commit().await()
+                    writeContent(provider, it)
                 }
+            } else {
+                outputChannel.commit().await()
             }
         }
     }
+
+    /**
+     * Create the HTTP server output channel. It outputs the HTTP response.
+     *
+     * @return The HTTP server output channel.
+     */
+    abstract fun createHttpServerOutputChannel(response: MetaData.Response): HttpServerOutputChannel
 
     private suspend fun writeContent(provider: HttpServerContentProvider, outputChannel: HttpServerOutputChannel) {
         writeLoop@ while (true) {
