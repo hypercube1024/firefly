@@ -4,9 +4,12 @@ import javassist.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.fireflysource.common.string.StringUtils.replace;
 
@@ -22,120 +25,162 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
     private JavassistClassProxyFactory() {
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T createProxy(T instance, ClassProxy proxy, MethodFilter filter) throws Throwable {
+        Class<?> clazz = instance.getClass();
+        Method[] methods = Arrays.stream(clazz.getMethods()).filter(m -> filterMethods(filter, m)).toArray(Method[]::new);
+        if (methods.length == 0) {
+            return instance;
+        }
+
         ClassPool classPool = ClassPool.getDefault();
         classPool.insertClassPath(new ClassClassPath(ClassProxyFactory.class));
+        CtClass cc = buildClass(classPool, clazz);
+        buildPrivateFields(clazz, cc);
+        buildConstructor(classPool, clazz, cc);
+        List<String> methodCodes = buildMethodCodes(methods);
+        for (String str : methodCodes) {
+            cc.addMethod(CtMethod.make(str, cc));
+        }
 
-        Class<?> clazz = instance.getClass();
-        // make class
-        CtClass cc = classPool.makeClass("com.firefly.utils.ClassProxy" + UUID.randomUUID().toString().replace("-", ""));
+        MethodProxy[] methodProxies = getMethodProxies(methods);
+        return (T) cc.toClass(classLoader, null)
+                     .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
+                     .newInstance(proxy, instance, methodProxies);
+    }
+
+    private List<String> buildMethodCodes(Method[] methods) {
+        return IntStream
+                .range(0, methods.length)
+                .boxed()
+                .map(index -> buildMethodCode(methods[index], index))
+                .collect(Collectors.toList());
+    }
+
+    private String buildMethodCode(Method m, Integer index) {
+        Class<?>[] parameters = m.getParameterTypes();
+        return buildMethodSignatureLine(m, parameters) + "{\n" +
+                convertParametersToObjectArray(parameters) +
+                buildInvokeInterceptMethodAndReturnLine(m, index) +
+                "}";
+    }
+
+    private MethodProxy[] getMethodProxies(Method[] methods) {
+        return Arrays.stream(methods)
+                     .map(JavassistReflectionProxyFactory.INSTANCE::getMethodProxy)
+                     .toArray(MethodProxy[]::new);
+    }
+
+    private String buildMethodSignatureLine(Method m, Class<?>[] parameters) {
+        String t = "public {} {} ({})";
+        return replace(t, m.getReturnType().getCanonicalName(), m.getName(), buildParameters(parameters));
+    }
+
+    private String convertParametersToObjectArray(Class<?>[] parameters) {
+        if (parameters == null || parameters.length == 0) {
+            return "Object[] args = new Object[0];\n";
+        } else {
+            return "Object[] args = new Object[]{" +
+                    buildParameterObjectArray(parameters) +
+                    "};\n";
+        }
+    }
+
+    private String buildInvokeInterceptMethodAndReturnLine(Method m, Integer index) {
+        if (!m.getReturnType().equals(void.class)) {
+            if (m.getReturnType().isPrimitive()) {
+                String t = "\t{} ret = (({})classProxy.intercept(methodProxies[{}], originalInstance, args)).{}Value();\n" +
+                        "\treturn ret;\n";
+                return replace(t,
+                        m.getReturnType().getCanonicalName(),
+                        AbstractProxyFactory.primitiveWrapMap.get(m.getReturnType()),
+                        index,
+                        m.getReturnType().getCanonicalName());
+            } else {
+                String t = "\t{} ret = ({})classProxy.intercept(methodProxies[{}], originalInstance, args);\n" +
+                        "\treturn ret;\n";
+                return replace(t,
+                        m.getReturnType().getCanonicalName(),
+                        m.getReturnType().getCanonicalName(),
+                        index);
+            }
+        } else {
+            String t = "\tclassProxy.intercept(methodProxies[{}], originalInstance, args);\n";
+            return replace(t, index);
+        }
+    }
+
+
+    private String buildParameterObjectArray(Class<?>[] parameters) {
+        return IntStream.range(0, parameters.length)
+                        .boxed()
+                        .map(index -> convertTypeToObject(parameters, index))
+                        .collect(Collectors.joining(","));
+    }
+
+    private String convertTypeToObject(Class<?>[] parameters, Integer index) {
+        final Class<?> parameter = parameters[index];
+        String objectParam;
+        if (parameter.isPrimitive()) {
+            String t = "(Object){}.valueOf(arg{})";
+            objectParam = replace(t, AbstractProxyFactory.primitiveWrapMap.get(parameters[index]), index);
+        } else {
+            objectParam = "(Object)arg" + index;
+        }
+        return objectParam;
+    }
+
+    private String buildParameters(Class<?>[] parameters) {
+        if (parameters == null || parameters.length == 0) {
+            return "";
+        }
+        return IntStream
+                .range(0, parameters.length)
+                .boxed()
+                .map(index -> parameters[index].getCanonicalName() + " arg" + index)
+                .collect(Collectors.joining(","));
+    }
+
+    private boolean filterMethods(MethodFilter filter, Method m) {
+        return !m.getDeclaringClass().equals(Object.class)
+                && !Modifier.isFinal(m.getModifiers())
+                && !Modifier.isStatic(m.getModifiers())
+                && !Modifier.isNative(m.getModifiers())
+                && Optional.ofNullable(filter).map(f -> f.accept(m)).orElse(true);
+    }
+
+    private CtClass buildClass(ClassPool classPool, Class<?> clazz) throws NotFoundException, CannotCompileException {
+        String className = "com.firefly.utils.ClassProxy" + UUID.randomUUID().toString().replace("-", "");
+        CtClass cc = classPool.makeClass(className);
         cc.setSuperclass(classPool.get(clazz.getName()));
+        return cc;
+    }
 
-        // make fields
+    private void buildPrivateFields(Class<?> clazz, CtClass cc) throws CannotCompileException {
         cc.addField(CtField.make("private " + ClassProxy.class.getCanonicalName() + " classProxy;", cc));
         cc.addField(CtField.make("private " + clazz.getCanonicalName() + " originalInstance;", cc));
         cc.addField(CtField.make("private " + MethodProxy[].class.getCanonicalName() + " methodProxies;", cc));
+    }
 
-        // make constructor
+    private void buildConstructor(ClassPool classPool, Class<?> clazz, CtClass cc) throws CannotCompileException, NotFoundException {
         CtConstructor empty = new CtConstructor(null, cc);
         empty.setBody("{}");
+        cc.addConstructor(empty);
+
         CtConstructor constructor = new CtConstructor(new CtClass[]{
                 classPool.get(ClassProxy.class.getName()),
                 classPool.get(clazz.getName()),
                 classPool.get(MethodProxy[].class.getName())
         }, cc);
-        constructor.setBody("{"
-                + "this.classProxy = (" + ClassProxy.class.getCanonicalName() + ")$1;"
-                + "this.originalInstance = (" + clazz.getCanonicalName() + ")$2;"
-                + "this.methodProxies = (" + MethodProxy[].class.getCanonicalName() + ")$3;"
-                + "}");
-        cc.addConstructor(empty);
+        String bodyTemplate = "{"
+                + "this.classProxy = ({})$1;"
+                + "this.originalInstance = ({})$2;"
+                + "this.methodProxies = ({})$3;"
+                + "}";
+        String body = replace(bodyTemplate,
+                ClassProxy.class.getCanonicalName(), clazz.getCanonicalName(), MethodProxy[].class.getCanonicalName());
+        constructor.setBody(body);
         cc.addConstructor(constructor);
-
-        // make methods
-        List<Method> list = new ArrayList<>();
-        for (Method m : clazz.getMethods()) {
-            if (m.getDeclaringClass().equals(Object.class)
-                    || Modifier.isFinal(m.getModifiers())
-                    || Modifier.isStatic(m.getModifiers())
-                    || Modifier.isNative(m.getModifiers())) {
-                continue;
-            }
-            if (filter != null && !filter.accept(m)) {
-                continue;
-            }
-            list.add(m);
-        }
-
-        Method[] methods = list.toArray(new Method[0]);
-        MethodProxy[] methodProxies = new MethodProxy[methods.length];
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
-            methodProxies[i] = JavassistReflectionProxyFactory.INSTANCE.getMethodProxy(m);
-
-            Class[] parameters = m.getParameterTypes();
-
-            StringBuilder parameterArray;
-            if (parameters.length == 0) {
-                parameterArray = new StringBuilder("Object[] args = new Object[0];\n");
-            } else {
-                parameterArray = new StringBuilder("Object[] args = new Object[]{");
-            }
-
-            StringBuilder str = new StringBuilder("public " + m.getReturnType().getCanonicalName() + " " + m.getName() + "(");
-
-            for (int j = 0; j < parameters.length; j++) {
-                if (j != 0) {
-                    str.append(", ");
-                    parameterArray.append(", ");
-                }
-
-                str.append(parameters[j].getCanonicalName()).append(" arg").append(j);
-
-                if (parameters[j].isPrimitive()) {
-                    String t = "(Object){}.valueOf(arg{})";
-                    parameterArray.append(replace(t, AbstractProxyFactory.primitiveWrapMap.get(parameters[j]), j));
-                } else {
-                    parameterArray.append("(Object)arg").append(j);
-                }
-            }
-
-            str.append("){\n");
-
-            if (parameters.length > 0) {
-                parameterArray.append("};\n");
-            }
-
-            str.append("\t").append(parameterArray);
-            if (!m.getReturnType().equals(void.class)) {
-                if (m.getReturnType().isPrimitive()) {
-                    String t = "\t{} ret = (({})classProxy.intercept(methodProxies[{}], originalInstance, args)).{}Value();\n";
-                    str.append(replace(t,
-                            m.getReturnType().getCanonicalName(),
-                            AbstractProxyFactory.primitiveWrapMap.get(m.getReturnType()),
-                            i,
-                            m.getReturnType().getCanonicalName()));
-                } else {
-                    String t = "\t{} ret = ({})classProxy.intercept(methodProxies[{}], originalInstance, args);\n";
-                    str.append(replace(t,
-                            m.getReturnType().getCanonicalName(),
-                            m.getReturnType().getCanonicalName(),
-                            i));
-                }
-                str.append("\treturn ret;\n");
-            } else {
-                String t = "\tclassProxy.intercept(methodProxies[{}], originalInstance, args);\n";
-                str.append(replace(t, i));
-            }
-            str.append("}");
-            cc.addMethod(CtMethod.make(str.toString(), cc));
-        }
-
-        // generate a proxy instance
-        return (T) cc.toClass(classLoader, null)
-                     .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
-                     .newInstance(proxy, instance, methodProxies);
     }
 }
