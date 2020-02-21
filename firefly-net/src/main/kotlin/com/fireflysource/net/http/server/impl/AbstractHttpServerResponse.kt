@@ -15,6 +15,8 @@ import com.fireflysource.net.http.server.HttpServerResponse
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,6 +29,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     private var cookieList: List<Cookie>? = null
     private val committed = AtomicBoolean(false)
     private var serverOutputChannel: HttpServerOutputChannel? = null
+    private val mutex = Mutex()
 
     override fun getStatus(): Int = response.status
 
@@ -86,7 +89,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         .asCompletableFuture()
         .thenCompose { Result.DONE }
 
-    private suspend fun commitResponse() {
+    private suspend fun commitResponse() = mutex.withLock {
         if (committed.compareAndSet(false, true)) {
             if (response.fields[HttpHeader.CONNECTION] == null && httpVersion == HttpVersion.HTTP_1_1) {
                 response.fields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE)
@@ -148,9 +151,10 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         }
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
-        return serverOutputChannel?.closeFuture() ?: Result.DONE
-    }
+    override fun closeFuture(): CompletableFuture<Void> = httpServerConnection.coroutineScope.launch {
+        commit().await()
+        outputChannel.closeFuture().await()
+    }.asCompletableFuture().thenCompose { Result.DONE }
 
     override fun close() {
         closeFuture()

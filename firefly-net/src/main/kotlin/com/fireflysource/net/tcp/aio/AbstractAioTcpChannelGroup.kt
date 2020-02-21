@@ -48,7 +48,7 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
                 group.shutdownNow() // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
                 if (!group.awaitTermination(awaitTerminationTimeout, TimeUnit.SECONDS)) {
-                    System.err.println("The tcp client channel group did not terminate")
+                    log.info("The TCP channel group did not terminate")
                 }
             }
         } catch (ie: InterruptedException) {
@@ -57,7 +57,7 @@ abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
             // Preserve interrupt status
             Thread.currentThread().interrupt()
         } catch (e: Exception) {
-            log.info { "shutdown channel group exception." }
+            log.info { "shutdown channel group exception. ${e.message}" }
         }
     }
 

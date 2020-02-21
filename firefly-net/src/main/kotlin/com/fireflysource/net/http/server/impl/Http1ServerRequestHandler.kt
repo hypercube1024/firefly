@@ -89,7 +89,6 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private fun reset() {
         context = null
-        connectionListener = HttpServerConnection.EMPTY_LISTENER
         request.recycle()
     }
 
