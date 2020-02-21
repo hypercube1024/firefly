@@ -43,7 +43,7 @@ class Http1ClientConnection(
     private val generator = HttpGenerator()
 
     // generator buffer
-    private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.requestHeaderBufferSize) }
+    private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.headerBufferSize) }
     private val contentBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.contentBufferSize) }
     private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
 

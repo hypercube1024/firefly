@@ -51,6 +51,8 @@ open class OutputBuffers(
         return maxSize - getCurrentOffset()
     }
 
+    fun getLastIndex(): Int = lastIndex
+
     override fun hasRemaining(): Boolean {
         return getCurrentOffset() < maxSize
     }

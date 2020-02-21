@@ -11,7 +11,6 @@ import com.fireflysource.net.http.common.codec.PreEncodedHttpField;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -394,12 +393,7 @@ public class HttpGenerator {
 
     }
 
-    @Deprecated
-    public Result generateResponse(MetaData.Response info, ByteBuffer header, ByteBuffer chunk, ByteBuffer content, boolean last) throws IOException {
-        return generateResponse(info, false, header, chunk, content, last);
-    }
-
-    public Result generateResponse(MetaData.Response info, boolean head, ByteBuffer header, ByteBuffer chunk, ByteBuffer content, boolean last) throws IOException {
+    public Result generateResponse(MetaData.Response info, boolean head, ByteBuffer header, ByteBuffer chunk, ByteBuffer content, boolean last) {
         switch (state) {
             case START: {
                 if (info == null)
@@ -680,7 +674,6 @@ public class HttpGenerator {
                     // TODO discard content for backward compatibility with 9.3 releases
                     // TODO review if it is still needed in 9.4 or can we just throw.
                     content.clear();
-                    content_length = 0;
                 } else
                     throw new BadMessageException(INTERNAL_SERVER_ERROR_500, "Content for no content response");
             }

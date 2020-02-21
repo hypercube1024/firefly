@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import java.net.URL
 import java.nio.ByteBuffer
 
-class Http1ServerRequestHandler(private val connection: HttpServerConnection) : HttpParser.RequestHandler {
+class Http1ServerRequestHandler(private val connection: Http1ServerConnection) : HttpParser.RequestHandler {
 
     companion object {
         private val log = SystemLogger.create(Http1ServerRequestHandler::class.java)

@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server;
 import com.fireflysource.common.io.OutputChannel;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -55,4 +56,13 @@ public interface HttpServerOutputChannel extends OutputChannel {
      * @return The future result.
      */
     CompletableFuture<Integer> write(String string);
+
+    /**
+     * Write the message to the remote endpoint.
+     *
+     * @param string  The string.
+     * @param charset The charset.
+     * @return The future result.
+     */
+    CompletableFuture<Integer> write(String string, Charset charset);
 }

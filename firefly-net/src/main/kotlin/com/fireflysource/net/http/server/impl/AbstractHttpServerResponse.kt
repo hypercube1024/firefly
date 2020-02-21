@@ -96,10 +96,8 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
                 .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
 
             val provider = contentProvider
-            if (provider != null) {
-                if (provider.length() > 0) {
-                    response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
-                }
+            if (provider != null && provider.length() >= 0) {
+                response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
             }
 
             val output = createHttpServerOutputChannel(response)
@@ -124,7 +122,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
 
     private suspend fun writeContent(provider: HttpServerContentProvider, outputChannel: HttpServerOutputChannel) {
         writeLoop@ while (true) {
-            val size = if (provider.length() > 0) provider.length().coerceAtMost(4096L).toInt() else 4096
+            val size = if (provider.length() > 0) provider.length().coerceAtMost(8192L).toInt() else 8192
             val buffer = BufferUtils.allocate(size)
             val position = buffer.flipToFill()
             val length = provider.read(buffer).await()

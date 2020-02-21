@@ -15,7 +15,7 @@ suspend fun HttpParser.parseAll(tcpConnection: TcpConnection) {
         }
 
         var remaining = buffer.remaining()
-        readBufLoop@ while (!this.isState(HttpParser.State.END) && remaining > 0) {
+        while (!this.isState(HttpParser.State.END) && remaining > 0) {
             val wasRemaining = remaining
             this.parseNext(buffer)
             remaining = buffer.remaining()

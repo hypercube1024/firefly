@@ -5,6 +5,7 @@ import com.fireflysource.common.sys.ProjectVersion;
 import com.fireflysource.net.http.common.codec.DateGenerator;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -12,9 +13,9 @@ import java.nio.ByteBuffer;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpGeneratorServerTest {
-    
+
     @Test
-    void test_0_9() throws Exception {
+    void test_0_9() {
         ByteBuffer header = BufferUtils.allocate(8096);
         ByteBuffer content = BufferUtils.toBuffer("0123456789");
 
@@ -49,7 +50,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testSimple() throws Exception {
+    void testSimple() {
         ByteBuffer header = BufferUtils.allocate(8096);
         ByteBuffer content = BufferUtils.toBuffer("0123456789");
 
@@ -74,7 +75,7 @@ class HttpGeneratorServerTest {
         response += BufferUtils.toString(content);
         BufferUtils.clear(content);
 
-        result = gen.generateResponse(null, false, null, null, content, false);
+        result = gen.generateResponse(null, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
 
@@ -87,7 +88,50 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void test204() throws Exception {
+    @DisplayName("should generate response with content length successfully")
+    void testGenerateHeaderNoLast() {
+        ByteBuffer header = BufferUtils.allocate(8096);
+        ByteBuffer content = BufferUtils.toBuffer("0123456789");
+
+        HttpGenerator gen = new HttpGenerator();
+
+        MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(), 10);
+        info.getFields().add("Content-Type", "test/data");
+        info.getFields().add("Last-Modified", DateGenerator.JAN_01_1970);
+
+        HttpGenerator.Result result = gen.generateResponse(info, false, header, null, null, false);
+        System.out.println(result + ", " + gen.getState());
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+        assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
+        String response = BufferUtils.toString(header);
+        BufferUtils.clear(header);
+
+        result = gen.generateResponse(null, false, null, null, content, false);
+        System.out.println(result + ", " + gen.getState());
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+        assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
+        response += BufferUtils.toString(content);
+        BufferUtils.clear(content);
+
+        result = gen.generateResponse(null, false, null, null, null, true);
+        System.out.println(result + ", " + gen.getState());
+        assertEquals(HttpGenerator.Result.CONTINUE, result);
+        assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
+
+        result = gen.generateResponse(null, false, null, null, null, true);
+        System.out.println(result + ", " + gen.getState());
+        assertEquals(HttpGenerator.Result.DONE, result);
+        assertEquals(HttpGenerator.State.END, gen.getState());
+
+        System.out.println(response);
+        assertTrue(response.contains("HTTP/1.1 200 OK"));
+        assertTrue(response.contains("Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT"));
+        assertTrue(response.contains("Content-Length: 10"));
+        assertTrue(response.contains("\r\n0123456789"));
+    }
+
+    @Test
+    void test204() {
         ByteBuffer header = BufferUtils.allocate(8096);
         ByteBuffer content = BufferUtils.toBuffer("0123456789");
 
@@ -119,7 +163,7 @@ class HttpGeneratorServerTest {
 
 
     @Test
-    void testComplexChars() throws Exception {
+    void testComplexChars() {
         ByteBuffer header = BufferUtils.allocate(8096);
         ByteBuffer content = BufferUtils.toBuffer("0123456789");
 
@@ -158,7 +202,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testSendServerXPoweredBy() throws Exception {
+    void testSendServerXPoweredBy() {
         ByteBuffer header = BufferUtils.allocate(8096);
         MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(), -1);
         HttpFields fields = new HttpFields();
@@ -205,7 +249,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseIncorrectContentLength() throws Exception {
+    void testResponseIncorrectContentLength() {
         ByteBuffer header = BufferUtils.allocate(8096);
 
         HttpGenerator gen = new HttpGenerator();
@@ -227,7 +271,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseNoContentPersistent() throws Exception {
+    void testResponseNoContentPersistent() {
         ByteBuffer header = BufferUtils.allocate(8096);
 
         HttpGenerator gen = new HttpGenerator();
@@ -259,7 +303,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseKnownNoContentNotPersistent() throws Exception {
+    void testResponseKnownNoContentNotPersistent() {
         ByteBuffer header = BufferUtils.allocate(8096);
 
         HttpGenerator gen = new HttpGenerator();
@@ -292,7 +336,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseUpgrade() throws Exception {
+    void testResponseUpgrade() {
         ByteBuffer header = BufferUtils.allocate(8096);
 
         HttpGenerator gen = new HttpGenerator();
@@ -324,7 +368,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithChunkedContent() throws Exception {
+    void testResponseWithChunkedContent() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World! ");
@@ -337,16 +381,21 @@ class HttpGeneratorServerTest {
 
         MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_1, 200, null, new HttpFields(), -1);
         info.getFields().add("Last-Modified", DateGenerator.JAN_01_1970);
-        result = gen.generateResponse(info, false, null, null, content0, false);
+        result = gen.generateResponse(info, false, null, null, null, false);
         assertEquals(HttpGenerator.Result.NEED_HEADER, result);
         assertEquals(HttpGenerator.State.START, gen.getState());
 
-        result = gen.generateResponse(info, false, header, null, content0, false);
+        result = gen.generateResponse(info, false, header, null, null, false);
         assertEquals(HttpGenerator.Result.FLUSH, result);
         assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
-
         String out = BufferUtils.toString(header);
         BufferUtils.clear(header);
+
+        result = gen.generateResponse(null, false, null, chunk, content0, false);
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+        assertEquals(HttpGenerator.State.COMMITTED, gen.getState());
+        out += BufferUtils.toString(chunk);
+        BufferUtils.clear(chunk);
         out += BufferUtils.toString(content0);
         BufferUtils.clear(content0);
 
@@ -358,7 +407,7 @@ class HttpGeneratorServerTest {
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.CONTINUE, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
 
@@ -368,9 +417,10 @@ class HttpGeneratorServerTest {
         out += BufferUtils.toString(chunk);
         BufferUtils.clear(chunk);
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
+        System.out.println(out);
 
         assertTrue(out.contains("HTTP/1.1 200 OK"));
         assertTrue(out.contains("Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT"));
@@ -387,7 +437,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithHintedChunkedContent() throws Exception {
+    void testResponseWithHintedChunkedContent() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World! ");
@@ -455,7 +505,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithContentAndTrailer() throws Exception {
+    void testResponseWithContentAndTrailer() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
         ByteBuffer trailer = BufferUtils.allocate(4096);
@@ -541,7 +591,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithTrailer() throws Exception {
+    void testResponseWithTrailer() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE);
         ByteBuffer trailer = BufferUtils.allocate(4096);
@@ -608,7 +658,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithKnownContentLengthFromMetaData() throws Exception {
+    void testResponseWithKnownContentLengthFromMetaData() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World! ");
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog. ");
@@ -655,7 +705,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testResponseWithKnownContentLengthFromHeader() throws Exception {
+    void testResponseWithKnownContentLengthFromHeader() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World! ");
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog. ");
@@ -704,7 +754,7 @@ class HttpGeneratorServerTest {
 
 
     @Test
-    void test100ThenResponseWithContent() throws Exception {
+    void test100ThenResponseWithContent() {
         ByteBuffer header = BufferUtils.allocate(4096);
         ByteBuffer content0 = BufferUtils.toBuffer("Hello World! ");
         ByteBuffer content1 = BufferUtils.toBuffer("The quick brown fox jumped over the lazy dog. ");
@@ -766,7 +816,7 @@ class HttpGeneratorServerTest {
     }
 
     @Test
-    void testConnectionKeepAliveWithAdditionalCustomValue() throws Exception {
+    void testConnectionKeepAliveWithAdditionalCustomValue() {
         HttpGenerator generator = new HttpGenerator();
 
         HttpFields fields = new HttpFields();

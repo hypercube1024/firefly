@@ -12,7 +12,7 @@ public class HttpConfig {
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
     private long releaseTimeout = 60;
-    private int requestHeaderBufferSize = 4 * 1024;
+    private int headerBufferSize = 4 * 1024;
     private int contentBufferSize = 16 * 1024;
     private SecureEngineFactory secureEngineFactory;
     private int maxDynamicTableSize = DEFAULT_HEADER_TABLE_SIZE;
@@ -54,12 +54,12 @@ public class HttpConfig {
         this.releaseTimeout = releaseTimeout;
     }
 
-    public int getRequestHeaderBufferSize() {
-        return requestHeaderBufferSize;
+    public int getHeaderBufferSize() {
+        return headerBufferSize;
     }
 
-    public void setRequestHeaderBufferSize(int requestHeaderBufferSize) {
-        this.requestHeaderBufferSize = requestHeaderBufferSize;
+    public void setHeaderBufferSize(int headerBufferSize) {
+        this.headerBufferSize = headerBufferSize;
     }
 
     public int getContentBufferSize() {
@@ -133,7 +133,7 @@ public class HttpConfig {
                 ", connectionPoolSize=" + connectionPoolSize +
                 ", leakDetectorInterval=" + leakDetectorInterval +
                 ", releaseTimeout=" + releaseTimeout +
-                ", requestHeaderBufferSize=" + requestHeaderBufferSize +
+                ", requestHeaderBufferSize=" + headerBufferSize +
                 ", contentBufferSize=" + contentBufferSize +
                 ", secureEngineFactory=" + secureEngineFactory +
                 ", maxDynamicTableSize=" + maxDynamicTableSize +
