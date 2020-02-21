@@ -65,11 +65,8 @@ class TestHttp1ServerConnection {
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
-            val futures = (1..count).map {
-                val future = httpClient.get("http://${address.hostName}:${address.port}/test-$it").submit()
-//                println("client send test-$it")
-                future
-            }
+            val futures = (1..count)
+                .map { httpClient.get("http://${address.hostName}:${address.port}/test-$it").submit() }
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
             Assertions.assertTrue(allDone)

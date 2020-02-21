@@ -85,35 +85,44 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     override fun isCommitted(): Boolean = committed.get()
 
     override fun commit(): CompletableFuture<Void> = httpServerConnection.coroutineScope
-        .launch { commitResponse() }
+        .launch { commitAwait() }
         .asCompletableFuture()
         .thenCompose { Result.DONE }
 
-    private suspend fun commitResponse() = mutex.withLock {
-        if (committed.compareAndSet(false, true)) {
-            if (response.fields[HttpHeader.CONNECTION] == null && httpVersion == HttpVersion.HTTP_1_1) {
-                response.fields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE)
-            }
+    private suspend fun commitAwait() {
+        if (committed.get()) return
 
-            cookies.map { CookieGenerator.generateSetCookie(it) }
-                .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
+        mutex.withLock {
+            if (committed.get()) return@commitAwait
 
-            val provider = contentProvider
-            if (provider != null && provider.length() >= 0) {
-                response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
-            }
-
-            val output = createHttpServerOutputChannel(response)
-            if (provider != null) {
-                output.useAwait {
-                    it.commit().await()
-                    writeContent(provider, it)
-                }
-            } else {
-                output.commit().await()
-            }
-            this.serverOutputChannel = output
+            createOutputChannelAndCommit()
+            committed.set(true)
         }
+    }
+
+    private suspend fun createOutputChannelAndCommit() {
+        if (response.fields[HttpHeader.CONNECTION] == null && httpVersion == HttpVersion.HTTP_1_1) {
+            response.fields.put(HttpHeader.CONNECTION, HttpHeaderValue.KEEP_ALIVE)
+        }
+
+        cookies.map { CookieGenerator.generateSetCookie(it) }
+            .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
+
+        val provider = contentProvider
+        if (provider != null && provider.length() >= 0) {
+            response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
+        }
+
+        val output = createHttpServerOutputChannel(response)
+        if (provider != null) {
+            output.useAwait {
+                it.commit().await()
+                writeContent(provider, it)
+            }
+        } else {
+            output.commit().await()
+        }
+        this.serverOutputChannel = output
     }
 
     /**
