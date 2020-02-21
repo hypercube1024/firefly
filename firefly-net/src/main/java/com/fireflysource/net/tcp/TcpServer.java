@@ -62,7 +62,7 @@ public interface TcpServer extends LifeCycle {
     /**
      * Set the TCP idle timeout. The unit is second.
      *
-     * @param timeout The TCP idle timeout. The unit is second.
+     * @param timeout The TCP idle timeout. Time unit is second.
      * @return The TCP server.
      */
     TcpServer timeout(Long timeout);
@@ -77,7 +77,7 @@ public interface TcpServer extends LifeCycle {
 
     /**
      * If you don't set a callback for the connection accepting event. The server will accept connection
-     * and send it to the channel. And then, you can receive the connection from this channel.
+     * and send it to the channel, and then, you can receive the connection from this channel.
      *
      * @return The TCP connection channel.
      */
