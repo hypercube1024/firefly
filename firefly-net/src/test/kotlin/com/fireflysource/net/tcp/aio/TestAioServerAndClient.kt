@@ -184,7 +184,6 @@ class TestAioServerAndClient {
         }
         assertFalse(success)
         assertTrue(connection.isShutdownInput)
-        assertTrue(connection.duration > 0)
 
         val stopTime = measureTimeMillis {
             stopAll()
