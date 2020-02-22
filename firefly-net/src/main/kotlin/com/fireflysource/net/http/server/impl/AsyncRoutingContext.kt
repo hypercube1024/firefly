@@ -46,7 +46,7 @@ class AsyncRoutingContext(
         val status = HttpStatus.FOUND_302
         return setStatus(status)
             .put(HttpHeader.LOCATION, url)
-            .contentProvider(DefaultContentProvider(status, null))
+            .contentProvider(DefaultContentProvider(status, null, this))
             .end()
     }
 

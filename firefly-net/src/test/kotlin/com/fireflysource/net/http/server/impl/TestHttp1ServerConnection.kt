@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
@@ -52,11 +53,18 @@ class TestHttp1ServerConnection {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 ctx.write(BufferUtils.toBuffer("response buffer.", StandardCharsets.UTF_8))
                 val arr = arrayOf(
-                    BufferUtils.toBuffer("response array 1.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("response array 2.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("response array 3.", StandardCharsets.UTF_8)
+                    BufferUtils.toBuffer("array 1.", StandardCharsets.UTF_8),
+                    BufferUtils.toBuffer("array 2.", StandardCharsets.UTF_8),
+                    BufferUtils.toBuffer("array 3.", StandardCharsets.UTF_8)
                 )
-                return ctx.write(arr, 0, arr.size).end("hello http1 server!")
+                val list = listOf(
+                    BufferUtils.toBuffer("list 1.", StandardCharsets.UTF_8),
+                    BufferUtils.toBuffer("list 2.", StandardCharsets.UTF_8),
+                    BufferUtils.toBuffer("list 3.", StandardCharsets.UTF_8)
+                )
+                return ctx.write(arr, 0, arr.size)
+                    .write(list, 1, 2)
+                    .end("hello http1 server!")
             }
 
             override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
@@ -77,7 +85,7 @@ class TestHttp1ServerConnection {
 
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals(
-                "response buffer.response array 1.response array 2.response array 3.hello http1 server!",
+                "response buffer.array 1.array 2.array 3.list 2.list 3.hello http1 server!",
                 response.stringBody
             )
             println(response)
@@ -166,6 +174,42 @@ class TestHttp1ServerConnection {
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals("POST, query[q1, q2, q3], message[v1, v2, v3, v4, v5]", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should response default html successfully.")
+    fun testContentProvider(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.setStatus(HttpStatus.NOT_FOUND_404)
+                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+                    .end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("http://${address.hostName}:${address.port}/not-found-$it").submit() }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.NOT_FOUND_404, response.status)
+            println(response)
         }
 
         val throughput = count / (time / 1000.00)

@@ -160,10 +160,15 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         }
     }
 
-    override fun closeFuture(): CompletableFuture<Void> = httpServerConnection.coroutineScope.launch {
-        commit().await()
-        outputChannel.closeFuture().await()
-    }.asCompletableFuture().thenCompose { Result.DONE }
+    override fun closeFuture(): CompletableFuture<Void> {
+        val provider = contentProvider
+        return if (provider == null) {
+            httpServerConnection.coroutineScope.launch {
+                commit().await()
+                outputChannel.closeFuture().await()
+            }.asCompletableFuture().thenCompose { Result.DONE }
+        } else Result.DONE
+    }
 
     override fun close() {
         closeFuture()
