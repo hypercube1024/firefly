@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
 import java.util.function.Supplier
@@ -18,6 +19,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     var contentHandler: HttpClientContentHandler? = null
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
+    private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
 
     override fun getHeaderCacheSize(): Int {
         return 4096
@@ -54,7 +56,11 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun messageComplete(): Boolean {
-        httpClientResponse?.response?.trailerSupplier = Supplier { HttpFields(trailers) }
+        val clientResponse = httpClientResponse
+        requireNotNull(clientResponse)
+        val trailer = HttpFields(trailers)
+        clientResponse.response.trailerSupplier = Supplier { trailer }
+        responseChannel.offer(clientResponse)
         return true
     }
 
@@ -68,7 +74,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     suspend fun complete(): HttpClientResponse {
         contentHandler?.closeFuture()?.await()
-        return httpClientResponse ?: throw IllegalStateException("Not received response.")
+        return responseChannel.receive()
     }
 
     fun reset() {

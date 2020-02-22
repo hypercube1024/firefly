@@ -553,11 +553,11 @@ class HttpGeneratorServerTest {
         out += BufferUtils.toString(content1);
         BufferUtils.clear(content1);
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.CONTINUE, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
 
-        result = gen.generateResponse(null, false, null, chunk, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
 
         assertEquals(HttpGenerator.Result.NEED_CHUNK_TRAILER, result);
         assertEquals(HttpGenerator.State.COMPLETING, gen.getState());
@@ -569,8 +569,12 @@ class HttpGeneratorServerTest {
         out += BufferUtils.toString(trailer);
         BufferUtils.clear(trailer);
 
-        result = gen.generateResponse(null, false, null, trailer, null, true);
+        result = gen.generateResponse(null, false, null, null, null, true);
         assertEquals(HttpGenerator.Result.SHUTDOWN_OUT, result);
+        assertEquals(HttpGenerator.State.END, gen.getState());
+
+        result = gen.generateResponse(null, false, null, null, null, true);
+        assertEquals(HttpGenerator.Result.DONE, result);
         assertEquals(HttpGenerator.State.END, gen.getState());
 
         assertTrue(out.contains("HTTP/1.1 200 OK"));

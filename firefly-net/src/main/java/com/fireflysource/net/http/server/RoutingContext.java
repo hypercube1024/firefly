@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * A new routing context instance creates when the server receives an HTTP request.
@@ -364,6 +365,42 @@ public interface RoutingContext {
      */
     default RoutingContext add(String header, String value) {
         getResponse().getHttpFields().add(header, value);
+        return this;
+    }
+
+    /**
+     * Add HTTP response header and CSV values.
+     *
+     * @param header The HTTP header.
+     * @param values The value.
+     * @return The routing context.
+     */
+    default RoutingContext addCSV(HttpHeader header, String... values) {
+        getResponse().getHttpFields().addCSV(header, values);
+        return this;
+    }
+
+    /**
+     * Add HTTP response header and CSV values.
+     *
+     * @param header The HTTP header.
+     * @param values The value.
+     * @return The routing context.
+     */
+    default RoutingContext addCSV(String header, String... values) {
+        getResponse().getHttpFields().addCSV(header, values);
+
+        return this;
+    }
+
+    /**
+     * Set the HTTP trailer fields.
+     *
+     * @param supplier The HTTP trailer fields supplier.
+     * @return The routing context.
+     */
+    default RoutingContext setTrailerSupplier(Supplier<HttpFields> supplier) {
+        getResponse().setTrailerSupplier(supplier);
         return this;
     }
 

@@ -5,6 +5,7 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
@@ -213,6 +214,55 @@ class TestHttp1ServerConnection {
             assertEquals(HttpStatus.NOT_FOUND_404, response.status)
             assertEquals("Just so so", response.reason)
             println(response)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should response trailer successfully.")
+    fun testTrailer(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
+                    .setTrailerSupplier {
+                        val fields = HttpFields()
+                        fields.put("t1", "trailer1")
+                        fields.put("t2", "trailer2")
+                        fields.put("t3", "trailer3")
+                        fields
+                    }
+                    .write("response text success.")
+                    .write("trailer.")
+                    .end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("http://${address.hostName}:${address.port}/trailer-$it").submit() }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("t1, t2, t3", response.httpFields[HttpHeader.TRAILER])
+            assertEquals("response text success.trailer.", response.stringBody)
+            assertEquals("trailer1", response.trailerSupplier.get()["t1"])
+            assertEquals("trailer2", response.trailerSupplier.get()["t2"])
+            assertEquals("trailer3", response.trailerSupplier.get()["t3"])
+
         }
 
         val throughput = count / (time / 1000.00)

@@ -62,6 +62,7 @@ class AsyncHttpClientResponse(
             |$status $reason $httpVersion
             |$httpFields
             |$stringBody
+            |${trailerSupplier.get()}
             |end response --------------
         """.trimMargin()
     }

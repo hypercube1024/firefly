@@ -116,16 +116,19 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         try {
             completing()
             if (generator.isChunking) {
-                val generateResult = generator.generateResponse(null, false, null, chunkBuffer, null, true)
-                Assert.state(
-                    generateResult == HttpGenerator.Result.FLUSH,
-                    "The HTTP server generator result error. $generateResult"
-                )
-                Assert.state(
-                    generator.isState(HttpGenerator.State.COMPLETING),
-                    "The HTTP server generator state error. ${generator.state}"
-                )
-                flushChunkBuffer()
+                when (val generateResult = generator.generateResponse(null, false, null, chunkBuffer, null, true)) {
+                    HttpGenerator.Result.FLUSH -> {
+                        Assert.state(
+                            generator.isState(HttpGenerator.State.COMPLETING),
+                            "The HTTP server generator state error. ${generator.state}"
+                        )
+                        flushChunkBuffer()
+                    }
+                    HttpGenerator.Result.NEED_CHUNK_TRAILER -> {
+                        generateTrailer()
+                    }
+                    else -> throw IllegalStateException("The HTTP server generator result error. $generateResult")
+                }
             }
             end()
             Result.done(endResponse.future)
@@ -157,6 +160,19 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
             "The HTTP server generator state error. ${generator.state}"
         )
         generator.reset()
+    }
+
+    private suspend fun generateTrailer() {
+        val generateResult = generator.generateResponse(null, false, null, headerBuffer, null, true)
+        Assert.state(
+            generateResult == HttpGenerator.Result.FLUSH,
+            "The HTTP server generator result error. $generateResult"
+        )
+        Assert.state(
+            generator.isState(HttpGenerator.State.COMPLETING),
+            "The HTTP server generator state error. ${generator.state}"
+        )
+        flushHeaderBuffer()
     }
 
     private suspend fun flushHeaderBuffer() {
@@ -194,7 +210,6 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         }
         BufferUtils.clear(chunkBuffer)
     }
-
 
 }
 
