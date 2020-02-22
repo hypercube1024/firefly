@@ -20,18 +20,27 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     var connectionListener: HttpServerConnection.Listener = HttpServerConnection.EMPTY_LISTENER
     private val parserChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
-    private var request = MetaData.Request(HttpFields())
-    private var context: AsyncRoutingContext? = null
 
     init {
         handleParserMessageJob()
     }
 
     private fun handleParserMessageJob() = connection.coroutineScope.launch {
+        var request: MetaData.Request? = null
+        var context: AsyncRoutingContext? = null
         parserLoop@ while (true) {
             val message = parserChannel.receive()
             try {
-                onParserMessage(message)
+                when (message) {
+                    is StartRequest -> request = newRequest(message)
+                    is ParsedHeader -> addHeader(request, message)
+                    is HeaderComplete -> context = newContextAndNotifyHeaderComplete(request)
+                    is Content -> acceptContent(context, message)
+                    is ContentComplete -> closeContentHandler(context)
+                    is MessageComplete -> notifyHttpRequestComplete(context)
+                    is BadMessage -> notifyException(context, message.exception)
+                    is EarlyEOF -> notifyException(context, IllegalStateException("Parser early EOF"))
+                }
             } catch (e: Exception) {
                 log.error(e) { "Handle HTTP1 server parser message exception." }
                 notifyException(context, e)
@@ -39,57 +48,21 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         }
     }
 
-    private suspend fun onParserMessage(message: ParserMessage) {
-        when (message) {
-            is HeaderComplete -> {
-                val httpServerRequest = AsyncHttpServerRequest(MetaData.Request(request))
-                val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection), connection)
-                context = ctx
-                request.recycle()
-                notifyHeaderComplete(ctx)
-            }
-            is Content -> {
-                try {
-                    val ctx = context
-                    requireNotNull(ctx)
-                    ctx.request.contentHandler.accept(message.byteBuffer, context)
-                    log.debug { "HTTP1 server receives content success. id: ${connection.id}" }
-                } catch (e: Exception) {
-                    log.error(e) { "HTTP1 server accepts content exception. id: ${connection.id}" }
-                }
-            }
-            is ContentComplete -> {
-                try {
-                    val ctx = context
-                    requireNotNull(ctx)
-                    ctx.request.contentHandler.closeFuture().await()
-                } catch (e: Exception) {
-                    log.error(e) { "HTTP1 server completes content exception. id: ${connection.id}" }
-                }
-            }
-            is MessageComplete -> {
-                val ctx = context
-                requireNotNull(ctx)
-                ctx.request.isRequestComplete = true
-                notifyHttpRequestComplete(ctx)
-                reset()
-            }
-            is BadMessage -> {
-                log.error(message.exception) { "Receive the bad HTTP1 message. id: ${connection.id}" }
-                notifyException(context, message.exception)
-                reset()
-            }
-            is EarlyEOF -> {
-                log.error { "HTTP1 server parser early EOF. id: ${connection.id}" }
-                notifyException(context, IllegalStateException("Parser early EOF"))
-                reset()
-            }
-        }
+    private fun newRequest(message: StartRequest): MetaData.Request {
+        return MetaData.Request(message.method, HttpURI(URL(message.uri).toURI()), message.version, HttpFields())
     }
 
-    private fun reset() {
-        context = null
-        request.recycle()
+    private fun addHeader(request: MetaData.Request?, message: ParsedHeader) {
+        requireNotNull(request)
+        request.fields.add(message.field)
+    }
+
+    private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
+        requireNotNull(request)
+        val httpServerRequest = AsyncHttpServerRequest(request)
+        val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection), connection)
+        notifyHeaderComplete(ctx)
+        return ctx
     }
 
     private suspend fun notifyHeaderComplete(context: RoutingContext) {
@@ -101,8 +74,29 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         }
     }
 
-    private suspend fun notifyHttpRequestComplete(context: RoutingContext) {
+    private fun acceptContent(context: AsyncRoutingContext?, message: Content) {
         try {
+            requireNotNull(context)
+            context.request.contentHandler.accept(message.byteBuffer, context)
+            log.debug { "HTTP1 server receives content success. id: ${connection.id}" }
+        } catch (e: Exception) {
+            log.error(e) { "HTTP1 server accepts content exception. id: ${connection.id}" }
+        }
+    }
+
+    private suspend fun closeContentHandler(context: AsyncRoutingContext?) {
+        try {
+            requireNotNull(context)
+            context.request.contentHandler.closeFuture().await()
+        } catch (e: Exception) {
+            log.error(e) { "HTTP1 server completes content exception. id: ${connection.id}" }
+        }
+    }
+
+    private suspend fun notifyHttpRequestComplete(context: RoutingContext?) {
+        try {
+            requireNotNull(context)
+            context.request.isRequestComplete = true
             connectionListener.onHttpRequestComplete(context).await()
             log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
         } catch (e: Exception) {
@@ -112,23 +106,22 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun notifyException(context: RoutingContext?, exception: Exception) {
         try {
+            log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
             connectionListener.onException(context, exception).await()
         } catch (e: Exception) {
-            log.error(e) { "HTTP1 server receives the error. id: ${connection.id}" }
+            log.error(e) { "HTTP1 server on exception. id: ${connection.id}" }
         }
     }
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
-        request.method = method
-        request.uri = HttpURI(URL(uri).toURI())
-        request.httpVersion = version
+        parserChannel.offer(StartRequest(method, uri, version))
         return false
     }
 
     override fun getHeaderCacheSize(): Int = 4096
 
     override fun parsedHeader(field: HttpField) {
-        request.fields.add(field)
+        parserChannel.offer(ParsedHeader(field))
     }
 
     override fun headerComplete(): Boolean {
@@ -162,6 +155,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 }
 
 sealed class ParserMessage
+data class StartRequest(val method: String, val uri: String, val version: HttpVersion) : ParserMessage()
+data class ParsedHeader(val field: HttpField) : ParserMessage()
 object HeaderComplete : ParserMessage()
 class Content(val byteBuffer: ByteBuffer) : ParserMessage()
 object ContentComplete : ParserMessage()

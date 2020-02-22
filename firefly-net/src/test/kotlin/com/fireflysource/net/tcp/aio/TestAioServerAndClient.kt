@@ -5,6 +5,8 @@ import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.coroutine.eventAsync
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
+import com.fireflysource.net.tcp.TcpClientFactory
+import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -58,7 +60,7 @@ class TestAioServerAndClient {
         val messageCount = AtomicInteger()
         val tcpConfig = TcpConfig(30, enableSecure)
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        TcpServerFactory.create(tcpConfig).onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()
             recvLoop@ while (true) {
@@ -77,7 +79,7 @@ class TestAioServerAndClient {
             }
         }.listen(host, port)
 
-        val client = AioTcpClient(tcpConfig)
+        val client = TcpClientFactory.create(tcpConfig)
         val time = measureTimeMillis {
             val jobs = (1..connectionCount).map {
                 event {
@@ -162,7 +164,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4001
 
-        AioTcpServer(TcpConfig(1)).onAcceptAsync { conn ->
+        TcpServerFactory.create(TcpConfig(1)).onAcceptAsync { conn ->
             try {
                 conn.read().await()
                 println("Server reads success.")
@@ -171,7 +173,7 @@ class TestAioServerAndClient {
             }
         }.listen(host, port)
 
-        val client = AioTcpClient(TcpConfig(1))
+        val client = TcpClientFactory.create(TcpConfig(1))
         val connection = client.connect(host, port).await()
         assertEquals(port, connection.remoteAddress.port)
 
@@ -197,7 +199,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4002
 
-        AioTcpServer().onAcceptAsync { conn ->
+        TcpServerFactory.create().onAcceptAsync { conn ->
             try {
                 conn.read().await()
                 println("Server reads success.")
@@ -206,7 +208,7 @@ class TestAioServerAndClient {
             }
         }.listen(host, port)
 
-        val client = AioTcpClient()
+        val client = TcpClientFactory.create()
         val connection = client.connect(host, port).await()
 
         val success = eventAsync {

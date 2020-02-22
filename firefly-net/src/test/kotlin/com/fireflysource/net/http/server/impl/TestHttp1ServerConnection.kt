@@ -125,8 +125,55 @@ class TestHttp1ServerConnection {
         println("success. $time ms, ${throughput.roundToLong()} qps")
     }
 
+    @Test
+    @DisplayName("should receive query strings and form inputs successfully.")
+    fun testQueryStringsAndFormInputs(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                val query = ctx.getQueryString("key1")
+                val queryList = ctx.getQueryStrings("list1")
+                val message = ctx.getFormInput("key1")
+                val formList = ctx.getFormInputs("list1")
+                val method = ctx.method
+                return ctx.write(method).write(", ").write(query).write(queryList.toString()).write(", ")
+                    .write(message).write(formList.toString())
+                    .end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("http://${address.hostName}:${address.port}/query-form-$it")
+                    .addQueryString("key1", "query")
+                    .addQueryStrings("list1", listOf("q1", "q2", "q3"))
+                    .addFormInput("key1", "message")
+                    .addFormInputs("list1", listOf("v1", "v2", "v3", "v4", "v5"))
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("POST, query[q1, q2, q3], message[v1, v2, v3, v4, v5]", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
     private fun createHttpServer(listener: HttpServerConnection.Listener) {
-        val server = TcpServerFactory.create()
+        val server = TcpServerFactory.create().timeout(120 * 1000)
         server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()

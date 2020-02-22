@@ -138,7 +138,9 @@ public class MetaData implements Iterable<HttpField> {
         }
 
         public Request(Request request) {
-            this(request.getMethod(), new HttpURI(request.getURI()), request.getHttpVersion(), new HttpFields(request.getFields()), request.getContentLength());
+            super(request.getHttpVersion(), new HttpFields(request.getFields()), request.getContentLength());
+            this.method = request.getMethod();
+            this.uri = new HttpURI(request.getURI());
         }
 
         public void recycle() {
