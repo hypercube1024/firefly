@@ -55,4 +55,14 @@ class AsyncHttpClientResponse(
         .map { it as ByteBufferContentHandler }
         .map { it.getByteBuffers() }
         .orElse(listOf())
+
+    override fun toString(): String {
+        return """
+            |response: -----------------
+            |$status
+            |$httpFields
+            |$stringBody
+            |end response --------------
+        """.trimMargin()
+    }
 }

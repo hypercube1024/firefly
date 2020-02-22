@@ -168,5 +168,4 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     override fun close() {
         closeFuture()
     }
-
 }

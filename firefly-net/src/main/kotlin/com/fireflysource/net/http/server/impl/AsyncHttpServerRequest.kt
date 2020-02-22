@@ -146,4 +146,13 @@ class AsyncHttpServerRequest(val request: MetaData.Request) : HttpServerRequest 
 
     override fun getTrailerSupplier(): Supplier<HttpFields> = request.trailerSupplier
 
+    override fun toString(): String {
+        return """
+            |request: -----------------
+            |$method $uri $httpVersion
+            |$httpFields
+            |$stringBody
+            |end request --------------
+        """.trimMargin()
+    }
 }
