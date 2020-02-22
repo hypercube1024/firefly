@@ -151,6 +151,7 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffer -> output.result.accept(Result(true, totalLength.toInt(), null))
                     is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                     is OutputBufferList -> output.result.accept(Result(true, totalLength, null))
+                    is ShutdownOutput -> output.result.accept(Result.createFailedResult(IllegalStateException("The output type error.")))
                 }
             }
 
@@ -211,13 +212,13 @@ abstract class AbstractAioTcpConnection(
             }
         }
 
-        private suspend fun readBuffers(input: InputMessage): Boolean {
+        private suspend fun readBuffers(input: InputBuffer): Boolean {
             lastReadTime = System.currentTimeMillis()
             var success = true
             var exception: Exception? = null
             var length = 0
             try {
-                length = read(input)
+                length = socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit)
                 if (length < 0) {
                     success = false
                     exception = ClosedChannelException()
@@ -234,15 +235,9 @@ abstract class AbstractAioTcpConnection(
                 exception = e
             }
 
-            fun complete() {
-                when (input) {
-                    is InputBuffer -> input.result.accept(Result(true, length, null))
-                }
-            }
-
             if (success) {
                 log.debug { "TCP connection reads buffers total length: $length" }
-                complete()
+                input.result.accept(Result(true, length, null))
             } else {
                 shutdownInputAndClose()
                 closeFuture()
@@ -264,11 +259,6 @@ abstract class AbstractAioTcpConnection(
             if (isShutdownOutput) {
                 closeNow()
             }
-        }
-
-        private suspend fun read(input: InputMessage): Int = when (input) {
-            is InputBuffer -> socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit)
-            else -> throw IllegalArgumentException("The input message cannot read.")
         }
 
         private fun failed(input: InputMessage, exception: Exception?) {
