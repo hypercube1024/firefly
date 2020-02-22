@@ -59,7 +59,7 @@ class AsyncHttpClientResponse(
     override fun toString(): String {
         return """
             |response: -----------------
-            |$status
+            |$status $reason $httpVersion
             |$httpFields
             |$stringBody
             |end response --------------

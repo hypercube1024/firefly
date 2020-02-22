@@ -7,6 +7,7 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
@@ -187,7 +188,8 @@ class TestHttp1ServerConnection {
 
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.setStatus(HttpStatus.NOT_FOUND_404)
+                return ctx.setStatus(HttpStatus.NOT_FOUND_404).setReason("Just so so")
+                    .setHttpVersion(HttpVersion.HTTP_1_1)
                     .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
                     .end()
             }
@@ -209,6 +211,7 @@ class TestHttp1ServerConnection {
             val response = futures[0].await()
 
             assertEquals(HttpStatus.NOT_FOUND_404, response.status)
+            assertEquals("Just so so", response.reason)
             println(response)
         }
 
