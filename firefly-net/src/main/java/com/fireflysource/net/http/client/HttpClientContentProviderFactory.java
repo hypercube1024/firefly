@@ -11,15 +11,15 @@ import java.nio.file.Path;
 
 abstract public class HttpClientContentProviderFactory {
 
-    public static HttpClientContentProvider createByteBufferContentProvider(ByteBuffer buffer) {
+    public static HttpClientContentProvider bytesBody(ByteBuffer buffer) {
         return new ByteBufferContentProvider(buffer);
     }
 
-    public static HttpClientContentProvider createStringContentProvider(String string, Charset charset) {
+    public static HttpClientContentProvider stringBody(String string, Charset charset) {
         return new StringContentProvider(string, charset);
     }
 
-    public static HttpClientContentProvider createFileContentProvider(Path path, OpenOption... openOptions) {
+    public static HttpClientContentProvider fileBody(Path path, OpenOption... openOptions) {
         return new FileContentProvider(path, openOptions);
     }
 

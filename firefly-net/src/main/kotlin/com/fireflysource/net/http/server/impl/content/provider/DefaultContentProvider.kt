@@ -45,9 +45,7 @@ class DefaultContentProvider(
         return when (getCode()) {
             HttpStatus.Code.NOT_FOUND -> "The resource ${ctx.uri.path} is not found"
             HttpStatus.Code.INTERNAL_SERVER_ERROR -> "The server internal error. <br/> ${exception?.message}"
-            else -> {
-                "${getTitle()} <br/> ${exception?.message}"
-            }
+            else -> "${getTitle()} <br/> ${exception?.message}"
         }
     }
 

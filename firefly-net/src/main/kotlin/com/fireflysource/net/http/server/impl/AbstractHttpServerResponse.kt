@@ -17,7 +17,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
@@ -56,14 +55,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         response.fields.addAll(httpFields)
     }
 
-    override fun getCookies(): List<Cookie> {
-        val cookies = cookieList
-        return if (cookies == null) {
-            val newCookies = LinkedList<Cookie>()
-            cookieList = newCookies
-            newCookies
-        } else cookies
-    }
+    override fun getCookies(): List<Cookie> = cookieList ?: listOf()
 
     override fun setCookies(cookies: List<Cookie>) {
         cookieList = cookies
@@ -106,7 +98,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         }
 
         cookies.map { CookieGenerator.generateSetCookie(it) }
-            .forEach { response.fields.put(HttpHeader.SET_COOKIE, it) }
+            .forEach { response.fields.add(HttpHeader.SET_COOKIE, it) }
 
         val provider = contentProvider
         if (provider != null && provider.length() >= 0) {

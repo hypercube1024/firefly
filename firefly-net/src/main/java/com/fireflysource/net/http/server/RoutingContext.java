@@ -405,13 +405,13 @@ public interface RoutingContext {
     }
 
     /**
-     * Add HTTP response cookie.
+     * Set HTTP response cookies.
      *
-     * @param cookie The HTTP response cookie.
-     * @return The routing context.
+     * @param cookies The HTTP response cookies.
+     * @return he routing context.
      */
-    default RoutingContext addCookie(Cookie cookie) {
-        getResponse().getCookies().add(cookie);
+    default RoutingContext setCookies(List<Cookie> cookies) {
+        getResponse().setCookies(cookies);
         return this;
     }
 

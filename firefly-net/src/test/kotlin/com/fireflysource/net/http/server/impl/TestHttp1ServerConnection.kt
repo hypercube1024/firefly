@@ -5,10 +5,7 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
-import com.fireflysource.net.http.common.model.HttpFields
-import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
@@ -263,6 +260,85 @@ class TestHttp1ServerConnection {
             assertEquals("trailer2", response.trailerSupplier.get()["t2"])
             assertEquals("trailer3", response.trailerSupplier.get()["t3"])
 
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should redirect successfully.")
+    fun testRedirect(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.redirect("http://${address.hostName}:${address.port}/r0")
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("http://${address.hostName}:${address.port}/redirect-$it").submit() }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.FOUND_302, response.status)
+            assertEquals("http://${address.hostName}:${address.port}/r0", response.httpFields[HttpHeader.LOCATION])
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should get cookies and set cookies successfully.")
+    fun testCookies(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                ctx.cookies = listOf(
+                    Cookie("s1", "v1"),
+                    Cookie("s2", "v2"),
+                    Cookie("s3", ctx.cookies[0].value),
+                    Cookie("s4", ctx.cookies[1].value)
+                )
+                return ctx.end("receive ${ctx.stringBody} ok.")
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("http://${address.hostName}:${address.port}/cookies-$it")
+                    .body("cookies c1, c2.")
+                    .cookies(listOf(Cookie("c1", "client1"), Cookie("c2", "client2")))
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals(4, response.cookies.size)
+            assertEquals("receive cookies c1, c2. ok.", response.stringBody)
         }
 
         val throughput = count / (time / 1000.00)

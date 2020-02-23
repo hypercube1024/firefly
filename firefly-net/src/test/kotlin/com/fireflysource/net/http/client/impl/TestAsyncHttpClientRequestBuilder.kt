@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.HttpClientConnectionManager
-import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createStringContentProvider
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.stringBody
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
 import com.fireflysource.net.http.common.model.*
@@ -117,11 +117,11 @@ class TestAsyncHttpClientRequestBuilder {
 
         val fields = HttpFields()
         fields.add("t1", "x1")
-        builder.addFieldPart("text1", createStringContentProvider("plain text1", StandardCharsets.UTF_8), fields)
+        builder.addFieldPart("text1", stringBody("plain text1", StandardCharsets.UTF_8), fields)
 
         val fields2 = HttpFields()
         fields2.add("t2", "x2")
-        builder.addFieldPart("text2", createStringContentProvider("plain text2", StandardCharsets.UTF_8), fields2)
+        builder.addFieldPart("text2", stringBody("plain text2", StandardCharsets.UTF_8), fields2)
 
         val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)
@@ -142,7 +142,7 @@ class TestAsyncHttpClientRequestBuilder {
         builder.addFilePart(
             "text1",
             "file1.txt",
-            createStringContentProvider("mock file text1", StandardCharsets.UTF_8),
+            stringBody("mock file text1", StandardCharsets.UTF_8),
             fields
         )
 

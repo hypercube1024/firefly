@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.client.impl.content.provider
 
 import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createByteBufferContentProvider
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.bytesBody
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,7 +19,7 @@ class TestByteBufferContentProvider {
         content.putLong(7777)
         BufferUtils.flipToFlush(content, pos)
 
-        val provider = createByteBufferContentProvider(content)
+        val provider = bytesBody(content)
         val buffer = provider.toByteBuffer()
         assertEquals(333, buffer.int)
         assertEquals(7777, buffer.long)
@@ -34,7 +34,7 @@ class TestByteBufferContentProvider {
         content.putLong(7777)
         BufferUtils.flipToFlush(content, pos)
 
-        val provider = createByteBufferContentProvider(content)
+        val provider = bytesBody(content)
         assertEquals(12, provider.length())
 
         val buffer = BufferUtils.allocate(6)

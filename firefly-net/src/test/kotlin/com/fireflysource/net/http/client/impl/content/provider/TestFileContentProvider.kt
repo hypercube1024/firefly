@@ -4,7 +4,7 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.io.writeAwait
-import com.fireflysource.net.http.client.HttpClientContentProviderFactory.createFileContentProvider
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory.fileBody
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -50,7 +50,7 @@ class TestFileContentProvider {
             assertEquals(capacity, writeLen)
         }
 
-        val provider = createFileContentProvider(tmpFile, READ) as FileContentProvider
+        val provider = fileBody(tmpFile, READ) as FileContentProvider
         val readBuffer = BufferUtils.allocate(capacity)
         val readPos = BufferUtils.flipToFill(readBuffer)
         val readLen = provider.read(readBuffer).await()
