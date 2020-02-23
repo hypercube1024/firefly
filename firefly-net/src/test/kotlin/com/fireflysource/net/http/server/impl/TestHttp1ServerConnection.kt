@@ -356,7 +356,7 @@ class TestHttp1ServerConnection {
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 val content = ctx.getStringBody(charset)
-                return ctx.contentProvider(stringBody("收到：${content}", charset)).end()
+                return ctx.contentProvider(stringBody("收到：${content}。长度：${ctx.contentLength}", charset)).end()
             }
 
             override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
@@ -379,7 +379,7 @@ class TestHttp1ServerConnection {
             val response = futures[0].await()
             println(response.getStringBody(charset))
             assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("收到：发射！！Oooo", response.getStringBody(charset))
+            assertEquals("收到：发射！！Oooo。长度：12", response.getStringBody(charset))
         }
 
         val throughput = count / (time / 1000.00)
