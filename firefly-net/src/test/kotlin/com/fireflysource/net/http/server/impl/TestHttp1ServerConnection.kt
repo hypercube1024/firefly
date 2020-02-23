@@ -143,11 +143,15 @@ class TestHttp1ServerConnection {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 val query = ctx.getQueryString("key1")
                 val queryList = ctx.getQueryStrings("list1")
+                val querySize = ctx.queryStrings.size
                 val message = ctx.getFormInput("key1")
                 val formList = ctx.getFormInputs("list1")
+                val formSize = ctx.formInputs.size
                 val method = ctx.method
-                return ctx.write(method).write(", ").write(query).write(queryList.toString()).write(", ")
-                    .write(message).write(formList.toString())
+                return ctx.write(method).write(", ")
+                    .write(query).write(queryList.toString()).write(", size: $querySize")
+                    .write(", ")
+                    .write(message).write(formList.toString()).write(", size: $formSize")
                     .end()
             }
 
@@ -174,7 +178,7 @@ class TestHttp1ServerConnection {
             val response = futures[0].await()
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("POST, query[q1, q2, q3], message[v1, v2, v3, v4, v5]", response.stringBody)
+            assertEquals("POST, query[q1, q2, q3], size: 2, message[v1, v2, v3, v4, v5], size: 2", response.stringBody)
         }
 
         val throughput = count / (time / 1000.00)
