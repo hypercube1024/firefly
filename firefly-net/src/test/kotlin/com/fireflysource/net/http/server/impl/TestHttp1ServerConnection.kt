@@ -390,6 +390,48 @@ class TestHttp1ServerConnection {
         println("success. $time ms, ${throughput.roundToLong()} qps")
     }
 
+    @Test
+    @DisplayName("should accept 100 continue.")
+    fun testAccept100Continue(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.end("receive ${ctx.stringBody} OK")
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("http://${address.hostName}:${address.port}/100-continue-$it")
+                    .put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE.value)
+                    .body("100 continue content")
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("receive 100 continue content OK", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
     private fun createHttpServer(listener: HttpServerConnection.Listener) {
         val server = TcpServerFactory.create().timeout(120 * 1000)
         server.onAcceptAsync { connection ->

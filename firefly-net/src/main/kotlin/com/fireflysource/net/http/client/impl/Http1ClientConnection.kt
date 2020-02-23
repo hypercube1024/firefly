@@ -68,7 +68,7 @@ class Http1ClientConnection(
                 handler.contentHandler = requestMessage.contentHandler
 
                 generateRequestAndFlushData(requestMessage)
-
+                log.debug("HTTP1 client generates request complete. id: $id")
                 val response = parseResponse()
                 requestMessage.response.complete(response)
             } catch (e: Exception) {
@@ -93,18 +93,25 @@ class Http1ClientConnection(
     }
 
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
+        var parsed100Continue = false
         genLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
                 COMMITTED -> {
                     if (requestMessage.expect100Continue) {
-                        val status = parse100ContinueResponse()
-                        if (status == HttpStatus.CONTINUE_100) {
-                            parser.reset()
+                        if (parsed100Continue) {
                             generateContent(requestMessage)
                         } else {
-                            requestMessage.contentProvider?.closeFuture()?.await()
-                            break@genLoop
+                            val status = parse100ContinueResponse()
+                            parsed100Continue = true
+                            if (status == HttpStatus.CONTINUE_100) {
+                                parser.reset()
+                                generateContent(requestMessage)
+                                log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
+                            } else {
+                                requestMessage.contentProvider?.closeFuture()?.await()
+                                break@genLoop
+                            }
                         }
                     } else generateContent(requestMessage)
                 }

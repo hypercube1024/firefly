@@ -137,4 +137,11 @@ public interface HttpServerResponse extends AsyncCloseable {
      * @return If true, the http response has committed.
      */
     boolean isCommitted();
+
+    /**
+     * Response 100 continue.
+     *
+     * @return The future result.
+     */
+    CompletableFuture<Void> response100Continue();
 }

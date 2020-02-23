@@ -246,6 +246,13 @@ public interface RoutingContext {
     }
 
     /**
+     * The request headers contain expect 100 continue.
+     *
+     * @return If true, the headers contain expect 100 continue.
+     */
+    boolean expect100Continue();
+
+    /**
      * Get HTTP request content length.
      *
      * @return The HTTP request content length.
@@ -424,6 +431,15 @@ public interface RoutingContext {
     default RoutingContext contentProvider(HttpServerContentProvider contentProvider) {
         getResponse().setContentProvider(contentProvider);
         return this;
+    }
+
+    /**
+     * Response 100 continue.
+     *
+     * @return The future result.
+     */
+    default CompletableFuture<Void> response100Continue() {
+        return getResponse().response100Continue();
     }
 
     /**

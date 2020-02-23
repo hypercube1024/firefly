@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerRequest
@@ -40,6 +41,11 @@ class AsyncRoutingContext(
 
     override fun getPathParameterByRegexGroup(index: Int): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun expect100Continue(): Boolean {
+        val expectValue = request.httpFields[HttpHeader.EXPECT]
+        return HttpHeaderValue.CONTINUE.`is`(expectValue)
     }
 
     override fun redirect(url: String): CompletableFuture<Void> {
