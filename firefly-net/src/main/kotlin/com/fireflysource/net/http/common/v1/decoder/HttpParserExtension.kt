@@ -1,10 +1,6 @@
 package com.fireflysource.net.http.common.v1.decoder
 
 import com.fireflysource.common.`object`.Assert
-import com.fireflysource.net.http.common.model.HttpFields
-import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpHeaderValue
-import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.future.await
 import java.util.function.Predicate
@@ -31,17 +27,4 @@ suspend fun HttpParser.parse(tcpConnection: TcpConnection, terminal: Predicate<H
             Assert.state(remaining != wasRemaining, "The received data cannot be consumed")
         }
     }
-}
-
-fun HttpFields.containExpectContinue(): Boolean {
-    val expectValue = this[HttpHeader.EXPECT]
-    return HttpHeaderValue.CONTINUE.`is`(expectValue)
-}
-
-fun HttpFields.containCloseConnection(version: HttpVersion): Boolean = when (version) {
-    HttpVersion.HTTP_0_9, HttpVersion.HTTP_1_0 -> !this.contains(
-        HttpHeader.CONNECTION,
-        HttpHeaderValue.KEEP_ALIVE.value
-    )
-    else -> this.contains(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
 }

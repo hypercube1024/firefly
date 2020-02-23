@@ -2,7 +2,7 @@ package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
+import com.fireflysource.net.http.common.model.containExpectContinue
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerRequest
 import com.fireflysource.net.http.server.HttpServerResponse

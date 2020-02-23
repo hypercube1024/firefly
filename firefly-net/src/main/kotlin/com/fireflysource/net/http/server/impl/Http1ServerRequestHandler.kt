@@ -4,8 +4,6 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
-import com.fireflysource.net.http.common.v1.decoder.containCloseConnection
-import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.channels.Channel
