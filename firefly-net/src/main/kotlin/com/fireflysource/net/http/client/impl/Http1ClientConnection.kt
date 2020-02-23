@@ -10,10 +10,7 @@ import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.*
-import com.fireflysource.net.http.common.v1.decoder.HttpParser
-import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
-import com.fireflysource.net.http.common.v1.decoder.parse
-import com.fireflysource.net.http.common.v1.decoder.parseAll
+import com.fireflysource.net.http.common.v1.decoder.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
@@ -73,6 +70,11 @@ class Http1ClientConnection(
                 log.debug("HTTP1 client generates request complete. id: $id")
                 val response = parseResponse()
                 requestMessage.response.complete(response)
+                if (response.httpFields.containCloseConnection(response.httpVersion)
+                    || requestMessage.request.fields.containCloseConnection(requestMessage.request.httpVersion)
+                ) {
+                    this@Http1ClientConnection.closeFuture().await()
+                }
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
                 requestMessage.response.completeExceptionally(e)
@@ -173,7 +175,7 @@ class Http1ClientConnection(
         } else {
             val result = generator.generateRequest(null, null, null, null, true)
             Assert.state(
-                result == DONE || result == CONTINUE,
+                result == DONE || result == SHUTDOWN_OUT || result == CONTINUE,
                 "The HTTP client generator result error. $result"
             )
         }

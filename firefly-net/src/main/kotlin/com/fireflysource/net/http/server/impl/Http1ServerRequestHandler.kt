@@ -4,6 +4,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.containCloseConnection
 import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
@@ -100,6 +101,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             requireNotNull(context)
             context.request.isRequestComplete = true
             connectionListener.onHttpRequestComplete(context).await()
+            if (context.response.httpFields.containCloseConnection(context.response.httpVersion) ||
+                context.request.httpFields.containCloseConnection(context.request.httpVersion)
+            ) {
+                context.connection.closeFuture().await()
+            }
             log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server handles request exception. id: ${connection.id}" }

@@ -439,12 +439,12 @@ class TestHttp1ServerConnection {
 
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                println("server header complete. ${ctx.uri.path}")
+//                println("server header complete. ${ctx.uri.path}")
                 return ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
             }
 
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                println("server request complete. ${ctx.uri.path}")
+//                println("server request complete. ${ctx.uri.path}")
                 return Result.DONE
             }
 
@@ -470,6 +470,55 @@ class TestHttp1ServerConnection {
             println(response)
             assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
             assertEquals("Content too large", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should close connection successfully.")
+    fun testCloseConnection(): Unit = runBlocking {
+        val count = 13
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
+                    .end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val responses = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .submit().await()
+            }
+
+//            try {
+//                CompletableFuture.allOf(*futures.toTypedArray()).await()
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+
+//            val allDone = futures.all { it.isDone }
+//            assertTrue(allDone)
+
+            val response = responses[0]
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("Close connection success", response.stringBody)
         }
 
         val throughput = count / (time / 1000.00)

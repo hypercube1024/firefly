@@ -152,7 +152,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     private fun end() {
         val generateResult = generator.generateResponse(null, false, null, null, null, true)
         Assert.state(
-            generateResult == HttpGenerator.Result.DONE,
+            generateResult == HttpGenerator.Result.DONE || generateResult == HttpGenerator.Result.SHUTDOWN_OUT,
             "The HTTP server generator result error. $generateResult"
         )
         Assert.state(
