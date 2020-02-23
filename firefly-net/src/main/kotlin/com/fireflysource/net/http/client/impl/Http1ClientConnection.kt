@@ -10,7 +10,9 @@ import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.*
-import com.fireflysource.net.http.common.v1.decoder.*
+import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.parse
+import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
@@ -52,6 +54,7 @@ class Http1ClientConnection(
     private var upgradeHttpClientConnection: HttpClientConnection? = null
     private var sendHttp2UpgradeHeaders = AtomicBoolean(true)
     private val mutex = Mutex()
+    private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
 
 
     init {
@@ -63,7 +66,7 @@ class Http1ClientConnection(
             val requestMessage = requestChannel.receive()
 
             try {
-                handler.expect100Continue = requestMessage.expect100Continue
+                handler.expectServerAcceptingContent = requestMessage.expectServerAcceptingContent
                 handler.contentHandler = requestMessage.contentHandler
 
                 generateRequestAndFlushData(requestMessage)
@@ -91,24 +94,23 @@ class Http1ClientConnection(
         return handler.complete()
     }
 
-    private suspend fun parse100ContinueResponse(): Int {
+    private suspend fun isServerAcceptingContent(): Boolean {
         parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
-        return handler.getExpect100ContinueStatus()
+        return handler.isServerAcceptingContent()
     }
 
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
-        var parsed100Continue = false
+        var acceptContent = false
         genLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
                 COMMITTED -> {
-                    if (requestMessage.expect100Continue) {
-                        if (parsed100Continue) {
+                    if (requestMessage.expectServerAcceptingContent) {
+                        if (acceptContent) {
                             generateContent(requestMessage)
                         } else {
-                            val status = parse100ContinueResponse()
-                            parsed100Continue = true
-                            if (status == HttpStatus.CONTINUE_100) {
+                            if (isServerAcceptingContent()) {
+                                acceptContent = true
                                 parser.reset()
                                 generateContent(requestMessage)
                                 log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
@@ -150,7 +152,7 @@ class Http1ClientConnection(
                 FLUSH -> flushChunkedContentBuffer()
                 CONTINUE -> { // ignore the generator result continue.
                 }
-                DONE -> completeContent()
+                SHUTDOWN_OUT, DONE -> completeContent()
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
         } else {
@@ -158,7 +160,7 @@ class Http1ClientConnection(
                 FLUSH -> flushContentBuffer()
                 CONTINUE -> { // ignore the generator result continue.
                 }
-                DONE -> completeContent()
+                SHUTDOWN_OUT, DONE -> completeContent()
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
         }
@@ -168,7 +170,7 @@ class Http1ClientConnection(
         if (generator.isChunking) {
             when (val result = generator.generateRequest(null, null, chunkBuffer, null, true)) {
                 FLUSH -> flushChunkBuffer()
-                CONTINUE, DONE -> { // ignore the generator result done.
+                CONTINUE, SHUTDOWN_OUT, DONE -> { // ignore the generator result done.
                 }
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
@@ -259,14 +261,16 @@ class Http1ClientConnection(
             log.info { "HTTP1 connection upgrades HTTP2 success. id: $id" }
 
             HttpProtocolNegotiator.removeHttp2UpgradeHeader(request)
-            http2ClientConnection.send(request).await()
+            val http2Response = http2ClientConnection.send(request).await()
+            httpVersion = HttpVersion.HTTP_2
+            http2Response
         } else {
             log.info { "HTTP1 connection upgrades HTTP2 failure. id: $id" }
             response
         }
     }
 
-    override fun getHttpVersion(): HttpVersion = HttpVersion.HTTP_1_1
+    override fun getHttpVersion(): HttpVersion = httpVersion
 
     override fun isSecureConnection(): Boolean = tcpConnection.isSecureConnection
 
@@ -294,7 +298,7 @@ class Http1ClientConnection(
         val contentProvider: HttpClientContentProvider?,
         val contentHandler: HttpClientContentHandler?,
         val response: CompletableFuture<HttpClientResponse>,
-        val expect100Continue: Boolean
+        val expectServerAcceptingContent: Boolean
     )
 }
 

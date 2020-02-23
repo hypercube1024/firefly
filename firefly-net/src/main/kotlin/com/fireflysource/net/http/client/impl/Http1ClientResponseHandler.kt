@@ -14,11 +14,11 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     private val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
     var contentHandler: HttpClientContentHandler? = null
-    var expect100Continue = false
+    var expectServerAcceptingContent = false
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
-    private var expect100ContinueStatus: Int = 0
+    private var isServerAcceptingContent: Boolean = false
 
     override fun getHeaderCacheSize(): Int {
         return 4096
@@ -31,13 +31,14 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
             response.reason = reason
         }
 
-        if (expect100Continue) {
+        if (expectServerAcceptingContent) {
             if (status == HttpStatus.CONTINUE_100) {
-                expect100ContinueStatus = status
+                isServerAcceptingContent = true
             } else {
-                expect100ContinueStatus = status
+                isServerAcceptingContent = false
                 updateResponseLine()
             }
+            expectServerAcceptingContent = false
         } else updateResponseLine()
         return false
     }
@@ -87,7 +88,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         return responseChannel.receive()
     }
 
-    fun getExpect100ContinueStatus(): Int = expect100ContinueStatus
+    fun isServerAcceptingContent(): Boolean = isServerAcceptingContent
 
     fun reset() {
         response.recycle()

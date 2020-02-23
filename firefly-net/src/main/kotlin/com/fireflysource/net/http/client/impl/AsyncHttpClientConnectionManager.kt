@@ -56,11 +56,9 @@ class AsyncHttpClientConnectionManager(
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
             .thenCompose { pooledObject ->
-                pooledObject.use {
-                    val connection = it.getObject()
-                    log.debug("get client connection. id: ${connection.id}, ${connection.isClosed}")
-                    connection.sendRequest(request)
-                }
+                val connection = pooledObject.getObject()
+                log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
+                pooledObject.use { connection.sendRequest(request) }
             }
     }
 

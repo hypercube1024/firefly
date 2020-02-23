@@ -439,12 +439,10 @@ class TestHttp1ServerConnection {
 
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-//                println("server header complete. ${ctx.uri.path}")
                 return ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
             }
 
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-//                println("server request complete. ${ctx.uri.path}")
                 return Result.DONE
             }
 
@@ -479,7 +477,7 @@ class TestHttp1ServerConnection {
     @Test
     @DisplayName("should close connection successfully.")
     fun testCloseConnection(): Unit = runBlocking {
-        val count = 13
+        val count = 30
 
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
