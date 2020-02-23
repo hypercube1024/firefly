@@ -393,7 +393,7 @@ class TestHttp1ServerConnection {
     @Test
     @DisplayName("should accept 100 continue.")
     fun testAccept100Continue(): Unit = runBlocking {
-        val count = 100
+        val count = 1
 
         createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
@@ -426,6 +426,50 @@ class TestHttp1ServerConnection {
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals("receive 100 continue content OK", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should not accept 100 continue and receive the error status successfully.")
+    fun testNotAccept100Continue(): Unit = runBlocking {
+        val count = 100
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                println("server header complete. ${ctx.uri.path}")
+                return ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                println("server request complete. ${ctx.uri.path}")
+                return Result.DONE
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("http://${address.hostName}:${address.port}/100-continue-$it")
+                    .put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE.value)
+                    .body("100 continue content")
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
+            assertEquals("Content too large", response.stringBody)
         }
 
         val throughput = count / (time / 1000.00)

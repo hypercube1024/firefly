@@ -40,6 +40,10 @@ class Http1ServerConnection(
         }
     }
 
+    fun resetParser() {
+        parser.reset()
+    }
+
     private fun generateResponseJob() = responseHandler.generateResponseJob()
 
     fun getHeaderBufferSize() = config.headerBufferSize

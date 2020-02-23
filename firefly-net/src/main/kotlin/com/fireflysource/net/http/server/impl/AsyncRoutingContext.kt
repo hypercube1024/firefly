@@ -1,8 +1,8 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerRequest
 import com.fireflysource.net.http.server.HttpServerResponse
@@ -44,8 +44,7 @@ class AsyncRoutingContext(
     }
 
     override fun expect100Continue(): Boolean {
-        val expectValue = request.httpFields[HttpHeader.EXPECT]
-        return HttpHeaderValue.CONTINUE.`is`(expectValue)
+        return request.httpFields.containExpectContinue()
     }
 
     override fun redirect(url: String): CompletableFuture<Void> {

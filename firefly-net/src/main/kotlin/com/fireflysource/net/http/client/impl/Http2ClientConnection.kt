@@ -13,6 +13,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.MetaData
+import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
@@ -156,7 +157,7 @@ class Http2ClientConnection(
         val response = AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
         val metaDataResponse = response.response
 
-        val expect100Continue = expect100Continue(request)
+        val expect100Continue = request.httpFields.containExpectContinue()
         val serverAccept = CompletableFuture<Boolean>()
         val trailer = HttpFields()
         var theFirstHeader = true

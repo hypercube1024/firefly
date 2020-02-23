@@ -1,17 +1,21 @@
 package com.fireflysource.net.http.common.v1.decoder
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.net.http.common.model.HttpFields
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.future.await
+import java.util.function.Predicate
 
 suspend fun HttpParser.parseAll(tcpConnection: TcpConnection) {
-    this.parse(tcpConnection, HttpParser.State.END)
+    this.parse(tcpConnection, Predicate { it == HttpParser.State.END })
 }
 
-suspend fun HttpParser.parse(tcpConnection: TcpConnection, terminalState: HttpParser.State) {
-    Assert.state(this.isState(HttpParser.State.START), "The parser state error. ${this.state}")
+suspend fun HttpParser.parse(tcpConnection: TcpConnection, terminal: Predicate<HttpParser.State>) {
+    fun isTerminal() = terminal.test(this.state) || this.isState(HttpParser.State.END)
 
-    recvLoop@ while (!this.isState(terminalState)) {
+    recvLoop@ while (!isTerminal()) {
         val buffer = try {
             tcpConnection.read().await()
         } catch (e: Exception) {
@@ -19,11 +23,16 @@ suspend fun HttpParser.parse(tcpConnection: TcpConnection, terminalState: HttpPa
         }
 
         var remaining = buffer.remaining()
-        while (!this.isState(terminalState) && remaining > 0) {
+        while (!isTerminal() && remaining > 0) {
             val wasRemaining = remaining
             this.parseNext(buffer)
             remaining = buffer.remaining()
             Assert.state(remaining != wasRemaining, "The received data cannot be consumed")
         }
     }
+}
+
+fun HttpFields.containExpectContinue(): Boolean {
+    val expectValue = this[HttpHeader.EXPECT]
+    return HttpHeaderValue.CONTINUE.`is`(expectValue)
 }

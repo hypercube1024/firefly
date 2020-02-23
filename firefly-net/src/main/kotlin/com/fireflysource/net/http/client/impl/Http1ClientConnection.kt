@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.common.v1.decoder.parse
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
@@ -28,6 +29,7 @@ import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Predicate
 
 class Http1ClientConnection(
     private val config: HttpConfig,
@@ -88,7 +90,7 @@ class Http1ClientConnection(
     }
 
     private suspend fun parse100ContinueResponse(): Int {
-        parser.parse(tcpConnection, HttpParser.State.HEADER)
+        parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
         return handler.getExpect100ContinueStatus()
     }
 
@@ -272,7 +274,7 @@ class Http1ClientConnection(
         prepareHttp1Headers(request)
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
-        val expect100Continue = expect100Continue(request)
+        val expect100Continue = request.httpFields.containExpectContinue()
         requestChannel.offer(
             RequestMessage(
                 metaDataRequest,

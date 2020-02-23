@@ -4,6 +4,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.containExpectContinue
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.channels.Channel
@@ -60,7 +61,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
         requireNotNull(request)
         val httpServerRequest = AsyncHttpServerRequest(request)
-        val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection), connection)
+        val expect100 = request.fields.containExpectContinue()
+        val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection, expect100), connection)
         notifyHeaderComplete(ctx)
         return ctx
     }
