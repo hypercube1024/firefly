@@ -5,9 +5,13 @@ import com.fireflysource.net.tcp.TcpConnection
 import kotlinx.coroutines.future.await
 
 suspend fun HttpParser.parseAll(tcpConnection: TcpConnection) {
+    this.parse(tcpConnection, HttpParser.State.END)
+}
+
+suspend fun HttpParser.parse(tcpConnection: TcpConnection, terminalState: HttpParser.State) {
     Assert.state(this.isState(HttpParser.State.START), "The parser state error. ${this.state}")
 
-    recvLoop@ while (!this.isState(HttpParser.State.END)) {
+    recvLoop@ while (!this.isState(terminalState)) {
         val buffer = try {
             tcpConnection.read().await()
         } catch (e: Exception) {
@@ -15,7 +19,7 @@ suspend fun HttpParser.parseAll(tcpConnection: TcpConnection) {
         }
 
         var remaining = buffer.remaining()
-        while (!this.isState(HttpParser.State.END) && remaining > 0) {
+        while (!this.isState(terminalState) && remaining > 0) {
             val wasRemaining = remaining
             this.parseNext(buffer)
             remaining = buffer.remaining()

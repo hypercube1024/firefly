@@ -126,12 +126,12 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
         request.httpFields.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.FORM_ENCODED.value)
         request.httpFields.put(HttpHeader.CONTENT_LENGTH, stringContentProvider.length().toString())
     } else {
-        if (request.contentProvider != null) {
-            if (request.contentProvider is MultiPartContentProvider) {
-                val multiPartContentProvider = (request.contentProvider as MultiPartContentProvider)
-                request.httpFields.put(HttpHeader.CONTENT_TYPE, multiPartContentProvider.contentType)
-                if (multiPartContentProvider.length() >= 0) {
-                    request.httpFields.put(HttpHeader.CONTENT_LENGTH, multiPartContentProvider.length().toString())
+        val provider = request.contentProvider
+        if (provider != null) {
+            if (provider is MultiPartContentProvider) {
+                request.httpFields.put(HttpHeader.CONTENT_TYPE, provider.contentType)
+                if (provider.length() >= 0) {
+                    request.httpFields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
                 }
             } else {
                 val contentLength = request.contentProvider!!.length()
@@ -163,7 +163,6 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
     val len = request.contentProvider?.length() ?: -1
     val metaDataReq = MetaData.Request(request.method, request.uri, request.httpVersion, request.httpFields, len)
     metaDataReq.trailerSupplier = request.trailerSupplier
-
     return metaDataReq
 }
 

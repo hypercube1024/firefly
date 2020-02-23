@@ -9,11 +9,9 @@ import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
-import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.common.model.HttpHeaderValue
-import com.fireflysource.net.http.common.model.HttpVersion
-import com.fireflysource.net.http.common.model.MetaData
+import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v1.decoder.parse
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
@@ -66,10 +64,11 @@ class Http1ClientConnection(
             val requestMessage = requestChannel.receive()
 
             try {
+                handler.expect100Continue = requestMessage.expect100Continue
+                handler.contentHandler = requestMessage.contentHandler
+
                 generateRequestAndFlushData(requestMessage)
 
-                // receive response data
-                handler.contentHandler = requestMessage.contentHandler
                 val response = parseResponse()
                 requestMessage.response.complete(response)
             } catch (e: Exception) {
@@ -88,11 +87,27 @@ class Http1ClientConnection(
         return handler.complete()
     }
 
+    private suspend fun parse100ContinueResponse(): Int {
+        parser.parse(tcpConnection, HttpParser.State.HEADER)
+        return handler.getExpect100ContinueStatus()
+    }
+
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
         genLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
-                COMMITTED -> generateContent(requestMessage)
+                COMMITTED -> {
+                    if (requestMessage.expect100Continue) {
+                        val status = parse100ContinueResponse()
+                        if (status == HttpStatus.CONTINUE_100) {
+                            parser.reset()
+                            generateContent(requestMessage)
+                        } else {
+                            requestMessage.contentProvider?.closeFuture()?.await()
+                            break@genLoop
+                        }
+                    } else generateContent(requestMessage)
+                }
                 COMPLETING -> completeContent()
                 END -> {
                     requestMessage.contentProvider?.closeFuture()?.await()
@@ -250,7 +265,16 @@ class Http1ClientConnection(
         prepareHttp1Headers(request)
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
-        requestChannel.offer(RequestMessage(metaDataRequest, request.contentProvider, request.contentHandler, future))
+        val expect100Continue = expect100Continue(request)
+        requestChannel.offer(
+            RequestMessage(
+                metaDataRequest,
+                request.contentProvider,
+                request.contentHandler,
+                future,
+                expect100Continue
+            )
+        )
         return future
     }
 
@@ -258,7 +282,8 @@ class Http1ClientConnection(
         val request: MetaData.Request,
         val contentProvider: HttpClientContentProvider?,
         val contentHandler: HttpClientContentHandler?,
-        val response: CompletableFuture<HttpClientResponse>
+        val response: CompletableFuture<HttpClientResponse>,
+        val expect100Continue: Boolean
     )
 }
 

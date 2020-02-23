@@ -2119,6 +2119,37 @@ class HttpParserTest {
         assertNull(bad);
     }
 
+    @Test
+    void testExpect100Continue() {
+        ByteBuffer buffer1 = BufferUtils.toBuffer("HTTP/1.1 100 Continue\r\n");
+        ByteBuffer buffer2 = BufferUtils.toBuffer("HTTP/1.1 200 OK\r\n");
+        ByteBuffer buffer3 = BufferUtils.toBuffer("Content-Length: 4\r\n" +
+                "\r\n" +
+                "test");
+        HttpParser.ResponseHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parser.parseNext(buffer1);
+        assertEquals("HTTP/1.1", methodOrVersion);
+        assertEquals("100", uriOrStatus);
+        assertEquals("Continue", versionOrReason);
+        assertEquals(State.HEADER, parser.getState());
+        parser.reset();
+        assertEquals(State.START, parser.getState());
+        System.out.println(parser.getState());
+
+        parser.parseNext(buffer2);
+        assertEquals("HTTP/1.1", methodOrVersion);
+        assertEquals("200", uriOrStatus);
+        assertEquals("OK", versionOrReason);
+        System.out.println(parser.getState());
+
+        parser.parseNext(buffer3);
+        assertEquals("Content-Length", hdr[0]);
+        assertEquals("4", val[0]);
+        assertEquals("test", content);
+        System.out.println(parser.getState());
+    }
+
     @BeforeEach
     void init() {
         bad = null;
@@ -2216,7 +2247,7 @@ class HttpParserTest {
             val = new String[10];
             messageCompleted = false;
             headerCompleted = false;
-            return false;
+            return status == HttpStatus.CONTINUE_100;
         }
 
         @Override

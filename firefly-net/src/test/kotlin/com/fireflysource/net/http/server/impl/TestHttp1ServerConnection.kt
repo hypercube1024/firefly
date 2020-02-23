@@ -383,6 +383,7 @@ class TestHttp1ServerConnection {
             val response = futures[0].await()
             println(response.getStringBody(charset))
             assertEquals(HttpStatus.OK_200, response.status)
+//            assertEquals("收到：发射！！Oooo。长度：12", response.getStringBody(charset))
         }
 
         val throughput = count / (time / 1000.00)
