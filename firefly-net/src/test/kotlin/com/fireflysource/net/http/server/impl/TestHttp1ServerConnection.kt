@@ -7,6 +7,7 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.tcp.TcpServerFactory
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import kotlin.math.roundToLong
@@ -339,6 +341,45 @@ class TestHttp1ServerConnection {
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals(4, response.cookies.size)
             assertEquals("receive cookies c1, c2. ok.", response.stringBody)
+        }
+
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+    }
+
+    @Test
+    @DisplayName("should receive gbk content successfully.")
+    fun testGBK(): Unit = runBlocking {
+        val count = 100
+        val charset = Charset.forName("GBK")
+
+        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                val content = ctx.getStringBody(charset)
+                return ctx.contentProvider(stringBody("收到：${content}", charset)).end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+                exception.printStackTrace()
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("http://${address.hostName}:${address.port}/gbk-$it")
+                    .body("发射！！Oooo", charset)
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response.getStringBody(charset))
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("收到：发射！！Oooo", response.getStringBody(charset))
         }
 
         val throughput = count / (time / 1000.00)
