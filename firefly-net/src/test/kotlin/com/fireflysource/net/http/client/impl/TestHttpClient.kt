@@ -111,6 +111,7 @@ class TestHttpClient {
 
         val throughput = count / (time / 1000.00)
         println("success. $time ms, ${throughput.roundToLong()} qps")
+        httpClient.stop()
     }
 
     @Test
@@ -126,6 +127,8 @@ class TestHttpClient {
 
         assertEquals(HttpStatus.OK_200, response.status)
         assertEquals("test chunked encoding success", response.stringBody)
+
+        httpClient.stop()
     }
 
     @Test
@@ -146,6 +149,8 @@ class TestHttpClient {
             assertEquals("test no chunked encoding success", response.stringBody)
             assertEquals(32, response.contentLength)
         }
+
+        httpClient.stop()
     }
 
     class MockChunkByteBufferContentProvider(content: ByteBuffer) : ByteBufferContentProvider(content) {

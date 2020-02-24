@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server.impl
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
@@ -10,6 +11,7 @@ import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
+import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
@@ -45,12 +47,29 @@ class TestHttp1ServerConnection {
         println("stop success. $stopTime")
     }
 
+    private fun createHttpServer(listener: HttpServerConnection.Listener): TcpServer {
+        val server = TcpServerFactory.create().timeout(120 * 1000)
+        return server.onAcceptAsync { connection ->
+            println("accept connection. ${connection.id}")
+            connection.beginHandshake().await()
+            val http1ServerConnection = Http1ServerConnection(HttpConfig(), connection)
+            http1ServerConnection.setListener(listener).begin()
+        }.listen(address)
+    }
+
+    private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: TcpServer) {
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+        httpClient.stop()
+        httpServer.stop()
+    }
+
     @Test
     @DisplayName("should receive request and response texts successfully.")
     fun test(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 ctx.write(BufferUtils.toBuffer("response buffer.", StandardCharsets.UTF_8))
                 val arr = arrayOf(
@@ -92,8 +111,7 @@ class TestHttp1ServerConnection {
             println(response)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -101,7 +119,7 @@ class TestHttp1ServerConnection {
     fun testResponseContentLength(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 val buffer = BufferUtils.toBuffer("response text with content length.", StandardCharsets.UTF_8)
                 ctx.put(HttpHeader.CONTENT_LENGTH, buffer.remaining().toString())
@@ -130,8 +148,7 @@ class TestHttp1ServerConnection {
             println(response)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -139,7 +156,7 @@ class TestHttp1ServerConnection {
     fun testQueryStringsAndFormInputs(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 val query = ctx.getQueryString("key1")
                 val queryList = ctx.getQueryStrings("list1")
@@ -181,8 +198,7 @@ class TestHttp1ServerConnection {
             assertEquals("POST, query[q1, q2, q3], size: 2, message[v1, v2, v3, v4, v5], size: 2", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -190,7 +206,7 @@ class TestHttp1ServerConnection {
     fun testContentProvider(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return ctx.setStatus(HttpStatus.NOT_FOUND_404).setReason("Just so so")
                     .setHttpVersion(HttpVersion.HTTP_1_1)
@@ -219,8 +235,7 @@ class TestHttp1ServerConnection {
             println(response)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -228,7 +243,7 @@ class TestHttp1ServerConnection {
     fun testTrailer(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return ctx.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
                     .setTrailerSupplier {
@@ -268,8 +283,7 @@ class TestHttp1ServerConnection {
 
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -277,7 +291,7 @@ class TestHttp1ServerConnection {
     fun testRedirect(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return ctx.redirect("http://${address.hostName}:${address.port}/r0")
             }
@@ -302,16 +316,16 @@ class TestHttp1ServerConnection {
             assertEquals("http://${address.hostName}:${address.port}/r0", response.httpFields[HttpHeader.LOCATION])
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
+
 
     @Test
     @DisplayName("should get cookies and set cookies successfully.")
     fun testCookies(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 ctx.cookies = listOf(
                     Cookie("s1", "v1"),
@@ -347,8 +361,7 @@ class TestHttp1ServerConnection {
             assertEquals("receive cookies c1, c2. ok.", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -357,7 +370,7 @@ class TestHttp1ServerConnection {
         val count = 100
         val charset = Charset.forName("GBK")
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 val content = ctx.getStringBody(charset)
                 return ctx.contentProvider(stringBody("收到：${content}。长度：${ctx.contentLength}", charset)).end()
@@ -386,8 +399,7 @@ class TestHttp1ServerConnection {
 //            assertEquals("收到：发射！！Oooo。长度：12", response.getStringBody(charset))
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -395,7 +407,7 @@ class TestHttp1ServerConnection {
     fun testAccept100Continue(): Unit = runBlocking {
         val count = 1
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
             }
@@ -428,8 +440,7 @@ class TestHttp1ServerConnection {
             assertEquals("receive 100 continue content OK", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -437,7 +448,7 @@ class TestHttp1ServerConnection {
     fun testNotAccept100Continue(): Unit = runBlocking {
         val count = 100
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
             }
@@ -470,8 +481,7 @@ class TestHttp1ServerConnection {
             assertEquals("Content too large", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -479,7 +489,7 @@ class TestHttp1ServerConnection {
     fun testCloseConnection(): Unit = runBlocking {
         val count = 30
 
-        createHttpServer(object : HttpServerConnection.Listener.Adapter() {
+        val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
                 return Result.DONE
             }
@@ -504,33 +514,13 @@ class TestHttp1ServerConnection {
                     .submit().await()
             }
 
-//            try {
-//                CompletableFuture.allOf(*futures.toTypedArray()).await()
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-
-//            val allDone = futures.all { it.isDone }
-//            assertTrue(allDone)
-
             val response = responses[0]
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals("Close connection success", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
-    }
-
-    private fun createHttpServer(listener: HttpServerConnection.Listener) {
-        val server = TcpServerFactory.create().timeout(120 * 1000)
-        server.onAcceptAsync { connection ->
-            println("accept connection. ${connection.id}")
-            connection.beginHandshake().await()
-            val http1ServerConnection = Http1ServerConnection(HttpConfig(), connection)
-            http1ServerConnection.setListener(listener).begin()
-        }.listen(address)
+        finish(count, time, httpClient, httpServer)
     }
 
 }

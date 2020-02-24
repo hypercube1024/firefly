@@ -3,6 +3,7 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
@@ -13,6 +14,7 @@ import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.impl.Http2ServerConnection
+import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
@@ -47,23 +49,31 @@ class TestHttp2ClientConnection {
         println("shutdown time: $time ms")
     }
 
+    private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: TcpServer) {
+        val throughput = count / (time / 1000.00)
+        println("success. $time ms, ${throughput.roundToLong()} qps")
+        httpClient.stop()
+        httpServer.stop()
+    }
+
     @Test
     @DisplayName("should send request and receive response successfully.")
     fun testSendRequest(): Unit = runBlocking {
         val httpConfig = HttpConfig()
         val count = 100
 
-        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
-            connection.beginHandshake().await()
-            val connectionListener = object : Http2Connection.Listener.Adapter() {
+        val httpServer =
+            TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
+                connection.beginHandshake().await()
+                val connectionListener = object : Http2Connection.Listener.Adapter() {
 
-                override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
-                    failure.printStackTrace()
-                }
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
 
-                override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                    println("Server receives go away frame: $frame")
-                }
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
 
                 override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
                     val fields = HttpFields()
@@ -97,8 +107,7 @@ class TestHttp2ClientConnection {
             assertEquals("http exchange success.", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -107,17 +116,18 @@ class TestHttp2ClientConnection {
         val httpConfig = HttpConfig()
         val count = 100
 
-        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
-            connection.beginHandshake().await()
-            val connectionListener = object : Http2Connection.Listener.Adapter() {
+        val httpServer =
+            TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
+                connection.beginHandshake().await()
+                val connectionListener = object : Http2Connection.Listener.Adapter() {
 
-                override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
-                    failure.printStackTrace()
-                }
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
 
-                override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                    println("Server receives go away frame: $frame")
-                }
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
 
                 override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
                     val headers = LinkedList<HeadersFrame>()
@@ -204,8 +214,7 @@ class TestHttp2ClientConnection {
             assertEquals("receive data success.", response.stringBody)
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
     @Test
@@ -214,17 +223,18 @@ class TestHttp2ClientConnection {
         val httpConfig = HttpConfig()
         val count = 100
 
-        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
-            connection.beginHandshake().await()
-            val connectionListener = object : Http2Connection.Listener.Adapter() {
+        val httpServer =
+            TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
+                connection.beginHandshake().await()
+                val connectionListener = object : Http2Connection.Listener.Adapter() {
 
-                override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
-                    failure.printStackTrace()
-                }
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
 
-                override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
-                    println("Server receives go away frame: $frame")
-                }
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
 
                 override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
                     val headers = LinkedList<HeadersFrame>()
@@ -325,8 +335,7 @@ class TestHttp2ClientConnection {
             assertEquals("v3", trailers["t3"])
         }
 
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
+        finish(count, time, httpClient, httpServer)
     }
 
 
