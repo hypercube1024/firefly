@@ -21,6 +21,7 @@ import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -70,7 +71,7 @@ class AsyncHttpClientConnectionManager(
         return this.use {
             connection.sendRequest(request)
                 .exceptionallyCompose { e ->
-                    if (connection.httpVersion == HttpVersion.HTTP_1_1) {
+                    if (connection.httpVersion == HttpVersion.HTTP_1_1 && e.cause != null && e.cause is CancellationException) {
                         log.warn("retry request: ${request.uri}, message: ${e.message}, class: ${e.cause?.javaClass?.name}")
                         retryOne(address, request)
                     } else CompletableFutures.completeExceptionally(e)
