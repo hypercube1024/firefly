@@ -55,11 +55,13 @@ class AsyncHttpClientConnectionManager(
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose { pooledObject ->
-                val connection = pooledObject.getObject()
-                log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
-                pooledObject.use { connection.sendRequest(request) }
-            }
+            .thenCompose { it.send(request) }
+    }
+
+    private fun PooledObject<HttpClientConnection>.send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        val connection = this.getObject()
+        log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
+        return this.use { connection.sendRequest(request) }
     }
 
     private fun HttpClientConnection.sendRequest(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {

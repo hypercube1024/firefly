@@ -519,6 +519,19 @@ class TestHttp1ServerConnection {
             }
 
             val response = responses[0]
+
+//            val futures = (1..count).map {
+//                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
+//                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+//                    .submit()
+//            }
+//
+//            CompletableFuture.allOf(*futures.toTypedArray()).await()
+//            val allDone = futures.all { it.isDone }
+//            assertTrue(allDone)
+//
+//            val response = futures[0].await()
+
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals("Close connection success", response.stringBody)

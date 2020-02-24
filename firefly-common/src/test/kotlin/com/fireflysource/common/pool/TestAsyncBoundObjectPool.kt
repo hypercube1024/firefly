@@ -38,7 +38,7 @@ class TestAsyncBoundObjectPool {
                 assertTrue(pooledObject.getObject().id in 0..max)
                 println("get pooled object success. object: $pooledObject")
 
-                pooledObject.release().await()
+                pooledObject.closeFuture().await()
                 assertTrue(pooledObject.isReleased)
             }
 
