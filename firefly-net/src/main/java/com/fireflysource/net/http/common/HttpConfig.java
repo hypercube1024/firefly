@@ -21,7 +21,6 @@ public class HttpConfig {
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
     private int maxConcurrentStreams = -1;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
-    private int clientMaxRetry = 3;
 
     public long getTimeout() {
         return timeout;
@@ -125,14 +124,6 @@ public class HttpConfig {
 
     public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
         this.initialSessionRecvWindow = initialSessionRecvWindow;
-    }
-
-    public int getClientMaxRetry() {
-        return clientMaxRetry;
-    }
-
-    public void setClientMaxRetry(int clientMaxRetry) {
-        this.clientMaxRetry = clientMaxRetry;
     }
 
     @Override

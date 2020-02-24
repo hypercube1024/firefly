@@ -512,19 +512,19 @@ class TestHttp1ServerConnection {
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
-            //            val responses = (1..count).map {
-//                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
-//                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-//                    .submit().await()
-//            }
+            val responses = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .submit().await()
+            }
+
+            val response = responses[0]
+
+//            fun send(i: Int) = httpClient.get("http://${address.hostName}:${address.port}/close-$i")
+//                .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+//                .submit()
 //
-//            val response = responses[0]
-
-            fun send(i: Int) = httpClient.get("http://${address.hostName}:${address.port}/close-$i")
-                .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                .submit()
-
-            val futures = (1..count).map { send(it) }
+//            val futures = (1..count).map { send(it) }
 
 //            (1..count).forEach {
 //                try {
@@ -536,11 +536,11 @@ class TestHttp1ServerConnection {
 //                }
 //            }
 
-            CompletableFuture.allOf(*futures.toTypedArray()).await()
-            val allDone = futures.all { it.isDone }
-            assertTrue(allDone)
-
-            val response = futures[0].await()
+//            CompletableFuture.allOf(*futures.toTypedArray()).await()
+//            val allDone = futures.all { it.isDone }
+//            assertTrue(allDone)
+//
+//            val response = futures[0].await()
 
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
