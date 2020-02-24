@@ -2,7 +2,7 @@ package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.common.model.containExpectContinue
+import com.fireflysource.net.http.common.model.expectServerAcceptsContent
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerRequest
 import com.fireflysource.net.http.server.HttpServerResponse
@@ -44,7 +44,7 @@ class AsyncRoutingContext(
     }
 
     override fun expect100Continue(): Boolean {
-        return request.httpFields.containExpectContinue()
+        return request.httpFields.expectServerAcceptsContent()
     }
 
     override fun redirect(url: String): CompletableFuture<Void> {

@@ -13,12 +13,12 @@ import java.util.function.Supplier
 class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     private val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
-    var contentHandler: HttpClientContentHandler? = null
-    var expectServerAcceptingContent = false
+    private var contentHandler: HttpClientContentHandler? = null
+    private var expectServerAcceptsContent = false
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
-    private var isServerAcceptingContent: Boolean = false
+    private var serverAccepted: Boolean = false
 
     override fun getHeaderCacheSize(): Int {
         return 4096
@@ -31,14 +31,14 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
             response.reason = reason
         }
 
-        if (expectServerAcceptingContent) {
+        if (expectServerAcceptsContent) {
             if (status == HttpStatus.CONTINUE_100) {
-                isServerAcceptingContent = true
+                serverAccepted = true
             } else {
-                isServerAcceptingContent = false
+                serverAccepted = false
                 updateResponseLine()
             }
-            expectServerAcceptingContent = false
+            expectServerAcceptsContent = false
         } else updateResponseLine()
         return false
     }
@@ -88,7 +88,12 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         return responseChannel.receive()
     }
 
-    fun isServerAcceptingContent(): Boolean = isServerAcceptingContent
+    fun serverAccepted(): Boolean = serverAccepted
+
+    fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean) {
+        this.contentHandler = contentHandler
+        this.expectServerAcceptsContent = expectServerAcceptsContent
+    }
 
     fun reset() {
         response.recycle()

@@ -66,15 +66,14 @@ class Http1ClientConnection(
             val requestMessage = requestChannel.receive()
 
             try {
-                handler.expectServerAcceptingContent = requestMessage.expectServerAcceptingContent
-                handler.contentHandler = requestMessage.contentHandler
+                handler.init(requestMessage.contentHandler, requestMessage.expectServerAcceptsContent)
 
                 generateRequestAndFlushData(requestMessage)
                 log.debug("HTTP1 client generates request complete. id: $id")
                 val response = parseResponse()
                 requestMessage.response.complete(response)
-                if (response.httpFields.containCloseConnection(response.httpVersion)
-                    || requestMessage.request.fields.containCloseConnection(requestMessage.request.httpVersion)
+                if (response.httpFields.isCloseConnection(response.httpVersion)
+                    || requestMessage.request.fields.isCloseConnection(requestMessage.request.httpVersion)
                 ) {
                     this@Http1ClientConnection.closeFuture().await()
                 }
@@ -94,23 +93,23 @@ class Http1ClientConnection(
         return handler.complete()
     }
 
-    private suspend fun isServerAcceptingContent(): Boolean {
+    private suspend fun serverAccepted(): Boolean {
         parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
-        return handler.isServerAcceptingContent()
+        return handler.serverAccepted()
     }
 
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
-        var acceptContent = false
+        var accepted = false
         genLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
                 COMMITTED -> {
-                    if (requestMessage.expectServerAcceptingContent) {
-                        if (acceptContent) {
+                    if (requestMessage.expectServerAcceptsContent) {
+                        if (accepted) {
                             generateContent(requestMessage)
                         } else {
-                            if (isServerAcceptingContent()) {
-                                acceptContent = true
+                            if (serverAccepted()) {
+                                accepted = true
                                 parser.reset()
                                 generateContent(requestMessage)
                                 log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
@@ -141,6 +140,7 @@ class Http1ClientConnection(
 
     private suspend fun generateContent(requestMessage: RequestMessage) {
         requireNotNull(requestMessage.contentProvider)
+
         val pos = contentBuffer.flipToFill()
         val len = requestMessage.contentProvider.read(contentBuffer).await()
         contentBuffer.flipToFlush(pos)
@@ -280,14 +280,13 @@ class Http1ClientConnection(
         prepareHttp1Headers(request)
         val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest = toMetaDataRequest(request)
-        val expect100Continue = request.httpFields.containExpectContinue()
         requestChannel.offer(
             RequestMessage(
                 metaDataRequest,
                 request.contentProvider,
                 request.contentHandler,
                 future,
-                expect100Continue
+                request.httpFields.expectServerAcceptsContent()
             )
         )
         return future
@@ -296,9 +295,9 @@ class Http1ClientConnection(
     private data class RequestMessage(
         val request: MetaData.Request,
         val contentProvider: HttpClientContentProvider?,
-        val contentHandler: HttpClientContentHandler?,
+        val contentHandler: HttpClientContentHandler,
         val response: CompletableFuture<HttpClientResponse>,
-        val expectServerAcceptingContent: Boolean
+        val expectServerAcceptsContent: Boolean
     )
 }
 

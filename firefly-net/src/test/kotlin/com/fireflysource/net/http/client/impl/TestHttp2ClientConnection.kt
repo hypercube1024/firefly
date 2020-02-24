@@ -13,16 +13,17 @@ import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.impl.Http2ServerConnection
-import com.fireflysource.net.tcp.aio.AioTcpServer
-import com.fireflysource.net.tcp.aio.TcpConfig
+import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.net.InetSocketAddress
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
@@ -32,16 +33,27 @@ import kotlin.system.measureTimeMillis
 
 class TestHttp2ClientConnection {
 
+    private lateinit var address: InetSocketAddress
+    private val timeout = 5 * 60L
+
+    @BeforeEach
+    fun init() {
+        address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
+    }
+
+    @AfterEach
+    fun destroy() {
+        val time = measureTimeMillis { AbstractLifeCycle.stopAll() }
+        println("shutdown time: $time ms")
+    }
+
     @Test
     @DisplayName("should send request and receive response successfully.")
     fun testSendRequest(): Unit = runBlocking {
-        val host = "localhost"
-        val port = Random.nextInt(20000, 30000)
-        val tcpConfig = TcpConfig(3000, true)
         val httpConfig = HttpConfig()
         val count = 100
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
             connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
@@ -68,13 +80,13 @@ class TestHttp2ClientConnection {
                 }
             }
             Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(host, port)
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 
         val time = measureTimeMillis {
             val futures = (1..count).map { i ->
-                httpClient.get("https://${host}:${port}/test/$i").submit()
+                httpClient.get("https://${address.hostName}:${address.port}/test/$i").submit()
             }
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
@@ -92,13 +104,10 @@ class TestHttp2ClientConnection {
     @Test
     @DisplayName("should receive 100 continue response.")
     fun test100Continue(): Unit = runBlocking {
-        val host = "localhost"
-        val port = Random.nextInt(20000, 30000)
-        val tcpConfig = TcpConfig(3000, true)
         val httpConfig = HttpConfig()
         val count = 100
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
             connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
@@ -175,13 +184,13 @@ class TestHttp2ClientConnection {
                 }
             }
             Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(host, port)
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 
         val time = measureTimeMillis {
             val futures = (1..count).map {
-                httpClient.post("https://${host}:${port}/data")
+                httpClient.post("https://${address.hostName}:${address.port}/data")
                     .put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE.value)
                     .body("Some test data!")
                     .submit()
@@ -202,13 +211,10 @@ class TestHttp2ClientConnection {
     @Test
     @DisplayName("should receive trailers successfully.")
     fun testTrailer(): Unit = runBlocking {
-        val host = "localhost"
-        val port = Random.nextInt(20000, 30000)
-        val tcpConfig = TcpConfig(30, true)
         val httpConfig = HttpConfig()
         val count = 100
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
             connection.beginHandshake().await()
             val connectionListener = object : Http2Connection.Listener.Adapter() {
 
@@ -293,13 +299,13 @@ class TestHttp2ClientConnection {
                 }
             }
             Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(host, port)
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 
         val time = measureTimeMillis {
             val futures = (1..count).map {
-                httpClient.post("https://${host}:${port}/data")
+                httpClient.post("https://${address.hostName}:${address.port}/data")
                     .put(HttpHeader.EXPECT, HttpHeaderValue.CONTINUE.value)
                     .body("Some test data!")
                     .submit()
@@ -323,9 +329,5 @@ class TestHttp2ClientConnection {
         println("success. $time ms, ${throughput.roundToLong()} qps")
     }
 
-    @AfterEach
-    fun destroy() {
-        val time = measureTimeMillis { AbstractLifeCycle.stopAll() }
-        println("shutdown time: $time ms")
-    }
+
 }

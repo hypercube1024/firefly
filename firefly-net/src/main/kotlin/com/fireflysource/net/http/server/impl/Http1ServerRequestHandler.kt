@@ -60,7 +60,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
         requireNotNull(request)
         val httpServerRequest = AsyncHttpServerRequest(request)
-        val expect100 = request.fields.containExpectContinue()
+        val expect100 = request.fields.expectServerAcceptsContent()
         val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection, expect100), connection)
         notifyHeaderComplete(ctx)
         return ctx
@@ -99,8 +99,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             requireNotNull(context)
             context.request.isRequestComplete = true
             connectionListener.onHttpRequestComplete(context).await()
-            if (context.response.httpFields.containCloseConnection(context.response.httpVersion) ||
-                context.request.httpFields.containCloseConnection(context.request.httpVersion)
+            if (context.response.httpFields.isCloseConnection(context.response.httpVersion) ||
+                context.request.httpFields.isCloseConnection(context.request.httpVersion)
             ) {
                 context.connection.closeFuture().await()
             }

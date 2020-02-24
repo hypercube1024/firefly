@@ -34,7 +34,7 @@ class TestHttp1ServerConnection {
 
     @BeforeEach
     fun init() {
-        address = InetSocketAddress("localhost", Random.nextInt(2000, 5000))
+        address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
     }
 
     @AfterEach
