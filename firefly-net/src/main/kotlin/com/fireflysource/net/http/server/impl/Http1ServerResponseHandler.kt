@@ -117,7 +117,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
                     else -> throw IllegalStateException("The HTTP server generator result error. $generateResult")
                 }
             }
-            end()
+            end(endResponse)
             Result.done(endResponse.future)
         } catch (e: Exception) {
             endResponse.future.completeExceptionally(e)
@@ -130,9 +130,9 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         assert(HttpGenerator.State.COMPLETING)
     }
 
-    private fun end() {
+    private fun end(endResponse: EndResponse) {
         val result = generator.generateResponse(null, false, null, null, null, true)
-        if (result == HttpGenerator.Result.SHUTDOWN_OUT) {
+        if (result == HttpGenerator.Result.SHUTDOWN_OUT || endResponse.closeConnection) {
             http1ServerConnection.closeFuture()
             log.debug { "HTTP1 server connection is closing. id: ${http1ServerConnection.id}" }
         }
@@ -218,4 +218,4 @@ class Http1OutputBufferList(
     result: Consumer<Result<Long>>
 ) : Http1OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
-data class EndResponse(val future: CompletableFuture<Void>) : Http1ResponseMessage
+data class EndResponse(val future: CompletableFuture<Void>, val closeConnection: Boolean) : Http1ResponseMessage

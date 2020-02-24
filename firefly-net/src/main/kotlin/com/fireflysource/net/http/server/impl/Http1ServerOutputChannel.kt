@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class Http1ServerOutputChannel(
     private val http1ServerConnection: Http1ServerConnection,
-    private val response: MetaData.Response
+    private val response: MetaData.Response,
+    private val closeConnection: Boolean
 ) : HttpServerOutputChannel {
 
     private val committed = AtomicBoolean(false)
@@ -62,7 +63,7 @@ class Http1ServerOutputChannel(
 
     override fun closeFuture(): CompletableFuture<Void> {
         return if (closed.compareAndSet(false, true)) {
-            val message = EndResponse(CompletableFuture())
+            val message = EndResponse(CompletableFuture(), closeConnection)
             http1ServerConnection.sendResponseMessage(message)
             message.future
         } else {

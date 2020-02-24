@@ -61,7 +61,12 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         requireNotNull(request)
         val httpServerRequest = AsyncHttpServerRequest(request)
         val expect100 = request.fields.expectServerAcceptsContent()
-        val ctx = AsyncRoutingContext(httpServerRequest, Http1ServerResponse(connection, expect100), connection)
+        val closeConnection = request.fields.isCloseConnection(request.httpVersion)
+        val ctx = AsyncRoutingContext(
+            httpServerRequest,
+            Http1ServerResponse(connection, expect100, closeConnection),
+            connection
+        )
         notifyHeaderComplete(ctx)
         return ctx
     }

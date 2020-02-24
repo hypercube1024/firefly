@@ -9,7 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class Http1ServerResponse(
     private val http1ServerConnection: Http1ServerConnection,
-    private val expect100Continue: Boolean
+    private val expect100Continue: Boolean,
+    private val closeConnection: Boolean
 ) : AbstractHttpServerResponse(http1ServerConnection) {
 
     companion object {
@@ -22,7 +23,7 @@ class Http1ServerResponse(
         if (expect100Continue && !write100Continue.get()) {
             http1ServerConnection.resetParser()
         }
-        return Http1ServerOutputChannel(http1ServerConnection, response)
+        return Http1ServerOutputChannel(http1ServerConnection, response, closeConnection)
     }
 
     override fun response100Continue(): CompletableFuture<Void> {
