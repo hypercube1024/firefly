@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.time.withTimeout
 import java.time.Duration
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -185,8 +186,8 @@ class AsyncBoundObjectPool<T>(
 
         leakDetector.stop()
         poolChannel.close()
-        pollObjectJob.cancel()
-        releaseObjectJob.cancel()
+        pollObjectJob.cancel(CancellationException("Cancel object pool polling job exception."))
+        releaseObjectJob.cancel(CancellationException("Cancel object pool release job exception."))
     }
 
     inner class ReleasePooledObjectMessage(

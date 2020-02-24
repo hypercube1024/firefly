@@ -15,10 +15,8 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.LinkedTransferQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
+import java.util.concurrent.CancellationException
 
 
 /**
@@ -313,7 +311,7 @@ class FileLog : Log {
     override fun close() = runBlocking {
         try {
             channel.offer(stopLogMessage)
-            consumerJob.cancel()
+            consumerJob.cancel(CancellationException("Cancel file log exception."))
             consumerJob.join()
         } finally {
             output.close()

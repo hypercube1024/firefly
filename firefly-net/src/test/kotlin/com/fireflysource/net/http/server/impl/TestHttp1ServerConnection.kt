@@ -58,10 +58,14 @@ class TestHttp1ServerConnection {
     }
 
     private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: TcpServer) {
-        val throughput = count / (time / 1000.00)
-        println("success. $time ms, ${throughput.roundToLong()} qps")
-        httpClient.stop()
-        httpServer.stop()
+        try {
+            val throughput = count / (time / 1000.00)
+            println("success. $time ms, ${throughput.roundToLong()} qps")
+            httpClient.stop()
+            httpServer.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     @Test

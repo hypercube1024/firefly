@@ -3,6 +3,7 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
@@ -61,29 +62,31 @@ class Http1ClientConnection(
 
     private fun generateRequestAndParseResponseJob() = coroutineScope.launch {
         while (true) {
-            val requestMessage = requestChannel.receive()
-
+            val message = requestChannel.receive()
             try {
-                handler.init(requestMessage.contentHandler, requestMessage.expectServerAcceptsContent)
-
-                generateRequestAndFlushData(requestMessage)
+                handler.init(message.contentHandler, message.expectServerAcceptsContent)
+                generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
-                val response = parseResponse()
-                requestMessage.response.complete(response)
-                if (response.httpFields.isCloseConnection(response.httpVersion)
-                    || requestMessage.request.fields.isCloseConnection(requestMessage.request.httpVersion)
-                ) {
-                    this@Http1ClientConnection.closeFuture().await()
-                }
+                parseResponse().complete(message)
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
-                requestMessage.response.completeExceptionally(e)
+                message.response.completeExceptionally(e)
             } finally {
                 handler.reset()
                 parser.reset()
                 generator.reset()
             }
         }
+    }
+
+    private suspend fun HttpClientResponse.complete(requestMessage: RequestMessage) {
+        val request = requestMessage.request
+        val response = this
+        if (response.httpFields.isCloseConnection(response.httpVersion) ||
+            request.fields.isCloseConnection(request.httpVersion)
+        ) {
+            this@Http1ClientConnection.useAwait { requestMessage.response.complete(response) }
+        } else requestMessage.response.complete(response)
     }
 
     private suspend fun parseResponse(): HttpClientResponse {

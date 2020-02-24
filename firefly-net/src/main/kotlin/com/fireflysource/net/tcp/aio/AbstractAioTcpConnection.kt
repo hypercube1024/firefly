@@ -21,6 +21,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.InterruptedByTimeoutException
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -376,19 +377,20 @@ abstract class AbstractAioTcpConnection(
             try {
                 socketChannel.close()
             } catch (e: Exception) {
-                log.warn(e) { "Close socket channel exception. $id" }
+                log.warn(e) { "Close socket channel exception. id: $id" }
             }
 
             try {
-                coroutineScope.cancel()
-            } catch (e: Exception) {
-                log.warn(e) { "Cancel writing job exception. $id" }
+                coroutineScope.cancel(CancellationException("Cancel TCP coroutine exception. id: $id"))
+            } catch (e: Throwable) {
+                println("cancel exception")
+                log.warn(e) { "Cancel TCP coroutine exception. id: $id" }
             }
 
             try {
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.warn(e) { "The TCP connection close callback exception. $id" }
+                log.warn(e) { "The TCP connection close callback exception. id: $id" }
             }
 
             log.info { "The TCP connection close success. id: $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
