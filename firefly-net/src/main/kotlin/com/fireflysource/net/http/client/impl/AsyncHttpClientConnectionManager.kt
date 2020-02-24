@@ -1,5 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -10,6 +12,7 @@ import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -51,40 +54,38 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-//        return sendRetry(request, 0, 3)
-
         val address = buildAddress(request)
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose { it.send(request) }
+            .thenCompose { it.send(request, address) }
     }
 
-//    private fun sendRetry(
-//        request: HttpClientRequest,
-//        retryCount: Int,
-//        maxRetry: Int
-//    ): CompletableFuture<HttpClientResponse> {
-//        val address = buildAddress(request)
-//        val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-//        return pool.poll()
-//            .thenCompose { it.send(request) }
-//            .exceptionallyCompose {
-//                if (retryCount < maxRetry) {
-//                    val future = sendRetry(request, retryCount + 1, maxRetry)
-//                    log.warn("retry request: ${request.uri}, count: $retryCount, max: $maxRetry, message: ${it.message}")
-//                    future
-//                } else {
-//                    CompletableFutures.completeExceptionally(it)
-//                }
-//            }
-//    }
-
-    private fun PooledObject<HttpClientConnection>.send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+    private fun PooledObject<HttpClientConnection>.send(
+        request: HttpClientRequest,
+        address: Address
+    ): CompletableFuture<HttpClientResponse> {
         val connection = this.getObject()
         log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
-        return this.use { connection.sendRequest(request) }
+        return this.use {
+            connection.sendRequest(request)
+                .exceptionallyCompose { e ->
+                    if (connection.httpVersion == HttpVersion.HTTP_1_1) {
+                        log.warn("retry request: ${request.uri}, message: ${e.message}, class: ${e.cause?.javaClass?.name}")
+                        retryOne(address, request)
+                    } else CompletableFutures.completeExceptionally(e)
+                }
+        }
     }
+
+    private fun retryOne(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        return createTcpConnection(address)
+            .thenApply { createHttp1ClientConnection(it) }
+            .thenCompose { connection -> retrySend(connection, request) }
+    }
+
+    private fun retrySend(connection: HttpClientConnection, request: HttpClientRequest) =
+        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
 
     private fun HttpClientConnection.sendRequest(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         return when {
@@ -112,7 +113,7 @@ class AsyncHttpClientConnectionManager(
         releaseTimeout = config.releaseTimeout
 
         objectFactory { pool ->
-            val connection = createTcpConnection(address)
+            val connection = createTcpConnection(address).await()
             val httpConnection = if (connection.isSecureConnection) {
                 when (connection.beginHandshake().await()) {
                     SupportedProtocolEnum.H2.value -> createHttp2ClientConnection(connection)
@@ -138,11 +139,11 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private suspend fun createTcpConnection(address: Address): TcpConnection {
+    private fun createTcpConnection(address: Address): CompletableFuture<TcpConnection> {
         return if (address.secure) {
-            secureTcpClient.connect(address.socketAddress).await()
+            secureTcpClient.connect(address.socketAddress)
         } else {
-            tcpClient.connect(address.socketAddress).await()
+            tcpClient.connect(address.socketAddress)
         }
     }
 
