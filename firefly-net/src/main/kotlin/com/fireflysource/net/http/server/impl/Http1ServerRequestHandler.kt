@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
@@ -99,13 +98,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         try {
             requireNotNull(context)
             context.request.isRequestComplete = true
-
-            if (context.response.httpFields.isCloseConnection(context.response.httpVersion) ||
-                context.request.httpFields.isCloseConnection(context.request.httpVersion)
-            ) {
-                context.connection.useAwait { connectionListener.onHttpRequestComplete(context).await() }
-            } else connectionListener.onHttpRequestComplete(context).await()
-
+            connectionListener.onHttpRequestComplete(context).await()
             log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server handles request exception. id: ${connection.id}" }
