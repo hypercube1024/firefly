@@ -1,5 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -51,11 +53,40 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        return sendRetry(request, 0, config.clientMaxRetry)
+//        val address = buildAddress(request)
+//        val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+//        return pool.poll()
+//            .thenCompose { it.send(request) }
+//            .exceptionallyCompose {
+//                val future = send(request)
+//                println("retry request: ${request.uri}")
+//                future
+//            }
+//        return connectionPoolMap
+//            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+//            .poll()
+//            .thenCompose { it.send(request) }
+    }
+
+    private fun sendRetry(
+        request: HttpClientRequest,
+        retryCount: Int,
+        maxRetry: Int
+    ): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request)
-        return connectionPoolMap
-            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-            .poll()
+        val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+        return pool.poll()
             .thenCompose { it.send(request) }
+            .exceptionallyCompose {
+                if (retryCount < maxRetry) {
+                    val future = sendRetry(request, retryCount + 1, maxRetry)
+                    log.warn("retry request: ${request.uri}, count: $retryCount, max: $maxRetry, message: ${it.message}")
+                    future
+                } else {
+                    CompletableFutures.completeExceptionally(it)
+                }
+            }
     }
 
     private fun PooledObject<HttpClientConnection>.send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
