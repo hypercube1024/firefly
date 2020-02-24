@@ -6,6 +6,7 @@ import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
+import com.fireflysource.net.http.common.v1.encoder.assert
 import com.fireflysource.net.tcp.buffer.OutputBuffers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
@@ -22,11 +23,8 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     private val generator = HttpGenerator()
-
-    // generator buffer
     private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(http1ServerConnection.getHeaderBufferSize()) }
     private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
-
     private val responseChannel: Channel<Http1ResponseMessage> = Channel(Channel.UNLIMITED)
 
     fun sendResponseMessage(message: Http1ResponseMessage) {
@@ -48,8 +46,8 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     private suspend fun generateHeader(header: Header) {
         val (response, future) = header
         try {
-            val result = generator.generateResponse(response, false, headerBuffer, null, null, false)
-            checkResult(result)
+            generator.generateResponse(response, false, headerBuffer, null, null, false)
+                .assertFlush()
             flushHeaderBuffer()
             Result.done(future)
         } catch (e: Exception) {
@@ -66,13 +64,13 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
                 val buffer = http1OutputBuffers.buffers[it]
                 if (generator.isChunking) {
                     val chunk = BufferUtils.allocate(HttpGenerator.CHUNK_SIZE)
-                    val generateResult = generator.generateResponse(null, false, null, chunk, buffer, false)
-                    checkResult(generateResult)
+                    generator.generateResponse(null, false, null, chunk, buffer, false)
+                        .assertFlush()
                     content.add(chunk)
                     content.add(buffer)
                 } else {
-                    val generateResult = generator.generateResponse(null, false, null, null, buffer, false)
-                    checkResult(generateResult)
+                    generator.generateResponse(null, false, null, null, buffer, false)
+                        .assertFlush()
                     content.add(buffer)
                 }
             }
@@ -87,12 +85,12 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         val (buffer, result) = http1OutputBuffer
         try {
             val length = if (generator.isChunking) {
-                val generateResult = generator.generateResponse(null, false, null, chunkBuffer, buffer, false)
-                checkResult(generateResult)
+                generator.generateResponse(null, false, null, chunkBuffer, buffer, false)
+                    .assertFlush()
                 flushChunkedContentBuffer(buffer).toInt()
             } else {
-                val generateResult = generator.generateResponse(null, false, null, null, buffer, false)
-                checkResult(generateResult)
+                generator.generateResponse(null, false, null, null, buffer, false)
+                    .assertFlush()
                 flushContentBuffer(buffer)
             }
             result.accept(Result(true, length, null))
@@ -101,15 +99,9 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         }
     }
 
-    private fun checkResult(generateResult: HttpGenerator.Result) {
-        Assert.state(
-            generateResult == HttpGenerator.Result.FLUSH,
-            "The HTTP server generator result error. $generateResult"
-        )
-        Assert.state(
-            generator.isState(HttpGenerator.State.COMMITTED),
-            "The HTTP server generator state error. ${generator.state}"
-        )
+    private fun HttpGenerator.Result.assertFlush() {
+        this.assert(HttpGenerator.Result.FLUSH)
+        assert(HttpGenerator.State.COMMITTED)
     }
 
     private suspend fun completeContent(endResponse: EndResponse) {
@@ -118,15 +110,10 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
             if (generator.isChunking) {
                 when (val generateResult = generator.generateResponse(null, false, null, chunkBuffer, null, true)) {
                     HttpGenerator.Result.FLUSH -> {
-                        Assert.state(
-                            generator.isState(HttpGenerator.State.COMPLETING),
-                            "The HTTP server generator state error. ${generator.state}"
-                        )
+                        assert(HttpGenerator.State.COMPLETING)
                         flushChunkBuffer()
                     }
-                    HttpGenerator.Result.NEED_CHUNK_TRAILER -> {
-                        generateTrailer()
-                    }
+                    HttpGenerator.Result.NEED_CHUNK_TRAILER -> generateTrailer()
                     else -> throw IllegalStateException("The HTTP server generator result error. $generateResult")
                 }
             }
@@ -138,41 +125,30 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     private fun completing() {
-        val generateResult = generator.generateResponse(null, false, null, null, null, true)
-        Assert.state(
-            generateResult == HttpGenerator.Result.CONTINUE,
-            "The HTTP server generator result error. $generateResult"
-        )
-        Assert.state(
-            generator.isState(HttpGenerator.State.COMPLETING),
-            "The HTTP server generator state error. ${generator.state}"
-        )
+        generator.generateResponse(null, false, null, null, null, true)
+            .assert(HttpGenerator.Result.CONTINUE)
+        assert(HttpGenerator.State.COMPLETING)
     }
 
     private fun end() {
-        val generateResult = generator.generateResponse(null, false, null, null, null, true)
-        Assert.state(
-            generateResult == HttpGenerator.Result.DONE || generateResult == HttpGenerator.Result.SHUTDOWN_OUT,
-            "The HTTP server generator result error. $generateResult"
-        )
-        Assert.state(
-            generator.isState(HttpGenerator.State.END),
-            "The HTTP server generator state error. ${generator.state}"
-        )
+        generator.generateResponse(null, false, null, null, null, true)
+            .assert(setOf(HttpGenerator.Result.DONE, HttpGenerator.Result.SHUTDOWN_OUT))
+        assert(HttpGenerator.State.END)
         generator.reset()
     }
 
     private suspend fun generateTrailer() {
-        val generateResult = generator.generateResponse(null, false, null, headerBuffer, null, true)
-        Assert.state(
-            generateResult == HttpGenerator.Result.FLUSH,
-            "The HTTP server generator result error. $generateResult"
-        )
-        Assert.state(
-            generator.isState(HttpGenerator.State.COMPLETING),
-            "The HTTP server generator state error. ${generator.state}"
-        )
+        generator.generateResponse(null, false, null, headerBuffer, null, true)
+            .assert(HttpGenerator.Result.FLUSH)
+        assert(HttpGenerator.State.COMPLETING)
         flushHeaderBuffer()
+    }
+
+    private fun assert(expectState: HttpGenerator.State) {
+        Assert.state(
+            generator.isState(expectState),
+            "The HTTP generator state error. ${generator.state}"
+        )
     }
 
     private suspend fun flushHeaderBuffer() {

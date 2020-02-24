@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -16,6 +15,7 @@ import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
+import com.fireflysource.net.http.common.v1.encoder.assert
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -41,12 +41,10 @@ class Http1ClientConnection(
 
     private val generator = HttpGenerator()
 
-    // generator buffer
     private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.headerBufferSize) }
     private val contentBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.contentBufferSize) }
     private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
 
-    // parser
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
 
@@ -132,9 +130,8 @@ class Http1ClientConnection(
 
     private suspend fun generateHeader(requestMessage: RequestMessage) {
         val hasContent = (requestMessage.contentProvider != null)
-        val result =
-            generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
-        Assert.state(result == FLUSH, "The HTTP client generator result error. $result")
+        generator.generateRequest(requestMessage.request, headerBuffer, null, null, !hasContent)
+            .assert(FLUSH)
         flushHeaderBuffer()
     }
 
@@ -175,11 +172,8 @@ class Http1ClientConnection(
                 else -> throw IllegalStateException("The HTTP client generator result error. $result")
             }
         } else {
-            val result = generator.generateRequest(null, null, null, null, true)
-            Assert.state(
-                result == DONE || result == SHUTDOWN_OUT || result == CONTINUE,
-                "The HTTP client generator result error. $result"
-            )
+            generator.generateRequest(null, null, null, null, true)
+                .assert(setOf(DONE, SHUTDOWN_OUT, CONTINUE))
         }
     }
 
