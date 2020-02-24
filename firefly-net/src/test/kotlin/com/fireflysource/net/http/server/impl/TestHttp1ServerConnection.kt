@@ -520,21 +520,11 @@ class TestHttp1ServerConnection {
 //
 //            val response = responses[0]
 
-            fun send(i: Int) = httpClient.get("http://${address.hostName}:${address.port}/close-$i")
-                .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                .submit()
-
-            val futures = (1..count).map { send(it) }
-
-//            (1..count).forEach {
-//                try {
-//                    val i = it - 1
-//                    futures[i].await()
-//                } catch (e: Exception) {
-//                    println("response exception. $it. ${e::class.java.name}")
-//                    e.printStackTrace()
-//                }
-//            }
+            val futures = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .submit()
+            }
 
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
