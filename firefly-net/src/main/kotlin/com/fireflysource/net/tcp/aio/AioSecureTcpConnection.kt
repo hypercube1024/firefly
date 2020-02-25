@@ -1,10 +1,12 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.buffer.*
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.*
@@ -19,6 +21,10 @@ class AioSecureTcpConnection(
     private val tcpConnection: TcpConnection,
     private val secureEngine: SecureEngine
 ) : TcpConnection by tcpConnection {
+
+    companion object {
+        private val log = SystemLogger.create(AioSecureTcpConnection::class.java)
+    }
 
     private val encryptedOutChannel: Channel<OutputMessage> = Channel(Channel.UNLIMITED)
     private val stashedBuffers = LinkedList<ByteBuffer>()
@@ -54,28 +60,62 @@ class AioSecureTcpConnection(
         }
     }
 
-    private fun encryptMessageAndFlush(outputMessage: OutputMessage) {
+    private suspend fun encryptMessageAndFlush(outputMessage: OutputMessage) {
         when (outputMessage) {
             is OutputBuffer -> encryptAndFlushBuffer(outputMessage)
             is OutputBuffers -> encryptAndFlushBuffers(outputMessage)
             is OutputBufferList -> encryptAndFlushBuffers(outputMessage)
-            is ShutdownOutput -> tcpConnection.close(outputMessage.result)
+            is ShutdownOutput -> shutdownOutput(outputMessage)
         }
     }
 
-    private fun encryptAndFlushBuffers(outputMessage: OutputBuffers) {
-        val encryptedBuffers = secureEngine.encrypt(
-            outputMessage.buffers,
-            outputMessage.getCurrentOffset(),
-            outputMessage.getCurrentLength()
-        )
-        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size, outputMessage.result)
+    private suspend fun encryptAndFlushBuffers(outputMessage: OutputBuffers) {
+        val result = outputMessage.result
+        try {
+            val remaining = outputMessage.remaining()
+            val buffers = outputMessage.buffers
+            val offset = outputMessage.getCurrentOffset()
+            val length = outputMessage.getCurrentLength()
+            val encryptedBuffers = secureEngine.encrypt(buffers, offset, length)
+            val size = encryptedBuffers.size
+            log.debug { "Encrypt and flush buffer. id: $id, remaining: $remaining, size: $size, offset: $offset, length: $length" }
+
+            if (remaining == 0L || size == 0) {
+                result.accept(Result(true, 0, null))
+            } else {
+                tcpConnection.write(encryptedBuffers, 0, size).await()
+                result.accept(Result(true, remaining, null))
+            }
+        } catch (e: Exception) {
+            result.accept(Result(false, -1, e))
+        }
     }
 
-    private fun encryptAndFlushBuffer(outputMessage: OutputBuffer) {
-        val encryptedBuffers = secureEngine.encrypt(outputMessage.buffer)
-        tcpConnection.write(encryptedBuffers, 0, encryptedBuffers.size) {
-            outputMessage.result.accept(Result(it.isSuccess, it.value.toInt(), it.throwable))
+    private suspend fun encryptAndFlushBuffer(outputMessage: OutputBuffer) {
+        val (buffer, result) = outputMessage
+        try {
+            val remaining = buffer.remaining()
+            val encryptedBuffers = secureEngine.encrypt(buffer)
+            val size = encryptedBuffers.size
+            log.debug { "Encrypt and flush buffer. id: $id, remaining: $remaining, size: $size" }
+
+            if (remaining == 0 || size == 0) {
+                result.accept(Result(true, 0, null))
+            } else {
+                tcpConnection.write(encryptedBuffers, 0, size).await()
+                result.accept(Result(true, remaining, null))
+            }
+        } catch (e: Exception) {
+            result.accept(Result(false, -1, e))
+        }
+    }
+
+    private suspend fun shutdownOutput(message: ShutdownOutput) {
+        try {
+            tcpConnection.closeFuture().await()
+            message.result.accept(Result.SUCCESS)
+        } catch (e: Exception) {
+            message.result.accept(Result.createFailedResult(e))
         }
     }
 

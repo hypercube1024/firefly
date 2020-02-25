@@ -71,7 +71,7 @@ class BufferedOutputTcpConnection(
         while (src.hasRemaining()) {
             val srcRemaining = src.remaining()
             val consumed = BufferUtils.put(src, buffer)
-            log.debug { "Flush buffer. id: $id, src: $srcRemaining, consumed: $consumed" }
+            log.debug { "Append buffer. id: $id, src: $srcRemaining, consumed: $consumed" }
             if (!buffer.hasRemaining()) {
                 flushBuffer()
             }
@@ -89,7 +89,9 @@ class BufferedOutputTcpConnection(
 
     private suspend fun flushBuffer() {
         buffer.flipToFlush(position)
-        tcpConnection.write(buffer).await()
+        val remaining = buffer.remaining()
+        val consumed = tcpConnection.write(buffer).await()
+        log.debug { "Flush buffer. id: $id, len: $remaining, consumed: $consumed" }
         BufferUtils.clear(buffer)
         position = buffer.flipToFill()
     }

@@ -390,7 +390,6 @@ abstract class AbstractAioTcpConnection(
             try {
                 coroutineScope.cancel(CancellationException("Cancel TCP coroutine exception. id: $id"))
             } catch (e: Throwable) {
-                println("cancel exception")
                 log.warn(e) { "Cancel TCP coroutine exception. id: $id" }
             }
 

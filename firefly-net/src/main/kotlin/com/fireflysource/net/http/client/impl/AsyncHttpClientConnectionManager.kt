@@ -1,7 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -12,7 +10,6 @@ import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
-import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -21,7 +18,6 @@ import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
-import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -56,42 +52,47 @@ class AsyncHttpClientConnectionManager(
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose { it.send(request, address) }
-    }
-
-    private fun PooledObject<HttpClientConnection>.send(
-        request: HttpClientRequest,
-        address: Address
-    ): CompletableFuture<HttpClientResponse> {
-        val connection = this.getObject()
-        log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
-        return this.use {
-            connection.sendRequest(request).exceptionallyCompose { e ->
-                retryOneTimeWhenCancellationException(connection, e, request, address)
+            .thenCompose {
+                it.use { pooledObject ->
+                    val httpClientConnection = pooledObject.`object`
+                    httpClientConnection.sendRequest(request)
+                }
             }
-        }
     }
 
-    private fun retryOneTimeWhenCancellationException(
-        connection: HttpClientConnection,
-        e: Throwable,
-        request: HttpClientRequest,
-        address: Address
-    ): CompletableFuture<HttpClientResponse> {
-        return if (connection.httpVersion == HttpVersion.HTTP_1_1 && e.cause != null && e.cause is CancellationException) {
-            log.warn("retry request: ${request.uri}, message: ${e.message}, class: ${e.cause?.javaClass?.name}")
-            retryOneTime(address, request)
-        } else CompletableFutures.completeExceptionally(e)
-    }
+//    private fun PooledObject<HttpClientConnection>.send(
+//        request: HttpClientRequest,
+//        address: Address
+//    ): CompletableFuture<HttpClientResponse> {
+//        val connection = this.getObject()
+//        log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
+//        return this.use {
+//            connection.sendRequest(request).exceptionallyCompose { e ->
+//                retryOneTimeWhenCancellationException(connection, e, request, address)
+//            }
+//        }
+//    }
 
-    private fun retryOneTime(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        return createTcpConnection(address)
-            .thenApply { createHttp1ClientConnection(it) }
-            .thenCompose { connection -> retrySend(connection, request) }
-    }
-
-    private fun retrySend(connection: HttpClientConnection, request: HttpClientRequest) =
-        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
+//    private fun retryOneTimeWhenCancellationException(
+//        connection: HttpClientConnection,
+//        e: Throwable,
+//        request: HttpClientRequest,
+//        address: Address
+//    ): CompletableFuture<HttpClientResponse> {
+//        return if (connection.httpVersion == HttpVersion.HTTP_1_1 && e.cause != null && e.cause is CancellationException) {
+//            log.warn("retry request: ${request.uri}, message: ${e.message}, class: ${e.cause?.javaClass?.name}")
+//            retryOneTime(address, request)
+//        } else CompletableFutures.completeExceptionally(e)
+//    }
+//
+//    private fun retryOneTime(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+//        return createTcpConnection(address)
+//            .thenApply { createHttp1ClientConnection(it) }
+//            .thenCompose { connection -> retrySend(connection, request) }
+//    }
+//
+//    private fun retrySend(connection: HttpClientConnection, request: HttpClientRequest) =
+//        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
 
     private fun HttpClientConnection.sendRequest(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         return when {

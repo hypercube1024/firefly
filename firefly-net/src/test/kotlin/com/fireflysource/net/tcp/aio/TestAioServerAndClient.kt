@@ -36,12 +36,19 @@ class TestAioServerAndClient {
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                arguments("single", true),
-                arguments("array", true),
-                arguments("list", true),
-                arguments("single", false),
-                arguments("array", false),
-                arguments("list", false)
+                arguments("single", true, false),
+                arguments("array", true, false),
+                arguments("list", true, false),
+                arguments("single", false, false),
+                arguments("array", false, false),
+                arguments("list", false, false),
+
+                arguments("single", true, true),
+                arguments("array", true, true),
+                arguments("list", true, true),
+                arguments("single", false, true),
+                arguments("array", false, true),
+                arguments("list", false, true)
             )
         }
     }
@@ -49,16 +56,20 @@ class TestAioServerAndClient {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send and receive messages successfully.")
-    fun test(bufType: String, enableSecure: Boolean) = runBlocking {
+    fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean) = runBlocking {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
 
         val connectionCount = defaultPoolSize
-        val maxMessageCountPerOneConnection = 100
+        val maxMessageCountPerOneConnection = 20
         val expectMessageCount = maxMessageCountPerOneConnection * connectionCount
 
         val messageCount = AtomicInteger()
-        val tcpConfig = TcpConfig(30, enableSecure)
+        val tcpConfig = TcpConfig(
+            timeout = 30,
+            enableSecureConnection = enableSecure,
+            enableOutputBuffer = enableBuffer
+        )
 
         TcpServerFactory.create(tcpConfig).onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
@@ -74,7 +85,13 @@ class TestAioServerAndClient {
                     val num = buf.int
                     val newBuf = ByteBuffer.allocate(4)
                     newBuf.putInt(num).flip()
-                    connection.write(newBuf, discard())
+
+                    if (num == maxMessageCountPerOneConnection) {
+                        connection.write(newBuf).await()
+                        connection.flush().await()
+                    } else {
+                        connection.write(newBuf, discard())
+                    }
                 }
             }
         }.listen(host, port)
@@ -114,6 +131,7 @@ class TestAioServerAndClient {
                                 buf.putInt(i).flip()
                                 connection.write(buf, discard())
                             }
+                            connection.flush()
                         }
                         "array" -> {
                             val bufArray = Array<ByteBuffer>(maxMessageCountPerOneConnection) { index ->
@@ -122,6 +140,7 @@ class TestAioServerAndClient {
                                 buf
                             }
                             connection.write(bufArray, 0, bufArray.size, discard())
+                            connection.flush()
                         }
                         "list" -> {
                             val bufList = List<ByteBuffer>(maxMessageCountPerOneConnection) { index ->
@@ -130,6 +149,7 @@ class TestAioServerAndClient {
                                 buf
                             }
                             connection.write(bufList, 0, bufList.size, discard())
+                            connection.flush()
                         }
                     }
 

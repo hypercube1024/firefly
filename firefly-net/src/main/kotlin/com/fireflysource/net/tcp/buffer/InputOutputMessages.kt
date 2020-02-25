@@ -15,7 +15,7 @@ sealed class OutputMessage {
     open fun hasRemaining(): Boolean = false
 }
 
-class OutputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage() {
+data class OutputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage() {
     override fun hasRemaining(): Boolean = buffer.hasRemaining()
 }
 
