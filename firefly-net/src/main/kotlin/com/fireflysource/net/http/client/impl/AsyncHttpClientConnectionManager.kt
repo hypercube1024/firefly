@@ -52,16 +52,10 @@ class AsyncHttpClientConnectionManager(
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose { sendAndReleasePooledObject(it, request) }
+            .thenCompose { pooledObject ->
+                pooledObject.use { it.`object`.sendAndTryToUpgradeHttp2(request) }
+            }
     }
-
-    private fun sendAndReleasePooledObject(
-        pooledObject: PooledObject<HttpClientConnection>,
-        request: HttpClientRequest
-    ): CompletableFuture<HttpClientResponse> {
-        return pooledObject.use { it.`object`.sendAndTryToUpgradeHttp2(request) }
-    }
-
 
     private fun HttpClientConnection.sendAndTryToUpgradeHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         return when {
