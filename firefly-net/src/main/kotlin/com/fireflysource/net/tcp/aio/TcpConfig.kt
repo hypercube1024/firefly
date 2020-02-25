@@ -12,7 +12,9 @@ data class TcpConfig(
     var backlog: Int = 16 * 1024,
     var reuseAddr: Boolean = true,
     var keepAlive: Boolean = true,
-    var tcpNoDelay: Boolean = false
+    var tcpNoDelay: Boolean = false,
+    var bufferSize: Int = 8 * 1024,
+    var enableOutputBuffer: Boolean = false
 )
 
 enum class SupportedProtocolEnum(val value: String) {

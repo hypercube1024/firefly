@@ -48,7 +48,7 @@ class TestHttp1ServerConnection {
     }
 
     private fun createHttpServer(listener: HttpServerConnection.Listener): TcpServer {
-        val server = TcpServerFactory.create().timeout(120 * 1000)
+        val server = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
         return server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()

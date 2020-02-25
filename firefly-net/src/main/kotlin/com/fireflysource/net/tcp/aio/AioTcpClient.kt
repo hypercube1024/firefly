@@ -43,6 +43,16 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         return this
     }
 
+    override fun bufferSize(bufferSize: Int): TcpClient {
+        config.bufferSize = bufferSize
+        return this
+    }
+
+    override fun enableOutputBuffer(): TcpClient {
+        config.enableOutputBuffer = true
+        return this
+    }
+
     override fun connect(address: SocketAddress): CompletableFuture<TcpConnection> =
         connect(address, defaultSupportedProtocols)
 
@@ -79,36 +89,45 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
             secureEngineFactory.create(scope, true, supportedProtocols)
         }
 
-        fun createSecureConnection(connectionId: Int, socketChannel: AsynchronousSocketChannel) =
-            if (config.enableSecureConnection) {
-                val tcpConnection =
-                    AioTcpConnection(connectionId, config.timeout, socketChannel, getDispatcher(connectionId))
-                val secureEngine = createSecureEngine(tcpConnection.coroutineScope)
-                AioSecureTcpConnection(tcpConnection, secureEngine)
-            } else {
+        fun createConnection(connectionId: Int, socketChannel: AsynchronousSocketChannel): TcpConnection {
+            val aioTcpConnection =
                 AioTcpConnection(connectionId, config.timeout, socketChannel, getDispatcher(connectionId))
-            }
 
-        val socketChannel = AsynchronousSocketChannel.open(group)
-        socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
-        socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
-        socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
-        socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
+            val tcpConnection = if (config.enableSecureConnection) {
+                val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
+                AioSecureTcpConnection(aioTcpConnection, secureEngine)
+            } else aioTcpConnection
 
-            override fun completed(result: Void?, connectionId: Int) {
-                try {
-                    future.complete(createSecureConnection(connectionId, socketChannel))
-                } catch (e: Exception) {
-                    log.warn(e) { "connecting exception. id: ${connectionId}, address: $address" }
-                    future.completeExceptionally(e)
+            return if (config.enableOutputBuffer) {
+                BufferedOutputTcpConnection(tcpConnection, config.bufferSize)
+            } else tcpConnection
+        }
+
+        try {
+            val socketChannel = AsynchronousSocketChannel.open(group)
+            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
+            socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
+            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
+            socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
+
+                override fun completed(result: Void?, connectionId: Int) {
+                    try {
+                        future.complete(createConnection(connectionId, socketChannel))
+                    } catch (e: Exception) {
+                        log.warn(e) { "connecting exception. id: ${connectionId}, address: $address" }
+                        future.completeExceptionally(e)
+                    }
                 }
-            }
 
-            override fun failed(t: Throwable?, connectionId: Int) {
-                log.warn(t) { "connecting exception. id: ${connectionId}, address: $address" }
-                future.completeExceptionally(t)
-            }
-        })
+                override fun failed(t: Throwable?, connectionId: Int) {
+                    log.warn(t) { "connecting exception. id: ${connectionId}, address: $address" }
+                    future.completeExceptionally(t)
+                }
+            })
+        } catch (e: Exception) {
+            log.error(e) { "TCP client connect exception" }
+            future.completeExceptionally(e)
+        }
     }
 
     override fun getThreadName() = "aio-tcp-client"

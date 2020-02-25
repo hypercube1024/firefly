@@ -194,6 +194,20 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
+     * Flush output buffer to remote endpoint.
+     *
+     * @return The current connection.
+     */
+    TcpConnection flush();
+
+    /**
+     * Get output buffer size.
+     *
+     * @return The output buffer size.
+     */
+    int getBufferSize();
+
+    /**
      * If you enable the TLS protocol, it returns true.
      *
      * @return If you enable the TLS protocol, it returns true.

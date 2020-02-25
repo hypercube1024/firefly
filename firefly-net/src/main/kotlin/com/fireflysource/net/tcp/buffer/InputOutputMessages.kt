@@ -53,6 +53,11 @@ open class OutputBuffers(
 
     fun getLastIndex(): Int = lastIndex
 
+    fun remaining(): Long {
+        val offset = getCurrentOffset()
+        return (offset..lastIndex).map { buffers[it].remaining().toLong() }.sum()
+    }
+
     override fun hasRemaining(): Boolean {
         return getCurrentOffset() < maxSize
     }
@@ -66,3 +71,5 @@ class OutputBufferList(
 ) : OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
 class ShutdownOutput(val result: Consumer<Result<Void>>) : OutputMessage()
+
+object FlushOutput : OutputMessage()

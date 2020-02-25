@@ -123,6 +123,7 @@ class Http1ClientConnection(
                 }
                 COMPLETING -> completeContent()
                 END -> {
+                    tcpConnection.flush()
                     requestMessage.contentProvider?.closeFuture()?.await()
                     break@genLoop
                 }

@@ -327,6 +327,10 @@ abstract class AbstractAioTcpConnection(
         return this
     }
 
+    override fun flush(): TcpConnection = this
+
+    override fun getBufferSize(): Int = 0
+
     private fun isWriteable() = !isOutputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()
 
     private fun isReadable() = !isInputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()

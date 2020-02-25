@@ -5,6 +5,7 @@ import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
 import com.fireflysource.net.tcp.secure.conscrypt.DefaultCredentialConscryptSSLContextFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.net.SocketAddress
@@ -71,6 +72,16 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         return this
     }
 
+    override fun bufferSize(bufferSize: Int): TcpServer {
+        config.bufferSize = bufferSize
+        return this
+    }
+
+    override fun enableOutputBuffer(): TcpServer {
+        config.enableOutputBuffer = true
+        return this
+    }
+
     override fun onAccept(consumer: Consumer<TcpConnection>): TcpServer {
         connectionConsumer = consumer
         return this
@@ -105,31 +116,31 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
     }
 
     private fun onAcceptCompleted(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
+        fun createSecureEngine(scope: CoroutineScope) = if (peerHost.isNotBlank() && peerPort != 0) {
+            secureEngineFactory.create(scope, false, peerHost, peerPort, supportedProtocols)
+        } else {
+            secureEngineFactory.create(scope, false, supportedProtocols)
+        }
+
         try {
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
-            val tcpConnection = AioTcpConnection(
+            val aioTcpConnection = AioTcpConnection(
                 connectionId, config.timeout,
                 socketChannel, getDispatcher(connectionId)
             )
-            if (config.enableSecureConnection) {
-                val secureEngine = if (peerHost.isNotBlank() && peerPort != 0) {
-                    secureEngineFactory.create(
-                        tcpConnection.coroutineScope,
-                        false,
-                        peerHost,
-                        peerPort,
-                        supportedProtocols
-                    )
-                } else {
-                    secureEngineFactory.create(tcpConnection.coroutineScope, false, supportedProtocols)
-                }
-                val secureConnection = AioSecureTcpConnection(tcpConnection, secureEngine)
-                connectionConsumer.accept(secureConnection)
-            } else {
-                connectionConsumer.accept(tcpConnection)
-            }
+
+            val tcpConnection = if (config.enableSecureConnection) {
+                val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
+                AioSecureTcpConnection(aioTcpConnection, secureEngine)
+            } else aioTcpConnection
+
+            val connection = if (config.enableOutputBuffer) {
+                BufferedOutputTcpConnection(tcpConnection, config.bufferSize)
+            } else tcpConnection
+
+            connectionConsumer.accept(connection)
             log.debug { "accept the client connection. $connectionId" }
         } catch (e: Exception) {
             log.warn(e) { "accept connection exception. $connectionId" }

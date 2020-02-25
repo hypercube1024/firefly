@@ -39,6 +39,21 @@ public interface TcpClient extends LifeCycle {
     TcpClient timeout(Long timeout);
 
     /**
+     * Enable output buffer.
+     *
+     * @return The TCP client.
+     */
+    TcpClient enableOutputBuffer();
+
+    /**
+     * Set output buffer size.
+     *
+     * @param bufferSize The output buffer size.
+     * @return The TCP client.
+     */
+    TcpClient bufferSize(int bufferSize);
+
+    /**
      * Create a TCP connection to the server.
      *
      * @param address The server address.
