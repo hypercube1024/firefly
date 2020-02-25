@@ -512,13 +512,6 @@ class TestHttp1ServerConnection {
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
-//            val responses = (1..count).map {
-//                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
-//                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-//                    .submit().await()
-//            }
-//            val response = responses[0]
-
             val futures = (1..count).map {
                 httpClient.get("http://${address.hostName}:${address.port}/close-$it")
                     .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
