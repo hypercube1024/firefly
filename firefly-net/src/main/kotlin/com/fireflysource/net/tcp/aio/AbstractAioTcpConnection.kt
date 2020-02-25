@@ -327,7 +327,10 @@ abstract class AbstractAioTcpConnection(
         return this
     }
 
-    override fun flush(): TcpConnection = this
+    override fun flush(result: Consumer<Result<Void>>): TcpConnection {
+        result.accept(Result.SUCCESS)
+        return this
+    }
 
     override fun getBufferSize(): Int = 0
 

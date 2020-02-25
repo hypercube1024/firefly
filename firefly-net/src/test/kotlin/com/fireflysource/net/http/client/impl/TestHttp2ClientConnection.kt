@@ -64,6 +64,7 @@ class TestHttp2ClientConnection {
 
         val httpServer =
             TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
+                println("accept connection. id: ${connection.id}, buffer: ${connection.bufferSize}")
                 connection.beginHandshake().await()
                 val connectionListener = object : Http2Connection.Listener.Adapter() {
 
@@ -75,21 +76,21 @@ class TestHttp2ClientConnection {
                         println("Server receives go away frame: $frame")
                     }
 
-                override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
-                    val fields = HttpFields()
-                    fields.put("Test-Http-Exchange", "R1")
-                    val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
-                    val headersFrame = HeadersFrame(stream.id, response, null, false)
-                    stream.headers(headersFrame) {}
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        val fields = HttpFields()
+                        fields.put("Test-Http-Exchange", "R1")
+                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
+                        stream.headers(headersFrame) {}
 
-                    val data = BufferUtils.toBuffer("http exchange success.")
-                    val dataFrame = DataFrame(stream.id, data, true)
-                    stream.data(dataFrame) {}
+                        val data = BufferUtils.toBuffer("http exchange success.")
+                        val dataFrame = DataFrame(stream.id, data, true)
+                        stream.data(dataFrame) {}
 
-                    return Stream.Listener.Adapter()
+                        return Stream.Listener.Adapter()
+                    }
                 }
-            }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
+                Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
         }.listen(address)
 
         val httpClient = HttpClientFactory.create()

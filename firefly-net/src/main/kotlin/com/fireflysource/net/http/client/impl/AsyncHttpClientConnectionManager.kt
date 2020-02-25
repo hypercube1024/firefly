@@ -43,13 +43,10 @@ class AsyncHttpClientConnectionManager(
 
     private fun createSecureTcpClient(): TcpClient {
         return if (config.secureEngineFactory != null) {
-            AioTcpClient()
-                .timeout(config.timeout)
-                .secureEngineFactory(config.secureEngineFactory)
-                .enableSecureConnection()
+            AioTcpClient().timeout(config.timeout)
+                .secureEngineFactory(config.secureEngineFactory).enableSecureConnection()
         } else {
-            AioTcpClient()
-                .timeout(config.timeout)
+            AioTcpClient().timeout(config.timeout)
                 .enableSecureConnection()
         }
     }

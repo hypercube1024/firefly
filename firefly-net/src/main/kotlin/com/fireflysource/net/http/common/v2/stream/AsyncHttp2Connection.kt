@@ -150,6 +150,7 @@ abstract class AsyncHttp2Connection(
             stream.updateClose(dataFrame.isEndStream, CloseState.Event.BEFORE_SEND)
 
             val writtenBytes = tcpConnection.write(frameBytes.byteBuffers, 0, frameBytes.byteBuffers.size).await()
+            tcpConnection.flush().await()
             frameEntry.dataRemaining -= dataLength
             frameEntry.writtenBytes += writtenBytes
 
@@ -231,6 +232,7 @@ abstract class AsyncHttp2Connection(
                 }
 
                 val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+                tcpConnection.flush().await()
                 writeBytes += bytes
 
                 when (frame.type) {

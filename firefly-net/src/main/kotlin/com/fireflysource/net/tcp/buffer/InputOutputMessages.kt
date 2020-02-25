@@ -72,4 +72,4 @@ class OutputBufferList(
 
 class ShutdownOutput(val result: Consumer<Result<Void>>) : OutputMessage()
 
-object FlushOutput : OutputMessage()
+class FlushOutput(val result: Consumer<Result<Void>>) : OutputMessage()

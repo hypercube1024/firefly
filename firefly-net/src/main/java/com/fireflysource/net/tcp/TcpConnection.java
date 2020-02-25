@@ -40,6 +40,11 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      */
     TcpConnection close(Consumer<Result<Void>> result);
 
+    /**
+     * Close the current connection and wait the remaining messages of the channel have been sent completely.
+     *
+     * @return The future result.
+     */
     default CompletableFuture<Void> closeFuture() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         close(futureToConsumer(future));
@@ -196,9 +201,21 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     /**
      * Flush output buffer to remote endpoint.
      *
+     * @param result When flush data to remote endpoint, the framework will invoke this function.
      * @return The current connection.
      */
-    TcpConnection flush();
+    TcpConnection flush(Consumer<Result<Void>> result);
+
+    /**
+     * Flush output buffer to remote endpoint.
+     *
+     * @return The future result.
+     */
+    default CompletableFuture<Void> flush() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        flush(futureToConsumer(future));
+        return future;
+    }
 
     /**
      * Get output buffer size.

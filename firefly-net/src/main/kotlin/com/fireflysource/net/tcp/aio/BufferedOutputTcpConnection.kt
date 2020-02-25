@@ -36,10 +36,9 @@ class BufferedOutputTcpConnection(
                 is OutputBuffer -> flushOutputBuffer(message)
                 is OutputBuffers -> flushOutputBuffers(message)
                 is OutputBufferList -> flushOutputBuffers(message)
-                is FlushOutput -> flushBuffer()
+                is FlushOutput -> flushBuffer(message)
                 is ShutdownOutput -> {
-                    flushBuffer()
-                    tcpConnection.close(message.result)
+                    shutdownOutput(message)
                     break@flushLoop
                 }
             }
@@ -79,6 +78,15 @@ class BufferedOutputTcpConnection(
         }
     }
 
+    private suspend fun flushBuffer(message: FlushOutput) {
+        try {
+            flushBuffer()
+            message.result.accept(Result.SUCCESS)
+        } catch (e: Exception) {
+            message.result.accept(Result.createFailedResult(e))
+        }
+    }
+
     private suspend fun flushBuffer() {
         buffer.flipToFlush(position)
         tcpConnection.write(buffer).await()
@@ -86,8 +94,17 @@ class BufferedOutputTcpConnection(
         position = buffer.flipToFill()
     }
 
-    override fun flush(): TcpConnection {
-        outputMessageChannel.offer(FlushOutput)
+    private suspend fun shutdownOutput(message: ShutdownOutput) {
+        try {
+            flushBuffer()
+            tcpConnection.close(message.result)
+        } catch (e: Exception) {
+            message.result.accept(Result.createFailedResult(e))
+        }
+    }
+
+    override fun flush(result: Consumer<Result<Void>>): TcpConnection {
+        outputMessageChannel.offer(FlushOutput(result))
         return this
     }
 

@@ -28,7 +28,9 @@ class Http1ServerResponse(
 
     override fun response100Continue(): CompletableFuture<Void> {
         return if (write100Continue.compareAndSet(false, true)) {
-            http1ServerConnection.tcpConnection.write(response100Buffer.duplicate()).thenCompose { Result.DONE }
+            http1ServerConnection.tcpConnection.write(response100Buffer.duplicate())
+                .thenAccept { http1ServerConnection.tcpConnection.flush() }
+                .thenCompose { Result.DONE }
         } else Result.DONE
     }
 }

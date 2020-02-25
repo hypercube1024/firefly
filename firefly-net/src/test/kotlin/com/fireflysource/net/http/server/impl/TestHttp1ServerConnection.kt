@@ -409,7 +409,7 @@ class TestHttp1ServerConnection {
     @Test
     @DisplayName("should accept 100 continue.")
     fun testAccept100Continue(): Unit = runBlocking {
-        val count = 1
+        val count = 100
 
         val httpServer = createHttpServer(object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
