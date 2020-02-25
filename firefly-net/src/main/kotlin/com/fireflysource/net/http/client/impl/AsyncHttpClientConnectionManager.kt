@@ -52,49 +52,18 @@ class AsyncHttpClientConnectionManager(
         return connectionPoolMap
             .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
             .poll()
-            .thenCompose {
-                it.use { pooledObject ->
-                    val httpClientConnection = pooledObject.`object`
-                    httpClientConnection.sendRequest(request)
-                }
-            }
+            .thenCompose { sendAndReleasePooledObject(it, request) }
     }
 
-//    private fun PooledObject<HttpClientConnection>.send(
-//        request: HttpClientRequest,
-//        address: Address
-//    ): CompletableFuture<HttpClientResponse> {
-//        val connection = this.getObject()
-//        log.debug { "get client connection. id: ${connection.id}, closed: ${connection.isClosed}, version: ${connection.httpVersion}" }
-//        return this.use {
-//            connection.sendRequest(request).exceptionallyCompose { e ->
-//                retryOneTimeWhenCancellationException(connection, e, request, address)
-//            }
-//        }
-//    }
+    private fun sendAndReleasePooledObject(
+        pooledObject: PooledObject<HttpClientConnection>,
+        request: HttpClientRequest
+    ): CompletableFuture<HttpClientResponse> {
+        return pooledObject.use { it.`object`.sendAndTryToUpgradeHttp2(request) }
+    }
 
-//    private fun retryOneTimeWhenCancellationException(
-//        connection: HttpClientConnection,
-//        e: Throwable,
-//        request: HttpClientRequest,
-//        address: Address
-//    ): CompletableFuture<HttpClientResponse> {
-//        return if (connection.httpVersion == HttpVersion.HTTP_1_1 && e.cause != null && e.cause is CancellationException) {
-//            log.warn("retry request: ${request.uri}, message: ${e.message}, class: ${e.cause?.javaClass?.name}")
-//            retryOneTime(address, request)
-//        } else CompletableFutures.completeExceptionally(e)
-//    }
-//
-//    private fun retryOneTime(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-//        return createTcpConnection(address)
-//            .thenApply { createHttp1ClientConnection(it) }
-//            .thenCompose { connection -> retrySend(connection, request) }
-//    }
-//
-//    private fun retrySend(connection: HttpClientConnection, request: HttpClientRequest) =
-//        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
 
-    private fun HttpClientConnection.sendRequest(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+    private fun HttpClientConnection.sendAndTryToUpgradeHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         return when {
             this.isSecureConnection -> this.send(request)
             this is Http1ClientConnection -> this.sendRequestTryToUpgradeHttp2(request)
