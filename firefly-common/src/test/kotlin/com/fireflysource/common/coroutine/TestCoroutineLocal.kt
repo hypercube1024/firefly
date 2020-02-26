@@ -2,8 +2,7 @@ package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.util.concurrent.*
@@ -30,13 +29,10 @@ class TestCoroutineLocal {
         val jobs = List(5) { i ->
             async(dispatcher + CoroutineLocalContext.asElement(mutableMapOf(key to i))) {
                 withTimeout(2000) {
-                    println("beforeSuspend [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
                     assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
                     CoroutineLocalContext.computeIfAbsent("key33") { 33 }
                     CoroutineLocalContext.setAttr("newKey", i)
-                    delay(100)
                     testLocalAttr(key, i)
-                    println("afterSuspend [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
                     assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
                 }
             }
@@ -45,18 +41,26 @@ class TestCoroutineLocal {
         jobs.forEach {
             it.join()
         }
-        println("Done")
+
     }
 
     private suspend fun testLocalAttr(key: String, expect: Int) = withAttributes {
-        launchWithAttributes {
-            delay(100)
+        assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
+        assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
+        println("beforeSuspend ${CoroutineLocalContext.getAttributes()}")
+        launchWithAttributes(attributes = mutableMapOf("d1" to 200)) {
+            CoroutineLocalContext.setAttr("c1", 100)
+            assertEquals(100, CoroutineLocalContext.getAttr<Int>("c1"))
             assertEquals(expect, CoroutineLocalContext.getAttr<Int>(key))
             assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
             assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
             assertEquals("OK", CoroutineLocalContext.getAttrOrDefault("keyX") { "OK" })
             println("inner fun [expected: $expect, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
+            assertEquals(200, CoroutineLocalContext.getAttr<Int>("d1"))
         }.join()
+        println("afterSuspend ${CoroutineLocalContext.getAttributes()}")
+        assertNull(CoroutineLocalContext.getAttr("d1"))
+        assertNull(CoroutineLocalContext.getAttr("c1"))
     }
 
     @Test

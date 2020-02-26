@@ -51,13 +51,8 @@ object CoroutineLocalContext {
      * @param attributes The attributes run through in the coroutine scope.
      * @return The coroutine context element.
      */
-    fun asElement(attributes: MutableMap<String, Any>): ThreadContextElement<MutableMap<String, Any>> {
-        return if (attributes is ConcurrentHashMap) {
-            ctx.asElement(attributes)
-        } else {
-            ctx.asElement(ConcurrentHashMap(attributes))
-        }
-    }
+    fun asElement(attributes: MutableMap<String, Any>): ThreadContextElement<MutableMap<String, Any>> =
+        ctx.asElement(ConcurrentHashMap(attributes))
 
     /**
      * Merge the attributes into the parent coroutine context element.
@@ -66,16 +61,15 @@ object CoroutineLocalContext {
      * @return The coroutine context element.
      */
     fun inheritParentElement(attributes: MutableMap<String, Any>? = null): ThreadContextElement<MutableMap<String, Any>> {
+        val newAttributes = ConcurrentHashMap<String, Any>()
         val parentAttributes = getAttributes()
-        val attrs = if (parentAttributes.isNullOrEmpty()) {
-            attributes ?: ConcurrentHashMap()
-        } else {
-            if (!attributes.isNullOrEmpty()) {
-                parentAttributes.putAll(attributes)
-            }
-            parentAttributes
+        if (parentAttributes != null) {
+            newAttributes.putAll(parentAttributes)
         }
-        return asElement(attrs)
+        if (attributes != null) {
+            newAttributes.putAll(attributes)
+        }
+        return ctx.asElement(newAttributes)
     }
 
     /**
