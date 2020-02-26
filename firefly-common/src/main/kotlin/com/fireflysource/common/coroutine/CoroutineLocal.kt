@@ -163,7 +163,7 @@ fun launchWithAttributes(
     return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
 }
 
-fun launchTask(
+fun launchJob(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
@@ -171,13 +171,13 @@ fun launchTask(
 }
 
 fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
-    launchTask(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+    launchJob(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
 
 fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
     runAsync(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
 
 fun event(block: suspend CoroutineScope.() -> Unit): Job =
-    launchTask(CoroutineDispatchers.singleThread) { block.invoke(this) }
+    launchJob(CoroutineDispatchers.singleThread) { block.invoke(this) }
 
 fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
     runAsync(CoroutineDispatchers.singleThread) { block.invoke(this) }
