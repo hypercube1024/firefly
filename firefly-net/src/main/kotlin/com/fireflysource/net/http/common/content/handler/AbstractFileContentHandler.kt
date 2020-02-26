@@ -2,7 +2,7 @@ package com.fireflysource.net.http.common.content.handler
 
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.io.AsyncCloseable
-import com.fireflysource.common.io.closeAsync
+import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.common.sys.Result
@@ -33,7 +33,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
 
             suspend fun closeFileChannel() {
                 try {
-                    fileChannel.closeAsync().join()
+                    fileChannel.closeJob().join()
                 } catch (e: Exception) {
                     log.error(e) { "close file channel exception." }
                 }

@@ -48,7 +48,7 @@ suspend fun <T : Closeable?, R> T.useAwait(block: suspend (T) -> R): R {
         throw e
     } finally {
         withContext(NonCancellable) {
-            this@useAwait?.closeAsync()?.join()
+            this@useAwait?.closeJob()?.join()
         }
     }
 }
@@ -68,7 +68,7 @@ suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
 /**
  * Close in the I/O blocking coroutine dispatcher
  */
-fun Closeable.closeAsync() = blocking {
+fun Closeable.closeJob() = blocking {
     @Suppress("BlockingMethodInNonBlockingContext")
     close()
 }

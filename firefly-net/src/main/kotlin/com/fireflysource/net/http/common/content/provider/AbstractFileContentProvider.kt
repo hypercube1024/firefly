@@ -3,7 +3,7 @@ package com.fireflysource.net.http.common.content.provider
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.InputChannel
-import com.fireflysource.common.io.closeAsync
+import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.readAwait
 import com.fireflysource.common.sys.Result
@@ -37,7 +37,7 @@ abstract class AbstractFileContentProvider(val path: Path, vararg options: OpenO
                         try {
                             val len = fileChannel.readAwait(buf, position)
                             if (len < 0) {
-                                fileChannel.closeAsync().join()
+                                fileChannel.closeJob().join()
                                 closed = true
                                 future.complete(len)
                                 break@readMessageLoop
@@ -50,7 +50,7 @@ abstract class AbstractFileContentProvider(val path: Path, vararg options: OpenO
                         }
                     }
                     is EndReadFile -> {
-                        fileChannel.closeAsync().join()
+                        fileChannel.closeJob().join()
                         closed = true
                         break@readMessageLoop
                     }
