@@ -95,7 +95,7 @@ object CoroutineLocalContext {
      * @param func Get the default value lazily.
      * @return An attribute in the current coroutine scope, or the default value.
      */
-    inline fun <reified T> getAttrOrDefault(name: String, func: (String) -> T): T {
+    inline fun <reified T> getAttrOrDefault(name: String, crossinline func: (String) -> T): T {
         return getAttributes()?.get(name) as T? ?: func(name)
     }
 
