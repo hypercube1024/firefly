@@ -1,7 +1,6 @@
 package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.ContinuationInterceptor
 
 /**
@@ -52,7 +51,7 @@ object CoroutineLocalContext {
      * @return The coroutine context element.
      */
     fun asElement(attributes: MutableMap<String, Any>): ThreadContextElement<MutableMap<String, Any>> =
-        ctx.asElement(ConcurrentHashMap(attributes))
+        ctx.asElement(HashMap(attributes))
 
     /**
      * Merge the attributes into the parent coroutine context element.
@@ -61,7 +60,7 @@ object CoroutineLocalContext {
      * @return The coroutine context element.
      */
     fun inheritParentElement(attributes: MutableMap<String, Any>? = null): ThreadContextElement<MutableMap<String, Any>> {
-        val newAttributes = ConcurrentHashMap<String, Any>()
+        val newAttributes = HashMap<String, Any>()
         val parentAttributes = getAttributes()
         if (parentAttributes != null) {
             newAttributes.putAll(parentAttributes)
