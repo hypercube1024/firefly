@@ -28,17 +28,16 @@ class TestCoroutineLocal {
         val dispatcher: CoroutineDispatcher = dispatchExecutor.asCoroutineDispatcher()
         val key = "index"
         val jobs = List(5) { i ->
-            val e = CoroutineLocalContext.asElement(mutableMapOf(key to i))
-            async(dispatcher + e) {
+            async(dispatcher + CoroutineLocalContext.asElement(mutableMapOf(key to i))) {
                 withTimeout(2000) {
                     println("beforeSuspend [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
-                    assertEquals(i, CoroutineLocalContext.getAttr(key)!!)
-                    CoroutineLocalContext.computeIfAbsent("constAttr") { 33 }
-                    CoroutineLocalContext.setAttr("e", i)
+                    assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
+                    CoroutineLocalContext.computeIfAbsent("key33") { 33 }
+                    CoroutineLocalContext.setAttr("newKey", i)
                     delay(100)
                     testLocalAttr(key, i)
                     println("afterSuspend [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
-                    assertEquals(i, CoroutineLocalContext.getAttr(key)!!)
+                    assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
                 }
             }
         }
@@ -46,18 +45,16 @@ class TestCoroutineLocal {
         jobs.forEach {
             it.join()
         }
-
         println("Done")
-        delay(2000)
     }
 
-    private suspend fun testLocalAttr(key: String, i: Int) = withAttributes {
+    private suspend fun testLocalAttr(key: String, expect: Int) = withAttributes {
         launchWithAttributes {
             delay(100)
-            assertEquals(i, CoroutineLocalContext.getAttr(key)!!)
-            assertEquals(33, CoroutineLocalContext.getAttr("constAttr")!!)
-            assertEquals(i, CoroutineLocalContext.getAttr("e")!!)
-            println("inner fun [expected: $i, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
+            assertEquals(expect, CoroutineLocalContext.getAttr<Int>(key))
+            assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
+            assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
+            println("inner fun [expected: $expect, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
         }.join()
     }
 
