@@ -43,9 +43,7 @@ class CoroutineLocal<T> {
  */
 object CoroutineLocalContext {
 
-    private val ctx: CoroutineLocal<MutableMap<String, Any>> by lazy {
-        CoroutineLocal<MutableMap<String, Any>>()
-    }
+    private val ctx: CoroutineLocal<MutableMap<String, Any>> by lazy { CoroutineLocal<MutableMap<String, Any>>() }
 
     /**
      * Convert the attributes to the coroutine context element.
@@ -94,8 +92,7 @@ object CoroutineLocalContext {
      * @return An attribute in the current coroutine scope.
      */
     inline fun <reified T> getAttr(name: String): T? {
-        val value = getAttributes()?.get(name)
-        return if (value == null) null else value as T
+        return getAttributes()?.get(name) as T?
     }
 
     /**
@@ -106,8 +103,7 @@ object CoroutineLocalContext {
      * @return An attribute in the current coroutine scope, or the default value.
      */
     inline fun <reified T> getAttrOrDefault(name: String, func: (String) -> T): T {
-        val value = getAttributes()?.get(name)
-        return if (value == null) func.invoke(name) else value as T
+        return getAttributes()?.get(name) as T? ?: func(name)
     }
 
     /**
@@ -118,8 +114,7 @@ object CoroutineLocalContext {
      * @return The old value in the current coroutine scope.
      */
     inline fun <reified T : Any> setAttr(name: String, value: T): T? {
-        val oldValue = getAttributes()?.put(name, value)
-        return if (oldValue == null) null else oldValue as T
+        return getAttributes()?.put(name, value) as T?
     }
 
     /**
@@ -132,10 +127,7 @@ object CoroutineLocalContext {
      * @return The value in the current coroutine scope.
      */
     inline fun <reified T : Any> computeIfAbsent(name: String, crossinline func: (String) -> T): T? {
-        val value = getAttributes()?.computeIfAbsent(name) {
-            func.invoke(it)
-        }
-        return if (value == null) null else value as T
+        return getAttributes()?.computeIfAbsent(name) { func(it) } as T?
     }
 }
 

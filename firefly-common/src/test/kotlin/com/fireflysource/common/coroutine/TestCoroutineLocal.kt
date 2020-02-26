@@ -54,6 +54,7 @@ class TestCoroutineLocal {
             assertEquals(expect, CoroutineLocalContext.getAttr<Int>(key))
             assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
             assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
+            assertEquals("OK", CoroutineLocalContext.getAttrOrDefault("keyX") { "OK" })
             println("inner fun [expected: $expect, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
         }.join()
     }
