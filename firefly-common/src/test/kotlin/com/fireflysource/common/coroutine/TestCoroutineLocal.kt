@@ -20,6 +20,7 @@ private val dispatchExecutor: ExecutorService = ThreadPoolExecutor(
 )
 
 class TestCoroutineLocal {
+    private val ctx = CoroutineLocalContext
 
     @Test
     @DisplayName("should get the coroutine local value across the many coroutines.")
@@ -27,13 +28,13 @@ class TestCoroutineLocal {
         val dispatcher: CoroutineDispatcher = dispatchExecutor.asCoroutineDispatcher()
         val key = "index"
         val jobs = List(5) { i ->
-            async(dispatcher + CoroutineLocalContext.asElement(mutableMapOf(key to i))) {
+            async(dispatcher + ctx.asElement(mutableMapOf(key to i))) {
                 withTimeout(2000) {
-                    assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
-                    CoroutineLocalContext.computeIfAbsent("key33") { 33 }
-                    CoroutineLocalContext.setAttr("newKey", i)
+                    assertEquals(i, ctx.getAttr<Int>(key))
+                    ctx.computeIfAbsent("key33") { 33 }
+                    ctx.setAttr("newKey", i)
                     testLocalAttr(key, i)
-                    assertEquals(i, CoroutineLocalContext.getAttr<Int>(key))
+                    assertEquals(i, ctx.getAttr<Int>(key))
                 }
             }
         }
@@ -45,22 +46,22 @@ class TestCoroutineLocal {
     }
 
     private suspend fun testLocalAttr(key: String, expect: Int) = withAttributes {
-        assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
-        assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
-        println("beforeSuspend ${CoroutineLocalContext.getAttributes()}")
+        assertEquals(33, ctx.getAttr<Int>("key33"))
+        assertEquals(expect, ctx.getAttr<Int>("newKey"))
+        println("beforeSuspend ${ctx.getAttributes()}")
         launchWithAttributes(attributes = mutableMapOf("d1" to 200)) {
-            CoroutineLocalContext.setAttr("c1", 100)
-            assertEquals(100, CoroutineLocalContext.getAttr<Int>("c1"))
-            assertEquals(expect, CoroutineLocalContext.getAttr<Int>(key))
-            assertEquals(33, CoroutineLocalContext.getAttr<Int>("key33"))
-            assertEquals(expect, CoroutineLocalContext.getAttr<Int>("newKey"))
-            assertEquals("OK", CoroutineLocalContext.getAttrOrDefault("keyX") { "OK" })
-            println("inner fun [expected: $expect, actual: ${CoroutineLocalContext.getAttr<Int>(key)}]")
-            assertEquals(200, CoroutineLocalContext.getAttr<Int>("d1"))
+            ctx.setAttr("c1", 100)
+            assertEquals(100, ctx.getAttr<Int>("c1"))
+            assertEquals(expect, ctx.getAttr<Int>(key))
+            assertEquals(33, ctx.getAttr<Int>("key33"))
+            assertEquals(expect, ctx.getAttr<Int>("newKey"))
+            assertEquals("OK", ctx.getAttrOrDefault("keyX") { "OK" })
+            println("inner fun [expected: $expect, actual: ${ctx.getAttr<Int>(key)}]")
+            assertEquals(200, ctx.getAttr<Int>("d1"))
         }.join()
-        println("afterSuspend ${CoroutineLocalContext.getAttributes()}")
-        assertNull(CoroutineLocalContext.getAttr("d1"))
-        assertNull(CoroutineLocalContext.getAttr("c1"))
+        println("afterSuspend ${ctx.getAttributes()}")
+        assertNull(ctx.getAttr("d1"))
+        assertNull(ctx.getAttr("c1"))
     }
 
     @Test
