@@ -54,9 +54,9 @@ object CoroutineLocalContext {
         ctx.asElement(HashMap(attributes))
 
     /**
-     * Merge the attributes into the parent coroutine context element.
+     * Inherit parent coroutine context element, and merge it into current attributes.
      *
-     * @param attributes The attributes merge into the parent coroutine context element.
+     * @param attributes The attributes run through in the coroutine scope.
      * @return The coroutine context element.
      */
     fun inheritParentElement(attributes: MutableMap<String, Any>? = null): ThreadContextElement<MutableMap<String, Any>> {
