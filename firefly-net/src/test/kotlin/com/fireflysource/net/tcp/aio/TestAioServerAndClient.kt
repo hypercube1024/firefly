@@ -8,6 +8,7 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -19,7 +20,6 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.nio.ByteBuffer
-import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
 import kotlin.math.roundToLong
@@ -201,10 +201,13 @@ class TestAioServerAndClient {
             connection.read().await()
             true
         } catch (e: Exception) {
-            assertTrue(e is InterruptedByTimeoutException)
+            println("Client reads failure. ${e.javaClass.name}")
             false
         }
+        delay(500)
         assertFalse(success)
+        assertTrue(connection.duration > 0)
+        assertTrue(connection.isShutdownInput)
 
         val stopTime = measureTimeMillis {
             stopAll()
