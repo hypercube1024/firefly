@@ -66,6 +66,7 @@ class AioSecureTcpConnection(
             is OutputBuffers -> encryptAndFlushBuffers(outputMessage)
             is OutputBufferList -> encryptAndFlushBuffers(outputMessage)
             is ShutdownOutput -> shutdownOutput(outputMessage)
+            else -> throw IllegalStateException("The output message type error")
         }
     }
 

@@ -6,25 +6,25 @@ import java.util.*;
 /**
  * <p>A Ternary Trie String lookup data structure.</p>
  * <p>
- * This Trie is of a fixed size and cannot grow (which can be a good thing with regards to DOS when used as a cache).
+ * This Trie is of a fixed size and cannot grow (which can be a good thing with the regards to DOS when used as a cache).
  * </p>
  * <p>
  * The Trie is stored in 3 arrays:
  * </p>
  * <dl>
- * <dt>char[] _tree</dt><dd>This is semantically 2 dimensional array flattened into a 1 dimensional char array. The second dimension
+ * <dt>char[] tree</dt><dd>This is semantically 2 dimensional array flattened into a 1 dimensional char array. The second dimension
  * is that every 4 sequential elements represents a row of: character; hi index; eq index; low index, used to build a
  * ternary trie of key strings.</dd>
- * <dt>String[] _key</dt><dd>An array of key values where each element matches a row in the _tree array. A non zero key element
- * indicates that the _tree row is a complete key rather than an intermediate character of a longer key.</dd>
- * <dt>V[] _value</dt><dd>An array of values corresponding to the _key array</dd>
+ * <dt>String[] key</dt><dd>An array of key values where each element matches a row in the tree array. A non-zero key element
+ * indicates that the tree row is a complete key rather than an intermediate character of a longer key.</dd>
+ * <dt>V[] value</dt><dd>An array of values corresponding to the key array</dd>
  * </dl>
- * <p>The lookup of a value will iterate through the _tree array matching characters. If the equal tree branch is followed,
- * then the _key array is looked up to see if this is a complete match.  If a match is found then the _value array is looked up
+ * <p>The lookup of a value will iterate through the tree array matching characters. If the equal tree branch follows,
+ * then the key array looks up to see if this is a complete match.  If a match finds then the value array looks up
  * to return the matching value.
  * </p>
  * <p>
- * This Trie may be instantiated either as case sensitive or insensitive.
+ * This Trie may instantiate either as case-sensitive or insensitive.
  * </p>
  * <p>This Trie is not Threadsafe and contains no mutual exclusion
  * or deliberate memory barriers.  It is intended for an ArrayTrie to be
@@ -35,9 +35,10 @@ import java.util.*;
  *
  * @param <V> the Entry type
  */
+@SuppressWarnings("unchecked")
 public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
 
-    public static final char[] lowercases = {'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
+    public static final char[] LOWER_CASES = {'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007', '\010',
             '\011', '\012', '\013', '\014', '\015', '\016', '\017', '\020', '\021', '\022', '\023', '\024', '\025',
             '\026', '\027', '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037', '\040', '\041', '\042',
             '\043', '\044', '\045', '\046', '\047', '\050', '\051', '\052', '\053', '\054', '\055', '\056', '\057',
@@ -61,35 +62,31 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
      * to the next row in the Trie.  This is actually a 2 dimensional
      * array that has been flattened to achieve locality of reference.
      */
-    private final char[] _tree;
+    private final char[] tree;
 
     /**
      * The key (if any) for a Trie row.
      * A row may be a leaf, a node or both in the Trie tree.
      */
-    private final String[] _key;
+    private final String[] key;
 
     /**
      * The value (if any) for a Trie row.
      * A row may be a leaf, a node or both in the Trie tree.
      */
-    private final V[] _value;
+    private final V[] value;
 
     /**
      * The number of rows allocated
      */
-    private char _rows;
-
-    /* ------------------------------------------------------------ */
+    private char rows;
 
     /**
-     * Create a case insensitive Trie of default capacity.
+     * Create a case-insensitive Trie of default capacity.
      */
     public ArrayTernaryTrie() {
         this(128);
     }
-
-    /* ------------------------------------------------------------ */
 
     /**
      * Create a Trie of default capacity
@@ -100,23 +97,19 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         this(insensitive, 128);
     }
 
-    /* ------------------------------------------------------------ */
-
     /**
-     * Create a case insensitive Trie
+     * Create a case-insensitive Trie
      *
      * @param capacity The capacity of the Trie, which is in the worst case
      *                 is the total number of characters of all keys stored in the Trie.
      *                 The capacity needed is dependent of the shared prefixes of the keys.
-     *                 For example, a capacity of 6 nodes is required to store keys "foo"
+     *                 For example, a capacity of 6 nodes require to store the keys "foo"
      *                 and "bar", but a capacity of only 4 is required to
      *                 store "bar" and "bat".
      */
     public ArrayTernaryTrie(int capacity) {
         this(true, capacity);
     }
-
-    /* ------------------------------------------------------------ */
 
     /**
      * Create a Trie
@@ -125,18 +118,16 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
      * @param capacity    The capacity of the Trie, which is in the worst case
      *                    is the total number of characters of all keys stored in the Trie.
      *                    The capacity needed is dependent of the shared prefixes of the keys.
-     *                    For example, a capacity of 6 nodes is required to store keys "foo"
+     *                    For example, a capacity of 6 nodes require to store the keys "foo"
      *                    and "bar", but a capacity of only 4 is required to
      *                    store "bar" and "bat".
      */
     public ArrayTernaryTrie(boolean insensitive, int capacity) {
         super(insensitive);
-        _value = (V[]) new Object[capacity];
-        _tree = new char[capacity * ROW_SIZE];
-        _key = new String[capacity];
+        value = (V[]) new Object[capacity];
+        tree = new char[capacity * ROW_SIZE];
+        key = new String[capacity];
     }
-
-    /* ------------------------------------------------------------ */
 
     /**
      * Copy Trie and change capacity by a factor
@@ -146,11 +137,11 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
      */
     public ArrayTernaryTrie(ArrayTernaryTrie<V> trie, double factor) {
         super(trie.isCaseInsensitive());
-        int capacity = (int) (trie._value.length * factor);
-        _rows = trie._rows;
-        _value = Arrays.copyOf(trie._value, capacity);
-        _tree = Arrays.copyOf(trie._tree, capacity * ROW_SIZE);
-        _key = Arrays.copyOf(trie._key, capacity);
+        int capacity = (int) (trie.value.length * factor);
+        rows = trie.rows;
+        value = Arrays.copyOf(trie.value, capacity);
+        tree = Arrays.copyOf(trie.tree, capacity * ROW_SIZE);
+        key = Arrays.copyOf(trie.key, capacity);
     }
 
     public static int hilo(int diff) {
@@ -159,103 +150,97 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         return 1 + (diff | Integer.MAX_VALUE) / (Integer.MAX_VALUE / 2);
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public void clear() {
-        _rows = 0;
-        Arrays.fill(_value, null);
-        Arrays.fill(_tree, (char) 0);
-        Arrays.fill(_key, null);
+        rows = 0;
+        Arrays.fill(value, null);
+        Arrays.fill(tree, (char) 0);
+        Arrays.fill(key, null);
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public boolean put(String s, V v) {
         int t = 0;
         int limit = s.length();
-        int last = 0;
+        int last;
         for (int k = 0; k < limit; k++) {
             char c = s.charAt(k);
             if (isCaseInsensitive() && c < 128)
-                c = lowercases[c];
+                c = LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
 
                 // Do we need to create the new row?
-                if (t == _rows) {
-                    _rows++;
-                    if (_rows >= _key.length) {
-                        _rows--;
+                if (t == rows) {
+                    rows++;
+                    if (rows >= key.length) {
+                        rows--;
                         return false;
                     }
-                    _tree[row] = c;
+                    tree[row] = c;
                 }
 
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
                 if (diff == 0)
-                    t = _tree[last = (row + EQ)];
+                    t = tree[last = (row + EQ)];
                 else if (diff < 0)
-                    t = _tree[last = (row + LO)];
+                    t = tree[last = (row + LO)];
                 else
-                    t = _tree[last = (row + HI)];
+                    t = tree[last = (row + HI)];
 
                 // do we need a new row?
                 if (t == 0) {
-                    t = _rows;
-                    _tree[last] = (char) t;
+                    t = rows;
+                    tree[last] = (char) t;
                 }
 
-                if (diff == 0)
-                    break;
+                if (diff == 0) break;
             }
         }
 
         // Do we need to create the new row?
-        if (t == _rows) {
-            _rows++;
-            if (_rows >= _key.length) {
-                _rows--;
+        if (t == rows) {
+            rows++;
+            if (rows >= key.length) {
+                rows--;
                 return false;
             }
         }
 
         // Put the key and value
-        _key[t] = v == null ? null : s;
-        _value[t] = v;
+        key[t] = v == null ? null : s;
+        value[t] = v;
 
         return true;
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public V get(String s, int offset, int len) {
         int t = 0;
         for (int i = 0; i < len; ) {
             char c = s.charAt(offset + i++);
             if (isCaseInsensitive() && c < 128)
-                c = lowercases[c];
+                c = LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
 
                 if (diff == 0) {
-                    t = _tree[row + EQ];
-                    if (t == 0)
-                        return null;
+                    t = tree[row + EQ];
+                    if (t == 0) return null;
                     break;
                 }
 
-                t = _tree[row + hilo(diff)];
-                if (t == 0)
-                    return null;
+                t = tree[row + hilo(diff)];
+                if (t == 0) return null;
             }
         }
 
-        return _value[t];
+        return value[t];
     }
 
     @Override
@@ -266,42 +251,36 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int i = 0; i < len; ) {
             byte c = (byte) (b.get(offset + i++) & 0x7f);
             if (isCaseInsensitive())
-                c = (byte) lowercases[c];
+                c = (byte) LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
 
                 if (diff == 0) {
-                    t = _tree[row + EQ];
-                    if (t == 0)
-                        return null;
+                    t = tree[row + EQ];
+                    if (t == 0) return null;
                     break;
                 }
 
-                t = _tree[row + hilo(diff)];
-                if (t == 0)
-                    return null;
+                t = tree[row + hilo(diff)];
+                if (t == 0) return null;
             }
         }
-
-        return (V) _value[t];
+        return value[t];
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public V getBest(String s) {
         return getBest(0, s, 0, s.length());
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public V getBest(String s, int offset, int length) {
         return getBest(0, s, offset, length);
     }
 
-    /* ------------------------------------------------------------ */
     private V getBest(int t, String s, int offset, int len) {
         int node = t;
         int end = offset + len;
@@ -310,45 +289,39 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
             char c = s.charAt(offset++);
             len--;
             if (isCaseInsensitive() && c < 128)
-                c = lowercases[c];
+                c = LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
 
                 if (diff == 0) {
-                    t = _tree[row + EQ];
-                    if (t == 0)
-                        break loop;
+                    t = tree[row + EQ];
+                    if (t == 0) break loop;
 
                     // if this node is a match, recurse to remember
-                    if (_key[t] != null) {
+                    if (key[t] != null) {
                         node = t;
                         V better = getBest(t, s, offset, len);
-                        if (better != null)
-                            return better;
+                        if (better != null) return better;
                     }
                     break;
                 }
 
-                t = _tree[row + hilo(diff)];
-                if (t == 0)
-                    break loop;
+                t = tree[row + hilo(diff)];
+                if (t == 0) break loop;
             }
         }
-        return (V) _value[node];
+        return value[node];
     }
 
-    /* ------------------------------------------------------------ */
     @Override
     public V getBest(ByteBuffer b, int offset, int len) {
-        if (b.hasArray())
-            return getBest(0, b.array(), b.arrayOffset() + b.position() + offset, len);
-        return getBest(0, b, offset, len);
+        if (b.hasArray()) return getBest(0, b.array(), b.arrayOffset() + b.position() + offset, len);
+        else return getBest(0, b, offset, len);
     }
 
-    /* ------------------------------------------------------------ */
     private V getBest(int t, byte[] b, int offset, int len) {
         int node = t;
         int end = offset + len;
@@ -357,37 +330,33 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
             byte c = (byte) (b[offset++] & 0x7f);
             len--;
             if (isCaseInsensitive())
-                c = (byte) lowercases[c];
+                c = (byte) LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
 
                 if (diff == 0) {
-                    t = _tree[row + EQ];
-                    if (t == 0)
-                        break loop;
+                    t = tree[row + EQ];
+                    if (t == 0) break loop;
 
                     // if this node is a match, recurse to remember
-                    if (_key[t] != null) {
+                    if (key[t] != null) {
                         node = t;
                         V better = getBest(t, b, offset, len);
-                        if (better != null)
-                            return better;
+                        if (better != null) return better;
                     }
                     break;
                 }
 
-                t = _tree[row + hilo(diff)];
-                if (t == 0)
-                    break loop;
+                t = tree[row + hilo(diff)];
+                if (t == 0) break loop;
             }
         }
-        return (V) _value[node];
+        return (V) value[node];
     }
 
-    /* ------------------------------------------------------------ */
     private V getBest(int t, ByteBuffer b, int offset, int len) {
         int node = t;
         int o = offset + b.position();
@@ -396,49 +365,45 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         for (int i = 0; i < len; i++) {
             byte c = (byte) (b.get(o + i) & 0x7f);
             if (isCaseInsensitive())
-                c = (byte) lowercases[c];
+                c = (byte) LOWER_CASES[c];
 
             while (true) {
                 int row = ROW_SIZE * t;
-                char n = _tree[row];
+                char n = tree[row];
                 int diff = n - c;
 
                 if (diff == 0) {
-                    t = _tree[row + EQ];
-                    if (t == 0)
-                        break loop;
+                    t = tree[row + EQ];
+                    if (t == 0) break loop;
 
                     // if this node is a match, recurse to remember
-                    if (_key[t] != null) {
+                    if (key[t] != null) {
                         node = t;
                         V best = getBest(t, b, offset + i + 1, len - i - 1);
-                        if (best != null)
-                            return best;
+                        if (best != null) return best;
                     }
                     break;
                 }
 
-                t = _tree[row + hilo(diff)];
-                if (t == 0)
-                    break loop;
+                t = tree[row + hilo(diff)];
+                if (t == 0) break loop;
             }
         }
-        return (V) _value[node];
+        return value[node];
     }
 
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        for (int r = 0; r <= _rows; r++) {
-            if (_key[r] != null && _value[r] != null) {
+        for (int r = 0; r <= rows; r++) {
+            if (key[r] != null && value[r] != null) {
                 buf.append(',');
-                buf.append(_key[r]);
+                buf.append(key[r]);
                 buf.append('=');
-                buf.append(_value[r].toString());
+                buf.append(value[r].toString());
             }
         }
-        if (buf.length() == 0)
-            return "{}";
+        if (buf.length() == 0) return "{}";
 
         buf.setCharAt(0, '{');
         buf.append('}');
@@ -449,25 +414,25 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
     public Set<String> keySet() {
         Set<String> keys = new HashSet<>();
 
-        for (int r = 0; r <= _rows; r++) {
-            if (_key[r] != null && _value[r] != null)
-                keys.add(_key[r]);
+        for (int r = 0; r <= rows; r++) {
+            if (key[r] != null && value[r] != null)
+                keys.add(key[r]);
         }
         return keys;
     }
 
     public int size() {
         int s = 0;
-        for (int r = 0; r <= _rows; r++) {
-            if (_key[r] != null && _value[r] != null)
+        for (int r = 0; r <= rows; r++) {
+            if (key[r] != null && value[r] != null)
                 s++;
         }
         return s;
     }
 
     public boolean isEmpty() {
-        for (int r = 0; r <= _rows; r++) {
-            if (_key[r] != null && _value[r] != null)
+        for (int r = 0; r <= rows; r++) {
+            if (key[r] != null && value[r] != null)
                 return false;
         }
         return true;
@@ -475,49 +440,49 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
 
     public Set<Map.Entry<String, V>> entrySet() {
         Set<Map.Entry<String, V>> entries = new HashSet<>();
-        for (int r = 0; r <= _rows; r++) {
-            if (_key[r] != null && _value[r] != null)
-                entries.add(new AbstractMap.SimpleEntry<>(_key[r], _value[r]));
+        for (int r = 0; r <= rows; r++) {
+            if (key[r] != null && value[r] != null)
+                entries.add(new AbstractMap.SimpleEntry<>(key[r], value[r]));
         }
         return entries;
     }
 
     @Override
     public boolean isFull() {
-        return _rows + 1 == _key.length;
+        return rows + 1 == key.length;
     }
 
     public void dump() {
-        for (int r = 0; r < _rows; r++) {
-            char c = _tree[r * ROW_SIZE + 0];
+        for (int r = 0; r < rows; r++) {
+            char c = tree[r * ROW_SIZE];
             System.err.printf("%4d [%s,%d,%d,%d] '%s':%s%n",
                     r,
                     (c < ' ' || c > 127) ? ("" + (int) c) : "'" + c + "'",
-                    (int) _tree[r * ROW_SIZE + LO],
-                    (int) _tree[r * ROW_SIZE + EQ],
-                    (int) _tree[r * ROW_SIZE + HI],
-                    _key[r],
-                    _value[r]);
+                    (int) tree[r * ROW_SIZE + LO],
+                    (int) tree[r * ROW_SIZE + EQ],
+                    (int) tree[r * ROW_SIZE + HI],
+                    key[r],
+                    value[r]);
         }
 
     }
 
     public static class Growing<V> implements Trie<V> {
-        private final int _growby;
-        private ArrayTernaryTrie<V> _trie;
+        private final int growBy;
+        private ArrayTernaryTrie<V> trie;
 
         public Growing() {
             this(1024, 1024);
         }
 
-        public Growing(int capacity, int growby) {
-            _growby = growby;
-            _trie = new ArrayTernaryTrie<>(capacity);
+        public Growing(int capacity, int growBy) {
+            this.growBy = growBy;
+            trie = new ArrayTernaryTrie<>(capacity);
         }
 
         public Growing(boolean insensitive, int capacity, int growby) {
-            _growby = growby;
-            _trie = new ArrayTernaryTrie<>(insensitive, capacity);
+            growBy = growby;
+            trie = new ArrayTernaryTrie<>(insensitive, capacity);
         }
 
         public boolean put(V v) {
@@ -525,76 +490,76 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         }
 
         public int hashCode() {
-            return _trie.hashCode();
+            return trie.hashCode();
         }
 
         public V remove(String s) {
-            return _trie.remove(s);
+            return trie.remove(s);
         }
 
         public V get(String s) {
-            return _trie.get(s);
+            return trie.get(s);
         }
 
         public V get(ByteBuffer b) {
-            return _trie.get(b);
+            return trie.get(b);
         }
 
         public V getBest(byte[] b, int offset, int len) {
-            return _trie.getBest(b, offset, len);
+            return trie.getBest(b, offset, len);
         }
 
         public boolean isCaseInsensitive() {
-            return _trie.isCaseInsensitive();
+            return trie.isCaseInsensitive();
         }
 
         public boolean equals(Object obj) {
-            return _trie.equals(obj);
+            return trie.equals(obj);
         }
 
         public void clear() {
-            _trie.clear();
+            trie.clear();
         }
 
         public boolean put(String s, V v) {
-            boolean added = _trie.put(s, v);
-            while (!added && _growby > 0) {
-                ArrayTernaryTrie<V> bigger = new ArrayTernaryTrie<>(_trie._key.length + _growby);
-                for (Map.Entry<String, V> entry : _trie.entrySet())
+            boolean added = trie.put(s, v);
+            while (!added && growBy > 0) {
+                ArrayTernaryTrie<V> bigger = new ArrayTernaryTrie<>(trie.key.length + growBy);
+                for (Map.Entry<String, V> entry : trie.entrySet())
                     bigger.put(entry.getKey(), entry.getValue());
-                _trie = bigger;
-                added = _trie.put(s, v);
+                trie = bigger;
+                added = trie.put(s, v);
             }
 
             return added;
         }
 
         public V get(String s, int offset, int len) {
-            return _trie.get(s, offset, len);
+            return trie.get(s, offset, len);
         }
 
         public V get(ByteBuffer b, int offset, int len) {
-            return _trie.get(b, offset, len);
+            return trie.get(b, offset, len);
         }
 
         public V getBest(String s) {
-            return _trie.getBest(s);
+            return trie.getBest(s);
         }
 
         public V getBest(String s, int offset, int length) {
-            return _trie.getBest(s, offset, length);
+            return trie.getBest(s, offset, length);
         }
 
         public V getBest(ByteBuffer b, int offset, int len) {
-            return _trie.getBest(b, offset, len);
+            return trie.getBest(b, offset, len);
         }
 
         public String toString() {
-            return _trie.toString();
+            return trie.toString();
         }
 
         public Set<String> keySet() {
-            return _trie.keySet();
+            return trie.keySet();
         }
 
         public boolean isFull() {
@@ -602,15 +567,15 @@ public class ArrayTernaryTrie<V> extends AbstractTrie<V> {
         }
 
         public void dump() {
-            _trie.dump();
+            trie.dump();
         }
 
         public boolean isEmpty() {
-            return _trie.isEmpty();
+            return trie.isEmpty();
         }
 
         public int size() {
-            return _trie.size();
+            return trie.size();
         }
 
     }

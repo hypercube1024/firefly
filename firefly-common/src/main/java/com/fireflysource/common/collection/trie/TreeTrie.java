@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * A Trie String lookup data structure using a tree
  * <p>
- * This implementation is always case insensitive and is optimal for a variable
+ * This implementation is always case-insensitive and is optimal for a variable
  * number of fixed strings with few special characters.
  * </p>
  * <p>
@@ -26,7 +26,7 @@ import java.util.*;
  * @param <V> the entry type
  */
 public class TreeTrie<V> extends AbstractTrie<V> {
-    private static final int[] __lookup =
+    private static final int[] LOOKUP =
             { // 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
                     /*0*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                     /*1*/-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -38,68 +38,68 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                     /*7*/15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
             };
     private static final int INDEX = 32;
-    private final TreeTrie<V>[] _nextIndex;
-    private final List<TreeTrie<V>> _nextOther = new ArrayList<>();
-    private final char _c;
-    private String _key;
-    private V _value;
+    private final TreeTrie<V>[] nextIndex;
+    private final List<TreeTrie<V>> nextOther = new ArrayList<>();
+    private final char ch;
+    private String key;
+    private V value;
 
     @SuppressWarnings("unchecked")
     public TreeTrie() {
         super(true);
-        _nextIndex = new TreeTrie[INDEX];
-        _c = 0;
+        nextIndex = new TreeTrie[INDEX];
+        ch = 0;
     }
 
     @SuppressWarnings("unchecked")
     private TreeTrie(char c) {
         super(true);
-        _nextIndex = new TreeTrie[INDEX];
-        this._c = c;
+        nextIndex = new TreeTrie[INDEX];
+        this.ch = c;
     }
 
     private static <V> void toString(Appendable out, TreeTrie<V> t) {
         if (t != null) {
-            if (t._value != null) {
+            if (t.value != null) {
                 try {
                     out.append(',');
-                    out.append(t._key);
+                    out.append(t.key);
                     out.append('=');
-                    out.append(t._value.toString());
+                    out.append(t.value.toString());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
 
             for (int i = 0; i < INDEX; i++) {
-                if (t._nextIndex[i] != null)
-                    toString(out, t._nextIndex[i]);
+                if (t.nextIndex[i] != null)
+                    toString(out, t.nextIndex[i]);
             }
-            for (int i = t._nextOther.size(); i-- > 0; )
-                toString(out, t._nextOther.get(i));
+            for (int i = t.nextOther.size(); i-- > 0; )
+                toString(out, t.nextOther.get(i));
         }
     }
 
     private static <V> void keySet(Set<String> set, TreeTrie<V> t) {
         if (t != null) {
-            if (t._key != null)
-                set.add(t._key);
+            if (t.key != null)
+                set.add(t.key);
 
             for (int i = 0; i < INDEX; i++) {
-                if (t._nextIndex[i] != null)
-                    keySet(set, t._nextIndex[i]);
+                if (t.nextIndex[i] != null)
+                    keySet(set, t.nextIndex[i]);
             }
-            for (int i = t._nextOther.size(); i-- > 0; )
-                keySet(set, t._nextOther.get(i));
+            for (int i = t.nextOther.size(); i-- > 0; )
+                keySet(set, t.nextOther.get(i));
         }
     }
 
     @Override
     public void clear() {
-        Arrays.fill(_nextIndex, null);
-        _nextOther.clear();
-        _key = null;
-        _value = null;
+        Arrays.fill(nextIndex, null);
+        nextOther.clear();
+        key = null;
+        value = null;
     }
 
     @Override
@@ -109,28 +109,28 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         for (int k = 0; k < limit; k++) {
             char c = s.charAt(k);
 
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
-                    t._nextIndex[index] = new TreeTrie<V>(c);
-                t = t._nextIndex[index];
+                if (t.nextIndex[index] == null)
+                    t.nextIndex[index] = new TreeTrie<V>(c);
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int i = t._nextOther.size(); i-- > 0; ) {
-                    n = t._nextOther.get(i);
-                    if (n._c == c)
+                for (int i = t.nextOther.size(); i-- > 0; ) {
+                    n = t.nextOther.get(i);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
                 if (n == null) {
                     n = new TreeTrie<V>(c);
-                    t._nextOther.add(n);
+                    t.nextOther.add(n);
                 }
                 t = n;
             }
         }
-        t._key = v == null ? null : s;
-        t._value = v;
+        t.key = v == null ? null : s;
+        t.value = v;
         return true;
     }
 
@@ -139,16 +139,16 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         TreeTrie<V> t = this;
         for (int i = 0; i < len; i++) {
             char c = s.charAt(offset + i);
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
+                if (t.nextIndex[index] == null)
                     return null;
-                t = t._nextIndex[index];
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int j = t._nextOther.size(); j-- > 0; ) {
-                    n = t._nextOther.get(j);
-                    if (n._c == c)
+                for (int j = t.nextOther.size(); j-- > 0; ) {
+                    n = t.nextOther.get(j);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
@@ -157,7 +157,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                 t = n;
             }
         }
-        return t._value;
+        return t.value;
     }
 
     @Override
@@ -165,16 +165,16 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         TreeTrie<V> t = this;
         for (int i = 0; i < len; i++) {
             byte c = b.get(offset + i);
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
+                if (t.nextIndex[index] == null)
                     return null;
-                t = t._nextIndex[index];
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int j = t._nextOther.size(); j-- > 0; ) {
-                    n = t._nextOther.get(j);
-                    if (n._c == c)
+                for (int j = t.nextOther.size(); j-- > 0; ) {
+                    n = t.nextOther.get(j);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
@@ -183,7 +183,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                 t = n;
             }
         }
-        return t._value;
+        return t.value;
     }
 
     @Override
@@ -191,16 +191,16 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         TreeTrie<V> t = this;
         for (int i = 0; i < len; i++) {
             byte c = b[offset + i];
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
+                if (t.nextIndex[index] == null)
                     break;
-                t = t._nextIndex[index];
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int j = t._nextOther.size(); j-- > 0; ) {
-                    n = t._nextOther.get(j);
-                    if (n._c == c)
+                for (int j = t.nextOther.size(); j-- > 0; ) {
+                    n = t.nextOther.get(j);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
@@ -210,7 +210,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
             }
 
             // Is the next Trie is a match
-            if (t._key != null) {
+            if (t.key != null) {
                 // Recurse so we can remember this possibility
                 V best = t.getBest(b, offset + i + 1, len - i - 1);
                 if (best != null)
@@ -218,7 +218,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                 break;
             }
         }
-        return t._value;
+        return t.value;
     }
 
     @Override
@@ -226,16 +226,16 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         TreeTrie<V> t = this;
         for (int i = 0; i < len; i++) {
             byte c = (byte) (0xff & s.charAt(offset + i));
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
+                if (t.nextIndex[index] == null)
                     break;
-                t = t._nextIndex[index];
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int j = t._nextOther.size(); j-- > 0; ) {
-                    n = t._nextOther.get(j);
-                    if (n._c == c)
+                for (int j = t.nextOther.size(); j-- > 0; ) {
+                    n = t.nextOther.get(j);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
@@ -245,7 +245,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
             }
 
             // Is the next Trie is a match
-            if (t._key != null) {
+            if (t.key != null) {
                 // Recurse so we can remember this possibility
                 V best = t.getBest(s, offset + i + 1, len - i - 1);
                 if (best != null)
@@ -253,7 +253,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                 break;
             }
         }
-        return t._value;
+        return t.value;
     }
 
     @Override
@@ -268,16 +268,16 @@ public class TreeTrie<V> extends AbstractTrie<V> {
         int pos = b.position() + offset;
         for (int i = 0; i < len; i++) {
             byte c = b.get(pos++);
-            int index = c >= 0 && c < 0x7f ? __lookup[c] : -1;
+            int index = c >= 0 && c < 0x7f ? LOOKUP[c] : -1;
             if (index >= 0) {
-                if (t._nextIndex[index] == null)
+                if (t.nextIndex[index] == null)
                     break;
-                t = t._nextIndex[index];
+                t = t.nextIndex[index];
             } else {
                 TreeTrie<V> n = null;
-                for (int j = t._nextOther.size(); j-- > 0; ) {
-                    n = t._nextOther.get(j);
-                    if (n._c == c)
+                for (int j = t.nextOther.size(); j-- > 0; ) {
+                    n = t.nextOther.get(j);
+                    if (n.ch == c)
                         break;
                     n = null;
                 }
@@ -287,7 +287,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
             }
 
             // Is the next Trie is a match
-            if (t._key != null) {
+            if (t.key != null) {
                 // Recurse so we can remember this possibility
                 V best = t.getBest(b, offset + i + 1, len - i - 1);
                 if (best != null)
@@ -295,7 +295,7 @@ public class TreeTrie<V> extends AbstractTrie<V> {
                 break;
             }
         }
-        return t._value;
+        return t.value;
     }
 
     @Override

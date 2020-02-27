@@ -88,6 +88,7 @@ abstract class AbstractAioTcpConnection(
             when (output) {
                 is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
+                else -> throw IllegalStateException("The output message type error.")
             }
         }
 
@@ -152,7 +153,7 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffer -> output.result.accept(Result(true, totalLength.toInt(), null))
                     is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                     is OutputBufferList -> output.result.accept(Result(true, totalLength, null))
-                    is ShutdownOutput -> output.result.accept(Result.createFailedResult(IllegalStateException("The output type error.")))
+                    else -> throw IllegalStateException("The output message type error")
                 }
             }
 
@@ -171,7 +172,7 @@ abstract class AbstractAioTcpConnection(
                 is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBufferList -> outputBuffers.result.accept(Result(false, -1, exception))
-                is ShutdownOutput -> outputBuffers.result.accept(Result.createFailedResult(exception))
+                else -> throw IllegalStateException("The output message type error")
             }
         }
     }
