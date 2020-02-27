@@ -132,12 +132,20 @@ object CoroutineLocalContext {
  * @param block The coroutine code block.
  * @return The deferred task result.
  */
-fun <T> runWithAttributesAsync(
+fun <T> runAndInheritParentAsync(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
-    return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
+    return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
+}
+
+fun <T> CoroutineScope.runAndInheritParentAsync(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    attributes: MutableMap<String, Any>? = null,
+    block: suspend CoroutineScope.() -> T
+): Deferred<T> {
+    return this.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
 
 fun <T> runAsync(
@@ -155,32 +163,40 @@ fun <T> runAsync(
  * @param block The coroutine code block.
  * @return The current job.
  */
-fun launchWithAttributes(
+fun launchAndInheritParentAttributes(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
-    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
+    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
+}
+
+fun CoroutineScope.launchAndInheritParentAttributes(
+    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+    attributes: MutableMap<String, Any>? = null,
+    block: suspend CoroutineScope.() -> Unit
+): Job {
+    return this.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
 
 fun launchJob(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
-    return GlobalScope.launch(context) { block.invoke(this) }
+    return GlobalScope.launch(context) { block(this) }
 }
 
 fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
-    launchJob(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+    launchJob(CoroutineDispatchers.ioBlocking) { block(this) }
 
 fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    runAsync(CoroutineDispatchers.ioBlocking) { block.invoke(this) }
+    runAsync(CoroutineDispatchers.ioBlocking) { block(this) }
 
 fun event(block: suspend CoroutineScope.() -> Unit): Job =
-    launchJob(CoroutineDispatchers.singleThread) { block.invoke(this) }
+    launchJob(CoroutineDispatchers.singleThread) { block(this) }
 
 fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    runAsync(CoroutineDispatchers.singleThread) { block.invoke(this) }
+    runAsync(CoroutineDispatchers.singleThread) { block(this) }
 
 /**
  * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.
@@ -190,10 +206,10 @@ fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
  * @param block The coroutine code block.
  * @return The result.
  */
-suspend fun <T> withAttributes(
+suspend fun <T> withContextAndInheritParentAttributes(
     context: ContinuationInterceptor = CoroutineDispatchers.computation,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
 ): T {
-    return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block.invoke(this) }
+    return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
