@@ -19,6 +19,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -84,8 +85,8 @@ abstract class AsyncHttp2Connection(
         private suspend fun flushOrStashDataFrameEntry(frameEntry: DataFrameEntry) {
             try {
                 val http2Stream = frameEntry.stream as AsyncHttp2Stream
-                val noStashedDataFrame = http2Stream.flushStashedDataFrameEntries()
-                if (noStashedDataFrame) {
+                val isEmpty = http2Stream.flushStashedDataFrameEntries()
+                if (isEmpty) {
                     val success = flushDataFrame(frameEntry)
                     if (!success) {
                         http2Stream.stashFrameEntry(frameEntry)
@@ -149,8 +150,7 @@ abstract class AsyncHttp2Connection(
             flowControl.onDataSending(stream, dataLength)
             stream.updateClose(dataFrame.isEndStream, CloseState.Event.BEFORE_SEND)
 
-            val writtenBytes = tcpConnection.write(frameBytes.byteBuffers, 0, frameBytes.byteBuffers.size).await()
-            tcpConnection.flush().await()
+            val writtenBytes = writeAndFlush(frameBytes.byteBuffers)
             frameEntry.dataRemaining -= dataLength
             frameEntry.writtenBytes += writtenBytes
 
@@ -204,10 +204,8 @@ abstract class AsyncHttp2Connection(
 
         private suspend fun flushControlFrames(frameEntry: ControlFrameEntry): Long {
             val stream = frameEntry.stream
-            var writeBytes = 0L
+            var writtenBytes = 0L
             frameLoop@ for (frame in frameEntry.frames) {
-                val byteBuffers = generator.control(frame).byteBuffers
-
                 when (frame.type) {
                     FrameType.HEADERS -> {
                         val headersFrame = frame as HeadersFrame
@@ -231,9 +229,9 @@ abstract class AsyncHttp2Connection(
                     }
                 }
 
-                val bytes = tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
-                tcpConnection.flush().await()
-                writeBytes += bytes
+                val byteBuffers = generator.control(frame).byteBuffers
+                val bytes = writeAndFlush(byteBuffers)
+                writtenBytes += bytes
 
                 when (frame.type) {
                     FrameType.HEADERS -> {
@@ -270,7 +268,13 @@ abstract class AsyncHttp2Connection(
                 }
             }
 
-            return writeBytes
+            return writtenBytes
+        }
+
+        private suspend fun writeAndFlush(byteBuffers: List<ByteBuffer>): Long {
+            return tcpConnection.write(byteBuffers, 0, byteBuffers.size)
+                .thenCompose { len -> tcpConnection.flush().thenApply { len } }
+                .await()
         }
 
         fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> {
