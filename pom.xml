@@ -633,9 +633,9 @@
             </build>
         </profile>
         <profile>
-            <id>jdk_11</id>
+            <id>jdk_11_plus</id>
             <activation>
-                <jdk>11</jdk>
+                <jdk>[11,)</jdk>
             </activation>
             <build>
                 <plugins>
