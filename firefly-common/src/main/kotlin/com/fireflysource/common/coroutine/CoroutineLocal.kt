@@ -1,7 +1,8 @@
 package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.*
-import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Retain a value in the coroutine scope.
@@ -124,79 +125,23 @@ object CoroutineLocalContext {
     }
 }
 
-/**
- * Starts an asynchronous task and inherits parent coroutine local attributes.
- *
- * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes merge into the parent coroutine context element.
- * @param block The coroutine code block.
- * @return The deferred task result.
- */
-fun <T> runAndInheritParentAsync(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+fun <T> CoroutineScope.inheritableAsync(
+    context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
+    start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
-    return GlobalScope.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
+    return this.async(context + CoroutineLocalContext.inheritParentElement(attributes), start) { block(this) }
 }
 
-fun <T> CoroutineScope.runAndInheritParentAsync(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+fun CoroutineScope.launchInheritable(
+    context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
-    block: suspend CoroutineScope.() -> T
-): Deferred<T> {
-    return this.async(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
-}
-
-fun <T> runAsync(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
-    block: suspend CoroutineScope.() -> T
-): Deferred<T> {
-    return GlobalScope.async(context) { block.invoke(this) }
-}
-
-/**
- * Starts an asynchronous task without the return value and inherits parent coroutine local attributes.
- *
- * @param context Additional to [CoroutineScope.coroutineContext] context of the coroutine.
- * @param attributes The attributes merge into the parent coroutine context element.
- * @param block The coroutine code block.
- * @return The current job.
- */
-fun launchAndInheritParentAttributes(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
-    attributes: MutableMap<String, Any>? = null,
+    start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
-    return GlobalScope.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
+    return this.launch(context + CoroutineLocalContext.inheritParentElement(attributes), start) { block(this) }
 }
-
-fun CoroutineScope.launchAndInheritParentAttributes(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
-    attributes: MutableMap<String, Any>? = null,
-    block: suspend CoroutineScope.() -> Unit
-): Job {
-    return this.launch(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
-}
-
-fun launchJob(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
-    block: suspend CoroutineScope.() -> Unit
-): Job {
-    return GlobalScope.launch(context) { block(this) }
-}
-
-fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
-    launchJob(CoroutineDispatchers.ioBlocking) { block(this) }
-
-fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    runAsync(CoroutineDispatchers.ioBlocking) { block(this) }
-
-fun event(block: suspend CoroutineScope.() -> Unit): Job =
-    launchJob(CoroutineDispatchers.singleThread) { block(this) }
-
-fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
-    runAsync(CoroutineDispatchers.singleThread) { block(this) }
 
 /**
  * Starts an asynchronous task waiting the result and inherits parent coroutine local attributes.
@@ -206,10 +151,28 @@ fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
  * @param block The coroutine code block.
  * @return The result.
  */
-suspend fun <T> withContextAndInheritParentAttributes(
-    context: ContinuationInterceptor = CoroutineDispatchers.computation,
+suspend fun <T> withContextInheritable(
+    context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
     block: suspend CoroutineScope.() -> T
 ): T {
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
+
+fun compute(block: suspend CoroutineScope.() -> Unit): Job =
+    GlobalScope.launch(CoroutineDispatchers.computation) { block(this) }
+
+fun <T> computeAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    GlobalScope.async(CoroutineDispatchers.computation) { block(this) }
+
+fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
+    GlobalScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
+
+fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    GlobalScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
+
+fun event(block: suspend CoroutineScope.() -> Unit): Job =
+    GlobalScope.launch(CoroutineDispatchers.singleThread) { block(this) }
+
+fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+    GlobalScope.async(CoroutineDispatchers.singleThread) { block(this) }

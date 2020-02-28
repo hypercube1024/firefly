@@ -45,20 +45,29 @@ class TestCoroutineLocal {
 
     }
 
-    private suspend fun testLocalAttr(key: String, expect: Int) = withContextAndInheritParentAttributes {
+    private suspend fun testLocalAttr(key: String, expect: Int) = withContextInheritable {
         assertEquals(33, ctx.getAttr<Int>("key33"))
         assertEquals(expect, ctx.getAttr<Int>("newKey"))
-        println("beforeSuspend ${ctx.getAttributes()}")
-        launchAndInheritParentAttributes(attributes = mutableMapOf("d1" to 200)) {
+        println("beforeSuspend ${ctx.getAttributes()}. context: $coroutineContext")
+        launchInheritable(attributes = mutableMapOf("d1" to 200)) {
             ctx.setAttr("c1", 100)
             assertEquals(100, ctx.getAttr<Int>("c1"))
             assertEquals(expect, ctx.getAttr<Int>(key))
             assertEquals(33, ctx.getAttr<Int>("key33"))
             assertEquals(expect, ctx.getAttr<Int>("newKey"))
             assertEquals("OK", ctx.getAttrOrDefault("keyX") { "OK" })
-            println("inner fun [expected: $expect, actual: ${ctx.getAttr<Int>(key)}]")
+            println("inner fun. context: $coroutineContext")
             assertEquals(200, ctx.getAttr<Int>("d1"))
         }.join()
+
+        val old = inheritableAsync {
+            val old = ctx.setAttr("c1", 200)
+            assertEquals(200, ctx.getAttr<Int>("c1"))
+            assertEquals(33, ctx.getAttr<Int>("key33"))
+            old
+        }
+        assertNull(old.await())
+
         println("afterSuspend ${ctx.getAttributes()}")
         assertNull(ctx.getAttr("d1"))
         assertNull(ctx.getAttr("c1"))
@@ -69,7 +78,8 @@ class TestCoroutineLocal {
     fun testCancelChannel(): Unit = runBlocking {
         val count = AtomicInteger()
         val channel = Channel<Int>()
-        val job = launchJob {
+        val job = computeAsync {
+            println("job context: ${Thread.currentThread().name}")
             while (true) {
                 val i = channel.receive()
                 println("test: $i")
@@ -77,7 +87,7 @@ class TestCoroutineLocal {
             }
         }
 
-        launchJob {
+        compute {
             (1..10).forEach {
                 delay(100)
                 channel.offer(it)
