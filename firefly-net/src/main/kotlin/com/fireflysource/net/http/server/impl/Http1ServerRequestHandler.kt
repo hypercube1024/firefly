@@ -110,7 +110,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         }
     }
 
-    private suspend fun notifyException(context: RoutingContext?, exception: Exception) {
+    private suspend fun notifyException(context: RoutingContext?, exception: Throwable) {
         try {
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
             connectionListener.onException(context, exception).await()

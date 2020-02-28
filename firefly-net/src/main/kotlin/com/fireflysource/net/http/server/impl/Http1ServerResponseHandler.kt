@@ -7,7 +7,8 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.assert
-import com.fireflysource.net.tcp.buffer.OutputBuffers
+import com.fireflysource.net.tcp.buffer.DelegatedOutputBufferArray
+import com.fireflysource.net.tcp.buffer.OutputBufferArray
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -194,23 +195,26 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
 
 }
 
-interface Http1ResponseMessage
+sealed class Http1ResponseMessage
 
 data class Header(
     val response: MetaData.Response,
     val future: CompletableFuture<Void>
-) : Http1ResponseMessage
+) : Http1ResponseMessage()
 
 data class Http1OutputBuffer(
     val buffer: ByteBuffer, val result: Consumer<Result<Int>>
-) : Http1ResponseMessage
+) : Http1ResponseMessage()
 
 open class Http1OutputBuffers(
-    buffers: Array<ByteBuffer>,
-    offset: Int,
-    length: Int,
-    result: Consumer<Result<Long>>
-) : OutputBuffers(buffers, offset, length, result), Http1ResponseMessage
+    val buffers: Array<ByteBuffer>,
+    val offset: Int,
+    val length: Int,
+    val result: Consumer<Result<Long>>,
+    private val outputBufferArray: DelegatedOutputBufferArray = DelegatedOutputBufferArray(
+        buffers, offset, length, result
+    )
+) : OutputBufferArray by outputBufferArray, Http1ResponseMessage()
 
 class Http1OutputBufferList(
     bufferList: List<ByteBuffer>,
@@ -219,4 +223,4 @@ class Http1OutputBufferList(
     result: Consumer<Result<Long>>
 ) : Http1OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
-data class EndResponse(val future: CompletableFuture<Void>, val closeConnection: Boolean) : Http1ResponseMessage
+data class EndResponse(val future: CompletableFuture<Void>, val closeConnection: Boolean) : Http1ResponseMessage()

@@ -91,7 +91,7 @@ class TestHttp1ServerConnection {
                     .end("hello http1 server!")
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -130,7 +130,7 @@ class TestHttp1ServerConnection {
                 return ctx.write(buffer).end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -176,7 +176,7 @@ class TestHttp1ServerConnection {
                     .end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -218,7 +218,7 @@ class TestHttp1ServerConnection {
                     .end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -262,7 +262,7 @@ class TestHttp1ServerConnection {
                     .end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -300,7 +300,7 @@ class TestHttp1ServerConnection {
                 return ctx.redirect("http://${address.hostName}:${address.port}/r0")
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -340,7 +340,7 @@ class TestHttp1ServerConnection {
                 return ctx.end("receive ${ctx.stringBody} ok.")
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -380,7 +380,7 @@ class TestHttp1ServerConnection {
                 return ctx.contentProvider(stringBody("收到：${content}。长度：${ctx.contentLength}", charset)).end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -420,7 +420,7 @@ class TestHttp1ServerConnection {
                 return ctx.end("receive ${ctx.stringBody} OK")
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 exception.printStackTrace()
                 return Result.DONE
             }
@@ -461,7 +461,7 @@ class TestHttp1ServerConnection {
                 return Result.DONE
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 println("server exception. ${exception.message}")
                 return Result.DONE
             }
@@ -504,7 +504,7 @@ class TestHttp1ServerConnection {
                     .end()
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Exception): CompletableFuture<Void> {
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
                 println("server exception. ${exception.message}")
                 return Result.DONE
             }

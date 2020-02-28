@@ -14,7 +14,7 @@ class Http2ServerConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    listener: Http2Connection.Listener = defaultHttp2ConnectionListener
+    private val listener: Http2Connection.Listener = defaultHttp2ConnectionListener
 ) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), ServerParser.Listener, HttpServerConnection {
 
     companion object {
@@ -22,13 +22,16 @@ class Http2ServerConnection(
     }
 
     private val parser: ServerParser = ServerParser(this, config.maxDynamicTableSize, config.maxHeaderSize)
-    private var connectionListener: HttpServerConnection.Listener? = null
+    private var connectionListener: HttpServerConnection.Listener = HttpServerConnection.EMPTY_LISTENER
 
     init {
         parser.init(UnaryOperator.identity())
     }
 
     override fun begin() {
+        if (listener is Http2ServerConnectionListener) {
+            listener.connectionListener = connectionListener
+        }
         launchParserJob(parser)
     }
 

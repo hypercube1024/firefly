@@ -91,7 +91,7 @@ class TestHttp2ClientConnection {
                     }
                 }
                 Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(address)
+            }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 
@@ -130,72 +130,72 @@ class TestHttp2ClientConnection {
                         println("Server receives go away frame: $frame")
                     }
 
-                override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
-                    val headers = LinkedList<HeadersFrame>()
-                    var responseClient100Continue = false
-                    val trailer = HttpFields()
-                    var receivedData = false
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        val headers = LinkedList<HeadersFrame>()
+                        var responseClient100Continue = false
+                        val trailer = HttpFields()
+                        var receivedData = false
 
-                    fun response100Continue(stream: Stream) {
-                        if (!responseClient100Continue) {
-                            val has100Continue = headers
-                                .map { it.metaData.fields }
-                                .any { HttpHeaderValue.CONTINUE.`is`(it[HttpHeader.EXPECT]) }
-                            if (has100Continue) {
-                                val continueResponse =
-                                    MetaData.Response(HttpVersion.HTTP_2, HttpStatus.CONTINUE_100, HttpFields())
-                                val continueHeaders = HeadersFrame(stream.id, continueResponse, null, false)
-                                stream.headers(continueHeaders) {}
-                                responseClient100Continue = true
-                            }
-                        }
-                    }
-
-                    fun onMessageComplete(stream: Stream) {
-                        val fields = HttpFields()
-                        fields.put("Test-100-Continue", "100")
-                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
-                        val headersFrame = HeadersFrame(stream.id, response, null, false)
-                        stream.headers(headersFrame) {}
-
-                        val data = BufferUtils.toBuffer("receive data success.")
-                        val dataFrame = DataFrame(stream.id, data, true)
-                        stream.data(dataFrame) {}
-                    }
-
-                    headers.add(frame)
-                    response100Continue(stream)
-                    if (frame.isEndStream) {
-                        onMessageComplete(stream)
-                    }
-                    return object : Stream.Listener.Adapter() {
-
-                        override fun onHeaders(stream: Stream, headersFrame: HeadersFrame) {
-
-                            if (receivedData) {
-                                trailer.addAll(headersFrame.metaData.fields)
-                            } else {
-                                headers.add(headersFrame)
-                            }
-                            response100Continue(stream)
-                            if (headersFrame.isEndStream) {
-                                onMessageComplete(stream)
+                        fun response100Continue(stream: Stream) {
+                            if (!responseClient100Continue) {
+                                val has100Continue = headers
+                                    .map { it.metaData.fields }
+                                    .any { HttpHeaderValue.CONTINUE.`is`(it[HttpHeader.EXPECT]) }
+                                if (has100Continue) {
+                                    val continueResponse =
+                                        MetaData.Response(HttpVersion.HTTP_2, HttpStatus.CONTINUE_100, HttpFields())
+                                    val continueHeaders = HeadersFrame(stream.id, continueResponse, null, false)
+                                    stream.headers(continueHeaders) {}
+                                    responseClient100Continue = true
+                                }
                             }
                         }
 
-                        override fun onData(stream: Stream, dataFrame: DataFrame, result: Consumer<Result<Void>>) {
-                            receivedData = true
-                            response100Continue(stream)
-                            if (dataFrame.isEndStream) {
-                                onMessageComplete(stream)
+                        fun onMessageComplete(stream: Stream) {
+                            val fields = HttpFields()
+                            fields.put("Test-100-Continue", "100")
+                            val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                            val headersFrame = HeadersFrame(stream.id, response, null, false)
+                            stream.headers(headersFrame) {}
+
+                            val data = BufferUtils.toBuffer("receive data success.")
+                            val dataFrame = DataFrame(stream.id, data, true)
+                            stream.data(dataFrame) {}
+                        }
+
+                        headers.add(frame)
+                        response100Continue(stream)
+                        if (frame.isEndStream) {
+                            onMessageComplete(stream)
+                        }
+                        return object : Stream.Listener.Adapter() {
+
+                            override fun onHeaders(stream: Stream, headersFrame: HeadersFrame) {
+
+                                if (receivedData) {
+                                    trailer.addAll(headersFrame.metaData.fields)
+                                } else {
+                                    headers.add(headersFrame)
+                                }
+                                response100Continue(stream)
+                                if (headersFrame.isEndStream) {
+                                    onMessageComplete(stream)
+                                }
                             }
-                            result.accept(Result.SUCCESS)
+
+                            override fun onData(stream: Stream, dataFrame: DataFrame, result: Consumer<Result<Void>>) {
+                                receivedData = true
+                                response100Continue(stream)
+                                if (dataFrame.isEndStream) {
+                                    onMessageComplete(stream)
+                                }
+                                result.accept(Result.SUCCESS)
+                            }
                         }
                     }
                 }
-            }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(address)
+                Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
+            }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 
@@ -237,80 +237,81 @@ class TestHttp2ClientConnection {
                         println("Server receives go away frame: $frame")
                     }
 
-                override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
-                    val headers = LinkedList<HeadersFrame>()
-                    var responseClient100Continue = false
-                    val trailer = HttpFields()
-                    var receivedData = false
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        val headers = LinkedList<HeadersFrame>()
+                        var responseClient100Continue = false
+                        val trailer = HttpFields()
+                        var receivedData = false
 
-                    fun response100Continue(stream: Stream) {
-                        if (!responseClient100Continue) {
-                            val has100Continue = headers
-                                .map { it.metaData.fields }
-                                .any { HttpHeaderValue.CONTINUE.`is`(it[HttpHeader.EXPECT]) }
-                            if (has100Continue) {
-                                val continueResponse =
-                                    MetaData.Response(HttpVersion.HTTP_2, HttpStatus.CONTINUE_100, HttpFields())
-                                val continueHeaders = HeadersFrame(stream.id, continueResponse, null, false)
-                                stream.headers(continueHeaders) {}
-                                responseClient100Continue = true
-                            }
-                        }
-                    }
-
-                    fun onMessageComplete(stream: Stream) {
-                        val fields = HttpFields()
-                        fields.put("Test-100-Continue", "100")
-                        fields.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
-                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
-                        val headersFrame = HeadersFrame(stream.id, response, null, false)
-                        stream.headers(headersFrame) {}
-
-                        val data = BufferUtils.toBuffer("receive data success.")
-                        val dataFrame = DataFrame(stream.id, data, false)
-                        stream.data(dataFrame) {}
-
-                        val trailers = HttpFields()
-                        trailers.put("t1", "v1")
-                        trailers.put("t2", "v2")
-                        trailers.put("t3", "v3")
-                        val trailersFrame = HeadersFrame(stream.id, MetaData(HttpVersion.HTTP_2, trailers), null, true)
-                        stream.headers(trailersFrame) {}
-                    }
-
-                    headers.add(frame)
-                    response100Continue(stream)
-                    if (frame.isEndStream) {
-                        onMessageComplete(stream)
-                    }
-                    return object : Stream.Listener.Adapter() {
-
-                        override fun onHeaders(stream: Stream, headersFrame: HeadersFrame) {
-
-                            if (receivedData) {
-                                trailer.addAll(headersFrame.metaData.fields)
-                            } else {
-                                headers.add(headersFrame)
-                            }
-                            response100Continue(stream)
-                            if (headersFrame.isEndStream) {
-                                onMessageComplete(stream)
+                        fun response100Continue(stream: Stream) {
+                            if (!responseClient100Continue) {
+                                val has100Continue = headers
+                                    .map { it.metaData.fields }
+                                    .any { HttpHeaderValue.CONTINUE.`is`(it[HttpHeader.EXPECT]) }
+                                if (has100Continue) {
+                                    val continueResponse =
+                                        MetaData.Response(HttpVersion.HTTP_2, HttpStatus.CONTINUE_100, HttpFields())
+                                    val continueHeaders = HeadersFrame(stream.id, continueResponse, null, false)
+                                    stream.headers(continueHeaders) {}
+                                    responseClient100Continue = true
+                                }
                             }
                         }
 
-                        override fun onData(stream: Stream, dataFrame: DataFrame, result: Consumer<Result<Void>>) {
-                            receivedData = true
-                            response100Continue(stream)
-                            if (dataFrame.isEndStream) {
-                                onMessageComplete(stream)
+                        fun onMessageComplete(stream: Stream) {
+                            val fields = HttpFields()
+                            fields.put("Test-100-Continue", "100")
+                            fields.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
+                            val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                            val headersFrame = HeadersFrame(stream.id, response, null, false)
+                            stream.headers(headersFrame) {}
+
+                            val data = BufferUtils.toBuffer("receive data success.")
+                            val dataFrame = DataFrame(stream.id, data, false)
+                            stream.data(dataFrame) {}
+
+                            val trailers = HttpFields()
+                            trailers.put("t1", "v1")
+                            trailers.put("t2", "v2")
+                            trailers.put("t3", "v3")
+                            val trailersFrame =
+                                HeadersFrame(stream.id, MetaData(HttpVersion.HTTP_2, trailers), null, true)
+                            stream.headers(trailersFrame) {}
+                        }
+
+                        headers.add(frame)
+                        response100Continue(stream)
+                        if (frame.isEndStream) {
+                            onMessageComplete(stream)
+                        }
+                        return object : Stream.Listener.Adapter() {
+
+                            override fun onHeaders(stream: Stream, headersFrame: HeadersFrame) {
+
+                                if (receivedData) {
+                                    trailer.addAll(headersFrame.metaData.fields)
+                                } else {
+                                    headers.add(headersFrame)
+                                }
+                                response100Continue(stream)
+                                if (headersFrame.isEndStream) {
+                                    onMessageComplete(stream)
+                                }
                             }
-                            result.accept(Result.SUCCESS)
+
+                            override fun onData(stream: Stream, dataFrame: DataFrame, result: Consumer<Result<Void>>) {
+                                receivedData = true
+                                response100Continue(stream)
+                                if (dataFrame.isEndStream) {
+                                    onMessageComplete(stream)
+                                }
+                                result.accept(Result.SUCCESS)
+                            }
                         }
                     }
                 }
-            }
-            Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
-        }.listen(address)
+                Http2ServerConnection(httpConfig, connection, SimpleFlowControlStrategy(), connectionListener).begin()
+            }.listen(address)
 
         val httpClient = HttpClientFactory.create()
 

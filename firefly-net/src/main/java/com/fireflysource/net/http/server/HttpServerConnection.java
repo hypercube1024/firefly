@@ -52,10 +52,10 @@ public interface HttpServerConnection extends HttpConnection {
          * When the connection parses the error HTTP message, invokes this method.
          *
          * @param context   The routing context. The context may be null.
-         * @param exception An exception.
+         * @param throwable An exception.
          * @return The future result.
          */
-        CompletableFuture<Void> onException(RoutingContext context, Exception exception);
+        CompletableFuture<Void> onException(RoutingContext context, Throwable throwable);
 
         /**
          * The empty listener implement.
@@ -73,7 +73,7 @@ public interface HttpServerConnection extends HttpConnection {
             }
 
             @Override
-            public CompletableFuture<Void> onException(RoutingContext context, Exception exception) {
+            public CompletableFuture<Void> onException(RoutingContext context, Throwable throwable) {
                 return Result.DONE;
             }
         }
