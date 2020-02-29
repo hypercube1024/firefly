@@ -839,6 +839,16 @@ abstract class AsyncHttp2Connection(
         tcpConnection.close()
     }
 
+    override fun closeFuture(): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        close(ErrorCode.NO_ERROR.code, "no_error", futureToConsumer(future))
+        return future
+    }
+
+    override fun close() {
+        closeFuture()
+    }
+
 
     // go away frame
     override fun onGoAway(frame: GoAwayFrame) {
