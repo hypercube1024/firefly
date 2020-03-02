@@ -16,11 +16,6 @@ import static com.fireflysource.common.string.StringUtils.replace;
 public class JavassistClassProxyFactory implements ClassProxyFactory {
 
     public static final JavassistClassProxyFactory INSTANCE = new JavassistClassProxyFactory();
-    public static ClassLoader classLoader;
-
-    static {
-        classLoader = Thread.currentThread().getContextClassLoader();
-    }
 
     private JavassistClassProxyFactory() {
     }
@@ -45,7 +40,7 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
         }
 
         MethodProxy[] methodProxies = getMethodProxies(methods);
-        return (T) cc.toClass(classLoader, null)
+        return (T) cc.toClass(this.getClass())
                      .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
                      .newInstance(proxy, instance, methodProxies);
     }
@@ -151,7 +146,7 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
     }
 
     private CtClass buildClass(ClassPool classPool, Class<?> clazz) throws NotFoundException, CannotCompileException {
-        String className = "com.firefly.utils.ClassProxy" + UUID.randomUUID().toString().replace("-", "");
+        String className = "com.fireflysource.common.bytecode.ClassProxy" + UUID.randomUUID().toString().replace("-", "");
         CtClass cc = classPool.makeClass(className);
         cc.setSuperclass(classPool.get(clazz.getName()));
         return cc;

@@ -23,14 +23,14 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(ArrayProxy.class));
 
-            CtClass cc = classPool.makeClass("com.firefly.utils.ArrayField" + UUID.randomUUID().toString().replace("-", ""));
+            CtClass cc = classPool.makeClass("com.fireflysource.common.bytecode.ArrayField" + UUID.randomUUID().toString().replace("-", ""));
             cc.addInterface(classPool.get(ArrayProxy.class.getName()));
 
             cc.addMethod(CtMethod.make(createArraySizeCode(clazz), cc));
             cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
             cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
 
-            return (ArrayProxy) cc.toClass(classLoader, null).getConstructor().newInstance();
+            return (ArrayProxy) cc.toClass(this.getClass()).getConstructor().newInstance();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -83,7 +83,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(FieldProxy.class));
 
-            CtClass cc = classPool.makeClass("com.firefly.utils.ProxyField" + UUID.randomUUID().toString().replace("-", ""));
+            CtClass cc = classPool.makeClass("com.fireflysource.common.bytecode.ProxyField" + UUID.randomUUID().toString().replace("-", ""));
             cc.addInterface(classPool.get(FieldProxy.class.getName()));
             cc.addField(CtField.make("private java.lang.reflect.Field field;", cc));
 
@@ -95,7 +95,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
             cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 
-            return (FieldProxy) cc.toClass(classLoader, null).getConstructor(Field.class).newInstance(field);
+            return (FieldProxy) cc.toClass(this.getClass()).getConstructor(Field.class).newInstance(field);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -147,7 +147,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             ClassPool classPool = ClassPool.getDefault();
             classPool.insertClassPath(new ClassClassPath(MethodProxy.class));
 
-            CtClass cc = classPool.makeClass("com.firefly.utils.ProxyMethod" + UUID.randomUUID().toString().replace("-", ""));
+            CtClass cc = classPool.makeClass("com.fireflysource.common.bytecode.ProxyMethod" + UUID.randomUUID().toString().replace("-", ""));
 
             cc.addInterface(classPool.get(MethodProxy.class.getName()));
             cc.addField(CtField.make("private java.lang.reflect.Method method;", cc));
@@ -159,7 +159,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             cc.addMethod(CtMethod.make("public java.lang.reflect.Method method(){return method;}", cc));
             cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 
-            return (MethodProxy) cc.toClass(classLoader, null).getConstructor(Method.class).newInstance(method);
+            return (MethodProxy) cc.toClass(this.getClass()).getConstructor(Method.class).newInstance(method);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
