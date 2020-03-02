@@ -30,7 +30,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             cc.addMethod(CtMethod.make(createArrayGetCode(clazz), cc));
             cc.addMethod(CtMethod.make(createArraySetCode(clazz), cc));
 
-            return (ArrayProxy) cc.toClass(this.getClass()).getConstructor().newInstance();
+            return (ArrayProxy) JavassistUtils.getClass(cc).getConstructor().newInstance();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -95,7 +95,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             cc.addMethod(CtMethod.make(createFieldGetterMethodCode(field), cc));
             cc.addMethod(CtMethod.make(createFieldSetterMethodCode(field), cc));
 
-            return (FieldProxy) cc.toClass(this.getClass()).getConstructor(Field.class).newInstance(field);
+            return (FieldProxy) JavassistUtils.getClass(cc).getConstructor(Field.class).newInstance(field);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -159,7 +159,7 @@ public class JavassistReflectionProxyFactory extends AbstractProxyFactory {
             cc.addMethod(CtMethod.make("public java.lang.reflect.Method method(){return method;}", cc));
             cc.addMethod(CtMethod.make(createInvokeMethodCode(method), cc));
 
-            return (MethodProxy) cc.toClass(this.getClass()).getConstructor(Method.class).newInstance(method);
+            return (MethodProxy) JavassistUtils.getClass(cc).getConstructor(Method.class).newInstance(method);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

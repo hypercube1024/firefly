@@ -40,10 +40,12 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
         }
 
         MethodProxy[] methodProxies = getMethodProxies(methods);
-        return (T) cc.toClass(this.getClass())
-                     .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
-                     .newInstance(proxy, instance, methodProxies);
+        return (T) JavassistUtils
+                .getClass(cc)
+                .getConstructor(ClassProxy.class, clazz, MethodProxy[].class)
+                .newInstance(proxy, instance, methodProxies);
     }
+
 
     private List<String> buildMethodCodes(Method[] methods) {
         return IntStream

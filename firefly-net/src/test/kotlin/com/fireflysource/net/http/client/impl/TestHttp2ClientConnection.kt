@@ -60,7 +60,7 @@ class TestHttp2ClientConnection {
     @DisplayName("should send request and receive response successfully.")
     fun testSendRequest(): Unit = runBlocking {
         val httpConfig = HttpConfig()
-        val count = 100
+        val count = 50
 
         val httpServer =
             TcpServerFactory.create().timeout(timeout).enableSecureConnection().onAcceptAsync { connection ->
