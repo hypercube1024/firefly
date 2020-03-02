@@ -36,7 +36,7 @@ import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-class TestHttp1ServerConnection {
+class TestHttpServerConnection {
 
     companion object {
         @JvmStatic
