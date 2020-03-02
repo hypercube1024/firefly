@@ -148,7 +148,7 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             }
 
             override fun onReset(stream: Stream, frame: ResetFrame, result: Consumer<Result<Void>>) {
-                val e = IllegalStateException(ErrorCode.toString(frame.error, "stream exception"))
+                val e = IllegalStateException(ErrorCode.toString(frame.error, "stream reset. id: ${stream.id}"))
                 connectionListener.onException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
                     .exceptionally {
@@ -158,7 +158,8 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             }
 
             override fun onFailure(stream: Stream, error: Int, reason: String, result: Consumer<Result<Void>>) {
-                val e = IllegalStateException(ErrorCode.toString(error, "stream failure. $reason"))
+                val defaultError = "stream failure. id: ${stream.id}, reason: $reason"
+                val e = IllegalStateException(ErrorCode.toString(error, defaultError))
                 connectionListener.onException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
                     .exceptionally {
