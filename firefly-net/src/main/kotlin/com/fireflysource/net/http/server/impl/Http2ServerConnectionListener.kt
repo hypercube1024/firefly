@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -16,7 +17,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.util.function.Consumer
 
-class Http2ServerConnectionListener(private val http2ServerConnection: Http2ServerConnection) :
+class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatcher) :
     Http2Connection.Listener.Adapter() {
 
     companion object {
@@ -127,11 +128,13 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
     }
 
     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+        val http2Connection = stream.http2Connection as Http2ServerConnection
         val streamScope = newCoroutineScope(stream)
         val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request)
-        val response = Http2ServerResponse(http2ServerConnection, stream)
-        val context = AsyncRoutingContext(request, response, http2ServerConnection)
+        val response = Http2ServerResponse(http2Connection, stream)
+        val context = AsyncRoutingContext(request, response, http2Connection)
         val handler = Http2StreamHandler(streamScope, context)
+        handler.sendMessage(HeadersInputMessage(frame))
 
         return object : Stream.Listener.Adapter() {
 
@@ -173,8 +176,8 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
 
     private fun newCoroutineScope(stream: Stream): CoroutineScope {
         return CoroutineScope(
-            http2ServerConnection.coroutineScope.coroutineContext +
-                    SupervisorJob(http2ServerConnection.supervisorJob) +
+            dispatcher.coroutineScope.coroutineContext +
+                    SupervisorJob(dispatcher.supervisorJob) +
                     CoroutineName("StreamScope#${stream.id}")
         )
     }

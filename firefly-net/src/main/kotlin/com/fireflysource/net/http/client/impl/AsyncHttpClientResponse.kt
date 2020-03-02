@@ -24,7 +24,8 @@ class AsyncHttpClientResponse(
 
     override fun getStatus(): Int = response.status
 
-    override fun getReason(): String = response.reason
+    override fun getReason(): String =
+        Optional.ofNullable(response.reason).orElseGet { HttpStatus.getMessage(response.status) }
 
     override fun getHttpVersion(): HttpVersion = response.httpVersion
 
@@ -34,7 +35,8 @@ class AsyncHttpClientResponse(
 
     override fun getContentLength(): Long = response.contentLength
 
-    override fun getTrailerSupplier(): Supplier<HttpFields> = response.trailerSupplier
+    override fun getTrailerSupplier(): Supplier<HttpFields> =
+        Optional.ofNullable(response.trailerSupplier).orElseGet { Supplier { HttpFields() } }
 
     override fun getStringBody(): String = Optional
         .ofNullable(contentHandler)

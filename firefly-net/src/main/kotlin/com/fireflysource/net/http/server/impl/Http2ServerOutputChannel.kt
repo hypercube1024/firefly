@@ -32,7 +32,6 @@ class Http2ServerOutputChannel(
     override fun commit(): CompletableFuture<Void> {
         if (committed.compareAndSet(false, true)) {
             messages.offer(HeadersOutputMessage)
-            writeOutputMessage()
         }
         return Result.DONE
     }
