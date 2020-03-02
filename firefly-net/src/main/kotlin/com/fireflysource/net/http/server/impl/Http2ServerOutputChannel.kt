@@ -90,7 +90,7 @@ class Http2ServerOutputChannel(
     }
 
     override fun close() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        closeFuture()
     }
 
     private fun writeOutputMessage(): Boolean {
