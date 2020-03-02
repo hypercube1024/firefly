@@ -78,8 +78,7 @@ class Http2ServerConnection(
         val metaData = frame.metaData
         when {
             metaData.isRequest -> onHttpRequest(stream, streamId, frame)
-            metaData.isResponse -> onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_request")
-            else -> onTrailers(stream, frame, streamId)
+            else -> onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "invalid_request")
         }
     }
 
@@ -100,17 +99,6 @@ class Http2ServerConnection(
             onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "duplicate_stream")
         }
     }
-
-    private fun onTrailers(stream: Stream?, frame: HeadersFrame, streamId: Int) {
-        if (stream != null && stream is AsyncHttp2Stream) {
-            stream.process(frame, discard())
-            notifyHeaders(stream, frame)
-        } else {
-            log.debug { "Stream: $streamId not found" }
-            onConnectionFailure(ErrorCode.PROTOCOL_ERROR.code, "unexpected_headers_frame")
-        }
-    }
-
 
     // promise frame
     override fun onPushPromise(frame: PushPromiseFrame) {
