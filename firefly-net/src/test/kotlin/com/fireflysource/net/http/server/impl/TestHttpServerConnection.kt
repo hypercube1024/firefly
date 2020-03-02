@@ -14,6 +14,8 @@ import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.TcpServerFactory
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -43,6 +45,7 @@ class TestHttpServerConnection {
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
                 arguments("http1", "http"),
+                arguments("http1", "https"),
                 arguments("http2", "https")
             )
         }
@@ -65,8 +68,9 @@ class TestHttpServerConnection {
 
     private fun createHttpServer(protocol: String, schema: String, listener: HttpServerConnection.Listener): TcpServer {
         val server = TcpServerFactory.create().timeout(120 * 1000)
-        if (protocol == "http1") {
-            server.enableOutputBuffer()
+        when (protocol) {
+            "http1" -> server.enableOutputBuffer().supportedProtocols(listOf(HTTP1.value))
+            "http2" -> server.supportedProtocols(listOf(HTTP2.value, HTTP1.value))
         }
         if (schema == "https") {
             server.enableSecureConnection()

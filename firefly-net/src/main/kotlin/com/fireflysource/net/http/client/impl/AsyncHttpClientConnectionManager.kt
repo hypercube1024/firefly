@@ -14,7 +14,7 @@ import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
-import com.fireflysource.net.tcp.aio.SupportedProtocolEnum
+import com.fireflysource.net.tcp.aio.ApplicationProtocol
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.await
@@ -104,7 +104,7 @@ class AsyncHttpClientConnectionManager(
             val connection = createTcpConnection(address).await()
             val httpConnection = if (connection.isSecureConnection) {
                 when (connection.beginHandshake().await()) {
-                    SupportedProtocolEnum.H2.value -> createHttp2ClientConnection(connection)
+                    ApplicationProtocol.HTTP2.value -> createHttp2ClientConnection(connection)
                     else -> createHttp1ClientConnection(connection)
                 }
             } else {

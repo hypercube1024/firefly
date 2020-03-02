@@ -17,11 +17,11 @@ data class TcpConfig(
     var enableOutputBuffer: Boolean = false
 )
 
-enum class SupportedProtocolEnum(val value: String) {
-    H2("h2"), HTTP_1_1("http/1.1")
+enum class ApplicationProtocol(val value: String) {
+    HTTP2("h2"), HTTP1("http/1.1")
 }
 
-val defaultSupportedProtocols: List<String> = SupportedProtocolEnum.values().map { it.value }
+val defaultSupportedProtocols: List<String> = ApplicationProtocol.values().map { it.value }
 
 val schemaDefaultPort = mapOf(
     "http" to 80,
