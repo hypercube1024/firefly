@@ -30,7 +30,7 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
         private val context: AsyncRoutingContext
     ) {
 
-        private val streamMessageChannel: Channel<Http2StreamMessage> = Channel(Channel.UNLIMITED)
+        private val streamMessageChannel: Channel<Http2StreamInputMessage> = Channel(Channel.UNLIMITED)
         private val trailer: HttpFields by lazy { HttpFields() }
         private var receivedData = false
 
@@ -42,8 +42,8 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             messageLoop@ while (true) {
                 try {
                     when (val message = streamMessageChannel.receive()) {
-                        is HeadersMessage -> handleHeaders(message)
-                        is DataMessage -> handleData(message)
+                        is HeadersInputMessage -> handleHeaders(message)
+                        is DataInputMessage -> handleData(message)
                         is StreamShutdown -> break@messageLoop
                     }
                 } catch (e: Throwable) {
@@ -53,11 +53,11 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             }
         }
 
-        fun sendMessage(message: Http2StreamMessage) {
+        fun sendMessage(message: Http2StreamInputMessage) {
             streamMessageChannel.offer(message)
         }
 
-        suspend fun handleHeaders(message: HeadersMessage) {
+        suspend fun handleHeaders(message: HeadersInputMessage) {
             val frame = message.frame
             if (receivedData) {
                 trailer.addAll(frame.metaData.fields)
@@ -75,7 +75,7 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             }
         }
 
-        suspend fun handleData(message: DataMessage) {
+        suspend fun handleData(message: DataInputMessage) {
             if (!receivedData) {
                 notifyHeaderComplete()
                 receivedData = true
@@ -95,7 +95,7 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
             }
         }
 
-        private fun acceptContent(message: DataMessage) {
+        private fun acceptContent(message: DataInputMessage) {
             val (frame, result) = message
             try {
                 context.request.contentHandler.accept(frame.data, context)
@@ -136,11 +136,11 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
         return object : Stream.Listener.Adapter() {
 
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                handler.sendMessage(HeadersMessage(frame))
+                handler.sendMessage(HeadersInputMessage(frame))
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-                handler.sendMessage(DataMessage(frame, result))
+                handler.sendMessage(DataInputMessage(frame, result))
             }
 
             override fun onClosed(stream: Stream) {
@@ -193,10 +193,10 @@ class Http2ServerConnectionListener(private val http2ServerConnection: Http2Serv
     }
 }
 
-sealed class Http2StreamMessage
+sealed class Http2StreamInputMessage
 
-data class HeadersMessage(val frame: HeadersFrame) : Http2StreamMessage()
+data class HeadersInputMessage(val frame: HeadersFrame) : Http2StreamInputMessage()
 
-data class DataMessage(val frame: DataFrame, val result: Consumer<Result<Void>>) : Http2StreamMessage()
+data class DataInputMessage(val frame: DataFrame, val result: Consumer<Result<Void>>) : Http2StreamInputMessage()
 
-object StreamShutdown : Http2StreamMessage()
+object StreamShutdown : Http2StreamInputMessage()

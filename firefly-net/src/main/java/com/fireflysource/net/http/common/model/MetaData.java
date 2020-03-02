@@ -206,6 +206,10 @@ public class MetaData implements Iterable<HttpField> {
             this(null, 0, null);
         }
 
+        public Response(HttpFields httpFields) {
+            this(null, 0, httpFields);
+        }
+
         public Response(HttpVersion version, int status, HttpFields fields) {
             this(version, status, fields, Long.MIN_VALUE);
         }
