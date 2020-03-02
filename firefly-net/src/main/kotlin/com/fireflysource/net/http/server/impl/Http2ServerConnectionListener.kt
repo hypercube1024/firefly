@@ -68,22 +68,19 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
                     notifyRequestComplete()
                 }
             } else {
-                context.request.httpFields.addAll(frame.metaData.fields)
+                notifyHeaderComplete()
                 if (frame.isEndStream) {
-                    notifyHeaderComplete()
                     notifyRequestComplete()
                 }
             }
         }
 
         suspend fun handleData(message: DataInputMessage) {
-            if (!receivedData) {
-                notifyHeaderComplete()
-                receivedData = true
-            }
+            receivedData = true
             acceptContent(message)
             if (message.frame.isEndStream) {
                 context.request.contentHandler.closeFuture().await()
+                context.request.isRequestComplete = true
                 notifyRequestComplete()
             }
         }
@@ -137,9 +134,8 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
         handler.sendMessage(HeadersInputMessage(frame))
 
         return object : Stream.Listener.Adapter() {
-
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                handler.sendMessage(HeadersInputMessage(frame))
+                log.warn { "Server received redundant headers: $frame" }
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {

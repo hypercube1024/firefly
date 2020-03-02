@@ -33,6 +33,11 @@ class Http2ClientConnection(
 
     companion object {
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
+        private val defaultServerAccepted: CompletableFuture<Boolean> by lazy {
+            val future = CompletableFuture<Boolean>()
+            future.complete(true)
+            future
+        }
     }
 
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
@@ -154,7 +159,7 @@ class Http2ClientConnection(
         val metaDataResponse = response.response
 
         val expectServerAcceptsContent = request.httpFields.expectServerAcceptsContent()
-        val serverAccepted = CompletableFuture<Boolean>()
+        val serverAccepted = if (expectServerAcceptsContent) CompletableFuture() else defaultServerAccepted
         val trailer = HttpFields()
         var theFirstHeader = true
         var receivedData = false
