@@ -35,7 +35,7 @@ abstract class AbstractAioTcpConnection(
     maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
     dispatcher: CoroutineDispatcher,
-    private val aioTcpCoroutineDispatcher: TcpCoroutineDispatcher = AioTcpCoroutineDispatcher(dispatcher)
+    private val aioTcpCoroutineDispatcher: TcpCoroutineDispatcher = AioTcpCoroutineDispatcher(id, dispatcher)
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection,
     TcpCoroutineDispatcher by aioTcpCoroutineDispatcher {
 
