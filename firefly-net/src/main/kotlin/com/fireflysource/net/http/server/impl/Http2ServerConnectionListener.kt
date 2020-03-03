@@ -45,6 +45,7 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
                     when (val message = streamMessageChannel.receive()) {
                         is HeadersInputMessage -> handleHeaders(message)
                         is DataInputMessage -> handleData(message)
+                        is TrailerInputMessage -> handleTrailer(message)
                         is StreamShutdown -> break@messageLoop
                     }
                 } catch (e: Throwable) {
@@ -58,20 +59,12 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
             streamMessageChannel.offer(message)
         }
 
+
         suspend fun handleHeaders(message: HeadersInputMessage) {
             val frame = message.frame
-            if (receivedData) {
-                trailer.addAll(frame.metaData.fields)
-                if (frame.isEndStream) {
-                    val asyncRequest = context.request as AsyncHttpServerRequest
-                    asyncRequest.request.setTrailerSupplier { trailer }
-                    notifyRequestComplete()
-                }
-            } else {
-                notifyHeaderComplete()
-                if (frame.isEndStream) {
-                    notifyRequestComplete()
-                }
+            notifyHeaderComplete()
+            if (frame.isEndStream) {
+                notifyRequestComplete()
             }
         }
 
@@ -82,6 +75,20 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
                 context.request.contentHandler.closeFuture().await()
                 context.request.isRequestComplete = true
                 notifyRequestComplete()
+            }
+        }
+
+        suspend fun handleTrailer(message: TrailerInputMessage) {
+            val frame = message.frame
+            if (receivedData) {
+                trailer.addAll(frame.metaData.fields)
+                if (frame.isEndStream) {
+                    val asyncRequest = context.request as AsyncHttpServerRequest
+                    asyncRequest.request.setTrailerSupplier { trailer }
+                    notifyRequestComplete()
+                }
+            } else {
+                log.warn { "HTTP2 server received trailer frame before data frame. frame: $frame, id: ${scope.coroutineContext[CoroutineName]}" }
             }
         }
 
@@ -135,7 +142,8 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
 
         return object : Stream.Listener.Adapter() {
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                log.warn { "Server received redundant headers: $frame" }
+                log.debug { "HTTP2 server received trailer frame. id: ${stream.id}" }
+                handler.sendMessage(TrailerInputMessage(frame))
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
@@ -197,5 +205,7 @@ sealed class Http2StreamInputMessage
 data class HeadersInputMessage(val frame: HeadersFrame) : Http2StreamInputMessage()
 
 data class DataInputMessage(val frame: DataFrame, val result: Consumer<Result<Void>>) : Http2StreamInputMessage()
+
+data class TrailerInputMessage(val frame: HeadersFrame) : Http2StreamInputMessage()
 
 object StreamShutdown : Http2StreamInputMessage()
