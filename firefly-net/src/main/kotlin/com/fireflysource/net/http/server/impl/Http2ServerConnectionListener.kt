@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.HttpFields
@@ -71,10 +72,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 val e = IllegalStateException(ErrorCode.toString(frame.error, "stream reset. id: ${stream.id}"))
                 connectionListener.onException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
-                    .exceptionally {
-                        result.accept(Result.createFailedResult(it))
-                        null
-                    }
+                    .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
             }
 
             override fun onFailure(stream: Stream, error: Int, reason: String, result: Consumer<Result<Void>>) {
@@ -82,10 +80,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 val e = IllegalStateException(ErrorCode.toString(error, defaultError))
                 connectionListener.onException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
-                    .exceptionally {
-                        result.accept(Result.createFailedResult(it))
-                        null
-                    }
+                    .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
             }
 
         }

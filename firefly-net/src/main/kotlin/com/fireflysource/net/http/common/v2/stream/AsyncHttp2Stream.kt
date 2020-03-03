@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
@@ -116,10 +117,7 @@ class AsyncHttp2Stream(
     override fun data(frame: DataFrame, result: Consumer<Result<Void>>) {
         asyncHttp2Connection.sendDataFrame(this, frame)
             .thenAccept { result.accept(Result.SUCCESS) }
-            .exceptionally {
-                result.accept(Result.createFailedResult(it))
-                null
-            }
+            .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
     }
 
     private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {
@@ -233,10 +231,7 @@ class AsyncHttp2Stream(
     private fun sendControlFrame(frame: Frame, result: Consumer<Result<Void>>) {
         asyncHttp2Connection.sendControlFrame(this, frame)
             .thenAccept { result.accept(Result.SUCCESS) }
-            .exceptionally {
-                result.accept(Result.createFailedResult(it))
-                null
-            }
+            .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
     }
 
 

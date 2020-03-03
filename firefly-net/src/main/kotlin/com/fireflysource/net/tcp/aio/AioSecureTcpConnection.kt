@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -165,10 +166,8 @@ class AioSecureTcpConnection(
                     result.accept(Result(true, it.applicationProtocol, null))
                     it.stashedAppBuffers.forEach { b -> stashedBuffers.add(b) }
                     launchEncryptingAndFlushJob()
-                }.exceptionally { e ->
-                    result.accept(Result(false, "", e))
-                    null
                 }
+                .exceptionallyAccept { result.accept(Result(false, "", it)) }
         } else {
             result.accept(Result(false, "", IllegalStateException("The handshake has begun")))
         }

@@ -2,6 +2,7 @@ package com.fireflysource.net.http.common.v2.stream
 
 import com.fireflysource.common.concurrent.AtomicBiInteger
 import com.fireflysource.common.concurrent.Atomics
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.math.MathUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.*
@@ -380,10 +381,7 @@ abstract class AsyncHttp2Connection(
     private fun sendNewHeadersFrame(stream: Stream, newHeadersFrame: HeadersFrame, promise: Consumer<Result<Stream?>>) {
         sendControlFrame(stream, newHeadersFrame)
             .thenAccept { promise.accept(Result(true, stream, null)) }
-            .exceptionally {
-                promise.accept(createFailedResult(null, it))
-                null
-            }
+            .exceptionallyAccept { promise.accept(createFailedResult(null, it)) }
     }
 
     fun removeStream(stream: Stream) {
@@ -540,10 +538,7 @@ abstract class AsyncHttp2Connection(
     protected fun reset(frame: ResetFrame, result: Consumer<Result<Void>>) {
         sendControlFrame(getStream(frame.streamId), frame)
             .thenAccept { result.accept(SUCCESS) }
-            .exceptionally {
-                result.accept(createFailedResult(it))
-                null
-            }
+            .exceptionallyAccept { result.accept(createFailedResult(it)) }
     }
 
 
@@ -564,10 +559,7 @@ abstract class AsyncHttp2Connection(
         val pushPromiseFrame = PushPromiseFrame(frame.streamId, promiseStreamId, frame.metaData)
         sendControlFrame(pushStream, pushPromiseFrame)
             .thenAccept { promise.accept(Result(true, pushStream, null)) }
-            .exceptionally {
-                promise.accept(Result(false, null, it))
-                null
-            }
+            .exceptionallyAccept { promise.accept(Result(false, null, it)) }
     }
 
 
@@ -615,24 +607,18 @@ abstract class AsyncHttp2Connection(
     // priority frame
     override fun priority(frame: PriorityFrame, result: Consumer<Result<Void>>): Int {
         val stream = http2StreamMap[frame.streamId]
-        if (stream == null) {
+        return if (stream == null) {
             val newStreamId = getNextStreamId()
             val newFrame = PriorityFrame(newStreamId, frame.parentStreamId, frame.weight, frame.isExclusive)
             sendControlFrame(null, newFrame)
                 .thenAccept { result.accept(SUCCESS) }
-                .exceptionally {
-                    result.accept(createFailedResult(it))
-                    null
-                }
-            return newStreamId
+                .exceptionallyAccept { result.accept(createFailedResult(it)) }
+            newStreamId
         } else {
             sendControlFrame(stream, frame)
                 .thenAccept { result.accept(SUCCESS) }
-                .exceptionally {
-                    result.accept(createFailedResult(it))
-                    null
-                }
-            return stream.id
+                .exceptionallyAccept { result.accept(createFailedResult(it)) }
+            stream.id
         }
     }
 
@@ -645,10 +631,7 @@ abstract class AsyncHttp2Connection(
     override fun settings(frame: SettingsFrame, result: Consumer<Result<Void>>) {
         sendControlFrame(null, frame)
             .thenAccept { result.accept(SUCCESS) }
-            .exceptionally {
-                result.accept(createFailedResult(it))
-                null
-            }
+            .exceptionallyAccept { result.accept(createFailedResult(it)) }
     }
 
     override fun onSettings(frame: SettingsFrame) {
@@ -770,10 +753,7 @@ abstract class AsyncHttp2Connection(
         } else {
             sendControlFrame(null, frame)
                 .thenAccept { result.accept(SUCCESS) }
-                .exceptionally {
-                    result.accept(createFailedResult(it))
-                    null
-                }
+                .exceptionallyAccept { result.accept(createFailedResult(it)) }
         }
     }
 
@@ -805,10 +785,7 @@ abstract class AsyncHttp2Connection(
                         closeFrame = goAwayFrame
                         sendControlFrame(null, goAwayFrame)
                             .thenAccept { result.accept(SUCCESS) }
-                            .exceptionally {
-                                result.accept(createFailedResult(it))
-                                null
-                            }
+                            .exceptionallyAccept { result.accept(createFailedResult(it)) }
                         return true
                     }
                 }

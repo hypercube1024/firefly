@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -65,17 +66,11 @@ class Http2ClientConnection(
             updateRecvWindow(windowDelta)
             sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame)
                 .thenAccept { log.info { "send connection preface success. id: $id" } }
-                .exceptionally {
-                    log.error(it) { "send connection preface exception. id: $id" }
-                    null
-                }
+                .exceptionallyAccept { log.error(it) { "send connection preface exception. id: $id" } }
         } else {
             sendControlFrame(null, prefaceFrame, settingsFrame)
                 .thenAccept { log.info { "send connection preface success. id: $id" } }
-                .exceptionally {
-                    log.error(it) { "send connection preface exception. id: $id" }
-                    null
-                }
+                .exceptionallyAccept { log.error(it) { "send connection preface exception. id: $id" } }
         }
     }
 
@@ -251,10 +246,9 @@ class Http2ClientConnection(
             .thenCompose { newStream -> serverAccepted.thenApply { Pair(newStream, it) } }
             .thenCompose { generateContent(contentProvider, metaDataRequest, it.first, it.second) }
             .thenAccept { generateTrailer(metaDataRequest, it.first, it.second) }
-            .exceptionally {
+            .exceptionallyAccept {
                 log.error(it) { "The HTTP2 client connection creates local stream failure. id: $id " }
                 future.completeExceptionally(it)
-                null
             }
         return future
     }
