@@ -9,12 +9,6 @@ import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import java.util.function.Consumer
 
 class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatcher) :
@@ -26,132 +20,53 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
 
     var connectionListener: HttpServerConnection.Listener = HttpServerConnection.EMPTY_LISTENER
 
-    private inner class Http2StreamHandler(
-        private val scope: CoroutineScope,
-        private val context: AsyncRoutingContext
-    ) {
-
-        private val streamMessageChannel: Channel<Http2StreamInputMessage> = Channel(Channel.UNLIMITED)
-        private val trailer: HttpFields by lazy { HttpFields() }
-        private var receivedData = false
-
-        init {
-            streamMessageJob()
-        }
-
-        fun streamMessageJob() = scope.launch {
-            messageLoop@ while (true) {
-                try {
-                    when (val message = streamMessageChannel.receive()) {
-                        is HeadersInputMessage -> handleHeaders(message)
-                        is DataInputMessage -> handleData(message)
-                        is TrailerInputMessage -> handleTrailer(message)
-                        is StreamShutdown -> break@messageLoop
-                    }
-                } catch (e: Throwable) {
-                    notifyException(e)
-                    break@messageLoop
-                }
-            }
-        }
-
-        fun sendMessage(message: Http2StreamInputMessage) {
-            streamMessageChannel.offer(message)
-        }
-
-
-        suspend fun handleHeaders(message: HeadersInputMessage) {
-            val frame = message.frame
-            notifyHeaderComplete()
-            if (frame.isEndStream) {
-                notifyRequestComplete()
-            }
-        }
-
-        suspend fun handleData(message: DataInputMessage) {
-            receivedData = true
-            acceptContent(message)
-            if (message.frame.isEndStream) {
-                context.request.contentHandler.closeFuture().await()
-                context.request.isRequestComplete = true
-                notifyRequestComplete()
-            }
-        }
-
-        suspend fun handleTrailer(message: TrailerInputMessage) {
-            val frame = message.frame
-            if (receivedData) {
-                trailer.addAll(frame.metaData.fields)
-                if (frame.isEndStream) {
-                    val asyncRequest = context.request as AsyncHttpServerRequest
-                    asyncRequest.request.setTrailerSupplier { trailer }
-                    notifyRequestComplete()
-                }
-            } else {
-                log.warn { "HTTP2 server received trailer frame before data frame. frame: $frame, id: ${scope.coroutineContext[CoroutineName]}" }
-            }
-        }
-
-        suspend fun notifyHeaderComplete() {
-            try {
-                connectionListener.onHeaderComplete(context).await()
-            } catch (e: Exception) {
-                log.error(e) { "HTTP2 server on headers complete exception. id: ${scope.coroutineContext[CoroutineName]}" }
-            }
-        }
-
-        private fun acceptContent(message: DataInputMessage) {
-            val (frame, result) = message
-            try {
-                context.request.contentHandler.accept(frame.data, context)
-                log.debug { "HTTP2 server accepts content success. id: ${scope.coroutineContext[CoroutineName]}" }
-                result.accept(Result.SUCCESS)
-            } catch (e: Exception) {
-                log.error(e) { "HTTP2 server accepts content exception. id:  ${scope.coroutineContext[CoroutineName]}" }
-                result.accept(Result.createFailedResult(e))
-            }
-        }
-
-        suspend fun notifyRequestComplete() {
-            try {
-                connectionListener.onHttpRequestComplete(context).await()
-            } catch (e: Exception) {
-                log.error(e) { "HTTP2 server on request complete exception. id: ${scope.coroutineContext[CoroutineName]}" }
-            }
-        }
-
-        private suspend fun notifyException(exception: Throwable) {
-            try {
-                log.error(exception) { "HTTP2 server on stream message exception. id: ${scope.coroutineContext[CoroutineName]}" }
-                connectionListener.onException(context, exception).await()
-            } catch (e: Exception) {
-                log.error(e) { "HTTP2 server on stream message exception. id: ${scope.coroutineContext[CoroutineName]}" }
-            }
-        }
-
-    }
-
     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
         val http2Connection = stream.http2Connection as Http2ServerConnection
-        val streamScope = newCoroutineScope(stream)
+
         val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request)
         val response = Http2ServerResponse(http2Connection, stream)
         val context = AsyncRoutingContext(request, response, http2Connection)
-        val handler = Http2StreamHandler(streamScope, context)
-        handler.sendMessage(HeadersInputMessage(frame))
+        val trailer: HttpFields by lazy { HttpFields() }
+        var receivedData = false
+
+        val headerComplete = connectionListener.onHeaderComplete(context)
+        if (frame.isEndStream) {
+            headerComplete.thenCompose { connectionListener.onHttpRequestComplete(context) }
+        }
 
         return object : Stream.Listener.Adapter() {
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                 log.debug { "HTTP2 server received trailer frame. id: ${stream.id}" }
-                handler.sendMessage(TrailerInputMessage(frame))
+                if (receivedData) {
+                    trailer.addAll(frame.metaData.fields)
+                }
+                if (frame.isEndStream) {
+                    headerComplete.thenCompose { connectionListener.onHttpRequestComplete(context) }
+                }
             }
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-                handler.sendMessage(DataInputMessage(frame, result))
+                receivedData = true
+                try {
+                    context.request.contentHandler.accept(frame.data, context)
+                    log.debug { "HTTP2 server accepts content success. id: ${stream.id}" }
+                    result.accept(Result.SUCCESS)
+                } catch (e: Exception) {
+                    log.error(e) { "HTTP2 server accepts content exception. id: ${stream.id}" }
+                    result.accept(Result.createFailedResult(e))
+                }
+                if (frame.isEndStream) {
+                    headerComplete
+                        .thenCompose { context.request.contentHandler.closeFuture() }
+                        .thenCompose {
+                            context.request.isRequestComplete = true
+                            connectionListener.onHttpRequestComplete(context)
+                        }
+                }
             }
 
             override fun onClosed(stream: Stream) {
-                handler.sendMessage(StreamShutdown)
+                log.debug { "HTTP2 server stream closed. id: ${stream.id}" }
             }
 
             override fun onReset(stream: Stream, frame: ResetFrame, result: Consumer<Result<Void>>) {
@@ -176,14 +91,6 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
             }
 
         }
-    }
-
-    private fun newCoroutineScope(stream: Stream): CoroutineScope {
-        return CoroutineScope(
-            dispatcher.coroutineScope.coroutineContext +
-                    SupervisorJob(dispatcher.supervisorJob) +
-                    CoroutineName("StreamScope#${stream.id}")
-        )
     }
 
     override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
