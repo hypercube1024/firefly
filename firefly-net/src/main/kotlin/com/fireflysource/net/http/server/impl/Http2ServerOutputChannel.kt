@@ -46,7 +46,6 @@ class Http2ServerOutputChannel(
 
     override fun isCommitted(): Boolean = committed.get()
 
-
     override fun write(byteBuffers: Array<ByteBuffer>, offset: Int, length: Int): CompletableFuture<Long> {
         val message = BuffersOutputMessage(byteBuffers, offset, length)
         messages.offer(message)

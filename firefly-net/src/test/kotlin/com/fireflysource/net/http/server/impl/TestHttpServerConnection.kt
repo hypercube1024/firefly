@@ -7,7 +7,6 @@ import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
-import com.fireflysource.net.http.common.v2.stream.SimpleFlowControlStrategy
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.RoutingContext
@@ -84,12 +83,7 @@ class TestHttpServerConnection {
                     http1Connection.setListener(listener).begin()
                 }
                 "http2" -> {
-                    val http2Connection = Http2ServerConnection(
-                        HttpConfig(),
-                        connection,
-                        SimpleFlowControlStrategy(),
-                        Http2ServerConnectionListener(connection)
-                    )
+                    val http2Connection = Http2ServerConnection(HttpConfig(), connection)
                     http2Connection.setListener(listener).begin()
                 }
             }

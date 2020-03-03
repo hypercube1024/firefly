@@ -8,11 +8,9 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import java.util.function.Consumer
 
-class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatcher) :
-    Http2Connection.Listener.Adapter() {
+class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
 
     companion object {
         private val log = SystemLogger.create(Http2ServerConnectionListener::class.java)
@@ -106,13 +104,3 @@ class Http2ServerConnectionListener(private val dispatcher: TcpCoroutineDispatch
         connectionListener.onException(null, e)
     }
 }
-
-sealed class Http2StreamInputMessage
-
-data class HeadersInputMessage(val frame: HeadersFrame) : Http2StreamInputMessage()
-
-data class DataInputMessage(val frame: DataFrame, val result: Consumer<Result<Void>>) : Http2StreamInputMessage()
-
-data class TrailerInputMessage(val frame: HeadersFrame) : Http2StreamInputMessage()
-
-object StreamShutdown : Http2StreamInputMessage()

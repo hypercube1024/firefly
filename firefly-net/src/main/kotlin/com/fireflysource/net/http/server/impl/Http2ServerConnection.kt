@@ -14,7 +14,7 @@ class Http2ServerConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    private val listener: Http2Connection.Listener = defaultHttp2ConnectionListener
+    private val listener: Http2Connection.Listener = Http2ServerConnectionListener()
 ) : AsyncHttp2Connection(2, config, tcpConnection, flowControl, listener), ServerParser.Listener, HttpServerConnection {
 
     companion object {
