@@ -9,7 +9,9 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
+import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.encoder.Generator
 import com.fireflysource.net.http.common.v2.frame.*
@@ -150,7 +152,7 @@ abstract class AsyncHttp2Connection(
             flowControl.onDataSending(stream, dataLength)
             stream.updateClose(dataFrame.isEndStream, CloseState.Event.BEFORE_SEND)
 
-            val writtenBytes = writeAndFlush(frameBytes.byteBuffers)
+            val writtenBytes = writeAndFlush(frameBytes.byteBuffers, dataFrame.isEndStream)
             frameEntry.dataRemaining -= dataLength
             frameEntry.writtenBytes += writtenBytes
 
@@ -230,7 +232,14 @@ abstract class AsyncHttp2Connection(
                 }
 
                 val byteBuffers = generator.control(frame).byteBuffers
-                val bytes = writeAndFlush(byteBuffers)
+                val flush = if (frame is HeadersFrame) {
+                    if (frame.isEndStream) true
+                    else {
+                        val metaData = frame.metaData
+                        metaData is MetaData.Response && metaData.status == HttpStatus.CONTINUE_100
+                    }
+                } else true
+                val bytes = writeAndFlush(byteBuffers, flush)
                 writtenBytes += bytes
 
                 when (frame.type) {
@@ -271,10 +280,15 @@ abstract class AsyncHttp2Connection(
             return writtenBytes
         }
 
-        private suspend fun writeAndFlush(byteBuffers: List<ByteBuffer>): Long {
-            return tcpConnection.write(byteBuffers, 0, byteBuffers.size)
-                .thenCompose { len -> tcpConnection.flush().thenApply { len } }
-                .await()
+        private suspend fun writeAndFlush(byteBuffers: List<ByteBuffer>, flush: Boolean = true): Long {
+            return if (flush) {
+                tcpConnection.write(byteBuffers, 0, byteBuffers.size)
+                    .thenCompose { len -> tcpConnection.flush().thenApply { len } }
+                    .await()
+            } else tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+//            return tcpConnection.write(byteBuffers, 0, byteBuffers.size)
+//                .thenCompose { len -> tcpConnection.flush().thenApply { len } }
+//                .await()
         }
 
         fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> {

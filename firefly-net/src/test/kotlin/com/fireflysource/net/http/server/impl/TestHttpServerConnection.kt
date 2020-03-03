@@ -66,9 +66,9 @@ class TestHttpServerConnection {
     }
 
     private fun createHttpServer(protocol: String, schema: String, listener: HttpServerConnection.Listener): TcpServer {
-        val server = TcpServerFactory.create().timeout(120 * 1000)
+        val server = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
         when (protocol) {
-            "http1" -> server.enableOutputBuffer().supportedProtocols(listOf(HTTP1.value))
+            "http1" -> server.supportedProtocols(listOf(HTTP1.value))
             "http2" -> server.supportedProtocols(listOf(HTTP2.value, HTTP1.value))
         }
         if (schema == "https") {
