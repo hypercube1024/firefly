@@ -2,7 +2,6 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.io.IO
-import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.codec.CookieGenerator
@@ -79,7 +78,6 @@ class TestHttpClient {
     fun destroy() {
         val time = measureTimeMillis {
             httpServer.stop(1)
-            stopAll()
         }
         println("shutdown time: $time ms")
     }

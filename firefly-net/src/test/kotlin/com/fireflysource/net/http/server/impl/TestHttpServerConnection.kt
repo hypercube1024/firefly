@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
@@ -18,7 +17,6 @@ import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -55,14 +53,6 @@ class TestHttpServerConnection {
     @BeforeEach
     fun init() {
         address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
-    }
-
-    @AfterEach
-    fun destroy() {
-        val stopTime = measureTimeMillis {
-            stopAll()
-        }
-        println("stop success. $stopTime")
     }
 
     private fun createHttpServer(protocol: String, schema: String, listener: HttpServerConnection.Listener): TcpServer {

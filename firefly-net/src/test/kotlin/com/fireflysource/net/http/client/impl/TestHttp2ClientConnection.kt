@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
@@ -17,7 +16,6 @@ import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -36,12 +34,6 @@ class TestHttp2ClientConnection {
     @BeforeEach
     fun init() {
         address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
-    }
-
-    @AfterEach
-    fun destroy() {
-        val time = measureTimeMillis { AbstractLifeCycle.stopAll() }
-        println("shutdown time: $time ms")
     }
 
     private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: TcpServer) {

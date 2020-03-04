@@ -28,7 +28,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
     private var supportedProtocols: List<String> = defaultSupportedProtocols
     private var peerHost: String = ""
     private var peerPort: Int = 0
-    private lateinit var serverSocketChannel: AsynchronousServerSocketChannel
+    private var serverSocketChannel: AsynchronousServerSocketChannel? = null
     private val acceptSocketConnectionCompletionHandler =
         object : CompletionHandler<AsynchronousSocketChannel, Int> {
             override fun completed(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
@@ -95,9 +95,10 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         start()
 
         try {
-            serverSocketChannel = AsynchronousServerSocketChannel.open(group)
-            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
-            serverSocketChannel.bind(address, config.backlog)
+            val socketChannel = AsynchronousServerSocketChannel.open(group)
+            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
+            socketChannel.bind(address, config.backlog)
+            this.serverSocketChannel = socketChannel
             accept()
         } catch (e: Exception) {
             log.error(e) { "bind server address exception" }
@@ -107,7 +108,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
 
     private fun accept() {
         try {
-            serverSocketChannel.accept(id.getAndIncrement(), acceptSocketConnectionCompletionHandler)
+            serverSocketChannel?.accept(id.getAndIncrement(), acceptSocketConnectionCompletionHandler)
         } catch (e: ShutdownChannelGroupException) {
             log.info { "the channel group is shutdown." }
         } catch (e: Exception) {
@@ -168,7 +169,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
 
     override fun destroy() {
         try {
-            serverSocketChannel.close()
+            serverSocketChannel?.close()
         } catch (e: Exception) {
             log.error(e) { "close server socket channel exception" }
         }

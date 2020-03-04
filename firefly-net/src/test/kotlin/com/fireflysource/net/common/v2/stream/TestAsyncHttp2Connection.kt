@@ -1,7 +1,6 @@
 package com.fireflysource.net.common.v2.stream
 
 import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.net.http.client.impl.Http2ClientConnection
@@ -23,7 +22,6 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -42,7 +40,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -149,7 +147,9 @@ class TestAsyncHttp2Connection {
         future.await()
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -162,7 +162,7 @@ class TestAsyncHttp2Connection {
 
         val resetFrameChannel = Channel<ResetFrame>(UNLIMITED)
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -257,7 +257,9 @@ class TestAsyncHttp2Connection {
         println("reset stream time: $time ms")
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -268,7 +270,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -358,7 +360,9 @@ class TestAsyncHttp2Connection {
         println("push promise stream time: $time ms")
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -369,7 +373,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, true)
         val httpConfig = HttpConfig()
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -433,7 +437,9 @@ class TestAsyncHttp2Connection {
 
         println("receive data time: $time")
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -447,7 +453,7 @@ class TestAsyncHttp2Connection {
         val requestHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
         val responseHeadersChannel = Channel<HeadersFrame>(UNLIMITED)
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -519,7 +525,9 @@ class TestAsyncHttp2Connection {
         println("new stream time: $time ms")
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     private fun createClientHttp2ConnectionListener(): Http2Connection.Listener.Adapter {
@@ -556,7 +564,7 @@ class TestAsyncHttp2Connection {
         val tcpConfig = TcpConfig(30, false)
         val httpConfig = HttpConfig()
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -588,7 +596,9 @@ class TestAsyncHttp2Connection {
 
         val success = http2Connection.close(ErrorCode.INTERNAL_ERROR.code, "test error message")
         assertTrue(success)
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -611,7 +621,7 @@ class TestAsyncHttp2Connection {
             ), false
         )
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -656,7 +666,9 @@ class TestAsyncHttp2Connection {
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
+
+        client.stop()
+        server.stop()
     }
 
     @Test
@@ -671,7 +683,7 @@ class TestAsyncHttp2Connection {
         val channel = Channel<Long>(UNLIMITED)
 
 
-        AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
                 httpConfig, connection, SimpleFlowControlStrategy(),
@@ -710,13 +722,9 @@ class TestAsyncHttp2Connection {
         assertTrue(pingCount > 0)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
-        Unit
-    }
 
-    @AfterEach
-    fun destroy() {
-        val time = measureTimeMillis { stopAll() }
-        println("shutdown time: $time ms")
+        client.stop()
+        server.stop()
     }
 
 }

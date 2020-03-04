@@ -3,7 +3,6 @@ package com.fireflysource.net.tcp.aio
 import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.coroutine.eventAsync
-import com.fireflysource.common.lifecycle.AbstractLifeCycle.stopAll
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpServerFactory
@@ -71,7 +70,7 @@ class TestAioServerAndClient {
             enableOutputBuffer = enableBuffer
         )
 
-        TcpServerFactory.create(tcpConfig).onAcceptAsync { connection ->
+        val server = TcpServerFactory.create(tcpConfig).onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()
             recvLoop@ while (true) {
@@ -173,7 +172,8 @@ class TestAioServerAndClient {
         println("connection: ${connectionCount}, messageCount: $expectMessageCount")
 
         val stopTime = measureTimeMillis {
-            stopAll()
+            client.stop()
+            server.stop()
         }
         println("stop success. $stopTime")
     }
@@ -184,7 +184,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4001
 
-        TcpServerFactory.create(TcpConfig(1)).onAcceptAsync { conn ->
+        val server = TcpServerFactory.create(TcpConfig(1)).onAcceptAsync { conn ->
             try {
                 conn.read().await()
                 println("Server reads success.")
@@ -210,7 +210,8 @@ class TestAioServerAndClient {
         assertTrue(connection.isShutdownInput)
 
         val stopTime = measureTimeMillis {
-            stopAll()
+            client.stop()
+            server.stop()
         }
         println("stop success. $stopTime")
     }
@@ -221,7 +222,7 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = 4002
 
-        TcpServerFactory.create().onAcceptAsync { conn ->
+        val server = TcpServerFactory.create().onAcceptAsync { conn ->
             try {
                 conn.read().await()
                 println("Server reads success.")
@@ -250,5 +251,8 @@ class TestAioServerAndClient {
         assertTrue(connection.isShutdownInput)
         assertTrue(connection.isClosed)
         assertFalse(success.await())
+
+        client.stop()
+        server.stop()
     }
 }
