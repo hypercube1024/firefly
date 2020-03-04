@@ -105,7 +105,7 @@ class TestHttpServerConnection {
     @MethodSource("testParametersProvider")
     @DisplayName("should receive request and response texts successfully.")
     fun test(protocol: String, schema: String): Unit = runBlocking {
-        val count = 100_000
+        val count = 100
 
         val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
