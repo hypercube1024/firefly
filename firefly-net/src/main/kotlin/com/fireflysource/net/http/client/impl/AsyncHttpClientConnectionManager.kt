@@ -60,7 +60,7 @@ class AsyncHttpClientConnectionManager(
                 .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
                 .poll()
                 .thenCompose { pooledObject ->
-                    pooledObject.use { it.`object`.sendAndTryToUpgradeHttp2(request) }
+                    pooledObject.use { it.`object`.send(request) }
                 }
         }
     }
@@ -74,14 +74,6 @@ class AsyncHttpClientConnectionManager(
         httpClientConnection: HttpClientConnection,
         response: HttpClientResponse
     ) = httpClientConnection.closeFuture().thenApply { response }
-
-    private fun HttpClientConnection.sendAndTryToUpgradeHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        return when {
-            this.isSecureConnection -> this.send(request)
-            this is Http1ClientConnection -> this.sendRequestTryToUpgradeHttp2(request)
-            else -> this.send(request)
-        }
-    }
 
     private fun buildAddress(request: HttpClientRequest): Address {
         val port: Int = if (request.uri.port > 0) {
