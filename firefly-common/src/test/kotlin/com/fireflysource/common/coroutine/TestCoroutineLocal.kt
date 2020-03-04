@@ -49,7 +49,7 @@ class TestCoroutineLocal {
         assertEquals(33, ctx.getAttr<Int>("key33"))
         assertEquals(expect, ctx.getAttr<Int>("newKey"))
         println("beforeSuspend ${ctx.getAttributes()}. context: $coroutineContext")
-        launchInheritable(attributes = mutableMapOf("d1" to 200)) {
+        inheritableLaunch(attributes = mutableMapOf("d1" to 200)) {
             ctx.setAttr("c1", 100)
             assertEquals(100, ctx.getAttr<Int>("c1"))
             assertEquals(expect, ctx.getAttr<Int>(key))

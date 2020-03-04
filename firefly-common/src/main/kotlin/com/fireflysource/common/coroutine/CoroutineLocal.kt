@@ -134,7 +134,7 @@ fun <T> CoroutineScope.inheritableAsync(
     return this.async(context + CoroutineLocalContext.inheritParentElement(attributes), start) { block(this) }
 }
 
-fun CoroutineScope.launchInheritable(
+fun CoroutineScope.inheritableLaunch(
     context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
     start: CoroutineStart = CoroutineStart.DEFAULT,
@@ -159,20 +159,26 @@ suspend fun <T> withContextInheritable(
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
 
-fun compute(block: suspend CoroutineScope.() -> Unit): Job =
+inline fun compute(crossinline block: suspend CoroutineScope.() -> Unit): Job =
     GlobalScope.launch(CoroutineDispatchers.computation) { block(this) }
 
-fun <T> computeAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+inline fun <T> computeAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
     GlobalScope.async(CoroutineDispatchers.computation) { block(this) }
 
-fun blocking(block: suspend CoroutineScope.() -> Unit): Job =
+inline fun blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
     GlobalScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
 
-fun <T> blockingAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+inline fun <T> blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
     GlobalScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
 
-fun event(block: suspend CoroutineScope.() -> Unit): Job =
+inline fun event(crossinline block: suspend CoroutineScope.() -> Unit): Job =
     GlobalScope.launch(CoroutineDispatchers.singleThread) { block(this) }
 
-fun <T> eventAsync(block: suspend CoroutineScope.() -> T): Deferred<T> =
+inline fun <T> eventAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
     GlobalScope.async(CoroutineDispatchers.singleThread) { block(this) }
+
+inline fun CoroutineScope.blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
+    this.launch(CoroutineDispatchers.ioBlocking) { block(this) }
+
+inline fun <T> CoroutineScope.blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
+    this.async(CoroutineDispatchers.ioBlocking) { block(this) }

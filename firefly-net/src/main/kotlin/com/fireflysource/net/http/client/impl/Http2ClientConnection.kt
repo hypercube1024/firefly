@@ -162,21 +162,21 @@ class Http2ClientConnection(
         val streamListener = object : Stream.Listener.Adapter() {
 
             fun onMessageComplete() {
-                if (contentHandler != null)
-                    contentHandler.closeFuture().thenAccept { future.complete(response) }
-                else
-                    future.complete(response)
+                if (contentHandler != null) {
+                    contentHandler.closeFuture()
+                        .thenAccept { future.complete(response) }
+                        .exceptionallyAccept { future.completeExceptionally(it) }
+                } else future.complete(response)
             }
 
-            fun copyResponse(frame: HeadersFrame) {
+            fun handleResponseHeaders(stream: Stream, frame: HeadersFrame) {
                 when (val metaData = frame.metaData) {
                     is MetaData.Response -> {
                         metaDataResponse.status = metaData.status
                         metaDataResponse.reason = metaData.reason
                         metaDataResponse.fields.addAll(metaData.fields)
                     }
-                    is MetaData.Request -> {
-                    }
+                    is MetaData.Request -> handleError(stream, "The HTTP2 client must receive response metadata.")
                     else -> {
                         if (receivedData) {
                             if (metaDataResponse.trailerSupplier == null) {
@@ -189,6 +189,14 @@ class Http2ClientConnection(
                 if (frame.isEndStream) onMessageComplete()
             }
 
+            fun handleError(stream: Stream, message: String) {
+                val resetFrame = ResetFrame(stream.id, ErrorCode.INTERNAL_ERROR.code)
+                stream.reset(resetFrame) {
+                    val exception = IllegalStateException(message)
+                    future.completeExceptionally(exception)
+                }
+            }
+
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                 if (theFirstHeader) {
                     theFirstHeader = false
@@ -197,26 +205,24 @@ class Http2ClientConnection(
                         if (expectServerAcceptsContent) {
                             if (metaData.status == HttpStatus.CONTINUE_100) {
                                 log.debug { "Client received 100 continue response. stream: $stream" }
-                                serverAccepted.complete(true)
+                                if (frame.isEndStream) {
+                                    serverAccepted.complete(false)
+                                    handleError(stream, "The remote stream closed. id: ${stream.id}")
+                                } else serverAccepted.complete(true)
                             } else {
                                 serverAccepted.complete(false)
-                                copyResponse(frame)
+                                handleResponseHeaders(stream, frame)
                             }
                         } else {
                             serverAccepted.complete(true)
-                            copyResponse(frame)
+                            handleResponseHeaders(stream, frame)
                         }
                     } else {
                         serverAccepted.complete(false)
-                        val resetFrame = ResetFrame(stream.id, ErrorCode.INTERNAL_ERROR.code)
-                        stream.reset(resetFrame) {
-                            val exception =
-                                IllegalStateException("The HTTP2 client must be not receive request meta data.")
-                            future.completeExceptionally(exception)
-                        }
+                        handleError(stream, "The HTTP2 client must receive response metadata.")
                     }
                 } else {
-                    copyResponse(frame)
+                    handleResponseHeaders(stream, frame)
                 }
             }
 
