@@ -200,7 +200,6 @@ abstract class AsyncHttp2Connection(
                 val length = flushControlFrames(frameEntry)
                 frameEntry.result.accept(Result(true, length, null))
             } catch (e: Exception) {
-                log.warn(e) { "Flush control frame exception. frames: ${frameEntry.frames.asList()}" }
                 frameEntry.result.accept(createFailedResult(-1, e))
             }
         }

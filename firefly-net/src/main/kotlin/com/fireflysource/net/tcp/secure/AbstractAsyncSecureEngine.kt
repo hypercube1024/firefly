@@ -114,7 +114,7 @@ abstract class AbstractAsyncSecureEngine(
         val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.isNotEmpty()) {
             val length = writeFunction?.apply(bufferList)?.await()
-            log.info { "Write TLS handshake data. mode: ${getMode()}, length: $length" }
+            log.debug { "Write TLS handshake data. mode: ${getMode()}, length: $length" }
         }
     }
 
@@ -127,7 +127,7 @@ abstract class AbstractAsyncSecureEngine(
             if (remaining > 0) {
                 stashedAppBuffers.add(inAppBuffer)
             }
-            log.info { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
+            log.debug { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
         }
     }
 

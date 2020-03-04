@@ -101,7 +101,7 @@ abstract class AbstractAioTcpConnection(
             if (isClosed) return
 
             shutdownOutput()
-            log.info { "TCP connection shutdown output. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
+            log.debug { "TCP connection shutdown output. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownInput) {
                 closeNow()
             }
@@ -141,7 +141,7 @@ abstract class AbstractAioTcpConnection(
                     success = false
                     exception = e
                 } catch (e: Exception) {
-                    log.warn(e) { "The TCP connection writing exception. id: $id" }
+                    log.warn { "The TCP connection writing exception. ${e.message} id: $id" }
                     success = false
                     exception = e
                     break
@@ -232,7 +232,7 @@ abstract class AbstractAioTcpConnection(
                 success = false
                 exception = e
             } catch (e: Exception) {
-                log.warn(e) { "The TCP connection reading exception. id: $id" }
+                log.warn { "The TCP connection reading exception. ${e.message} id: $id" }
                 success = false
                 exception = e
             }
@@ -257,7 +257,7 @@ abstract class AbstractAioTcpConnection(
             if (isClosed) return
 
             shutdownInput()
-            log.info { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
+            log.debug { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownOutput) {
                 closeNow()
             }
@@ -385,19 +385,19 @@ abstract class AbstractAioTcpConnection(
             try {
                 socketChannel.close()
             } catch (e: Exception) {
-                log.warn(e) { "Close socket channel exception. id: $id" }
+                log.warn { "Close socket channel exception. ${e.message} id: $id" }
             }
 
             try {
                 coroutineScope.cancel(CancellationException("Cancel TCP coroutine exception. id: $id"))
             } catch (e: Throwable) {
-                log.warn(e) { "Cancel TCP coroutine exception. id: $id" }
+                log.warn { "Cancel TCP coroutine exception. ${e.message} id: $id" }
             }
 
             try {
                 closeCallbacks.forEach { it.call() }
             } catch (e: Exception) {
-                log.warn(e) { "The TCP connection close callback exception. id: $id" }
+                log.warn { "The TCP connection close callback exception. ${e.message} id: $id" }
             }
 
             log.info { "The TCP connection close success. id: $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
