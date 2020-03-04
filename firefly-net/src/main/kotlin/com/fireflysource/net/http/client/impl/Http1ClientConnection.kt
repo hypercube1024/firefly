@@ -19,13 +19,10 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.http.common.v1.encoder.assert
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -216,56 +213,52 @@ class Http1ClientConnection(
     }
 
     fun sendRequestTryToUpgradeHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        return send(request)
 
-        fun sendRequestMaybeHttp2(): CompletableFuture<HttpClientResponse> {
-            val httpConnection = upgradeHttpClientConnection
-            return if (httpConnection != null) {
-                log.debug { "Send request with HTTP2 protocol. id: $id" }
-                httpConnection.send(request)
-            } else {
-                log.debug { "Send request with HTTP1 protocol. id: $id" }
-                send(request)
-            }
-        }
-
-        return if (sendHttp2UpgradeHeaders.get()) {
-            coroutineScope.async {
-                mutex.withLock {
-                    if (sendHttp2UpgradeHeaders.get()) {
-                        sendRequestWithHttp2UpgradeHeader(request)
-                    } else {
-                        sendRequestMaybeHttp2().await()
-                    }
-                }
-            }.asCompletableFuture()
-        } else {
-            sendRequestMaybeHttp2()
-        }
+//        fun sendRequestMaybeHttp2(): CompletableFuture<HttpClientResponse> {
+//            val httpConnection = upgradeHttpClientConnection
+//            return if (httpConnection != null) {
+//                log.debug { "Send request with HTTP2 protocol. id: $id" }
+//                httpConnection.send(request)
+//            } else {
+//                log.debug { "Send request with HTTP1 protocol. id: $id" }
+//                send(request)
+//            }
+//        }
+//
+//        return if (sendHttp2UpgradeHeaders.get()) {
+//            coroutineScope.async {
+//                mutex.withLock {
+//                    if (sendHttp2UpgradeHeaders.get()) {
+//                        sendRequestWithHttp2UpgradeHeader(request)
+//                    } else {
+//                        sendRequestMaybeHttp2().await()
+//                    }
+//                }
+//            }.asCompletableFuture()
+//        } else {
+//            sendRequestMaybeHttp2()
+//        }
     }
 
     private suspend fun sendRequestWithHttp2UpgradeHeader(request: HttpClientRequest): HttpClientResponse {
         log.debug { "Try to add h2c headers. id: $id" }
+        TODO("Switch the protocol to HTTP2.")
+
         // detect the protocol version using the Upgrade header
-        HttpProtocolNegotiator.addHttp2UpgradeHeader(request)
+//        HttpProtocolNegotiator.addHttp2UpgradeHeader(request)
+//
+//        val response = send(request).await()
+//        sendHttp2UpgradeHeaders.set(false)
 
-        val response = send(request).await()
-        sendHttp2UpgradeHeaders.set(false)
-
-        return if (HttpProtocolNegotiator.isUpgradeSuccess(response)) {
-            // switch the protocol to HTTP2
-            val http2ClientConnection = Http2ClientConnection(config, tcpConnection)
-            upgradeHttpClientConnection = http2ClientConnection
-
-            log.info { "HTTP1 connection upgrades HTTP2 success. id: $id" }
-
-            HttpProtocolNegotiator.removeHttp2UpgradeHeader(request)
-            val http2Response = http2ClientConnection.send(request).await()
-            httpVersion = HttpVersion.HTTP_2
-            http2Response
-        } else {
-            log.info { "HTTP1 connection upgrades HTTP2 failure. id: $id" }
-            response
-        }
+//        return if (HttpProtocolNegotiator.isUpgradeSuccess(response)) {
+//            // switch the protocol to HTTP2
+//            //
+//
+//        } else {
+//            log.info { "HTTP1 connection upgrades HTTP2 failure. id: $id" }
+//            response
+//        }
     }
 
     override fun getHttpVersion(): HttpVersion = httpVersion

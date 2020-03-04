@@ -29,7 +29,8 @@ class Http2ClientConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    listener: Http2Connection.Listener = defaultHttp2ConnectionListener
+    listener: Http2Connection.Listener = defaultHttp2ConnectionListener,
+    priorKnowledge: Boolean = true
 ) : AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener), HttpClientConnection {
 
     companion object {
@@ -46,8 +47,16 @@ class Http2ClientConnection(
 
     init {
         parser.init(UnaryOperator.identity())
+        if (priorKnowledge) beginPriorKnowledge()
+    }
+
+    private fun beginPriorKnowledge() {
         sendConnectionPreface()
         launchParserJob(parser)
+    }
+
+    fun beginStandardUpgrade() {
+        TODO("If the server response 101, init the stream, and receive the server response headers.")
     }
 
     private fun sendConnectionPreface() {
