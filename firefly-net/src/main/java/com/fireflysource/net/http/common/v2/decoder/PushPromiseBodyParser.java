@@ -119,6 +119,7 @@ public class PushPromiseBodyParser extends BodyParser {
 
     private void onPushPromise(int streamId, MetaData metaData) {
         PushPromiseFrame frame = new PushPromiseFrame(getStreamId(), streamId, metaData);
+        frame.setEndHeaders(hasFlag(Flags.END_HEADERS));
         notifyPushPromise(frame);
     }
 

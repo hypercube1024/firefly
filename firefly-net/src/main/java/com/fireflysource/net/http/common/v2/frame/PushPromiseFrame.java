@@ -6,6 +6,7 @@ public class PushPromiseFrame extends Frame {
     private final int streamId;
     private final int promisedStreamId;
     private final MetaData metaData;
+    private boolean endHeaders;
 
     public PushPromiseFrame(int streamId, int promisedStreamId, MetaData metaData) {
         super(FrameType.PUSH_PROMISE);
@@ -24,6 +25,14 @@ public class PushPromiseFrame extends Frame {
 
     public MetaData getMetaData() {
         return metaData;
+    }
+
+    public boolean isEndHeaders() {
+        return endHeaders;
+    }
+
+    public void setEndHeaders(boolean endHeaders) {
+        this.endHeaders = endHeaders;
     }
 
     @Override
