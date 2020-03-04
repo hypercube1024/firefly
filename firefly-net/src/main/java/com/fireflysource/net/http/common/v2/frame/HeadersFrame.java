@@ -7,6 +7,7 @@ public class HeadersFrame extends Frame {
     private final MetaData metaData;
     private final PriorityFrame priority;
     private final boolean endStream;
+    private boolean endHeaders;
 
     /**
      * <p>Creates a new {@code HEADERS} frame with an unspecified stream {@code id}.</p>
@@ -53,6 +54,14 @@ public class HeadersFrame extends Frame {
 
     public boolean isEndStream() {
         return endStream;
+    }
+
+    public boolean isEndHeaders() {
+        return endHeaders;
+    }
+
+    public void setEndHeaders(boolean endHeaders) {
+        this.endHeaders = endHeaders;
     }
 
     @Override

@@ -73,6 +73,7 @@ public class ContinuationBodyParser extends BodyParser {
         if (metaData == null || metaData == HeaderBlockParser.STREAM_FAILURE)
             return true;
         HeadersFrame frame = new HeadersFrame(getStreamId(), metaData, headerBlockFragments.getPriorityFrame(), headerBlockFragments.isEndStream());
+        frame.setEndHeaders(hasFlag(Flags.END_HEADERS));
         notifyHeaders(frame);
         return true;
     }

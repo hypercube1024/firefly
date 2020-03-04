@@ -177,6 +177,7 @@ public class HeadersBodyParser extends BodyParser {
         if (hasFlag(Flags.PRIORITY))
             priorityFrame = new PriorityFrame(getStreamId(), parentStreamId, weight, exclusive);
         HeadersFrame frame = new HeadersFrame(getStreamId(), metaData, priorityFrame, isEndStream());
+        frame.setEndHeaders(hasFlag(Flags.END_HEADERS));
         notifyHeaders(frame);
     }
 

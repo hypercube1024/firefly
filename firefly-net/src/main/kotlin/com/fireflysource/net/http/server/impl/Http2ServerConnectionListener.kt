@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
+import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
 class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
@@ -27,9 +28,13 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
         val context = AsyncRoutingContext(request, response, http2Connection)
         val trailer: HttpFields by lazy { HttpFields() }
         var receivedData = false
+        var headerComplete: CompletableFuture<Void>? = null
 
-        val headerComplete = connectionListener.onHeaderComplete(context)
+        if (frame.isEndHeaders) {
+            headerComplete = connectionListener.onHeaderComplete(context)
+        }
         if (frame.isEndStream) {
+            requireNotNull(headerComplete)
             headerComplete.thenCompose { connectionListener.onHttpRequestComplete(context) }
         }
 
@@ -38,9 +43,16 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 log.debug { "HTTP2 server received trailer frame. id: ${stream.id}" }
                 if (receivedData) {
                     trailer.addAll(frame.metaData.fields)
+                } else {
+                    request.httpFields.addAll(frame.metaData.fields)
+                }
+                if (frame.isEndHeaders) {
+                    headerComplete = connectionListener.onHeaderComplete(context)
                 }
                 if (frame.isEndStream) {
-                    headerComplete.thenCompose { connectionListener.onHttpRequestComplete(context) }
+                    val future = headerComplete
+                    requireNotNull(future)
+                    future.thenCompose { connectionListener.onHttpRequestComplete(context) }
                 }
             }
 
@@ -55,8 +67,9 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                     result.accept(Result.createFailedResult(e))
                 }
                 if (frame.isEndStream) {
-                    headerComplete
-                        .thenCompose { context.request.contentHandler.closeFuture() }
+                    val future = headerComplete
+                    requireNotNull(future)
+                    future.thenCompose { context.request.contentHandler.closeFuture() }
                         .thenCompose {
                             context.request.isRequestComplete = true
                             connectionListener.onHttpRequestComplete(context)
