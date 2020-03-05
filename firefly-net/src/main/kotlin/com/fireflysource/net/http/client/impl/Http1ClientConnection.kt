@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -47,20 +48,24 @@ class Http1ClientConnection(
 
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
-
+    private var http2ClientConnection: Http2ClientConnection? = null
 
     init {
         generateRequestAndParseResponseJob()
     }
 
     private fun generateRequestAndParseResponseJob() = coroutineScope.launch {
-        while (true) {
+        jobLoop@ while (true) {
             val message = requestChannel.receive()
             try {
+                if (message.expectUpgradeHttp2) {
+                    log.info { "Prepare to upgrade HTTP2. id: $id" }
+                }
                 handler.init(message.contentHandler, message.expectServerAcceptsContent, message.expectUpgradeHttp2)
                 generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
                 parseResponse(message).complete(message)
+                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) break@jobLoop
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
                 message.response.completeExceptionally(e)
@@ -68,6 +73,17 @@ class Http1ClientConnection(
                 handler.reset()
                 parser.reset()
                 generator.reset()
+            }
+        }
+        if (isUpgradeToHttp2Success()) {
+            while (true) {
+                val message = requestChannel.poll()
+                if (message != null) {
+                    val future = message.response
+                    sendRequestViaHttp2(message.httpClientRequest)
+                        .thenAccept { future.complete(it) }
+                        .exceptionallyAccept { future.completeExceptionally(it) }
+                } else break
             }
         }
     }
@@ -87,16 +103,19 @@ class Http1ClientConnection(
             val buffer = parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
             val success = handler.upgradeHttp2Successfully()
             if (success) {
-                //[0.003] HTTP Upgrade response
-                //HTTP/1.1 101 Switching Protocols
-                //
-                //[0.003] HTTP Upgrade success
-                //[0.005] recv HEADERS frame <length=67, flags=0x04, stream_id=1>
-                //          ; END_HEADERS
-                //          (padlen=0)
-                //          ; First response header
-                //{"id":19,"content":"Hello, Jan!"}[0.005] recv DATA frame <length=33, flags=0x00, stream_id=1>
-                TODO("Upgrade to HTTP2 connection, and then receive the HTTP2 response headers and data frames.")
+                log.info { "Upgrade HTTP2 success. id: $id" }
+
+                val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
+                val response = http2Connection.initH2cAndReceiveResponse(
+                    message.contentHandler,
+                    message.expectServerAcceptsContent,
+                    buffer
+                )
+                http2ClientConnection = http2Connection
+                httpVersion = HttpVersion.HTTP_2
+                return response.await().also {
+                    log.info { "Init HTTP2 connection and receive the response success. id: $id" }
+                }
             } else {
                 if (buffer != null) {
                     while (buffer.hasRemaining()) {
@@ -111,6 +130,10 @@ class Http1ClientConnection(
             parser.parseAll(tcpConnection)
             return handler.complete()
         }
+    }
+
+    private fun isUpgradeToHttp2Success(): Boolean {
+        return httpVersion == HttpVersion.HTTP_2 && http2ClientConnection != null
     }
 
     private suspend fun serverAccepted(): Boolean {
@@ -241,27 +264,36 @@ class Http1ClientConnection(
     override fun getTcpConnection(): TcpConnection = tcpConnection
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        return when (httpVersion) {
+            HttpVersion.HTTP_2 -> sendRequestViaHttp2(request)
+            HttpVersion.HTTP_1_1 -> sendRequestViaHttp1(request)
+            else -> throw IllegalStateException("HTTP version not support. $httpVersion")
+        }
+    }
+
+    private fun sendRequestViaHttp1(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         prepareHttp1Headers(request)
         val future = CompletableFuture<HttpClientResponse>()
-        val metaDataRequest = toMetaDataRequest(request)
-        requestChannel.offer(
-            RequestMessage(
-                metaDataRequest, request.contentProvider, request.contentHandler, future,
-                request.httpFields.expectServerAcceptsContent(),
-                expectUpgradeHttp2(request)
-            )
-        )
+        requestChannel.offer(RequestMessage(request, future))
         return future
     }
 
+    private fun sendRequestViaHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        val http2Connection = http2ClientConnection
+        requireNotNull(http2Connection)
+        return http2Connection.send(request)
+    }
+
     private data class RequestMessage(
-        val request: MetaData.Request,
-        val contentProvider: HttpClientContentProvider?,
-        val contentHandler: HttpClientContentHandler,
+        val httpClientRequest: HttpClientRequest,
         val response: CompletableFuture<HttpClientResponse>,
-        val expectServerAcceptsContent: Boolean,
-        val expectUpgradeHttp2: Boolean
+        val request: MetaData.Request = toMetaDataRequest(httpClientRequest),
+        val contentProvider: HttpClientContentProvider? = httpClientRequest.contentProvider,
+        val contentHandler: HttpClientContentHandler = httpClientRequest.contentHandler,
+        val expectServerAcceptsContent: Boolean = httpClientRequest.httpFields.expectServerAcceptsContent(),
+        val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest)
     )
+
 }
 
 fun prepareHttp1Headers(request: HttpClientRequest) {

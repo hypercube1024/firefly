@@ -392,7 +392,7 @@ abstract class AsyncHttp2Connection(
         }
     }
 
-    private fun getNextStreamId(): Int = getAndIncreaseStreamId(localStreamId, initStreamId)
+    protected fun getNextStreamId(): Int = getAndIncreaseStreamId(localStreamId, initStreamId)
 
     private fun getCurrentLocalStreamId(): Int = localStreamId.get()
 

@@ -4,9 +4,11 @@ import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientContentHandler
-import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
-import com.fireflysource.net.http.common.model.*
+import com.fireflysource.net.http.common.model.HttpFields
+import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.frame.DataFrame
 import com.fireflysource.net.http.common.v2.frame.ErrorCode
 import com.fireflysource.net.http.common.v2.frame.HeadersFrame
@@ -16,8 +18,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
 class Http2ClientStreamListener(
-    val request: HttpClientRequest,
-    val future: CompletableFuture<HttpClientResponse>
+    private val contentHandler: HttpClientContentHandler?,
+    private val expectServerAcceptsContent: Boolean,
+    private val future: CompletableFuture<HttpClientResponse>
 ) : Stream.Listener.Adapter() {
 
     companion object {
@@ -29,13 +32,9 @@ class Http2ClientStreamListener(
         }
     }
 
-    private val contentHandler: HttpClientContentHandler? = request.contentHandler
-
     private val response =
         AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
     private val metaDataResponse = response.response
-
-    private val expectServerAcceptsContent = request.httpFields.expectServerAcceptsContent()
     val serverAccepted = if (expectServerAcceptsContent) CompletableFuture() else defaultServerAccepted
     private val trailer = HttpFields()
     private var theFirstHeader = true
