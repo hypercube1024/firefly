@@ -8,6 +8,7 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.frame.DataFrame
+import com.fireflysource.net.http.common.v2.frame.Frame
 import com.fireflysource.net.http.common.v2.frame.HeadersFrame
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerOutputChannel
@@ -30,7 +31,7 @@ class Http2ServerOutputChannel(
 
     companion object {
         private val log = SystemLogger.create(Http2ServerOutputChannel::class.java)
-        private val bufferArrayChunkSize = 16 * 1024 * 1024L
+        private const val defaultMaxFrameSize = Frame.DEFAULT_MAX_LENGTH.toLong()
     }
 
     private val committed = AtomicBoolean(false)
@@ -132,7 +133,7 @@ class Http2ServerOutputChannel(
             length > 1 -> {
                 while (message.hasRemaining()) {
                     val remaining = message.remaining()
-                    val size = remaining.coerceAtMost(bufferArrayChunkSize).toInt()
+                    val size = remaining.coerceAtMost(defaultMaxFrameSize).toInt()
                     val buffer = BufferUtils.allocate(size)
                     val pos = buffer.flipToFill()
 
