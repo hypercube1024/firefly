@@ -74,6 +74,7 @@
         <msgpack.version>0.8.20</msgpack.version>
         <redisson.version>3.12.2</redisson.version>
         <conscrypt.version>2.2.1</conscrypt.version>
+        <bouncycastle.version>1.64</bouncycastle.version>
         <javassist.version>3.26.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>Dysprosium-SR5</spring.reactor.version>
@@ -222,7 +223,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.59</version>
+                <version>${bouncycastle.version}</version>
             </dependency>
 
             <!--jackson-->
