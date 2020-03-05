@@ -4,13 +4,15 @@ import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
-import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.HttpClientConnection
+import com.fireflysource.net.http.client.HttpClientContentProvider
+import com.fireflysource.net.http.client.HttpClientRequest
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
-import com.fireflysource.net.http.common.model.*
+import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
@@ -22,7 +24,6 @@ import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
 import java.util.function.UnaryOperator
 
 class Http2ClientConnection(
@@ -35,11 +36,6 @@ class Http2ClientConnection(
 
     companion object {
         private val log = SystemLogger.create(Http2ClientConnection::class.java)
-        private val defaultServerAccepted: CompletableFuture<Boolean> by lazy {
-            val future = CompletableFuture<Boolean>()
-            future.complete(true)
-            future
-        }
     }
 
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
@@ -160,112 +156,14 @@ class Http2ClientConnection(
     }
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        val future = CompletableFuture<HttpClientResponse>()
         val metaDataRequest: MetaData.Request = toMetaDataRequest(request)
-
         val contentProvider: HttpClientContentProvider? = request.contentProvider
-        val contentHandler: HttpClientContentHandler? = request.contentHandler
         val lastHeaders = contentProvider == null && metaDataRequest.trailerSupplier == null
         val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
 
-        val response = AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
-        val metaDataResponse = response.response
-
-        val expectServerAcceptsContent = request.httpFields.expectServerAcceptsContent()
-        val serverAccepted = if (expectServerAcceptsContent) CompletableFuture() else defaultServerAccepted
-        val trailer = HttpFields()
-        var theFirstHeader = true
-        var receivedData = false
-
-        val streamListener = object : Stream.Listener.Adapter() {
-
-            fun onMessageComplete() {
-                if (contentHandler != null) {
-                    contentHandler.closeFuture()
-                        .thenAccept { future.complete(response) }
-                        .exceptionallyAccept { future.completeExceptionally(it) }
-                } else future.complete(response)
-            }
-
-            fun handleResponseHeaders(stream: Stream, frame: HeadersFrame) {
-                when (val metaData = frame.metaData) {
-                    is MetaData.Response -> {
-                        metaDataResponse.status = metaData.status
-                        metaDataResponse.reason = metaData.reason
-                        metaDataResponse.fields.addAll(metaData.fields)
-                    }
-                    is MetaData.Request -> handleError(stream, "The HTTP2 client must receive response metadata.")
-                    else -> {
-                        if (receivedData) {
-                            if (metaDataResponse.trailerSupplier == null) {
-                                metaDataResponse.setTrailerSupplier { trailer }
-                            }
-                            trailer.addAll(metaData.fields)
-                        } else metaDataResponse.fields.addAll(metaData.fields)
-                    }
-                }
-                if (frame.isEndStream) onMessageComplete()
-            }
-
-            fun handleError(stream: Stream, message: String) {
-                val resetFrame = ResetFrame(stream.id, ErrorCode.INTERNAL_ERROR.code)
-                stream.reset(resetFrame) {
-                    val exception = IllegalStateException(message)
-                    future.completeExceptionally(exception)
-                }
-            }
-
-            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
-                if (theFirstHeader) {
-                    theFirstHeader = false
-                    val metaData = frame.metaData
-                    if (metaData is MetaData.Response) {
-                        if (expectServerAcceptsContent) {
-                            if (metaData.status == HttpStatus.CONTINUE_100) {
-                                log.debug { "Client received 100 continue response. stream: $stream" }
-                                if (frame.isEndStream) {
-                                    serverAccepted.complete(false)
-                                    handleError(stream, "The remote stream closed. id: ${stream.id}")
-                                } else serverAccepted.complete(true)
-                            } else {
-                                serverAccepted.complete(false)
-                                handleResponseHeaders(stream, frame)
-                            }
-                        } else {
-                            serverAccepted.complete(true)
-                            handleResponseHeaders(stream, frame)
-                        }
-                    } else {
-                        serverAccepted.complete(false)
-                        handleError(stream, "The HTTP2 client must receive response metadata.")
-                    }
-                } else {
-                    handleResponseHeaders(stream, frame)
-                }
-            }
-
-            override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
-                try {
-                    receivedData = true
-                    contentHandler?.accept(frame.data, response)
-                    if (frame.isEndStream) onMessageComplete()
-                } finally {
-                    result.accept(Result.SUCCESS)
-                }
-            }
-
-            override fun onReset(stream: Stream, frame: ResetFrame) {
-                val error = ErrorCode.toString(frame.error, "http2_request_error")
-                val exception = IllegalStateException(error)
-                future.completeExceptionally(exception)
-            }
-
-            override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {
-                val exception = IllegalStateException("http2_stream_timeout")
-                future.completeExceptionally(exception)
-                return true
-            }
-        }
+        val future = CompletableFuture<HttpClientResponse>()
+        val streamListener = Http2ClientStreamListener(request, future)
+        val serverAccepted = streamListener.serverAccepted
         newStream(headersFrame, streamListener)
             .thenCompose { newStream -> serverAccepted.thenApply { Pair(newStream, it) } }
             .thenCompose { generateContent(contentProvider, metaDataRequest, it.first, it.second) }
@@ -276,6 +174,7 @@ class Http2ClientConnection(
             }
         return future
     }
+
 
     private fun generateContent(
         contentProvider: HttpClientContentProvider?,
