@@ -57,10 +57,13 @@ object HttpProtocolNegotiator {
     }
 
     fun isUpgradeSuccess(response: HttpClientResponse): Boolean {
-        val connValue = response.httpFields[HttpHeader.CONNECTION]
-        val upgradeValue = response.httpFields[HttpHeader.UPGRADE]
         return response.status == HttpStatus.SWITCHING_PROTOCOLS_101
-                && connValue != null && connValue == "Upgrade"
-                && upgradeValue != null && upgradeValue == "h2c"
+                && response.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
+                && response.httpFields.contains(HttpHeader.UPGRADE, "h2c")
+    }
+
+    fun expectUpgradeHttp2(request: HttpClientRequest): Boolean {
+        return request.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
+                && request.httpFields.contains(HttpHeader.UPGRADE, "h2c")
     }
 }

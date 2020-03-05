@@ -29,7 +29,8 @@ class Http2ClientConnection(
     config: HttpConfig,
     tcpConnection: TcpConnection,
     flowControl: FlowControl = SimpleFlowControlStrategy(),
-    listener: Http2Connection.Listener = defaultHttp2ConnectionListener
+    listener: Http2Connection.Listener = defaultHttp2ConnectionListener,
+    priorKnowledge: Boolean = true
 ) : AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener), HttpClientConnection {
 
     companion object {
@@ -43,11 +44,28 @@ class Http2ClientConnection(
 
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
     private val adaptiveBufferSize = AdaptiveBufferSize()
+    private var upgradeHttp2FromHttp1 = false
 
     init {
-        parser.init(UnaryOperator.identity())
-        sendConnectionPreface()
-        launchParserJob(parser)
+        if (priorKnowledge) {
+            parser.init(UnaryOperator.identity())
+            sendConnectionPreface()
+            launchParserJob(parser)
+        }
+    }
+
+    fun initH2cAndReceiveResponse(byteBuffer: ByteBuffer?): HttpClientResponse {
+        upgradeHttp2FromHttp1 = true
+
+
+//        parser.init(UnaryOperator.identity())
+//        if (byteBuffer != null) {
+//            while (byteBuffer.hasRemaining()) {
+//                parser.parse(byteBuffer)
+//            }
+//        }
+//        launchParserJob(parser)
+        TODO("Create")
     }
 
     private fun sendConnectionPreface() {

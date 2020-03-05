@@ -396,7 +396,7 @@ abstract class AsyncHttp2Connection(
 
     private fun getCurrentLocalStreamId(): Int = localStreamId.get()
 
-    private fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
+    protected fun createLocalStream(streamId: Int, listener: Stream.Listener): Stream {
         checkMaxLocalStreams()
         val stream = AsyncHttp2Stream(this, streamId, true, listener)
         if (http2StreamMap.putIfAbsent(streamId, stream) == null) {
