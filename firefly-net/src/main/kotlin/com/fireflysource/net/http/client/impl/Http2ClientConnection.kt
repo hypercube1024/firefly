@@ -6,11 +6,13 @@ import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.HttpClientConnection
+import com.fireflysource.net.http.client.HttpClientContentProvider
+import com.fireflysource.net.http.client.HttpClientRequest
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.model.MetaData
-import com.fireflysource.net.http.common.model.expectServerAcceptsContent
 import com.fireflysource.net.http.common.v2.decoder.Parser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
@@ -42,31 +44,24 @@ class Http2ClientConnection(
 
     init {
         if (priorKnowledge) {
-            parser.init(UnaryOperator.identity())
-            sendConnectionPreface()
-            launchParserJob(parser)
+            init()
         }
     }
 
-    fun initH2cAndReceiveResponse(
-        contentHandler: HttpClientContentHandler?,
-        expectServerAcceptsContent: Boolean,
-        byteBuffer: ByteBuffer?
-    ): CompletableFuture<HttpClientResponse> {
+    fun upgradeHttp2AndReceiveResponse(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         upgradeHttp2FromHttp1 = true
         val streamId = getNextStreamId()
         val future = CompletableFuture<HttpClientResponse>()
-        val streamListener = Http2ClientStreamListener(contentHandler, expectServerAcceptsContent, future)
+        val streamListener = Http2ClientStreamListener(request, future)
         createLocalStream(streamId, streamListener)
-
-        parser.init(UnaryOperator.identity())
-        if (byteBuffer != null) {
-            while (byteBuffer.hasRemaining()) {
-                parser.parse(byteBuffer)
-            }
-        }
-        launchParserJob(parser)
+        init()
         return future
+    }
+
+    private fun init() {
+        sendConnectionPreface()
+        parser.init(UnaryOperator.identity())
+        launchParserJob(parser)
     }
 
     private fun sendConnectionPreface() {
@@ -167,8 +162,7 @@ class Http2ClientConnection(
         val headersFrame = HeadersFrame(metaDataRequest, null, lastHeaders)
 
         val future = CompletableFuture<HttpClientResponse>()
-        val streamListener =
-            Http2ClientStreamListener(request.contentHandler, request.httpFields.expectServerAcceptsContent(), future)
+        val streamListener = Http2ClientStreamListener(request, future)
         val serverAccepted = streamListener.serverAccepted
         newStream(headersFrame, streamListener)
             .thenCompose { newStream -> serverAccepted.thenApply { Pair(newStream, it) } }

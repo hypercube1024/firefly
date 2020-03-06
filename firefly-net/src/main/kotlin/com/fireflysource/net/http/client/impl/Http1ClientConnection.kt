@@ -9,6 +9,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeHttp2
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.model.*
@@ -58,10 +59,7 @@ class Http1ClientConnection(
         jobLoop@ while (true) {
             val message = requestChannel.receive()
             try {
-                if (message.expectUpgradeHttp2) {
-                    log.info { "Prepare to upgrade HTTP2. id: $id" }
-                }
-                handler.init(message.contentHandler, message.expectServerAcceptsContent, message.expectUpgradeHttp2)
+                handler.init(message.contentHandler, message.expectServerAcceptsContent)
                 generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
                 parseResponse(message).complete(message)
@@ -99,37 +97,19 @@ class Http1ClientConnection(
     }
 
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
-        if (message.expectUpgradeHttp2) {
-            val buffer = parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
-            val success = handler.upgradeHttp2Successfully()
-            if (success) {
-                log.info { "Upgrade HTTP2 success. id: $id" }
+        parser.parseAll(tcpConnection)
+        val response = handler.complete()
+        return if (message.expectUpgradeHttp2 && isUpgradeSuccess(response)) {
+            log.info { "Server upgrades HTTP2 successfully. id: $id" }
 
-                val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
-                val response = http2Connection.initH2cAndReceiveResponse(
-                    message.contentHandler,
-                    message.expectServerAcceptsContent,
-                    buffer
-                )
-                http2ClientConnection = http2Connection
-                httpVersion = HttpVersion.HTTP_2
-                return response.await().also {
-                    log.info { "Init HTTP2 connection and receive the response success. id: $id" }
-                }
-            } else {
-                if (buffer != null) {
-                    while (buffer.hasRemaining()) {
-                        val end = parser.parseNext(buffer)
-                        if (end || parser.isState(HttpParser.State.END)) break
-                    }
-                }
-                parser.parseAll(tcpConnection)
-                return handler.complete()
+            val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
+            val responseFuture = http2Connection.upgradeHttp2AndReceiveResponse(message.httpClientRequest)
+            http2ClientConnection = http2Connection
+            httpVersion = HttpVersion.HTTP_2
+            responseFuture.await().also {
+                log.info { "Client upgrades HTTP2 connection and receive the response successfully. id: $id" }
             }
-        } else {
-            parser.parseAll(tcpConnection)
-            return handler.complete()
-        }
+        } else response
     }
 
     private fun isUpgradeToHttp2Success(): Boolean {

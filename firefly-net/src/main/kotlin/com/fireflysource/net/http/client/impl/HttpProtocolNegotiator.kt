@@ -58,8 +58,6 @@ object HttpProtocolNegotiator {
 
     fun isUpgradeSuccess(response: HttpClientResponse): Boolean {
         return response.status == HttpStatus.SWITCHING_PROTOCOLS_101
-                && response.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
-                && response.httpFields.contains(HttpHeader.UPGRADE, "h2c")
     }
 
     fun expectUpgradeHttp2(request: HttpClientRequest): Boolean {

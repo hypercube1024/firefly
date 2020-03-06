@@ -2,7 +2,6 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientResponse
-import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
@@ -16,11 +15,15 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     private val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
     private var contentHandler: HttpClientContentHandler? = null
     private var expectServerAcceptsContent = false
-    private var expectUpgradeHttp2 = false
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
     private var serverAccepted: Boolean = false
+
+    fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean) {
+        this.contentHandler = contentHandler
+        this.expectServerAcceptsContent = expectServerAcceptsContent
+    }
 
     override fun getHeaderCacheSize(): Int {
         return 4096
@@ -51,13 +54,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     override fun headerComplete(): Boolean {
         httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), contentHandler)
-        return upgradeHttp2Successfully()
-    }
-
-    fun upgradeHttp2Successfully(): Boolean {
-        val response = httpClientResponse
-        requireNotNull(response)
-        return expectUpgradeHttp2 && isUpgradeSuccess(response)
+        return false
     }
 
     override fun content(buffer: ByteBuffer): Boolean {
@@ -98,15 +95,6 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     fun serverAccepted(): Boolean = serverAccepted
 
-    fun init(
-        contentHandler: HttpClientContentHandler,
-        expectServerAcceptsContent: Boolean,
-        expectUpgradeHttp2: Boolean
-    ) {
-        this.contentHandler = contentHandler
-        this.expectServerAcceptsContent = expectServerAcceptsContent
-        this.expectUpgradeHttp2 = expectUpgradeHttp2
-    }
 
     fun reset() {
         response.recycle()

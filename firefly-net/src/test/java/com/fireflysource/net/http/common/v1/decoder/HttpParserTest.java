@@ -5,6 +5,7 @@ import com.fireflysource.common.io.BufferUtils;
 import com.fireflysource.net.http.common.exception.BadMessageException;
 import com.fireflysource.net.http.common.model.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -2120,6 +2121,7 @@ class HttpParserTest {
     }
 
     @Test
+    @DisplayName("should parse 100 successfully.")
     void testExpect100Continue() {
         ByteBuffer buffer1 = BufferUtils.toBuffer("HTTP/1.1 100 Continue\r\n");
         ByteBuffer buffer2 = BufferUtils.toBuffer("HTTP/1.1 200 OK\r\n");
@@ -2148,6 +2150,18 @@ class HttpParserTest {
         assertEquals("4", val[0]);
         assertEquals("test", content);
         System.out.println(parser.getState());
+    }
+
+    @Test
+    @DisplayName("should parse 101 successfully.")
+    void test101SwitchingProtocols() {
+        ByteBuffer buffer1 = BufferUtils.toBuffer("HTTP/1.1 101 Switching Protocols\r\n\r\n");
+        HttpParser.ResponseHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parser.parseNext(buffer1);
+        assertEquals(-1, headers);
+        assertTrue(headerCompleted);
+        assertTrue(messageCompleted);
     }
 
     @BeforeEach
