@@ -13,6 +13,7 @@ import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -52,12 +53,32 @@ class AsyncHttpClientConnectionManager(
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request)
-        return connectionPoolMap
-            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-            .poll()
-            .thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } }
-            .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
+        val nonPersistence = request.httpFields.isCloseConnection(request.httpVersion)
+        return if (nonPersistence) {
+            createTcpConnection(address)
+                .thenApply { createHttp1ClientConnection(it) }
+                .thenCompose { sendAndCloseConnection(it, request) }
+                .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
+        } else {
+            connectionPoolMap
+                .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+                .poll()
+                .thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } }
+                .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
+        }
     }
+
+    private fun sendAndCloseConnection(
+        httpClientConnection: HttpClientConnection,
+        request: HttpClientRequest
+    ) = httpClientConnection.send(request)
+        .thenCompose { closeAndReturnResponse(httpClientConnection, it) }
+
+
+    private fun closeAndReturnResponse(
+        httpClientConnection: HttpClientConnection,
+        response: HttpClientResponse
+    ) = httpClientConnection.closeFuture().thenApply { response }
 
     private fun buildAddress(request: HttpClientRequest): Address {
         val port: Int = if (request.uri.port > 0) {

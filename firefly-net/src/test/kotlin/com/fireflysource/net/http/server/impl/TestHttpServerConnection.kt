@@ -566,7 +566,7 @@ class TestHttpServerConnection {
     }
 
     @Test
-    @DisplayName("should try to send request by another connection successfully.")
+    @DisplayName("should try to send request again when the request sends failure.")
     fun testServerCloseConnection(): Unit = runBlocking {
         val count = 30
 
