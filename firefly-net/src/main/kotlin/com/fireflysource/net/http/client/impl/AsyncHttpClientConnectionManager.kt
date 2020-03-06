@@ -1,5 +1,8 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.concurrent.exceptionallyAccept
+import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -10,7 +13,6 @@ import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
-import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpClient
@@ -50,19 +52,11 @@ class AsyncHttpClientConnectionManager(
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request)
-        val nonPersistence = request.httpFields.isCloseConnection(request.httpVersion)
-        return if (nonPersistence) {
-            createTcpConnection(address)
-                .thenApply { createHttp1ClientConnection(it) }
-                .thenCompose { sendAndCloseConnection(it, request) }
-        } else {
-            connectionPoolMap
-                .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-                .poll()
-                .thenCompose { pooledObject ->
-                    pooledObject.use { it.`object`.send(request) }
-                }
-        }
+        return connectionPoolMap
+            .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+            .poll()
+            .thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } }
+            .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
     }
 
     private fun sendAndCloseConnection(
@@ -128,7 +122,12 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
-        return Http1ClientConnection(config, connection)
+        return Http1ClientConnection(config, connection).onUnhandledRequestMessage { request, future ->
+            log.info { "Send request failure, try it again. uri: ${request.uri.path}" }
+            this@AsyncHttpClientConnectionManager.send(request)
+                .thenAccept { future.complete(it) }
+                .exceptionallyAccept { future.completeExceptionally(it) }
+        }
     }
 
     private fun createHttp2ClientConnection(connection: TcpConnection): HttpClientConnection {

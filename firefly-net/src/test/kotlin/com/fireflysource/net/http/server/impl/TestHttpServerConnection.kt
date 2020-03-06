@@ -565,4 +565,44 @@ class TestHttpServerConnection {
         finish(count, time, httpClient, httpServer)
     }
 
+    @Test
+    @DisplayName("should try to send request by another connection successfully.")
+    fun testServerCloseConnection(): Unit = runBlocking {
+        val count = 30
+
+        val httpServer = createHttpServer("http1", "http", object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .contentProvider(stringBody("Server closed connection success", StandardCharsets.UTF_8))
+                    .end()
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/server-close-$it").submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+            val response = futures[0].await()
+
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("Server closed connection success", response.stringBody)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
 }

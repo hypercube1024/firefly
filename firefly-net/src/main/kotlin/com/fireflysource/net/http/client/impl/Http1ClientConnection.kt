@@ -46,6 +46,10 @@ class Http1ClientConnection(
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+    private var unhandledRequestMessage: (HttpClientRequest, CompletableFuture<HttpClientResponse>) -> Unit =
+        { _, future ->
+            future.completeExceptionally(IllegalStateException("The HTTP1 connection has closed."))
+        }
 
     @Volatile
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
@@ -55,6 +59,11 @@ class Http1ClientConnection(
 
     init {
         handleRequestMessage()
+    }
+
+    fun onUnhandledRequestMessage(block: (HttpClientRequest, CompletableFuture<HttpClientResponse>) -> Unit): Http1ClientConnection {
+        this.unhandledRequestMessage = block
+        return this
     }
 
     private fun handleRequestMessage() = coroutineScope.launch {
@@ -83,7 +92,7 @@ class Http1ClientConnection(
         }
         when {
             this@Http1ClientConnection.isClosed -> pollRemainingRequestMessage { message ->
-                message.response.completeExceptionally(IllegalStateException("The HTTP1 connection has closed."))
+                unhandledRequestMessage(message.httpClientRequest, message.response)
             }
             isUpgradeToHttp2Success() -> pollRemainingRequestMessage { message ->
                 val future = message.response
