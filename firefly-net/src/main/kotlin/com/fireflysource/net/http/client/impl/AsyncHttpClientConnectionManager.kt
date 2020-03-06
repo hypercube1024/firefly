@@ -59,16 +59,6 @@ class AsyncHttpClientConnectionManager(
             .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
     }
 
-    private fun sendAndCloseConnection(
-        httpClientConnection: HttpClientConnection,
-        request: HttpClientRequest
-    ) = httpClientConnection.send(request).thenCompose { closeAndReturnResponse(httpClientConnection, it) }
-
-    private fun closeAndReturnResponse(
-        httpClientConnection: HttpClientConnection,
-        response: HttpClientResponse
-    ) = httpClientConnection.closeFuture().thenApply { response }
-
     private fun buildAddress(request: HttpClientRequest): Address {
         val port: Int = if (request.uri.port > 0) {
             request.uri.port
