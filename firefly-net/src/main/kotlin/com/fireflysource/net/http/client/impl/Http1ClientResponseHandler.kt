@@ -95,7 +95,6 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     fun serverAccepted(): Boolean = serverAccepted
 
-
     fun reset() {
         response.recycle()
         contentHandler = null

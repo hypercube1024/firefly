@@ -27,7 +27,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
-import java.util.function.Predicate
 
 class Http1ClientConnection(
     private val config: HttpConfig,
@@ -46,24 +45,29 @@ class Http1ClientConnection(
 
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
-
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+
+    @Volatile
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
+
+    @Volatile
     private var http2ClientConnection: Http2ClientConnection? = null
 
     init {
-        generateRequestAndParseResponseJob()
+        handleRequestMessage()
     }
 
-    private fun generateRequestAndParseResponseJob() = coroutineScope.launch {
-        jobLoop@ while (true) {
+    private fun handleRequestMessage() = coroutineScope.launch {
+        handleRequestLoop@ while (true) {
             val message = requestChannel.receive()
             try {
                 handler.init(message.contentHandler, message.expectServerAcceptsContent)
                 generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
-                parseResponse(message).complete(message)
-                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) break@jobLoop
+                val closed = parseResponse(message).complete(message)
+
+                if (closed) break@handleRequestLoop
+                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) break@handleRequestLoop
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
                 message.response.completeExceptionally(e)
@@ -73,27 +77,40 @@ class Http1ClientConnection(
                 generator.reset()
             }
         }
-        if (isUpgradeToHttp2Success()) {
-            while (true) {
-                val message = requestChannel.poll()
-                if (message != null) {
-                    val future = message.response
-                    sendRequestViaHttp2(message.httpClientRequest)
-                        .thenAccept { future.complete(it) }
-                        .exceptionallyAccept { future.completeExceptionally(it) }
-                } else break
+    }.invokeOnCompletion { cause ->
+        if (cause != null) {
+            log.info { "The HTTP1 request message job completion. cause: ${cause.message}" }
+        }
+        when {
+            this@Http1ClientConnection.isClosed -> pollRemainingRequestMessage { message ->
+                message.response.completeExceptionally(IllegalStateException("The HTTP1 connection has closed."))
+            }
+            isUpgradeToHttp2Success() -> pollRemainingRequestMessage { message ->
+                val future = message.response
+                sendRequestViaHttp2(message.httpClientRequest)
+                    .thenAccept { future.complete(it) }
+                    .exceptionallyAccept { future.completeExceptionally(it) }
             }
         }
     }
 
-    private suspend fun HttpClientResponse.complete(message: RequestMessage) {
+    private inline fun pollRemainingRequestMessage(crossinline block: (RequestMessage) -> Unit) {
+        while (true) {
+            val message = requestChannel.poll()
+            if (message != null) block(message) else break
+        }
+    }
+
+    private suspend fun HttpClientResponse.complete(message: RequestMessage): Boolean {
         val request = message.request
         val response = this
-        if (response.httpFields.isCloseConnection(response.httpVersion) ||
-            request.fields.isCloseConnection(request.httpVersion)
-        ) {
+        val closed = response.httpFields.isCloseConnection(response.httpVersion)
+                || request.fields.isCloseConnection(request.httpVersion)
+        if (closed) {
             this@Http1ClientConnection.useAwait { message.response.complete(response) }
+            log.debug { "HTTP1 connection closed. id: $id, closed: ${this@Http1ClientConnection.isClosed}" }
         } else message.response.complete(response)
+        return closed
     }
 
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
@@ -117,7 +134,7 @@ class Http1ClientConnection(
     }
 
     private suspend fun serverAccepted(): Boolean {
-        parser.parse(tcpConnection, Predicate { it.ordinal >= HttpParser.State.HEADER.ordinal })
+        parser.parse(tcpConnection) { it.ordinal >= HttpParser.State.HEADER.ordinal }
         return handler.serverAccepted()
     }
 
