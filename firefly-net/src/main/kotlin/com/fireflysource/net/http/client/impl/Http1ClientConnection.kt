@@ -103,6 +103,7 @@ class Http1ClientConnection(
                 unhandledRequestMessage(message.httpClientRequest, message.response)
             }
             isUpgradeToHttp2Success() -> pollRemainingRequestMessage { message ->
+                log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
                 val future = message.response
                 sendRequestViaHttp2(message.httpClientRequest)
                     .thenAccept { future.complete(it) }
@@ -135,19 +136,15 @@ class Http1ClientConnection(
         val response = handler.complete()
         return if (message.expectUpgradeHttp2) {
             if (isUpgradeSuccess(response)) {
-                log.info { "Server upgrades HTTP2 successfully. id: $id" }
+                log.info { "Client received 101 Switching Protocols. id: $id" }
 
                 val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
                 val responseFuture =
                     http2Connection.upgradeHttp2(message.httpClientRequest, remainingData)
                 http2ClientConnection = http2Connection
                 httpVersion = HttpVersion.HTTP_2
-                responseFuture.await()
-                    .also { log.info { "Client upgrades HTTP2 connection successfully. id: $id" } }
-            } else {
-                log.info { "Server upgrades HTTP2 failure. id: $id" }
-                response
-            }
+                responseFuture.await().also { log.info { "Client upgrades HTTP2 successfully. id: $id" } }
+            } else response.also { log.info { "Client upgrades HTTP2 failure. id: $id" } }
         } else response
     }
 

@@ -607,4 +607,42 @@ class TestHttpServerConnection {
         finish(count, time, httpClient, httpServer)
     }
 
+    @Test
+    @DisplayName("should upgrade http2 protocol successfully.")
+    fun testUpgradeHttp2(): Unit = runBlocking {
+        val count = 30
+
+        val httpServer = createHttpServer("http1", "http", object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.end("Upgrade http2 success")
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/upgrade-http2-$it").upgradeHttp2().submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+            val response = futures[0].await()
+
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("Upgrade http2 success", response.stringBody)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
 }

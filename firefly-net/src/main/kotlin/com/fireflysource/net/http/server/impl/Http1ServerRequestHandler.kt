@@ -126,10 +126,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 requireNotNull(settings)
 
                 switchingHttp2()
-                val http2ServerConnection = Http2ServerConnection(connection.config, connection.tcpConnection)
+                val http2ServerConnection = createHttp2Connection()
                 val stream = http2ServerConnection.upgradeHttp2(settings)
                 val response = Http2ServerResponse(http2ServerConnection, stream)
                 val http2Context = AsyncRoutingContext(context.request, response, http2ServerConnection)
+
                 upgradeHttp2Result.offer(true)
                 parserChannel.offer(EndHandleRequest)
                 connectionListener.onHttpRequestComplete(http2Context).await()
@@ -144,12 +145,17 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         }
     }
 
+    private fun createHttp2Connection() =
+        Http2ServerConnection(connection.config, connection.tcpConnection)
+            .also { it.setListener(connectionListener).begin() }
+
     private suspend fun switchingHttp2() {
         val message = "HTTP/1.1 101 Switching Protocols\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Upgrade: h2c\r\n" +
                 "\r\n"
         connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
+        log.info { "Server response 101 Switching Protocols. id: ${connection.id}" }
     }
 
     suspend fun upgradeHttp2Success() = upgradeHttp2Result.receive()
