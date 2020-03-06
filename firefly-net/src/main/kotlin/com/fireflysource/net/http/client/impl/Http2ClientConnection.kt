@@ -40,7 +40,6 @@ class Http2ClientConnection(
 
     private val parser: Parser = Parser(this, config.maxDynamicTableSize, config.maxHeaderSize)
     private val adaptiveBufferSize = AdaptiveBufferSize()
-    private var upgradeHttp2FromHttp1 = false
 
     init {
         if (priorKnowledge) {
@@ -51,7 +50,6 @@ class Http2ClientConnection(
     }
 
     fun upgradeHttp2(request: HttpClientRequest, frameBytes: ByteBuffer?): CompletableFuture<HttpClientResponse> {
-        upgradeHttp2FromHttp1 = true
         val streamId = getNextStreamId()
         val future = CompletableFuture<HttpClientResponse>()
         val streamListener = Http2ClientStreamListener(request, future)
