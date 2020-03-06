@@ -206,7 +206,6 @@ abstract class AbstractAsyncSecureEngine(
                     outPacketBuffer = outPacketBuffer.addCapacity(sslEngine.session.packetBufferSize)
                     val capacity = outPacketBuffer.capacity()
                     val remaining = outPacketBuffer.remaining()
-                    updateOutPacketBufferSize(remaining)
                     log.debug { "Resize out packet buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
@@ -249,7 +248,6 @@ abstract class AbstractAsyncSecureEngine(
                     inAppBuffer = inAppBuffer.addCapacity(sslEngine.session.applicationBufferSize)
                     val capacity = inAppBuffer.capacity()
                     val remaining = inAppBuffer.remaining()
-                    updateInAppBufferSize(remaining)
                     log.debug { "Resize in app buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
