@@ -43,4 +43,16 @@ public class SettingsGenerator extends FrameGenerator {
         frameBytes.setLength(Frame.HEADER_LENGTH + length);
         return frameBytes;
     }
+
+    public static ByteBuffer generateSettingsBody(Map<Integer, Integer> settings) {
+        int size = settings.size() * (2 + 4);
+        ByteBuffer buffer = BufferUtils.allocate(size);
+        final int pos = BufferUtils.flipToFill(buffer);
+        for (Map.Entry<Integer, Integer> entry : settings.entrySet()) {
+            buffer.putShort(entry.getKey().shortValue());
+            buffer.putInt(entry.getValue());
+        }
+        BufferUtils.flipToFlush(buffer, pos);
+        return buffer;
+    }
 }

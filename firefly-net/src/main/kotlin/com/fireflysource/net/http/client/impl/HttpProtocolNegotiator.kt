@@ -7,22 +7,12 @@ import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.common.v2.encoder.HeaderGenerator
-import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator
+import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator.generateSettingsBody
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 
 object HttpProtocolNegotiator {
-    private val settingsGenerator = SettingsGenerator(HeaderGenerator())
-    val defaultSettingsFrameBytes: ByteArray
-
-    init {
-        defaultSettingsFrameBytes = BufferUtils.toArray(
-            settingsGenerator.generateSettings(
-                SettingsFrame.DEFAULT_SETTINGS_FRAME.settings,
-                false
-            ).byteBuffers
-        )
-    }
+    val defaultSettingsFrameBytes: ByteArray =
+        BufferUtils.toArray(generateSettingsBody(SettingsFrame.DEFAULT_SETTINGS_FRAME.settings))
 
     fun addHttp2UpgradeHeader(request: HttpClientRequest) {
         // detect the protocol version using Connection and Upgrade HTTP headers
@@ -43,10 +33,10 @@ object HttpProtocolNegotiator {
         val bytes = if (request.http2Settings.isNullOrEmpty()) {
             defaultSettingsFrameBytes
         } else {
-            BufferUtils.toArray(settingsGenerator.generateSettings(request.http2Settings, false).byteBuffers)
+            BufferUtils.toArray(generateSettingsBody(request.http2Settings))
         }
 
-        val base64 = Base64Utils.encodeToString(bytes)
+        val base64 = Base64Utils.encodeToUrlSafeString(bytes)
         request.httpFields.put(HttpHeader.HTTP2_SETTINGS, base64)
     }
 

@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.addHttp2UpgradeHeader
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
@@ -60,6 +61,16 @@ class AsyncHttpClientRequestBuilder(
 
     override fun add(field: HttpField): HttpClientRequestBuilder {
         httpRequest.httpFields.add(field)
+        return this
+    }
+
+    override fun addCsv(header: HttpHeader, vararg values: String): HttpClientRequestBuilder {
+        httpRequest.httpFields.addCSV(header, *values)
+        return this
+    }
+
+    override fun addCsv(header: String, vararg values: String): HttpClientRequestBuilder {
+        httpRequest.httpFields.addCSV(header, *values)
         return this
     }
 
@@ -158,6 +169,11 @@ class AsyncHttpClientRequestBuilder(
 
     override fun http2Settings(http2Settings: Map<Int, Int>?): HttpClientRequestBuilder {
         httpRequest.http2Settings = http2Settings
+        return this
+    }
+
+    override fun upgradeHttp2(): HttpClientRequestBuilder {
+        addHttp2UpgradeHeader(httpRequest)
         return this
     }
 

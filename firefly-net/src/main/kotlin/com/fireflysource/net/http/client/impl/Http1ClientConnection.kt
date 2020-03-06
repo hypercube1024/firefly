@@ -70,6 +70,14 @@ class Http1ClientConnection(
         handleRequestLoop@ while (true) {
             val message = requestChannel.receive()
             try {
+                log.debug {
+                    """
+                    |handle http1 request:
+                    |${message.request.method} ${message.request.uri} ${message.request.httpVersion}
+                    |${message.request.fields}
+                """.trimMargin()
+                }
+
                 handler.init(message.contentHandler, message.expectServerAcceptsContent)
                 generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
@@ -125,15 +133,20 @@ class Http1ClientConnection(
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
         parser.parseAll(tcpConnection)
         val response = handler.complete()
-        return if (message.expectUpgradeHttp2 && isUpgradeSuccess(response)) {
-            log.info { "Server upgrades HTTP2 successfully. id: $id" }
+        return if (message.expectUpgradeHttp2) {
+            if (isUpgradeSuccess(response)) {
+                log.info { "Server upgrades HTTP2 successfully. id: $id" }
 
-            val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
-            val responseFuture = http2Connection.upgradeHttp2AndReceiveResponse(message.httpClientRequest)
-            http2ClientConnection = http2Connection
-            httpVersion = HttpVersion.HTTP_2
-            responseFuture.await().also {
-                log.info { "Client upgrades HTTP2 connection and receive the response successfully. id: $id" }
+                val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
+                val responseFuture = http2Connection.upgradeHttp2AndReceiveResponse(message.httpClientRequest)
+                http2ClientConnection = http2Connection
+                httpVersion = HttpVersion.HTTP_2
+                responseFuture.await().also {
+                    log.info { "Client upgrades HTTP2 connection and receive the response successfully. id: $id" }
+                }
+            } else {
+                log.info { "Upgrade HTTP2 failure. id: $id" }
+                response
             }
         } else response
     }

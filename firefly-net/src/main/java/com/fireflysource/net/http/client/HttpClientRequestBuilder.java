@@ -78,6 +78,24 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder add(HttpField field);
 
     /**
+     * Add the comma separated values, but only if not already present.
+     *
+     * @param header The header to add the value(s) to.
+     * @param values The value(s).
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder addCsv(HttpHeader header, String... values);
+
+    /**
+     * Add the comma separated values, but only if not already present.
+     *
+     * @param header The header to add the value(s) to.
+     * @param values The value(s).
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder addCsv(String header, String... values);
+
+    /**
      * Set the HTTP trailers.
      *
      * @param trailerSupplier The HTTP trailers.
@@ -243,6 +261,13 @@ public interface HttpClientRequestBuilder {
      * @return RequestBuilder
      */
     HttpClientRequestBuilder http2Settings(Map<Integer, Integer> http2Settings);
+
+    /**
+     * Try to upgrade HTTP2 protocol via the Upgrade header (h2c).
+     *
+     * @return RequestBuilder
+     */
+    HttpClientRequestBuilder upgradeHttp2();
 
     /**
      * Submit the HTTP request.
