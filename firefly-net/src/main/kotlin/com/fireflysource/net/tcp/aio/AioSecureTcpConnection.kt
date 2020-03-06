@@ -33,7 +33,7 @@ class AioSecureTcpConnection(
 
     init {
         secureEngine
-            .onHandshakeWrite { tcpConnection.write(it, 0, it.size) }
+            .onHandshakeWrite { tcpConnection.write(it) }
             .onHandshakeRead { tcpConnection.read() }
         tcpConnection.onClose { secureEngine.close() }
     }
@@ -78,14 +78,14 @@ class AioSecureTcpConnection(
             val buffers = outputMessage.buffers
             val offset = outputMessage.getCurrentOffset()
             val length = outputMessage.getCurrentLength()
-            val encryptedBuffers = secureEngine.encrypt(buffers, offset, length)
-            val size = encryptedBuffers.size
-            log.debug { "Encrypt and flush buffer. id: $id, remaining: $remaining, size: $size, offset: $offset, length: $length" }
+            val encryptedBuffer = secureEngine.encrypt(buffers, offset, length)
+            val size = encryptedBuffer.remaining()
+            log.debug { "Encrypt and flush buffer. id: $id, src: $remaining, desc: $size, offset: $offset, length: $length" }
 
             if (remaining == 0L || size == 0) {
                 result.accept(Result(true, 0, null))
             } else {
-                tcpConnection.write(encryptedBuffers, 0, size).await()
+                tcpConnection.write(encryptedBuffer).await()
                 result.accept(Result(true, remaining, null))
             }
         } catch (e: Exception) {
@@ -97,14 +97,14 @@ class AioSecureTcpConnection(
         val (buffer, result) = outputMessage
         try {
             val remaining = buffer.remaining()
-            val encryptedBuffers = secureEngine.encrypt(buffer)
-            val size = encryptedBuffers.size
-            log.debug { "Encrypt and flush buffer. id: $id, remaining: $remaining, size: $size" }
+            val encryptedBuffer = secureEngine.encrypt(buffer)
+            val size = encryptedBuffer.remaining()
+            log.debug { "Encrypt and flush buffer. id: $id, src: $remaining, desc: $size" }
 
             if (remaining == 0 || size == 0) {
                 result.accept(Result(true, 0, null))
             } else {
-                tcpConnection.write(encryptedBuffers, 0, size).await()
+                tcpConnection.write(encryptedBuffer).await()
                 result.accept(Result(true, remaining, null))
             }
         } catch (e: Exception) {

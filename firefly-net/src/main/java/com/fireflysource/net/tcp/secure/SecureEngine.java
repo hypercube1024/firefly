@@ -65,7 +65,7 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      * @param function The write function.
      * @return The secure engine.
      */
-    SecureEngine onHandshakeWrite(Function<List<ByteBuffer>, CompletableFuture<Long>> function);
+    SecureEngine onHandshakeWrite(Function<ByteBuffer, CompletableFuture<Integer>> function);
 
     /**
      * Decrypt the cipher text to the plain text.
@@ -79,9 +79,9 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      * Encrypt the plain text to the cipher text.
      *
      * @param byteBuffer The plain text data.
-     * @return The cipher text byte buffer list.
+     * @return The cipher text byte buffer.
      */
-    List<ByteBuffer> encrypt(ByteBuffer byteBuffer);
+    ByteBuffer encrypt(ByteBuffer byteBuffer);
 
     /**
      * Encrypt the plain text to the cipher text.
@@ -92,9 +92,9 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *                    byteBuffers.length.
      * @param length      The maximum number of buffers to be accessed; must be non-negative
      *                    and no larger than byteBuffers.length - offset.
-     * @return The cipher text byte buffer list.
+     * @return The cipher text byte buffer.
      */
-    List<ByteBuffer> encrypt(ByteBuffer[] byteBuffers, int offset, int length);
+    ByteBuffer encrypt(ByteBuffer[] byteBuffers, int offset, int length);
 
     /**
      * Encrypt the plain text to the cipher text.
@@ -105,8 +105,8 @@ public interface SecureEngine extends Closeable, ApplicationProtocolSelector {
      *                    byteBuffers.length.
      * @param length      The maximum number of buffers to be accessed; must be non-negative
      *                    and no larger than byteBuffers.length - offset.
-     * @return The cipher text byte buffer list.
+     * @return The cipher text byte buffer.
      */
-    List<ByteBuffer> encrypt(List<ByteBuffer> byteBuffers, int offset, int length);
+    ByteBuffer encrypt(List<ByteBuffer> byteBuffers, int offset, int length);
 
 }
