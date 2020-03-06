@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 class Http1ServerConnection(
-    private val config: HttpConfig,
+    val config: HttpConfig,
     private val tcpConnection: TcpConnection
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection, HttpServerConnection {
 
@@ -29,13 +29,18 @@ class Http1ServerConnection(
     private val begun = AtomicBoolean(false)
 
     private fun parseRequestJob() = coroutineScope.launch {
-        while (!tcpConnection.isClosed) {
+        parseLoop@ while (!tcpConnection.isClosed) {
             try {
                 parser.parseAll(tcpConnection)
+                if (requestHandler.upgradeHttp2Success()) {
+                    responseHandler.sendResponseMessage(UpgradeHttp2Success)
+                    log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
+                    break@parseLoop
+                }
             } catch (e: Exception) {
                 log.error(e) { "Parse HTTP1 request exception. id: $id" }
             } finally {
-                parser.reset()
+                resetParser()
             }
         }
     }

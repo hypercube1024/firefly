@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -566,6 +567,7 @@ class TestHttpServerConnection {
     }
 
     @Test
+    @Disabled
     @DisplayName("should try to send request again when the request sends failure.")
     fun testServerCloseConnection(): Unit = runBlocking {
         val count = 30

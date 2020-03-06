@@ -28,6 +28,13 @@ class Http2ServerConnection(
         parser.init(UnaryOperator.identity())
     }
 
+    fun upgradeHttp2(settingsFrame: SettingsFrame): Stream {
+        super.onSettings(settingsFrame)
+        val stream = createRemoteStream(1)
+        requireNotNull(stream)
+        return stream
+    }
+
     override fun begin() {
         if (listener is Http2ServerConnectionListener) {
             listener.connectionListener = connectionListener

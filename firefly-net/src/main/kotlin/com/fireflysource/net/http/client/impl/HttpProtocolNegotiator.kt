@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator.generateSettingsBody
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
+import com.fireflysource.net.http.server.HttpServerRequest
 
 object HttpProtocolNegotiator {
     val defaultSettingsFrameBytes: ByteArray =
@@ -53,5 +54,11 @@ object HttpProtocolNegotiator {
     fun expectUpgradeHttp2(request: HttpClientRequest): Boolean {
         return request.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
                 && request.httpFields.contains(HttpHeader.UPGRADE, "h2c")
+    }
+
+    fun expectUpgradeHttp2(request: HttpServerRequest): Boolean {
+        return request.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
+                && request.httpFields.contains(HttpHeader.UPGRADE, "h2c")
+                && request.httpFields.contains(HttpHeader.HTTP2_SETTINGS)
     }
 }

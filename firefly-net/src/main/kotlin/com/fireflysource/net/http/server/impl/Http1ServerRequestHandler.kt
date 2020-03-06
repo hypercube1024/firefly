@@ -1,9 +1,14 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.codec.base64.Base64Utils
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
+import com.fireflysource.net.http.common.v2.decoder.SettingsBodyParser
+import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +25,9 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     var connectionListener: HttpServerConnection.Listener = HttpServerConnection.EMPTY_LISTENER
     private val parserChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
+    private var expectUpgradeHttp2 = false
+    private var settingsFrame: SettingsFrame? = null
+    private val upgradeHttp2Result: Channel<Boolean> = Channel(1)
 
     init {
         handleParserMessageJob()
@@ -40,6 +48,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                     is MessageComplete -> notifyHttpRequestComplete(context)
                     is BadMessage -> notifyException(context, message.exception)
                     is EarlyEOF -> notifyException(context, IllegalStateException("Parser early EOF"))
+                    is EndHandleRequest -> break@parserLoop
                 }
             } catch (e: Exception) {
                 log.error(e) { "Handle HTTP1 server parser message exception." }
@@ -60,6 +69,15 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
         requireNotNull(request)
         val httpServerRequest = AsyncHttpServerRequest(request)
+
+        this.expectUpgradeHttp2 = HttpProtocolNegotiator.expectUpgradeHttp2(httpServerRequest)
+        if (expectUpgradeHttp2) {
+            val settingsBody = Base64Utils.decodeFromUrlSafeString(request.fields[HttpHeader.HTTP2_SETTINGS])
+            val settings = SettingsBodyParser.parseBody(ByteBuffer.wrap(settingsBody))
+            this.settingsFrame = settings
+            this.expectUpgradeHttp2 = settings != null
+        }
+
         val expect100 = request.fields.expectServerAcceptsContent()
         val closeConnection = request.fields.isCloseConnection(request.httpVersion)
         val ctx = AsyncRoutingContext(
@@ -103,15 +121,42 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         try {
             requireNotNull(context)
             context.request.isRequestComplete = true
-            connectionListener.onHttpRequestComplete(context).await()
+            if (expectUpgradeHttp2 && !context.response.isCommitted) {
+                val settings = settingsFrame
+                requireNotNull(settings)
+
+                switchingHttp2()
+                val http2ServerConnection = Http2ServerConnection(connection.config, connection.tcpConnection)
+                val stream = http2ServerConnection.upgradeHttp2(settings)
+                val response = Http2ServerResponse(http2ServerConnection, stream)
+                val http2Context = AsyncRoutingContext(context.request, response, http2ServerConnection)
+                upgradeHttp2Result.offer(true)
+                parserChannel.offer(EndHandleRequest)
+                connectionListener.onHttpRequestComplete(http2Context).await()
+            } else {
+                upgradeHttp2Result.offer(false)
+                connectionListener.onHttpRequestComplete(context).await()
+            }
             log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
         } catch (e: Exception) {
+            upgradeHttp2Result.offer(false)
             log.error(e) { "HTTP1 server handles request exception. id: ${connection.id}" }
         }
     }
 
+    private suspend fun switchingHttp2() {
+        val message = "HTTP/1.1 101 Switching Protocols\r\n" +
+                "Connection: Upgrade\r\n" +
+                "Upgrade: h2c\r\n" +
+                "\r\n"
+        connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
+    }
+
+    suspend fun upgradeHttp2Success() = upgradeHttp2Result.receive()
+
     private suspend fun notifyException(context: RoutingContext?, exception: Throwable) {
         try {
+            upgradeHttp2Result.offer(false)
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
             connectionListener.onException(context, exception).await()
         } catch (e: Exception) {
@@ -169,3 +214,4 @@ object ContentComplete : ParserMessage()
 object MessageComplete : ParserMessage()
 object EarlyEOF : ParserMessage()
 class BadMessage(val exception: Exception) : ParserMessage()
+object EndHandleRequest : ParserMessage()

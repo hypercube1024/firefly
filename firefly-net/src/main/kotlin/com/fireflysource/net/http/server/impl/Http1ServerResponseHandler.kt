@@ -33,13 +33,17 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     fun generateResponseJob() = http1ServerConnection.coroutineScope.launch {
-        while (true) {
+        responseLoop@ while (true) {
             when (val message = responseChannel.receive()) {
                 is Header -> generateHeader(message)
                 is Http1OutputBuffer -> generateContent(message)
                 is Http1OutputBuffers -> generateContent(message)
                 is Http1OutputBufferList -> generateContent(message)
                 is EndResponse -> completeContent(message)
+                is UpgradeHttp2Success -> {
+                    log.info { "Server upgrades HTTP2 success. Exit the response handler. id: ${http1ServerConnection.id}" }
+                    break@responseLoop
+                }
             }
         }
     }
@@ -224,3 +228,5 @@ class Http1OutputBufferList(
 ) : Http1OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
 data class EndResponse(val future: CompletableFuture<Void>, val closeConnection: Boolean) : Http1ResponseMessage()
+
+object UpgradeHttp2Success : Http1ResponseMessage()
