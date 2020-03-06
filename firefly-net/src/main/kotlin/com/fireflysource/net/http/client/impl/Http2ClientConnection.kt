@@ -44,24 +44,28 @@ class Http2ClientConnection(
 
     init {
         if (priorKnowledge) {
-            init()
+            sendConnectionPreface()
+            parser.init(UnaryOperator.identity())
+            launchParserJob(parser)
         }
     }
 
-    fun upgradeHttp2AndReceiveResponse(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+    fun upgradeHttp2(request: HttpClientRequest, frameBytes: ByteBuffer?): CompletableFuture<HttpClientResponse> {
         upgradeHttp2FromHttp1 = true
         val streamId = getNextStreamId()
         val future = CompletableFuture<HttpClientResponse>()
         val streamListener = Http2ClientStreamListener(request, future)
         createLocalStream(streamId, streamListener)
-        init()
-        return future
-    }
-
-    private fun init() {
         sendConnectionPreface()
         parser.init(UnaryOperator.identity())
+        if (frameBytes != null) {
+            log.debug { "Upgrade HTTP2 and received frame data. id: $id, remaining: ${frameBytes.remaining()}" }
+            while (frameBytes.hasRemaining()) {
+                parser.parse(frameBytes)
+            }
+        }
         launchParserJob(parser)
+        return future
     }
 
     private fun sendConnectionPreface() {

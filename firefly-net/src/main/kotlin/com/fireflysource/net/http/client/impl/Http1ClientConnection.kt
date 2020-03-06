@@ -131,21 +131,21 @@ class Http1ClientConnection(
     }
 
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
-        parser.parseAll(tcpConnection)
+        val remainingData = parser.parseAll(tcpConnection)
         val response = handler.complete()
         return if (message.expectUpgradeHttp2) {
             if (isUpgradeSuccess(response)) {
                 log.info { "Server upgrades HTTP2 successfully. id: $id" }
 
                 val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
-                val responseFuture = http2Connection.upgradeHttp2AndReceiveResponse(message.httpClientRequest)
+                val responseFuture =
+                    http2Connection.upgradeHttp2(message.httpClientRequest, remainingData)
                 http2ClientConnection = http2Connection
                 httpVersion = HttpVersion.HTTP_2
-                responseFuture.await().also {
-                    log.info { "Client upgrades HTTP2 connection and receive the response successfully. id: $id" }
-                }
+                responseFuture.await()
+                    .also { log.info { "Client upgrades HTTP2 connection successfully. id: $id" } }
             } else {
-                log.info { "Upgrade HTTP2 failure. id: $id" }
+                log.info { "Server upgrades HTTP2 failure. id: $id" }
                 response
             }
         } else response
@@ -291,6 +291,7 @@ class Http1ClientConnection(
     }
 
     private fun sendRequestViaHttp1(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        log.debug { "Send request via HTTP1 protocol. id: $id" }
         prepareHttp1Headers(request)
         val future = CompletableFuture<HttpClientResponse>()
         requestChannel.offer(RequestMessage(request, future))
@@ -300,6 +301,7 @@ class Http1ClientConnection(
     private fun sendRequestViaHttp2(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val http2Connection = http2ClientConnection
         requireNotNull(http2Connection)
+        log.debug { "Send request via HTTP2 protocol. id: $id" }
         return http2Connection.send(request)
     }
 
