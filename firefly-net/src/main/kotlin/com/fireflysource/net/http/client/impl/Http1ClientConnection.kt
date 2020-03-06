@@ -143,7 +143,7 @@ class Http1ClientConnection(
                     http2Connection.upgradeHttp2(message.httpClientRequest, remainingData)
                 http2ClientConnection = http2Connection
                 httpVersion = HttpVersion.HTTP_2
-                responseFuture.await().also { log.info { "Client upgrades HTTP2 successfully. id: $id" } }
+                responseFuture.await().also { log.info { "Client upgrades HTTP2 success. id: $id" } }
             } else response.also { log.info { "Client upgrades HTTP2 failure. id: $id" } }
         } else response
     }

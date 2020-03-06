@@ -40,12 +40,16 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
                 is Http1OutputBuffers -> generateContent(message)
                 is Http1OutputBufferList -> generateContent(message)
                 is EndResponse -> completeContent(message)
-                is UpgradeHttp2Success -> {
-                    log.info { "Server upgrades HTTP2 success. Exit the response handler. id: ${http1ServerConnection.id}" }
+                is EndResponseHandler -> {
+                    log.info { "Exit the server response handler. id: ${http1ServerConnection.id}" }
                     break@responseLoop
                 }
             }
         }
+    }
+
+    fun endResponseHandler() {
+        responseChannel.offer(EndResponseHandler)
     }
 
     private suspend fun generateHeader(header: Header) {
@@ -229,4 +233,4 @@ class Http1OutputBufferList(
 
 data class EndResponse(val future: CompletableFuture<Void>, val closeConnection: Boolean) : Http1ResponseMessage()
 
-object UpgradeHttp2Success : Http1ResponseMessage()
+object EndResponseHandler : Http1ResponseMessage()

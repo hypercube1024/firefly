@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -27,13 +28,14 @@ class Http1ServerConnection(
     private val parser = HttpParser(requestHandler)
     private val responseHandler = Http1ServerResponseHandler(this)
     private val begun = AtomicBoolean(false)
+    private val upgradeHttp2Result: Channel<Boolean> = Channel(1)
 
     private fun parseRequestJob() = coroutineScope.launch {
         parseLoop@ while (!tcpConnection.isClosed) {
             try {
                 parser.parseAll(tcpConnection)
-                if (requestHandler.upgradeHttp2Success()) {
-                    responseHandler.sendResponseMessage(UpgradeHttp2Success)
+                if (upgradeHttp2()) {
+                    responseHandler.endResponseHandler()
                     log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
                     break@parseLoop
                 }
@@ -43,6 +45,12 @@ class Http1ServerConnection(
                 resetParser()
             }
         }
+    }
+
+    private suspend fun upgradeHttp2() = upgradeHttp2Result.receive()
+
+    fun notifyUpgradeHttp2(success: Boolean) {
+        upgradeHttp2Result.offer(success)
     }
 
     fun resetParser() {
