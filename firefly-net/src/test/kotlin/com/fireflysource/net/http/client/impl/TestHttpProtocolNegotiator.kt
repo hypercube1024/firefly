@@ -31,7 +31,7 @@ class TestHttpProtocolNegotiator {
         )
         assertEquals("h2c", request.httpFields[HttpHeader.UPGRADE])
         assertEquals(
-            Base64Utils.encodeToString(defaultSettingsFrameBytes),
+            Base64Utils.encodeToUrlSafeString(defaultSettingsFrameBytes),
             request.httpFields[HttpHeader.HTTP2_SETTINGS]
         )
 
