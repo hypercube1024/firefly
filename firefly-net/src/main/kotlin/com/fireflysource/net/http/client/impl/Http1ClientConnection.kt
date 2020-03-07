@@ -40,9 +40,9 @@ class Http1ClientConnection(
 
     private val generator = HttpGenerator()
 
-    private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.headerBufferSize) }
-    private val contentBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(config.contentBufferSize) }
-    private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
+    private val headerBuffer: ByteBuffer by lazy(LazyThreadSafetyMode.NONE) { BufferUtils.allocateDirect(config.headerBufferSize) }
+    private val contentBuffer: ByteBuffer by lazy(LazyThreadSafetyMode.NONE) { BufferUtils.allocateDirect(config.contentBufferSize) }
+    private val chunkBuffer: ByteBuffer by lazy(LazyThreadSafetyMode.NONE) { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
 
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
