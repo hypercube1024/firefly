@@ -32,7 +32,7 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val group: TcpChannelGroup = createTcpChannelGroup()
-    private val tcpClient: TcpClient = AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
+    private val tcpClient: TcpClient = createTcpClient()
     private val secureTcpClient: TcpClient = createSecureTcpClient()
     private val connectionPoolMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
 
@@ -43,6 +43,9 @@ class AsyncHttpClientConnectionManager(
     private fun createTcpChannelGroup() =
         if (config.tcpChannelGroup != null) config.tcpChannelGroup
         else AioTcpChannelGroup("async-http-client")
+
+    private fun createTcpClient() =
+        AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
 
     private fun createSecureTcpClient(): TcpClient =
         if (config.secureEngineFactory != null)

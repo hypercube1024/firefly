@@ -1,9 +1,17 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.HttpURI
-import com.sun.net.httpserver.HttpServer
+import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.impl.Http1ServerConnection
+import com.fireflysource.net.tcp.TcpServer
+import com.fireflysource.net.tcp.TcpServerFactory
+import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -12,31 +20,39 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.net.URL
-import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
 
 class TestAsyncHttpClientConnectionManager {
 
     private lateinit var address: InetSocketAddress
-    private lateinit var httpServer: HttpServer
+    private lateinit var httpServer: TcpServer
 
     @BeforeEach
     fun init() {
         address = InetSocketAddress("localhost", Random.nextInt(2000, 5000))
-        httpServer = HttpServer.create(address, 1024)
+        val listener = object : HttpServerConnection.Listener.Adapter() {
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.put(HttpHeader.CONTENT_LENGTH, "7").end("test ok")
+            }
 
-        httpServer.createContext("/test1") { exg ->
-            val body = "test ok".toByteArray(StandardCharsets.UTF_8)
-            exg.sendResponseHeaders(200, body.size.toLong())
-            exg.responseBody.use { out -> out.write(body) }
-            exg.close()
+            override fun onException(context: RoutingContext, e: Throwable): CompletableFuture<Void> {
+                e.printStackTrace()
+                return Result.DONE
+            }
         }
-        httpServer.start()
+        httpServer = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
+            .onAcceptAsync { connection ->
+                println("accept connection. ${connection.id}")
+                connection.beginHandshake().await()
+                val http1Connection = Http1ServerConnection(HttpConfig(), connection)
+                http1Connection.setListener(listener).begin()
+            }.listen(address)
     }
 
     @AfterEach
     fun destroy() {
-        httpServer.stop(1)
+        httpServer.stop()
     }
 
     @Test
