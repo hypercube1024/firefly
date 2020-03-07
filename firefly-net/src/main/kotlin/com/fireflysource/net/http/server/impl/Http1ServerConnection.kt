@@ -13,6 +13,7 @@ import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class Http1ServerConnection(
@@ -39,6 +40,8 @@ class Http1ServerConnection(
                     log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
                     break@parseLoop
                 }
+            } catch (e: CancellationException) {
+                log.info { "Cancel HTTP1 parsing. id: $id" }
             } catch (e: Exception) {
                 log.error(e) { "Parse HTTP1 request exception. id: $id" }
             } finally {

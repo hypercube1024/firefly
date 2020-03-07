@@ -1,9 +1,10 @@
 package com.fireflysource.net.tcp.aio
 
-import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.*
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.Result.createFailedResult
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
@@ -81,13 +82,22 @@ abstract class AbstractAioTcpConnection(
             while (true) {
                 handleOutputMessage(outputMessageChannel.receive())
             }
+        }.invokeOnCompletion { cause ->
+            val e = cause ?: ClosedChannelException()
+            outputMessageChannel.pollAll { message ->
+                when (message) {
+                    is OutputBuffer -> message.result.accept(createFailedResult(-1, e))
+                    is OutputBuffers -> message.result.accept(createFailedResult(-1, e))
+                    is OutputBufferList -> message.result.accept(createFailedResult(-1, e))
+                    is ShutdownOutput -> message.result.accept(createFailedResult(e))
+                }
+            }
         }
 
         private suspend fun handleOutputMessage(output: OutputMessage) {
             when (output) {
                 is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
-                else -> throw IllegalStateException("The output message type error.")
             }
         }
 
@@ -204,6 +214,14 @@ abstract class AbstractAioTcpConnection(
             while (true) {
                 handleInputMessage(inputMessageChannel.receive())
             }
+        }.invokeOnCompletion { cause ->
+            val e = cause ?: ClosedChannelException()
+            inputMessageChannel.pollAll { message ->
+                when (message) {
+                    is InputBuffer -> message.bufferFuture.completeExceptionally(e)
+                    is ShutdownInput -> message.result.accept(Result.SUCCESS)
+                }
+            }
         }
 
         private suspend fun handleInputMessage(input: InputMessage) {
@@ -268,22 +286,15 @@ abstract class AbstractAioTcpConnection(
         private fun failed(input: InputMessage, e: Exception?) {
             when (input) {
                 is InputBuffer -> input.bufferFuture.completeExceptionally(e)
-                is ShutdownInput -> input.result.accept(Result.createFailedResult(e))
+                is ShutdownInput -> input.result.accept(createFailedResult(e))
             }
         }
     }
 
-    override fun read(): CompletableFuture<ByteBuffer> {
-        return if (!isReadable()) CompletableFutures.completeExceptionally(ClosedChannelException())
-        else CompletableFuture<ByteBuffer>().also { inputMessageHandler.sendInputMessage(InputBuffer(it)) }
-    }
+    override fun read(): CompletableFuture<ByteBuffer> =
+        CompletableFuture<ByteBuffer>().also { inputMessageHandler.sendInputMessage(InputBuffer(it)) }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        if (!isWriteable()) {
-            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
-            return this
-        }
-
         outputMessageHandler.sendOutputMessage(OutputBuffer(byteBuffer, result))
         return this
     }
@@ -292,11 +303,6 @@ abstract class AbstractAioTcpConnection(
         byteBuffers: Array<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        if (!isWriteable()) {
-            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
-            return this
-        }
-
         outputMessageHandler.sendOutputMessage(OutputBuffers(byteBuffers, offset, length, result))
         return this
     }
@@ -305,11 +311,6 @@ abstract class AbstractAioTcpConnection(
         byteBufferList: List<ByteBuffer>, offset: Int, length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        if (!isWriteable()) {
-            result.accept(Result.createFailedResult(-1, ClosedChannelException()))
-            return this
-        }
-
         outputMessageHandler.sendOutputMessage(OutputBufferList(byteBufferList, offset, length, result))
         return this
     }
@@ -320,10 +321,6 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun getBufferSize(): Int = 0
-
-    private fun isWriteable() = !isOutputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()
-
-    private fun isReadable() = !isInputShutdown.get() && !closeRequest.get() && !socketChannelClosed.get()
 
 
     override fun onClose(callback: Callback): TcpConnection {
