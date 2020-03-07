@@ -323,14 +323,22 @@ class TestBufferUtils {
 
     @Test
     void testAddCapacity() {
-        ByteBuffer b = BufferUtils.toBuffer("Goodbye Cruel World");
-        b.position(19);
-        assertEquals(0, b.remaining());
-        ByteBuffer b1 = BufferUtils.addCapacity(b, 20);
-        assertEquals(b1.remaining(), 20);
-        assertEquals(19, b1.position());
-        assertEquals(39, b1.capacity());
-        assertEquals(39, b1.limit());
+        Arrays.asList(BufferUtils.allocateDirect(19), BufferUtils.allocate(19)).forEach(b -> {
+            BufferUtils.flipToFill(b);
+            b.put(BufferUtils.toBuffer("Goodbye Cruel World"));
+
+            assertEquals(19, b.position());
+            assertEquals(0, b.remaining());
+
+            ByteBuffer b1 = BufferUtils.addCapacity(b, 20);
+            assertEquals(20, b1.remaining());
+            assertEquals(19, b1.position());
+            assertEquals(39, b1.capacity());
+            assertEquals(39, b1.limit());
+            BufferUtils.flipToFlush(b1, 0);
+            assertEquals("Goodbye Cruel World", BufferUtils.toString(b1).trim());
+        });
+
     }
 
     @Test

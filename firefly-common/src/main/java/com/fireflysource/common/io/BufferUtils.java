@@ -1007,9 +1007,18 @@ public class BufferUtils {
     }
 
     public static ByteBuffer addCapacity(ByteBuffer buffer, int capacity) {
-        ByteBuffer newBuffer = BufferUtils.ensureCapacity(buffer, buffer.position() + capacity);
-        BufferUtils.flipToFill(newBuffer);
-        newBuffer.position(buffer.position());
+        int srcPos = buffer.position();
+        int newCapacity = srcPos + capacity;
+        ByteBuffer newBuffer;
+        if (buffer.hasArray()) {
+            newBuffer = ByteBuffer.wrap(Arrays.copyOfRange(buffer.array(), buffer.arrayOffset(), buffer.arrayOffset() + newCapacity));
+            newBuffer.position(srcPos);
+        } else {
+            newBuffer = BufferUtils.allocateDirect(newCapacity);
+            BufferUtils.flipToFill(newBuffer);
+            BufferUtils.flipToFlush(buffer, 0);
+            newBuffer.put(buffer);
+        }
         return newBuffer;
     }
 }
