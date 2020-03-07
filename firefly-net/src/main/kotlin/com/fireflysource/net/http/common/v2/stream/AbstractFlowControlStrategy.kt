@@ -5,7 +5,7 @@ import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.v2.frame.WindowUpdateFrame
 
 abstract class AbstractFlowControlStrategy(
-    private var initialStreamRecvWindow: Int = DEFAULT_WINDOW_SIZE
+    protected var initialStreamRecvWindow: Int = DEFAULT_WINDOW_SIZE
 ) : FlowControl {
 
     companion object {
