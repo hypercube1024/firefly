@@ -56,7 +56,7 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     }
 
     override fun bufferSize(bufferSize: Int): TcpClient {
-        config.bufferSize = bufferSize
+        config.outputBufferSize = bufferSize
         return this
     }
 
@@ -104,7 +104,13 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
         fun createConnection(connectionId: Int, socketChannel: AsynchronousSocketChannel): TcpConnection {
             val aioTcpConnection =
-                AioTcpConnection(connectionId, config.timeout, socketChannel, group.getDispatcher(connectionId))
+                AioTcpConnection(
+                    connectionId,
+                    config.timeout,
+                    socketChannel,
+                    group.getDispatcher(connectionId),
+                    config.inputBufferSize
+                )
 
             val tcpConnection = if (config.enableSecureConnection) {
                 val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
@@ -112,7 +118,7 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
             } else aioTcpConnection
 
             return if (config.enableOutputBuffer) {
-                BufferedOutputTcpConnection(tcpConnection, config.bufferSize)
+                BufferedOutputTcpConnection(tcpConnection, config.outputBufferSize)
             } else tcpConnection
         }
 

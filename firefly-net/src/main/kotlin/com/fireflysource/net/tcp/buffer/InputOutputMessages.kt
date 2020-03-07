@@ -2,11 +2,12 @@ package com.fireflysource.net.tcp.buffer
 
 import com.fireflysource.common.sys.Result
 import java.nio.ByteBuffer
+import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
 sealed class InputMessage
 
-class InputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : InputMessage()
+class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : InputMessage()
 
 class ShutdownInput(val result: Consumer<Result<Void>>) : InputMessage()
 

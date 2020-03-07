@@ -13,7 +13,8 @@ data class TcpConfig(
     var reuseAddr: Boolean = true,
     var keepAlive: Boolean = true,
     var tcpNoDelay: Boolean = false,
-    var bufferSize: Int = 8 * 1024,
+    var inputBufferSize: Int = 16 * 1024,
+    var outputBufferSize: Int = 16 * 1024,
     var enableOutputBuffer: Boolean = false
 )
 

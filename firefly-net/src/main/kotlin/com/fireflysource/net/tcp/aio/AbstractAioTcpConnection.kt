@@ -1,10 +1,10 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.*
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
-import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.tcp.TcpConnection
@@ -35,6 +35,7 @@ abstract class AbstractAioTcpConnection(
     maxIdleTime: Long,
     private val socketChannel: AsynchronousSocketChannel,
     dispatcher: CoroutineDispatcher,
+    inputBufferSize: Int,
     private val aioTcpCoroutineDispatcher: TcpCoroutineDispatcher = AioTcpCoroutineDispatcher(id, dispatcher)
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), TcpConnection,
     TcpCoroutineDispatcher by aioTcpCoroutineDispatcher {
@@ -48,10 +49,8 @@ abstract class AbstractAioTcpConnection(
     private val isOutputShutdown: AtomicBoolean = AtomicBoolean(false)
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
-
-    private val adaptiveBufferSize: AdaptiveBufferSize = AdaptiveBufferSize()
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
-
+    private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
     private val outputMessageHandler = OutputMessageHandler()
     private val inputMessageHandler = InputMessageHandler()
 
@@ -220,7 +219,9 @@ abstract class AbstractAioTcpConnection(
             var exception: Exception? = null
             var length = 0
             try {
-                length = socketChannel.readAwait(input.buffer, maxIdleTime, timeUnit)
+                val pos = inputBuffer.flipToFill()
+                length = socketChannel.readAwait(inputBuffer, maxIdleTime, timeUnit)
+                inputBuffer.flipToFlush(pos)
                 if (length < 0) {
                     success = false
                     exception = ClosedChannelException()
@@ -239,12 +240,17 @@ abstract class AbstractAioTcpConnection(
 
             if (success) {
                 log.debug { "TCP connection reads buffers total length: $length" }
-                input.result.accept(Result(true, length, null))
+
+                val size = inputBuffer.remaining()
+                val newBuffer = BufferUtils.allocate(size)
+                newBuffer.append(inputBuffer)
+                input.bufferFuture.complete(newBuffer)
             } else {
                 shutdownInputAndClose()
                 closeFuture()
                 failed(input, exception)
             }
+            BufferUtils.clear(inputBuffer)
             return success
         }
 
@@ -263,33 +269,17 @@ abstract class AbstractAioTcpConnection(
             }
         }
 
-        private fun failed(input: InputMessage, exception: Exception?) {
+        private fun failed(input: InputMessage, e: Exception?) {
             when (input) {
-                is InputBuffer -> input.result.accept(Result(false, -1, exception))
-                is ShutdownInput -> input.result.accept(Result.createFailedResult(exception))
+                is InputBuffer -> input.bufferFuture.completeExceptionally(e)
+                is ShutdownInput -> input.result.accept(Result.createFailedResult(e))
             }
         }
     }
 
     override fun read(): CompletableFuture<ByteBuffer> {
-        if (!isReadable()) {
-            val future = CompletableFuture<ByteBuffer>()
-            future.completeExceptionally(ClosedChannelException())
-            return future
-        }
-
-        val future = CompletableFuture<Int>()
-
-        val bufferSize = adaptiveBufferSize.getBufferSize()
-        log.debug { "TCP connection allocates read buffer. id: $id, size: $bufferSize" }
-        val buffer = BufferUtils.allocate(bufferSize)
-        val pos = buffer.flipToFill()
-
-        inputMessageHandler.sendInputMessage(InputBuffer(buffer, futureToConsumer(future)))
-        return future.thenApply { length ->
-            adaptiveBufferSize.update(length)
-            buffer.flipToFlush(pos)
-        }
+        return if (!isReadable()) CompletableFutures.completeExceptionally(ClosedChannelException())
+        else CompletableFuture<ByteBuffer>().also { inputMessageHandler.sendInputMessage(InputBuffer(it)) }
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {

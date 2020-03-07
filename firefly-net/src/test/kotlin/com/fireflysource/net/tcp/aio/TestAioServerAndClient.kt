@@ -60,7 +60,7 @@ class TestAioServerAndClient {
         val port = Random.nextInt(10000, 20000)
 
         val connectionCount = defaultPoolSize
-        val maxMessageCountPerOneConnection = 20
+        val maxMessageCountPerOneConnection = 64
         val expectMessageCount = maxMessageCountPerOneConnection * connectionCount
 
         val messageCount = AtomicInteger()
