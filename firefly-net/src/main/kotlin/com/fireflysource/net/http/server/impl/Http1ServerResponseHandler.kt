@@ -24,8 +24,12 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     private val generator = HttpGenerator()
-    private val headerBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(http1ServerConnection.getHeaderBufferSize()) }
-    private val chunkBuffer: ByteBuffer by lazy { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
+    private val headerBuffer: ByteBuffer by lazy(LazyThreadSafetyMode.NONE) {
+        BufferUtils.allocateDirect(
+            http1ServerConnection.getHeaderBufferSize()
+        )
+    }
+    private val chunkBuffer: ByteBuffer by lazy(LazyThreadSafetyMode.NONE) { BufferUtils.allocateDirect(HttpGenerator.CHUNK_SIZE) }
     private val responseChannel: Channel<Http1ResponseMessage> = Channel(Channel.UNLIMITED)
 
     fun sendResponseMessage(message: Http1ResponseMessage) {
