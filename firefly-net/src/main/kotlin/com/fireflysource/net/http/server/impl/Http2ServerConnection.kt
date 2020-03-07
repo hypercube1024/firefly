@@ -46,18 +46,13 @@ class Http2ServerConnection(
     override fun onPreface() {
         val settings = notifyPreface()
         val settingsFrame = SettingsFrame(settings, false)
+        val windowDelta: Int = initialSessionRecvWindow - HttpConfig.DEFAULT_WINDOW_SIZE
 
-        var windowFrame: WindowUpdateFrame? = null
-        val sessionWindow: Int = initialSessionRecvWindow - HttpConfig.DEFAULT_WINDOW_SIZE
-        if (sessionWindow > 0) {
-            updateRecvWindow(sessionWindow)
-            windowFrame = WindowUpdateFrame(0, sessionWindow)
-        }
-        if (windowFrame == null) {
-            sendControlFrame(null, settingsFrame)
-        } else {
-            sendControlFrame(null, settingsFrame, windowFrame)
-        }
+        log.info { "HTTP2 server on preface. id: $id, window delta: $windowDelta, settings: $settingsFrame" }
+        if (windowDelta > 0) {
+            updateRecvWindow(windowDelta)
+            sendControlFrame(null, settingsFrame, WindowUpdateFrame(0, windowDelta))
+        } else sendControlFrame(null, settingsFrame)
     }
 
     // headers frame

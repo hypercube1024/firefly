@@ -4,6 +4,7 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerConnection
@@ -28,6 +29,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
@@ -56,7 +58,12 @@ class TestHttpServerConnection {
         address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
     }
 
-    private fun createHttpServer(protocol: String, schema: String, listener: HttpServerConnection.Listener): TcpServer {
+    private fun createHttpServer(
+        protocol: String,
+        schema: String,
+        listener: HttpServerConnection.Listener,
+        httpConfig: HttpConfig = HttpConfig()
+    ): TcpServer {
         val server = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
         when (protocol) {
             "http1" -> server.supportedProtocols(listOf(HTTP1.value))
@@ -70,11 +77,11 @@ class TestHttpServerConnection {
             connection.beginHandshake().await()
             when (protocol) {
                 "http1" -> {
-                    val http1Connection = Http1ServerConnection(HttpConfig(), connection)
+                    val http1Connection = Http1ServerConnection(httpConfig, connection)
                     http1Connection.setListener(listener).begin()
                 }
                 "http2" -> {
-                    val http2Connection = Http2ServerConnection(HttpConfig(), connection)
+                    val http2Connection = Http2ServerConnection(httpConfig, connection)
                     http2Connection.setListener(listener).begin()
                 }
             }
@@ -640,6 +647,50 @@ class TestHttpServerConnection {
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals("Upgrade http2 success", response.stringBody)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @Test
+    @DisplayName("should trigger window update successfully.")
+    fun testBufferedWindowUpdate(): Unit = runBlocking {
+        val count = 100
+        val content = (1..50000).joinToString("") { it.toString() }
+        val httpConfig = HttpConfig()
+        httpConfig.initialSessionRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
+        httpConfig.initialStreamRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
+
+        val httpServer = createHttpServer("http2", "https", object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return ctx.end("Received data success. length: ${ctx.stringBody.length}")
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        }, httpConfig)
+
+        val httpClient = HttpClientFactory.create(httpConfig)
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("https://${address.hostName}:${address.port}/big-data-http2-$it")
+                    .contentProvider(ByteBufferContentProvider(ByteBuffer.wrap(content.toByteArray(StandardCharsets.UTF_8))))
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+            val response = futures[0].await()
+
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("Received data success. length: 238894", response.stringBody)
         }
 
         finish(count, time, httpClient, httpServer)

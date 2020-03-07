@@ -81,11 +81,11 @@ class Http2ClientConnection(
             val windowUpdateFrame = WindowUpdateFrame(0, windowDelta)
             updateRecvWindow(windowDelta)
             sendControlFrame(null, prefaceFrame, settingsFrame, windowUpdateFrame)
-                .thenAccept { log.info { "send connection preface success. id: $id" } }
+                .thenAccept { log.info { "send connection preface success. id: $id, settings: $settingsFrame" } }
                 .exceptionallyAccept { log.error(it) { "send connection preface exception. id: $id" } }
         } else {
             sendControlFrame(null, prefaceFrame, settingsFrame)
-                .thenAccept { log.info { "send connection preface success. id: $id" } }
+                .thenAccept { log.info { "send connection preface success. id: $id, settings: $settingsFrame" } }
                 .exceptionallyAccept { log.error(it) { "send connection preface exception. id: $id" } }
         }
     }
