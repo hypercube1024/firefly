@@ -17,3 +17,8 @@ fun ByteBuffer.flipToFlush(position: Int): ByteBuffer {
     BufferUtils.flipToFlush(this, position)
     return this
 }
+
+fun ByteBuffer.copy(): ByteBuffer {
+    return if (this.hasRemaining()) BufferUtils.allocate(this.remaining()).append(this)
+    else BufferUtils.EMPTY_BUFFER
+}

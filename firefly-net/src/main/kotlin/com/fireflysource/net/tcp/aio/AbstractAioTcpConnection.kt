@@ -240,11 +240,7 @@ abstract class AbstractAioTcpConnection(
 
             if (success) {
                 log.debug { "TCP connection reads buffers total length: $length" }
-
-                val size = inputBuffer.remaining()
-                val newBuffer = BufferUtils.allocate(size)
-                newBuffer.append(inputBuffer)
-                input.bufferFuture.complete(newBuffer)
+                inputBuffer.copy().also { input.bufferFuture.complete(it) }
             } else {
                 shutdownInputAndClose()
                 closeFuture()

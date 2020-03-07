@@ -6,7 +6,6 @@ import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.tcp.aio.AdaptiveBufferSize
 import com.fireflysource.net.tcp.buffer.OutputBuffer
 import com.fireflysource.net.tcp.buffer.OutputBufferList
 import com.fireflysource.net.tcp.buffer.OutputBuffers
@@ -41,8 +40,10 @@ abstract class AbstractAsyncSecureEngine(
     private var writeFunction: Function<ByteBuffer, CompletableFuture<Int>>? = null
 
     private var inPacketBuffer = EMPTY_BUFFER
-    private val inAppAdaptiveBufferSize = AdaptiveBufferSize()
-    private val outPacketAdaptiveBufferSize = AdaptiveBufferSize()
+    private val inAppBuffer =
+        BufferUtils.allocateDirect((16 * 1024).coerceAtLeast(sslEngine.session.applicationBufferSize))
+    private val outPacketBuffer =
+        BufferUtils.allocateDirect((16 * 1024).coerceAtLeast(sslEngine.session.packetBufferSize))
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -154,28 +155,6 @@ abstract class AbstractAsyncSecureEngine(
         }
     }
 
-    private fun allocateInApp(): ByteBuffer {
-        val size = inAppAdaptiveBufferSize.getBufferSize()
-        log.debug { "Allocate in app buffer size: $size" }
-        return BufferUtils.allocate(size)
-    }
-
-    private fun updateInAppBufferSize(size: Int) {
-        inAppAdaptiveBufferSize.update(size)
-        log.debug { "In app size: $size" }
-    }
-
-    private fun allocateOutPacket(): ByteBuffer {
-        val size = outPacketAdaptiveBufferSize.getBufferSize()
-        log.debug { "Allocate out packet buffer size: $size" }
-        return BufferUtils.allocate(size)
-    }
-
-    private fun updateOutPacketBufferSize(size: Int) {
-        outPacketAdaptiveBufferSize.update(size)
-        log.debug { "Out packet size: $size" }
-    }
-
     override fun encrypt(outAppBuffer: ByteBuffer): ByteBuffer =
         encryptBuffers(OutputBuffer(outAppBuffer, discard()))
 
@@ -188,13 +167,13 @@ abstract class AbstractAsyncSecureEngine(
 
 
     private fun encryptBuffers(outAppBuffer: OutputMessage): ByteBuffer {
-        var outPacketBuffer = allocateOutPacket()
-        val pos = outPacketBuffer.flipToFill()
+        var packetBuffer = this.outPacketBuffer
+        val pos = packetBuffer.flipToFill()
 
         fun wrap() = when (outAppBuffer) {
-            is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, outPacketBuffer)
-            is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
-            is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, outPacketBuffer)
+            is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, packetBuffer)
+            is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
+            is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
             else -> throw IllegalArgumentException("Out app buffer type error.")
         }
 
@@ -203,9 +182,9 @@ abstract class AbstractAsyncSecureEngine(
             handshakeStatus = result.handshakeStatus
             when (result.status) {
                 BUFFER_OVERFLOW -> {
-                    outPacketBuffer = outPacketBuffer.addCapacity(sslEngine.session.packetBufferSize)
-                    val capacity = outPacketBuffer.capacity()
-                    val remaining = outPacketBuffer.remaining()
+                    packetBuffer = packetBuffer.addCapacity(sslEngine.session.packetBufferSize)
+                    val capacity = packetBuffer.capacity()
+                    val remaining = packetBuffer.remaining()
                     log.debug { "Resize out packet buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
@@ -219,10 +198,7 @@ abstract class AbstractAsyncSecureEngine(
             }
         }
 
-        outPacketBuffer.flipToFlush(pos)
-        val size = outPacketBuffer.remaining()
-        updateOutPacketBufferSize(size)
-        return outPacketBuffer
+        return packetBuffer.flipToFlush(pos).copy().also { BufferUtils.clear(this.outPacketBuffer) }
     }
 
     override fun decrypt(receivedBuffer: ByteBuffer): ByteBuffer {
@@ -232,11 +208,11 @@ abstract class AbstractAsyncSecureEngine(
             return EMPTY_BUFFER
         }
 
-        var inAppBuffer = allocateInApp()
-        val pos = inAppBuffer.flipToFill()
+        var appBuffer = this.inAppBuffer
+        val pos = appBuffer.flipToFill()
 
         unwrap@ while (true) {
-            val result = sslEngine.unwrap(inPacketBuffer, inAppBuffer)
+            val result = sslEngine.unwrap(inPacketBuffer, appBuffer)
             handshakeStatus = result.handshakeStatus
             when (result.status) {
                 BUFFER_UNDERFLOW -> {
@@ -245,9 +221,9 @@ abstract class AbstractAsyncSecureEngine(
                     }
                 }
                 BUFFER_OVERFLOW -> {
-                    inAppBuffer = inAppBuffer.addCapacity(sslEngine.session.applicationBufferSize)
-                    val capacity = inAppBuffer.capacity()
-                    val remaining = inAppBuffer.remaining()
+                    appBuffer = appBuffer.addCapacity(sslEngine.session.applicationBufferSize)
+                    val capacity = appBuffer.capacity()
+                    val remaining = appBuffer.remaining()
                     log.debug { "Resize in app buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
@@ -264,9 +240,7 @@ abstract class AbstractAsyncSecureEngine(
             }
         }
 
-        inAppBuffer.flipToFlush(pos)
-        updateInAppBufferSize(inAppBuffer.remaining())
-        return inAppBuffer
+        return appBuffer.flipToFlush(pos).copy().also { BufferUtils.clear(this.inAppBuffer) }
     }
 
     private fun merge(receivedBuffer: ByteBuffer) {
