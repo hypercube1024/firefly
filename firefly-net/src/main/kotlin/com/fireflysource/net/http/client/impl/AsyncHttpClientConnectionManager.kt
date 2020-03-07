@@ -14,12 +14,10 @@ import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.isCloseConnection
+import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.AioTcpClient
-import com.fireflysource.net.tcp.aio.ApplicationProtocol
-import com.fireflysource.net.tcp.aio.isSecureProtocol
-import com.fireflysource.net.tcp.aio.schemaDefaultPort
+import com.fireflysource.net.tcp.aio.*
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
@@ -33,7 +31,8 @@ class AsyncHttpClientConnectionManager(
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
     }
 
-    private val tcpClient: TcpClient = AioTcpClient().timeout(config.timeout)
+    private val group: TcpChannelGroup = createTcpChannelGroup()
+    private val tcpClient: TcpClient = AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
     private val secureTcpClient: TcpClient = createSecureTcpClient()
     private val connectionPoolMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
 
@@ -41,15 +40,20 @@ class AsyncHttpClientConnectionManager(
         start()
     }
 
-    private fun createSecureTcpClient(): TcpClient {
-        return if (config.secureEngineFactory != null) {
+    private fun createTcpChannelGroup() =
+        if (config.tcpChannelGroup != null) config.tcpChannelGroup
+        else AioTcpChannelGroup("async-http-client")
+
+    private fun createSecureTcpClient(): TcpClient =
+        if (config.secureEngineFactory != null)
             AioTcpClient().timeout(config.timeout)
-                .secureEngineFactory(config.secureEngineFactory).enableSecureConnection()
-        } else {
-            AioTcpClient().timeout(config.timeout)
+                .tcpChannelGroup(group)
+                .secureEngineFactory(config.secureEngineFactory)
                 .enableSecureConnection()
-        }
-    }
+        else
+            AioTcpClient().timeout(config.timeout)
+                .tcpChannelGroup(group)
+                .enableSecureConnection()
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request)
@@ -69,16 +73,11 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun sendAndCloseConnection(
-        httpClientConnection: HttpClientConnection,
+        connection: HttpClientConnection,
         request: HttpClientRequest
-    ) = httpClientConnection.send(request)
-        .thenCompose { closeAndReturnResponse(httpClientConnection, it) }
+    ) =
+        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
 
-
-    private fun closeAndReturnResponse(
-        httpClientConnection: HttpClientConnection,
-        response: HttpClientResponse
-    ) = httpClientConnection.closeFuture().thenApply { response }
 
     private fun buildAddress(request: HttpClientRequest): Address {
         val port: Int = if (request.uri.port > 0) {

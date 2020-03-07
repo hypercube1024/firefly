@@ -1,6 +1,8 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
@@ -16,14 +18,15 @@ import java.util.function.Consumer
 /**
  * @author Pengtao Qiu
  */
-class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpServer {
+class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCycle(), TcpServer {
 
     companion object {
         private val log = SystemLogger.create(AioTcpServer::class.java)
     }
 
-    private val connChannel = Channel<TcpConnection>(UNLIMITED)
-    private var connectionConsumer: Consumer<TcpConnection> = Consumer { connChannel.offer(it) }
+    private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-server")
+    private val connectionChannel = Channel<TcpConnection>(UNLIMITED)
+    private var connectionConsumer: Consumer<TcpConnection> = Consumer { connectionChannel.offer(it) }
     private var secureEngineFactory: SecureEngineFactory = DefaultCredentialConscryptSSLContextFactory()
     private var supportedProtocols: List<String> = defaultSupportedProtocols
     private var peerHost: String = ""
@@ -40,7 +43,25 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
             }
         }
 
-    override fun getTcpConnectionChannel(): Channel<TcpConnection> = connChannel
+    override fun init() {
+        group.start()
+    }
+
+    override fun destroy() {
+        try {
+            serverSocketChannel?.close()
+        } catch (e: Exception) {
+            log.error(e) { "close server socket channel exception" }
+        }
+        group.stop()
+    }
+
+    override fun tcpChannelGroup(group: TcpChannelGroup): TcpServer {
+        this.group = group
+        return this
+    }
+
+    override fun getTcpConnectionChannel(): Channel<TcpConnection> = connectionChannel
 
     override fun secureEngineFactory(secureEngineFactory: SecureEngineFactory): TcpServer {
         this.secureEngineFactory = secureEngineFactory
@@ -95,7 +116,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         start()
 
         try {
-            val socketChannel = AsynchronousServerSocketChannel.open(group)
+            val socketChannel = AsynchronousServerSocketChannel.open(group.asynchronousChannelGroup)
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             socketChannel.bind(address, config.backlog)
             this.serverSocketChannel = socketChannel
@@ -108,7 +129,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
 
     private fun accept() {
         try {
-            serverSocketChannel?.accept(id.getAndIncrement(), acceptSocketConnectionCompletionHandler)
+            serverSocketChannel?.accept(group.nextId, acceptSocketConnectionCompletionHandler)
         } catch (e: ShutdownChannelGroupException) {
             log.info { "the channel group is shutdown." }
         } catch (e: Exception) {
@@ -129,7 +150,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
             val aioTcpConnection = AioTcpConnection(
                 connectionId, config.timeout,
-                socketChannel, getDispatcher(connectionId)
+                socketChannel, group.getDispatcher(connectionId)
             )
 
             val tcpConnection = if (config.enableSecureConnection) {
@@ -165,14 +186,4 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         }
     }
 
-    override fun getThreadName() = "aio-tcp-server"
-
-    override fun destroy() {
-        try {
-            serverSocketChannel?.close()
-        } catch (e: Exception) {
-            log.error(e) { "close server socket channel exception" }
-        }
-        super.destroy()
-    }
 }

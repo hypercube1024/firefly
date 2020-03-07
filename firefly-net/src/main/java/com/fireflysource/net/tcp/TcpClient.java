@@ -16,6 +16,14 @@ import java.util.concurrent.CompletableFuture;
 public interface TcpClient extends LifeCycle {
 
     /**
+     * Set the TCP channel group.
+     *
+     * @param group The TCP channel group.
+     * @return The TCP client.
+     */
+    TcpClient tcpChannelGroup(TcpChannelGroup group);
+
+    /**
      * Set the TLS engine factory.
      *
      * @param secureEngineFactory The TLS engine factory.

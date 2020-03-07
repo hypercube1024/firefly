@@ -1,6 +1,8 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
@@ -16,16 +18,26 @@ import java.util.concurrent.CompletableFuture
 /**
  * @author Pengtao Qiu
  */
-class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcpChannelGroup(), TcpClient {
+class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCycle(), TcpClient {
 
     companion object {
         private val log = SystemLogger.create(AioTcpClient::class.java)
     }
 
     private var secureEngineFactory: SecureEngineFactory = NoCheckConscryptSSLContextFactory()
+    private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-client")
 
-    init {
-        start()
+    override fun init() {
+        group.start()
+    }
+
+    override fun destroy() {
+        group.stop()
+    }
+
+    override fun tcpChannelGroup(group: TcpChannelGroup): TcpClient {
+        this.group = group
+        return this
     }
 
     override fun secureEngineFactory(secureEngineFactory: SecureEngineFactory): TcpClient {
@@ -82,6 +94,7 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         supportedProtocols: List<String>,
         future: CompletableFuture<TcpConnection>
     ) {
+        start()
 
         fun createSecureEngine(scope: CoroutineScope) = if (peerHost.isNotBlank() && peerPort != 0) {
             secureEngineFactory.create(scope, true, peerHost, peerPort, supportedProtocols)
@@ -91,7 +104,7 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
 
         fun createConnection(connectionId: Int, socketChannel: AsynchronousSocketChannel): TcpConnection {
             val aioTcpConnection =
-                AioTcpConnection(connectionId, config.timeout, socketChannel, getDispatcher(connectionId))
+                AioTcpConnection(connectionId, config.timeout, socketChannel, group.getDispatcher(connectionId))
 
             val tcpConnection = if (config.enableSecureConnection) {
                 val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
@@ -104,11 +117,11 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         }
 
         try {
-            val socketChannel = AsynchronousSocketChannel.open(group)
+            val socketChannel = AsynchronousSocketChannel.open(group.asynchronousChannelGroup)
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
-            socketChannel.connect(address, id.getAndIncrement(), object : CompletionHandler<Void?, Int> {
+            socketChannel.connect(address, group.nextId, object : CompletionHandler<Void?, Int> {
 
                 override fun completed(result: Void?, connectionId: Int) {
                     try {
@@ -130,5 +143,4 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractAioTcp
         }
     }
 
-    override fun getThreadName() = "aio-tcp-client"
 }

@@ -17,6 +17,14 @@ import java.util.function.Consumer;
 public interface TcpServer extends LifeCycle {
 
     /**
+     * Set the TCP channel group.
+     *
+     * @param group The TCP channel group.
+     * @return The TCP server.
+     */
+    TcpServer tcpChannelGroup(TcpChannelGroup group);
+
+    /**
      * Set the TLS engine factory.
      *
      * @param secureEngineFactory The TLS engine factory.

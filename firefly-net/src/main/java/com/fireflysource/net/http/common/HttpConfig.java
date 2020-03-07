@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common;
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers;
+import com.fireflysource.net.tcp.TcpChannelGroup;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 public class HttpConfig {
@@ -8,6 +9,7 @@ public class HttpConfig {
     public static int DEFAULT_WINDOW_SIZE = 65535;
     public static int DEFAULT_HEADER_TABLE_SIZE = 4096;
 
+    private TcpChannelGroup tcpChannelGroup;
     private long timeout = 30;
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
@@ -21,6 +23,14 @@ public class HttpConfig {
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
     private int maxConcurrentStreams = -1;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
+
+    public TcpChannelGroup getTcpChannelGroup() {
+        return tcpChannelGroup;
+    }
+
+    public void setTcpChannelGroup(TcpChannelGroup tcpChannelGroup) {
+        this.tcpChannelGroup = tcpChannelGroup;
+    }
 
     public long getTimeout() {
         return timeout;

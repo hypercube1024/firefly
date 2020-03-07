@@ -6,38 +6,37 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadDi
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadExecutor
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.tcp.TcpChannelGroup
 import kotlinx.coroutines.CoroutineDispatcher
 import java.nio.channels.AsynchronousChannelGroup
+import java.nio.channels.AsynchronousChannelGroup.withThreadPool
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 
-/**
- * The asynchronous channel group and message thread group. It manages the IO and message threads.
- *
- * @author Pengtao Qiu
- */
-abstract class AbstractAioTcpChannelGroup : AbstractLifeCycle() {
+class AioTcpChannelGroup(threadName: String) : AbstractLifeCycle(), TcpChannelGroup {
 
     companion object {
-        private val log = SystemLogger.create(AbstractAioTcpChannelGroup::class.java)
+        private val log = SystemLogger.create(AioTcpChannelGroup::class.java)
     }
 
-    protected val id: AtomicInteger = AtomicInteger(0)
-    protected val group: AsynchronousChannelGroup =
-        AsynchronousChannelGroup.withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
+    private val id: AtomicInteger = AtomicInteger(0)
+    private val group: AsynchronousChannelGroup =
+        withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
     private val dispatchers: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
-        newSingleThreadDispatcher("firefly-${getThreadName()}-message-thread-$i")
+        newSingleThreadDispatcher("firefly-$threadName-$i")
     }
 
-    protected fun getDispatcher(connectionId: Int): CoroutineDispatcher {
+    override fun getDispatcher(connectionId: Int): CoroutineDispatcher {
         return dispatchers[abs(connectionId % defaultPoolSize)]
     }
 
-    abstract fun getThreadName(): String
+    override fun getAsynchronousChannelGroup(): AsynchronousChannelGroup = group
+
+    override fun getNextId(): Int = id.getAndIncrement()
 
     override fun init() {
-        log.info { "Initialize message thread group. boss: 1, worker: $defaultPoolSize" }
+        log.info { "Initialize TCP channel group. boss: 1, worker: $defaultPoolSize" }
     }
 
     override fun destroy() {
