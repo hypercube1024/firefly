@@ -23,6 +23,7 @@ public class HttpConfig {
     private int initialStreamRecvWindow = 8 * 1024 * 1024;
     private int maxConcurrentStreams = -1;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
+    private long streamIdleTimeout = 0;
 
     public TcpChannelGroup getTcpChannelGroup() {
         return tcpChannelGroup;
@@ -134,6 +135,14 @@ public class HttpConfig {
 
     public void setInitialSessionRecvWindow(int initialSessionRecvWindow) {
         this.initialSessionRecvWindow = initialSessionRecvWindow;
+    }
+
+    public long getStreamIdleTimeout() {
+        return streamIdleTimeout;
+    }
+
+    public void setStreamIdleTimeout(long streamIdleTimeout) {
+        this.streamIdleTimeout = streamIdleTimeout;
     }
 
     @Override

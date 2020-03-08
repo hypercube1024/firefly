@@ -167,6 +167,7 @@ class Http2ClientConnection(
         val streamListener = Http2ClientStreamListener(request, future)
         val serverAccepted = streamListener.serverAccepted
         newStream(headersFrame, streamListener)
+            .thenApply { setStreamIdleTimeout(it) }
             .thenCompose { newStream -> serverAccepted.thenApply { Pair(newStream, it) } }
             .thenCompose { generateContent(contentProvider, metaDataRequest, it.first, it.second) }
             .thenAccept { generateTrailer(metaDataRequest, it.first, it.second) }
@@ -175,6 +176,13 @@ class Http2ClientConnection(
                 future.completeExceptionally(it)
             }
         return future
+    }
+
+    private fun setStreamIdleTimeout(newStream: Stream): Stream {
+        if (config.streamIdleTimeout > 0) {
+            newStream.idleTimeout = config.streamIdleTimeout
+        }
+        return newStream
     }
 
     private fun generateContent(

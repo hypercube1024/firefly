@@ -10,10 +10,16 @@ import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.Event.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.delay
 import java.io.Closeable
 import java.io.IOException
+import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
@@ -30,17 +36,23 @@ class AsyncHttp2Stream(
         val defaultStreamListener = Stream.Listener.Adapter()
     }
 
+    private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
+
     private val sendWindow = AtomicInteger()
     private val recvWindow = AtomicInteger()
     private val level = AtomicInteger()
-    private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
-    private val closeState = AtomicReference(NOT_CLOSED)
-    private val createTime = System.currentTimeMillis()
 
-    private var dataLength = Long.MIN_VALUE
+    private val closeState = AtomicReference(NOT_CLOSED)
     private var localReset = false
     private var remoteReset = false
-    private var idleTimeout = asyncHttp2Connection.maxIdleTime
+
+    private val createTime = System.currentTimeMillis()
+    private var lastActiveTime = createTime
+    private var idleTimeout: Long = 0
+    private var idleCheckJob: Job? = null
+
+    private var dataLength = Long.MIN_VALUE
+
     val stashedDataFrames = LinkedList<DataFrameEntry>()
 
 
@@ -51,7 +63,44 @@ class AsyncHttp2Stream(
     override fun getIdleTimeout(): Long = idleTimeout
 
     override fun setIdleTimeout(idleTimeout: Long) {
-        this.idleTimeout = idleTimeout
+        if (idleTimeout > 0) {
+            this.idleTimeout = idleTimeout
+            val job = idleCheckJob
+            idleCheckJob = if (job == null) {
+                launchIdleCheckJob()
+            } else {
+                job.cancel(CancellationException("Set the new idle timeout. id: $id"))
+                launchIdleCheckJob()
+            }
+        }
+    }
+
+    private fun noIdle() {
+        lastActiveTime = System.currentTimeMillis()
+    }
+
+    private fun launchIdleCheckJob() = asyncHttp2Connection.coroutineScope.launch {
+        while (true) {
+            val duration = Duration.ofSeconds(idleTimeout)
+            delay(duration)
+            val idle = System.currentTimeMillis() - lastActiveTime
+            if (idle >= duration.toMillis()) {
+                notifyIdleTimeout()
+                break
+            }
+        }
+    }
+
+    private fun notifyIdleTimeout() {
+        try {
+            val reset = listener.onIdleTimeout(this, TimeoutException("Stream idle timeout"))
+            if (reset) {
+                val frame = ResetFrame(id, ErrorCode.CANCEL_STREAM_ERROR.code)
+                reset(frame, discard())
+            }
+        } catch (e: Exception) {
+            log.error(e) { "failure while notifying listener" }
+        }
     }
 
     override fun getAttribute(key: String): Any? = attributes[key]
@@ -84,6 +133,7 @@ class AsyncHttp2Stream(
     // header frame
     override fun headers(frame: HeadersFrame, result: Consumer<Result<Void>>) {
         try {
+            noIdle()
             Assert.isTrue(frame.streamId == id, "The headers frame id must equal the stream id")
             sendControlFrame(frame, result)
         } catch (e: Exception) {
@@ -92,6 +142,7 @@ class AsyncHttp2Stream(
     }
 
     private fun onHeaders(frame: HeadersFrame, result: Consumer<Result<Void>>) {
+        noIdle()
         val metaData: MetaData = frame.metaData
         if (metaData.isRequest || metaData.isResponse) {
             val fields = metaData.fields
@@ -110,18 +161,21 @@ class AsyncHttp2Stream(
 
     // push promise frame
     override fun push(frame: PushPromiseFrame, promise: Consumer<Result<Stream?>>, listener: Stream.Listener) {
+        noIdle()
         asyncHttp2Connection.push(frame, promise, listener)
     }
 
 
     // data frame
     override fun data(frame: DataFrame, result: Consumer<Result<Void>>) {
+        noIdle()
         asyncHttp2Connection.sendDataFrame(this, frame)
             .thenAccept { result.accept(Result.SUCCESS) }
             .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
     }
 
     private fun onData(frame: DataFrame, result: Consumer<Result<Void>>) {
+        noIdle()
         if (getRecvWindow() < 0) {
             // It's a bad client, it does not deserve to be treated gently by just resetting the stream.
             asyncHttp2Connection.close(ErrorCode.FLOW_CONTROL_ERROR.code, "stream_window_exceeded", discard())
@@ -238,6 +292,7 @@ class AsyncHttp2Stream(
     override fun close() {
         val oldState = closeState.getAndSet(CLOSED)
         if (oldState != CLOSED) {
+            idleCheckJob?.cancel(CancellationException("The stream closed. id: $id"))
             val deltaClosing = if (oldState == CLOSING) -1 else 0
             asyncHttp2Connection.updateStreamCount(local, -1, deltaClosing)
             notifyClosed(this)

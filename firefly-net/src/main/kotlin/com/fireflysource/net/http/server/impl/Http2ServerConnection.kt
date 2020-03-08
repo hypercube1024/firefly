@@ -74,13 +74,15 @@ class Http2ServerConnection(
     }
 
     private fun onHttpRequest(stream: Stream?, streamId: Int, frame: HeadersFrame) {
-        var remoteStream = stream
-        if (remoteStream == null) {
+        if (stream == null) {
             if (isRemoteStreamClosed(streamId)) {
                 onConnectionFailure(ErrorCode.STREAM_CLOSED_ERROR.code, "unexpected_headers_frame")
             } else {
-                remoteStream = createRemoteStream(streamId)
+                val remoteStream = createRemoteStream(streamId)
                 if (remoteStream != null && remoteStream is AsyncHttp2Stream) {
+                    if (config.streamIdleTimeout > 0) {
+                        remoteStream.idleTimeout = config.streamIdleTimeout
+                    }
                     onStreamOpened(remoteStream)
                     remoteStream.process(frame, discard())
                     remoteStream.listener = notifyNewStream(remoteStream, frame)
