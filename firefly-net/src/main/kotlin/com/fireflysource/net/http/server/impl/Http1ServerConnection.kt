@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.common.coroutine.Signal
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
@@ -11,7 +12,6 @@ import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,8 +28,8 @@ class Http1ServerConnection(
     private val requestHandler = Http1ServerRequestHandler(this)
     private val parser = HttpParser(requestHandler)
     private val responseHandler = Http1ServerResponseHandler(this)
-    private val begun = AtomicBoolean(false)
-    private val upgradeHttp2Result: Channel<Boolean> = Channel(1)
+    private val beginning = AtomicBoolean(false)
+    private val upgradeHttp2Signal: Signal<Boolean> = Signal()
 
     private fun parseRequestJob() = coroutineScope.launch {
         parseLoop@ while (!tcpConnection.isClosed) {
@@ -50,14 +50,15 @@ class Http1ServerConnection(
         }
     }
 
-    private suspend fun upgradeHttp2() = upgradeHttp2Result.receive()
+    private suspend fun upgradeHttp2() = upgradeHttp2Signal.wait()
 
     fun notifyUpgradeHttp2(success: Boolean) {
-        upgradeHttp2Result.offer(success)
+        upgradeHttp2Signal.notify(success)
     }
 
     fun resetParser() {
         parser.reset()
+        upgradeHttp2Signal.reset()
     }
 
     private fun generateResponseJob() = responseHandler.generateResponseJob()
@@ -67,7 +68,7 @@ class Http1ServerConnection(
     fun sendResponseMessage(message: Http1ResponseMessage) = responseHandler.sendResponseMessage(message)
 
     override fun begin() {
-        if (begun.compareAndSet(false, true)) {
+        if (beginning.compareAndSet(false, true)) {
             Assert.state(
                 requestHandler.connectionListener !== HttpServerConnection.EMPTY_LISTENER,
                 "The HTTP1 server connection listener is empty. Please set listener before begin parsing."
@@ -79,7 +80,7 @@ class Http1ServerConnection(
 
     override fun setListener(listener: HttpServerConnection.Listener): HttpServerConnection {
         Assert.state(
-            !begun.get(),
+            !beginning.get(),
             "The HTTP request parser has started. Please set listener before begin parsing."
         )
         requestHandler.connectionListener = listener
