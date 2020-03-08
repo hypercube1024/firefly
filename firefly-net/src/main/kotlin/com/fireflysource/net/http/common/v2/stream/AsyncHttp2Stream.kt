@@ -181,11 +181,7 @@ class AsyncHttp2Stream(
 
     fun getRecvWindow(): Int = recvWindow.get()
 
-    fun updateLevel(delta: Int): Int = level.getAndAdd(delta)
-
     fun addAndGetLevel(delta: Int): Int = level.addAndGet(delta)
-
-    fun getLevel(): Int = level.get()
 
     fun setLevel(level: Int) {
         this.level.set(level)

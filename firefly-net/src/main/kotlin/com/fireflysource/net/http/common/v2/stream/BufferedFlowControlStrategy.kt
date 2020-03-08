@@ -56,7 +56,7 @@ class BufferedFlowControlStrategy(
 
     override fun windowUpdate(http2Connection: Http2Connection, stream: Stream?, frame: WindowUpdateFrame) {
         super.windowUpdate(http2Connection, stream, frame)
-        if (frame.streamId <= 0) {
+        if (frame.streamId == 0) {
             val connection = http2Connection as AsyncHttp2Connection
             val recvWindow = connection.getRecvWindow()
             Atomics.updateMax(maxConnectionRecvWindow, recvWindow)
