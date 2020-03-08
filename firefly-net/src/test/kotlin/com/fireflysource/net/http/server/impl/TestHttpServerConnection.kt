@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClient
@@ -133,6 +134,7 @@ class TestHttpServerConnection {
         val time = measureTimeMillis {
             val futures = (1..count)
                 .map { httpClient.get("$schema://${address.hostName}:${address.port}/test-$it").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
             CompletableFuture.allOf(*futures.toTypedArray()).await()
             val allDone = futures.all { it.isDone }
             assertTrue(allDone)

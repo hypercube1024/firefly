@@ -66,7 +66,6 @@ abstract class AsyncHttp2Connection(
 
     private val flusher = FrameEntryFlusher()
 
-
     private inner class FrameEntryFlusher {
 
         private val frameEntryChannel = Channel<FlushFrameMessage>(Channel.UNLIMITED)
@@ -83,7 +82,7 @@ abstract class AsyncHttp2Connection(
                     is OnWindowUpdateMessage -> onWindowUpdateMessage(frameEntry)
                 }
             }
-        }
+        }.invokeOnCompletion { terminate() }
 
         private suspend fun flushOrStashDataFrameEntry(frameEntry: DataFrameEntry) {
             try {
@@ -806,10 +805,9 @@ abstract class AsyncHttp2Connection(
             when (val current = closeState.get()) {
                 CloseState.NOT_CLOSED, CloseState.LOCALLY_CLOSED, CloseState.REMOTELY_CLOSED -> {
                     if (closeState.compareAndSet(current, CloseState.CLOSED)) {
-                        for (stream in http2StreamMap.values) {
-                            (stream as AsyncHttp2Stream).close()
-                        }
-                        streams.clear()
+                        log.debug { "HTTP2 connection terminated. id: $id, stream size: ${http2StreamMap.size}" }
+                        http2StreamMap.values.map { it as AsyncHttp2Stream }.forEach { it.close() }
+                        http2StreamMap.clear()
                         disconnect()
                         break@terminateLoop
                     }
