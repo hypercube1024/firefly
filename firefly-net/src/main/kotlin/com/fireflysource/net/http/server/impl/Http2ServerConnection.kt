@@ -80,9 +80,6 @@ class Http2ServerConnection(
             } else {
                 val remoteStream = createRemoteStream(streamId)
                 if (remoteStream != null && remoteStream is AsyncHttp2Stream) {
-                    if (config.streamIdleTimeout > 0) {
-                        remoteStream.idleTimeout = config.streamIdleTimeout
-                    }
                     onStreamOpened(remoteStream)
                     remoteStream.process(frame, discard())
                     remoteStream.listener = notifyNewStream(remoteStream, frame)

@@ -96,6 +96,11 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                     .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
             }
 
+            override fun onIdleTimeout(stream: Stream, e: Throwable): Boolean {
+                connectionListener.onException(context, e)
+                return true
+            }
+
         }
     }
 

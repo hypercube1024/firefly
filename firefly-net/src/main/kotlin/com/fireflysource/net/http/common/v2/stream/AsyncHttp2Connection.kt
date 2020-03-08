@@ -59,7 +59,7 @@ abstract class AsyncHttp2Connection(
 
     private var maxLocalStreams: Int = -1
     private var maxRemoteStreams: Int = -1
-    private var streamIdleTimeout = tcpConnection.maxIdleTime
+    private var streamIdleTimeout: Long = config.streamIdleTimeout
     private var pushEnabled: Boolean = false
     private var closeFrame: GoAwayFrame? = null
     protected val initialSessionRecvWindow: Int = config.initialSessionRecvWindow
