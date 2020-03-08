@@ -655,8 +655,8 @@ class TestHttpServerConnection {
     @Test
     @DisplayName("should trigger window update successfully.")
     fun testBufferedWindowUpdate(): Unit = runBlocking {
-        val count = 100
-        val content = (1..50000).joinToString("") { it.toString() }
+        val count = 1
+        val content = (1..30_000_000).joinToString("") { "a" }
         val httpConfig = HttpConfig()
         httpConfig.initialSessionRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
         httpConfig.initialStreamRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
@@ -690,7 +690,7 @@ class TestHttpServerConnection {
 
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("Received data success. length: 238894", response.stringBody)
+            assertTrue(response.stringBody.contains("Received data success."))
         }
 
         finish(count, time, httpClient, httpServer)

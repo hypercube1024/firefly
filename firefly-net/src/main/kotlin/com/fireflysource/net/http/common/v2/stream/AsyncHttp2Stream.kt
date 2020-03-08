@@ -14,7 +14,6 @@ import java.io.Closeable
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
@@ -33,7 +32,8 @@ class AsyncHttp2Stream(
 
     private val sendWindow = AtomicInteger()
     private val recvWindow = AtomicInteger()
-    private val attributes: ConcurrentMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
+    private val level = AtomicInteger()
+    private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
     private val closeState = AtomicReference(NOT_CLOSED)
     private val createTime = System.currentTimeMillis()
 
@@ -42,6 +42,7 @@ class AsyncHttp2Stream(
     private var remoteReset = false
     private var idleTimeout = asyncHttp2Connection.maxIdleTime
     val stashedDataFrames = LinkedList<DataFrameEntry>()
+
 
     override fun getId(): Int = id
 
@@ -172,20 +173,22 @@ class AsyncHttp2Stream(
 
 
     // window update
-    fun updateSendWindow(delta: Int): Int {
-        return sendWindow.getAndAdd(delta)
-    }
+    fun updateSendWindow(delta: Int): Int = sendWindow.getAndAdd(delta)
 
-    fun updateRecvWindow(delta: Int): Int {
-        return recvWindow.getAndAdd(delta)
-    }
+    fun getSendWindow(): Int = sendWindow.get()
 
-    fun getSendWindow(): Int {
-        return sendWindow.get()
-    }
+    fun updateRecvWindow(delta: Int): Int = recvWindow.getAndAdd(delta)
 
-    fun getRecvWindow(): Int {
-        return recvWindow.get()
+    fun getRecvWindow(): Int = recvWindow.get()
+
+    fun updateLevel(delta: Int): Int = level.getAndAdd(delta)
+
+    fun addAndGetLevel(delta: Int): Int = level.addAndGet(delta)
+
+    fun getLevel(): Int = level.get()
+
+    fun setLevel(level: Int) {
+        this.level.set(level)
     }
 
 

@@ -94,10 +94,11 @@ abstract class AsyncHttp2Connection(
                     if (!success) {
                         http2Stream.stashFrameEntry(frameEntry)
                         val dataRemaining = frameEntry.dataRemaining
-                        log.debug { "Stash a data frame. remaining: $dataRemaining" }
+                        log.debug { "Send data frame failure. Stash a data frame. remaining: $dataRemaining, stream: $http2Stream" }
                     }
                 } else {
                     http2Stream.stashFrameEntry(frameEntry)
+                    log.debug { "Stashed data frame is not empty. Stash a data frame. stream: $http2Stream" }
                 }
             } catch (e: Exception) {
                 log.error(e) { "flush data frame exception." }
@@ -120,12 +121,8 @@ abstract class AsyncHttp2Connection(
                         val dataRemaining = entry.dataRemaining
                         val writtenBytes = entry.writtenBytes
                         log.debug { "Poll a stashed data frame. remaining: ${dataRemaining}, written: $writtenBytes" }
-                    } else {
-                        break@flush
-                    }
-                } else {
-                    break@flush
-                }
+                    } else break@flush
+                } else break@flush
             }
             return stashedDataFrames.isEmpty()
         }
@@ -135,9 +132,9 @@ abstract class AsyncHttp2Connection(
             val stream = frameEntry.stream as AsyncHttp2Stream
             val dataRemaining = frameEntry.dataRemaining
 
-            val sessionSendWindow = getSendWindow()
+            val connectionSendWindow = getSendWindow()
             val streamSendWindow = stream.getSendWindow()
-            val window = min(streamSendWindow, sessionSendWindow)
+            val window = min(streamSendWindow, connectionSendWindow)
 
             log.debug { "Flush data frame. window: $window, remaining: $dataRemaining" }
             if (window <= 0 && dataRemaining > 0) {
