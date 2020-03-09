@@ -41,7 +41,7 @@ class ContinuationParseTest {
             int streamId = 13;
             HttpFields fields = new HttpFields();
             fields.put("Accept", "text/html");
-            fields.put("User-Agent", "Jetty");
+            fields.put("User-Agent", "Firefly");
             MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
             FrameBytes frameBytes = generator.generateHeaders(streamId, metaData, null, true);

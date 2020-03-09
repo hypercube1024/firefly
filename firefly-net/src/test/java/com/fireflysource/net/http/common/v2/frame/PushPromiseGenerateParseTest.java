@@ -35,7 +35,7 @@ class PushPromiseGenerateParseTest {
         int promisedStreamId = 17;
         HttpFields fields = new HttpFields();
         fields.put("Accept", "text/html");
-        fields.put("User-Agent", "Jetty");
+        fields.put("User-Agent", "Firefly");
         MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
         // Iterate a few times to be sure generator and parser are properly reset.
@@ -80,7 +80,7 @@ class PushPromiseGenerateParseTest {
         int promisedStreamId = 17;
         HttpFields fields = new HttpFields();
         fields.put("Accept", "text/html");
-        fields.put("User-Agent", "Jetty");
+        fields.put("User-Agent", "Firefly");
         MetaData.Request metaData = new MetaData.Request("GET", HttpScheme.HTTP, new HostPortHttpField("localhost:8080"), "/path", HttpVersion.HTTP_2, fields);
 
         // Iterate a few times to be sure generator and parser are properly reset.

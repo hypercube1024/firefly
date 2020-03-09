@@ -5,11 +5,6 @@ package com.fireflysource.common.sys;
  * <p>Parses java versions to extract a consistent set of version parts</p>
  */
 public class JavaVersion {
-    /**
-     * The context attribute that can be set to target a different version of the jvm than the current runtime.
-     * Acceptable values should correspond to those returned by JavaVersion.getPlatform().
-     */
-    public static final String JAVA_TARGET_PLATFORM = "org.eclipse.jetty.javaTargetPlatform";
 
     public static final JavaVersion VERSION = parse(System.getProperty("java.version"));
 
