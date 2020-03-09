@@ -6,7 +6,6 @@ import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.codec.MultiPartParser
-import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.MultiPart
@@ -29,34 +28,37 @@ class MultiPartContentHandler(
     private var byteBuffer: ByteBuffer = BufferUtils.EMPTY_BUFFER
     private val multiPartHandler = MultiPartHandler()
     private val job = parsingJob()
+    private var part: AsyncMultiPart = AsyncMultiPart()
 
     private inner class MultiPartHandler : MultiPartParser.Handler {
 
-        private val httpFields = HttpFields()
-
         override fun startPart() {
-
+            multiPartChannel.offer(StartPart)
         }
 
         override fun parsedField(name: String, value: String) {
-            httpFields.add(name, value)
+            multiPartChannel.offer(PartField(name, value))
         }
 
         override fun headerComplete(): Boolean {
+            multiPartChannel.offer(PartHeaderComplete)
             return false
         }
 
         override fun content(item: ByteBuffer, last: Boolean): Boolean {
+            multiPartChannel.offer(PartContent(item, last))
             return false
         }
 
         override fun messageComplete(): Boolean {
+            multiPartChannel.offer(PartMessageComplete)
             return true
         }
 
         override fun earlyEOF() {
-
+            multiPartChannel.offer(PartEarlyEOF)
         }
+
     }
 
     private fun parsingJob() = event {
@@ -73,6 +75,20 @@ class MultiPartContentHandler(
                 is ParseMultiPartContent -> {
                     byteBuffer = message.byteBuffer
                     parser?.parse(message.byteBuffer, false)
+                }
+                is StartPart -> part = AsyncMultiPart()
+                is PartField -> part.httpFields.add(message.name, message.value)
+                is PartHeaderComplete -> {
+                    TODO("")
+                }
+                is PartContent -> {
+                    TODO("")
+                }
+                is PartMessageComplete -> {
+                    TODO("")
+                }
+                is PartEarlyEOF -> {
+                    TODO("")
                 }
                 is EndMultiPartHandler -> {
                     parser?.parse(byteBuffer, true)
@@ -130,4 +146,10 @@ class MultiPartContentHandler(
 sealed class MultiPartHandlerMessage
 class ParseMultiPartBoundary(val contentType: String?) : MultiPartHandlerMessage()
 class ParseMultiPartContent(val byteBuffer: ByteBuffer) : MultiPartHandlerMessage()
+object StartPart : MultiPartHandlerMessage()
+data class PartField(val name: String, val value: String) : MultiPartHandlerMessage()
+object PartHeaderComplete : MultiPartHandlerMessage()
+class PartContent(val byteBuffer: ByteBuffer, val last: Boolean) : MultiPartHandlerMessage()
+object PartMessageComplete : MultiPartHandlerMessage()
+object PartEarlyEOF : MultiPartHandlerMessage()
 object EndMultiPartHandler : MultiPartHandlerMessage()

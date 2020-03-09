@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture
 
 class AsyncMultiPart : MultiPart {
 
+    private val httpFields = HttpFields()
+
     override fun getSubmittedFileName(): String {
         TODO("Not yet implemented")
     }
@@ -15,9 +17,7 @@ class AsyncMultiPart : MultiPart {
         TODO("Not yet implemented")
     }
 
-    override fun getHttpFields(): HttpFields {
-        TODO("Not yet implemented")
-    }
+    override fun getHttpFields(): HttpFields = httpFields
 
     override fun closeFuture(): CompletableFuture<Void> {
         TODO("Not yet implemented")
