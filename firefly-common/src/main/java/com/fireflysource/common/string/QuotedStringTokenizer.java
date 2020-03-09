@@ -183,7 +183,7 @@ public class QuotedStringTokenizer extends StringTokenizer {
      *
      * @param s       The string to unquote.
      * @param lenient if true, will leave in backslashes that aren't valid escapes
-     * @return quoted string
+     * @return quoted string.
      */
     public static String unquoteOnly(String s, boolean lenient) {
         if (s == null)

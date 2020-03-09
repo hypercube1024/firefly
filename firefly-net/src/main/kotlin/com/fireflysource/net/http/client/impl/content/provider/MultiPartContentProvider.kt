@@ -36,7 +36,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     private var open = true
 
     private val multiPartChannel: Channel<MultiPartProviderMessage> = Channel(Channel.UNLIMITED)
-    private val generateJob: Job
+    private val generatingJob: Job
 
     init {
         val boundary = makeBoundary()
@@ -54,7 +54,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        generateJob = event {
+        generatingJob = event {
             readMessageLoop@ while (true) {
                 when (val readMultiPartMessage = multiPartChannel.receive()) {
                     is GenerateMultiPart -> {
@@ -134,7 +134,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     private suspend fun closeAwait() {
         close()
-        generateJob.join()
+        generatingJob.join()
     }
 
     override fun closeFuture(): CompletableFuture<Void> {

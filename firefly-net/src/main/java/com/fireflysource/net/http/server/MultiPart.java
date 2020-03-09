@@ -1,8 +1,9 @@
 package com.fireflysource.net.http.server;
 
+import com.fireflysource.common.io.InputChannel;
 import com.fireflysource.net.http.common.model.HttpFields;
 
-public interface MultiPart {
+public interface MultiPart extends InputChannel {
 
     /**
      * Gets the content type of this part.

@@ -346,6 +346,8 @@ public class MultiPartParserTest {
         assertEquals(State.DELIMITER, parser.getState());
         assertTrue(handler.fields.containsAll(Arrays.asList("name: value", "<<COMPLETE>>")));
         assertTrue(handler.content.containsAll(Arrays.asList("Hello", "<<LAST>>")));
+        System.out.println(data.remaining());
+        System.out.println(BufferUtils.toString(data));
 
         parser.parse(data, true);
         assertEquals(State.END, parser.getState());
@@ -382,6 +384,8 @@ public class MultiPartParserTest {
         assertEquals(State.DELIMITER, parser.getState());
         assertTrue(handler.fields.containsAll(Arrays.asList("name: value", "<<COMPLETE>>", "powerLevel: 9001", "<<COMPLETE>>")));
         assertTrue(handler.content.containsAll(Arrays.asList("Hello", "<<LAST>>", "secondary\r\ncontent", "<<LAST>>")));
+        System.out.println(data.remaining());
+        System.out.println(BufferUtils.toString(data));
 
         /* Test Progression to END State */
         parser.parse(data, true);
