@@ -35,8 +35,8 @@ class MultiPartContentProvider : HttpClientContentProvider {
     private var state = State.FIRST_BOUNDARY
     private var open = true
 
-    private val readChannel: Channel<ReadMultiPartMessage> = Channel(Channel.UNLIMITED)
-    private val readJob: Job
+    private val multiPartChannel: Channel<MultiPartProviderMessage> = Channel(Channel.UNLIMITED)
+    private val generateJob: Job
 
     init {
         val boundary = makeBoundary()
@@ -54,10 +54,10 @@ class MultiPartContentProvider : HttpClientContentProvider {
         val lastBoundaryLine = newLine + onlyBoundaryLine
         this.lastBoundary = lastBoundaryLine.toByteArray(StandardCharsets.US_ASCII)
 
-        readJob = event {
+        generateJob = event {
             readMessageLoop@ while (true) {
-                when (val readMultiPartMessage = readChannel.receive()) {
-                    is ReadMultiPartRequest -> {
+                when (val readMultiPartMessage = multiPartChannel.receive()) {
+                    is GenerateMultiPart -> {
                         val (buf, future) = readMultiPartMessage
                         try {
                             val len = generate(buf)
@@ -66,7 +66,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
                             future.completeExceptionally(e)
                         }
                     }
-                    is EndReadMultiPart -> {
+                    is EndMultiPartProvider -> {
                         open = false
                         state = State.COMPLETE
                         parts.forEach { part -> part.closeFuture().await() }
@@ -134,7 +134,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     private suspend fun closeAwait() {
         close()
-        readJob.join()
+        generateJob.join()
     }
 
     override fun closeFuture(): CompletableFuture<Void> {
@@ -147,7 +147,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 
     override fun close() {
-        readChannel.offer(EndReadMultiPart)
+        multiPartChannel.offer(EndMultiPartProvider)
     }
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
@@ -160,7 +160,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         }
 
         val future = CompletableFuture<Int>()
-        readChannel.offer(ReadMultiPartRequest(byteBuffer, future))
+        multiPartChannel.offer(GenerateMultiPart(byteBuffer, future))
         return future
     }
 
@@ -293,6 +293,10 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 }
 
-sealed class ReadMultiPartMessage
-data class ReadMultiPartRequest(val byteBuffer: ByteBuffer, val future: CompletableFuture<Int>) : ReadMultiPartMessage()
-object EndReadMultiPart : ReadMultiPartMessage()
+sealed class MultiPartProviderMessage
+
+data class GenerateMultiPart(
+    val byteBuffer: ByteBuffer, val future: CompletableFuture<Int>
+) : MultiPartProviderMessage()
+
+object EndMultiPartProvider : MultiPartProviderMessage()
