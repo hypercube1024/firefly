@@ -189,14 +189,6 @@ public interface Http2Connection extends HttpConnection {
         void onClose(Http2Connection http2Connection, GoAwayFrame frame);
 
         /**
-         * <p>Consumer<Result<Void>> method invoked when the idle timeout expired.</p>
-         *
-         * @param http2Connection The http2Connection
-         * @return Whether the http2Connection should be closed
-         */
-        boolean onIdleTimeout(Http2Connection http2Connection);
-
-        /**
          * <p>Consumer<Result<Void>> method invoked when a failure has been detected for this http2Connection.</p>
          *
          * @param http2Connection The http2Connection
@@ -242,11 +234,6 @@ public interface Http2Connection extends HttpConnection {
 
             @Override
             public void onClose(Http2Connection http2Connection, GoAwayFrame frame) {
-            }
-
-            @Override
-            public boolean onIdleTimeout(Http2Connection http2Connection) {
-                return true;
             }
 
             @Override

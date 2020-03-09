@@ -42,7 +42,15 @@ abstract class AsyncHttp2Connection(
 
     companion object {
         private val log = SystemLogger.create(AsyncHttp2Connection::class.java)
-        val defaultHttp2ConnectionListener = Http2Connection.Listener.Adapter()
+        val defaultHttp2ConnectionListener = object : Http2Connection.Listener.Adapter() {
+            override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
+                log.info { "HTTP2 connection received reset frame. $frame" }
+            }
+
+            override fun onFailure(http2Connection: Http2Connection, e: Throwable) {
+                log.error(e) { "HTTP2 connection exception. ${http2Connection.id}" }
+            }
+        }
     }
 
     private val localStreamId = AtomicInteger(initStreamId)
