@@ -75,6 +75,7 @@
         <redisson.version>3.12.2</redisson.version>
         <conscrypt.version>2.2.1</conscrypt.version>
         <bouncycastle.version>1.64</bouncycastle.version>
+        <openjsse.version>1.1.0</openjsse.version>
         <javassist.version>3.26.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>Dysprosium-SR5</spring.reactor.version>
@@ -214,6 +215,7 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- security -->
             <dependency>
                 <groupId>org.conscrypt</groupId>
                 <artifactId>conscrypt-openjdk-uber</artifactId>
@@ -224,6 +226,12 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.openjsse</groupId>
+                <artifactId>openjsse</artifactId>
+                <version>${openjsse.version}</version>
             </dependency>
 
             <!--jackson-->
