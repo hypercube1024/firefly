@@ -86,6 +86,12 @@
     </logger>
 
     <logger>
+        <name>error-stack</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
+
+    <logger>
         <name>com.fireflysource.log.demo</name>
         <level>${log.level}</level>
         <path>${log.path}</path>

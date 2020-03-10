@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TestLog {
 
-
     private static final Log logTrace = LogFactory.getInstance().getLog("test-TRACE");
     private static final Log logDebug = LogFactory.getInstance().getLog("test-DEBUG");
     private static final Log logInfo = LogFactory.getInstance().getLog("test-INFO");
@@ -32,29 +31,22 @@ class TestLog {
     private static final Log logDefaultName = LogFactory.getInstance().getLog("test-illegal");
     private static final Log logConsole = LogFactory.getInstance().getLog("test-console");
     private static final Log logCommon = LogFactory.getInstance().getLog("firefly-common");
-
+    private static final Log logErrorStack = LogFactory.getInstance().getLog("error-stack");
 
     private static MappedDiagnosticContext mdc;
 
     @BeforeAll
     static void init() {
         mdc = MappedDiagnosticContextFactory.getInstance().getMappedDiagnosticContext();
-        deleteLog(logTrace);
-        deleteLog(logDebug);
-        deleteLog(logError);
-        deleteLog(logWarn);
-        deleteLog(logInfo);
-        deleteLog(logFoo);
-        deleteLog(logBar);
-        deleteLog(testMdc);
-        deleteLog(logDefaultName);
-        deleteLog(logConsole);
-        deleteLog(logCommon);
+        deleteAll();
     }
 
     @AfterAll
     static void destroy() {
-        LogFactory.getInstance().close();
+        deleteAll();
+    }
+
+    private static void deleteAll() {
         deleteLog(logTrace);
         deleteLog(logDebug);
         deleteLog(logError);
@@ -66,6 +58,7 @@ class TestLog {
         deleteLog(logDefaultName);
         deleteLog(logConsole);
         deleteLog(logCommon);
+        deleteLog(logErrorStack);
     }
 
     private static void deleteLog(Log log) {
@@ -256,7 +249,6 @@ class TestLog {
     void testConsoleAndFile() throws IOException {
         logConsole.info("test console.");
         logCommon.info("test common.");
-
         sleep();
 
         List<String> lines = readAllLines(logConsole);
@@ -271,11 +263,11 @@ class TestLog {
         try {
             test3();
         } catch (Exception e) {
-            logConsole.error("exception", e);
+            logErrorStack.error("exception", e);
         }
         sleep();
 
-        List<String> lines = readAllLines(logConsole);
+        List<String> lines = readAllLines(logErrorStack);
         assertTrue(lines.get(0).contains("exception"));
         assertTrue(lines.size() > 1);
         assertTrue(lines.get(1).contains("$err_start"));
