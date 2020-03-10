@@ -20,6 +20,13 @@ public interface MultiPart extends InputChannel {
     String getName();
 
     /**
+     * Gets the file name
+     *
+     * @return The file name.
+     */
+    String getFileName();
+
+    /**
      * Gets the file name specified by the client
      *
      * @return the submitted file name

@@ -92,59 +92,40 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     private suspend fun notifyHeaderComplete(context: RoutingContext) {
-        try {
-            connectionListener.onHeaderComplete(context).await()
-            log.debug { "HTTP1 server handles header complete success. id: ${connection.id}" }
-        } catch (e: Exception) {
-            log.error(e) { "HTTP1 server handles header complete exception. id: ${connection.id}" }
-        }
+        connectionListener.onHeaderComplete(context).await()
     }
 
     private fun acceptContent(context: AsyncRoutingContext?, message: Content) {
-        try {
-            requireNotNull(context)
-            context.request.contentHandler.accept(message.byteBuffer, context)
-            log.debug { "HTTP1 server receives content success. id: ${connection.id}" }
-        } catch (e: Exception) {
-            log.error(e) { "HTTP1 server accepts content exception. id: ${connection.id}" }
-        }
+        requireNotNull(context)
+        context.request.contentHandler.accept(message.byteBuffer, context)
     }
 
     private suspend fun closeContentHandler(context: AsyncRoutingContext?) {
-        try {
-            requireNotNull(context)
-            context.request.contentHandler.closeFuture().await()
-        } catch (e: Exception) {
-            log.error(e) { "HTTP1 server completes content exception. id: ${connection.id}" }
-        }
+        requireNotNull(context)
+        context.request.contentHandler.closeFuture().await()
     }
 
     private suspend fun notifyHttpRequestComplete(context: RoutingContext?) {
-        try {
-            requireNotNull(context)
-            context.request.isRequestComplete = true
-            if (expectUpgradeHttp2 && !context.response.isCommitted) {
-                val settings = settingsFrame
-                requireNotNull(settings)
+        requireNotNull(context)
+        context.request.isRequestComplete = true
+        if (expectUpgradeHttp2 && !context.response.isCommitted) {
+            val settings = settingsFrame
+            requireNotNull(settings)
 
-                switchingHttp2()
-                val http2ServerConnection = createHttp2Connection()
-                val stream = http2ServerConnection.upgradeHttp2(settings)
-                val response = Http2ServerResponse(http2ServerConnection, stream)
-                val http2Context = AsyncRoutingContext(context.request, response, http2ServerConnection)
+            switchingHttp2()
+            val http2ServerConnection = createHttp2Connection()
+            val stream = http2ServerConnection.upgradeHttp2(settings)
+            val response = Http2ServerResponse(http2ServerConnection, stream)
+            val http2Context = AsyncRoutingContext(context.request, response, http2ServerConnection)
 
-                connection.notifyUpgradeHttp2(true)
-                endRequestHandler()
-                connectionListener.onHttpRequestComplete(http2Context).await()
-            } else {
-                connection.notifyUpgradeHttp2(false)
-                connectionListener.onHttpRequestComplete(context).await()
-            }
-            log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
-        } catch (e: Exception) {
+            connection.notifyUpgradeHttp2(true)
+            endRequestHandler()
+            connectionListener.onHttpRequestComplete(http2Context).await()
+        } else {
             connection.notifyUpgradeHttp2(false)
-            log.error(e) { "HTTP1 server handles request exception. id: ${connection.id}" }
+            connectionListener.onHttpRequestComplete(context).await()
         }
+        log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
     }
 
     private fun createHttp2Connection() =

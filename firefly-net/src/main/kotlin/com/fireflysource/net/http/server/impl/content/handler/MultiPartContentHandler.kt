@@ -2,6 +2,7 @@ package com.fireflysource.net.http.server.impl.content.handler
 
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.string.QuotedStringTokenizer
 import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
 import com.fireflysource.common.sys.Result
@@ -13,13 +14,20 @@ import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 
 class MultiPartContentHandler(
     private val maxFileSize: Long = 0,
     private val maxRequestSize: Long = 0,
-    private val fileSizeThreshold: Int = 0
+    private val fileSizeThreshold: Int = 0,
+    private val path: Path = tempPath
 ) : HttpServerContentHandler {
+
+    companion object {
+        private val tempPath = Paths.get(System.getProperty("java.io.tmpdir"))
+    }
 
     init {
         require(maxRequestSize >= maxFileSize) { "The max request size must be greater than the max file size." }
@@ -33,7 +41,7 @@ class MultiPartContentHandler(
     private var byteBuffer: ByteBuffer = BufferUtils.EMPTY_BUFFER
     private val multiPartHandler = MultiPartHandler()
     private val job = parsingJob()
-    private var part: AsyncMultiPart = AsyncMultiPart()
+    private var part: AsyncMultiPart? = null
 
     private inner class MultiPartHandler : MultiPartParser.Handler {
 
@@ -81,10 +89,29 @@ class MultiPartContentHandler(
                     byteBuffer = message.byteBuffer
                     parser?.parse(message.byteBuffer, false)
                 }
-                is StartPart -> part = AsyncMultiPart()
-                is PartField -> part.httpFields.add(message.name, message.value)
+                is StartPart -> part = AsyncMultiPart(fileSizeThreshold, path)
+                is PartField -> part?.httpFields?.add(message.name, message.value)
                 is PartHeaderComplete -> {
-                    TODO("")
+                    val contentDisposition = part?.httpFields?.get("Content-Disposition")
+                    requireNotNull(contentDisposition) { "Missing Content-Disposition header" }
+
+                    val token = QuotedStringTokenizer(contentDisposition, ";", false, true)
+                    var formData = false
+                    var name: String? = null
+                    var fileName: String? = null
+                    while (token.hasMoreTokens()) {
+                        val tokenValue = token.nextToken().trim().toLowerCase()
+                        when {
+                            tokenValue.startsWith("form-data") -> formData = true
+                            tokenValue.startsWith("name=") -> name = value(tokenValue)
+                            tokenValue.startsWith("filename=") -> fileName = fileNameValue(tokenValue)
+                        }
+                    }
+
+                    require(formData) { "Part not form-data" }
+                    requireNotNull(name) { "No name in part" }
+                    part?.name = name
+                    part?.fileName = fileName ?: ""
                 }
                 is PartContent -> {
                     TODO("")
@@ -112,15 +139,34 @@ class MultiPartContentHandler(
         if (start >= 0) {
             var end: Int = contentType.indexOf(";", start)
             end = if (end < 0) contentType.length else end
-            contentTypeBoundary = unquote(value(contentType.substring(start, end)).trim { it <= ' ' })
+            contentTypeBoundary = unquote(value(contentType.substring(start, end)).trim())
         }
         return contentTypeBoundary
     }
 
-    private fun value(nameEqualsValue: String): String {
-        val idx = nameEqualsValue.indexOf('=')
-        val value = nameEqualsValue.substring(idx + 1).trim { it <= ' ' }
+    private fun value(headerLine: String): String {
+        val idx = headerLine.indexOf('=')
+        val value = headerLine.substring(idx + 1).trim()
         return unquoteOnly(value)
+    }
+
+    private fun fileNameValue(headerLine: String): String {
+        val idx = headerLine.indexOf('=')
+        var value = headerLine.substring(idx + 1).trim()
+
+        return if (value.matches(".??[a-z,A-Z]\\:\\\\[^\\\\].*".toRegex())) {
+            // incorrectly escaped IE filenames that have the whole path
+            // we just strip any leading & trailing quotes and leave it as is
+            val first = value[0]
+            if (first == '"' || first == '\'') value = value.substring(1)
+            val last = value[value.length - 1]
+            if (last == '"' || last == '\'') value = value.substring(0, value.length - 1)
+            value
+        } else unquoteOnly(value, true)
+        // unquote the string, but allow any backslashes that don't
+        // form a valid escape sequence to remain as many browsers
+        // even on *nix systems will not escape a filename containing
+        // backslashes
     }
 
     override fun accept(byteBuffer: ByteBuffer, ctx: RoutingContext) {

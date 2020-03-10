@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
@@ -9,6 +10,7 @@ import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.RoutingContext
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -31,11 +33,11 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
         var headerComplete: CompletableFuture<Void>? = null
 
         if (frame.isEndHeaders) {
-            headerComplete = connectionListener.onHeaderComplete(context)
+            headerComplete = notifyHeaderComplete(context)
         }
         if (frame.isEndStream) {
-            requireNotNull(headerComplete)
-            headerComplete.thenCompose { connectionListener.onHttpRequestComplete(context) }
+            if (headerComplete != null) headerComplete.thenCompose { notifyRequestComplete(context) }
+            else notifyException(context, IllegalStateException("The header complete future must be not null"))
         }
 
         return object : Stream.Listener.Adapter() {
@@ -47,12 +49,12 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                     request.httpFields.addAll(frame.metaData.fields)
                 }
                 if (frame.isEndHeaders) {
-                    headerComplete = connectionListener.onHeaderComplete(context)
+                    headerComplete = notifyHeaderComplete(context)
                 }
                 if (frame.isEndStream) {
                     val future = headerComplete
-                    requireNotNull(future)
-                    future.thenCompose { connectionListener.onHttpRequestComplete(context) }
+                    if (future != null) future.thenCompose { notifyRequestComplete(context) }
+                    else notifyException(context, IllegalStateException("The header complete future must be not null"))
                 }
             }
 
@@ -68,12 +70,12 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 }
                 if (frame.isEndStream) {
                     val future = headerComplete
-                    requireNotNull(future)
-                    future.thenCompose { context.request.contentHandler.closeFuture() }
-                        .thenCompose {
-                            context.request.isRequestComplete = true
-                            connectionListener.onHttpRequestComplete(context)
-                        }
+                    if (future != null) {
+                        future.thenCompose { context.request.contentHandler.closeFuture() }
+                            .thenCompose { notifyRequestComplete(context) }
+                    } else {
+                        notifyException(context, IllegalStateException("The header complete future must be not null"))
+                    }
                 }
             }
 
@@ -83,7 +85,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
 
             override fun onReset(stream: Stream, frame: ResetFrame, result: Consumer<Result<Void>>) {
                 val e = IllegalStateException(ErrorCode.toString(frame.error, "stream reset. id: ${stream.id}"))
-                connectionListener.onException(context, e)
+                notifyException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
                     .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
             }
@@ -91,13 +93,13 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
             override fun onFailure(stream: Stream, error: Int, reason: String, result: Consumer<Result<Void>>) {
                 val defaultError = "stream failure. id: ${stream.id}, reason: $reason"
                 val e = IllegalStateException(ErrorCode.toString(error, defaultError))
-                connectionListener.onException(context, e)
+                notifyException(context, e)
                     .thenAccept { result.accept(Result.SUCCESS) }
                     .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
             }
 
             override fun onIdleTimeout(stream: Stream, e: Throwable): Boolean {
-                connectionListener.onException(context, e)
+                notifyException(context, e)
                 return true
             }
 
@@ -109,11 +111,33 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
     }
 
     override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
-        connectionListener.onException(null, failure)
+        notifyException(null, failure)
     }
 
     override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
         val e = IllegalStateException(ErrorCode.toString(frame.error, "stream exception"))
-        connectionListener.onException(null, e)
+        notifyException(null, e)
+    }
+
+    private fun notifyHeaderComplete(context: RoutingContext): CompletableFuture<Void> = try {
+        connectionListener.onHeaderComplete(context)
+    } catch (e: Exception) {
+        log.error(e) { "HTTP2 server handles header complete exception. id: ${context.connection.id}" }
+        notifyException(context, e)
+    }
+
+    private fun notifyRequestComplete(context: RoutingContext): CompletableFuture<Void> = try {
+        context.request.isRequestComplete = true
+        connectionListener.onHttpRequestComplete(context)
+    } catch (e: Exception) {
+        log.error(e) { "HTTP2 server handles header complete exception. id: ${context.connection.id}" }
+        notifyException(context, e)
+    }
+
+    private fun notifyException(context: RoutingContext?, e: Throwable): CompletableFuture<Void> = try {
+        connectionListener.onException(context, e)
+    } catch (t: Throwable) {
+        log.error(t) { "HTTP2 server handler exception. id: ${context?.connection?.id}" }
+        CompletableFutures.completeExceptionally(t)
     }
 }
