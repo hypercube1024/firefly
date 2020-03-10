@@ -18,6 +18,7 @@ import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class MultiPartContentHandler(
@@ -80,56 +81,62 @@ class MultiPartContentHandler(
     private fun parsingJob() = event {
         parseLoop@ while (true) {
             when (val message = multiPartChannel.receive()) {
-                is ParseMultiPartBoundary -> {
-                    val boundary = parseBoundary(message.contentType)
-                    if (boundary.isNotBlank()) {
-                        parser = MultiPartParser(multiPartHandler, boundary)
-                    } else {
-                        break@parseLoop
-                    }
-                }
-                is ParseMultiPartContent -> {
-                    byteBuffer = message.byteBuffer
-                    parser?.parse(message.byteBuffer, false)
-                }
+                is ParseMultiPartBoundary -> parseBoundaryAndCreateMultiPartParser(message)
+                is ParseMultiPartContent -> parseContent(message)
                 is EndMultiPartHandler -> parser?.parse(byteBuffer, true)
-                is StartPart -> part = AsyncMultiPart(maxFileSize, fileSizeThreshold, path)
-                is PartField -> part?.httpFields?.add(message.name, message.value)
-                is PartHeaderComplete -> {
-                    val contentDisposition = part?.httpFields?.get("Content-Disposition")
-                    requireNotNull(contentDisposition) { "Missing Content-Disposition header" }
-
-                    val token = QuotedStringTokenizer(contentDisposition, ";", false, true)
-                    var formData = false
-                    var name: String? = null
-                    var fileName: String? = null
-                    while (token.hasMoreTokens()) {
-                        val tokenValue = token.nextToken().trim().toLowerCase()
-                        when {
-                            tokenValue.startsWith("form-data") -> formData = true
-                            tokenValue.startsWith("name=") -> name = value(tokenValue)
-                            tokenValue.startsWith("filename=") -> fileName = fileNameValue(tokenValue)
-                        }
-                    }
-
-                    require(formData) { "Part not form-data" }
-                    requireNotNull(name) { "No name in part" }
-                    part?.name = name
-                    part?.fileName = fileName ?: ""
-                }
-                is PartContent -> part?.accept(message.byteBuffer, message.last)
+                is StartPart -> createMultiPart()
+                is PartField -> addMultiPartField(message)
+                is PartHeaderComplete -> handleHeaderComplete()
+                is PartContent -> acceptContent(message)
                 is PartMessageComplete -> {
                     part?.closeFileHandler()
                     break@parseLoop
                 }
-                is PartEarlyEOF -> {
-                    part?.closeFileHandler()
-                    throw BadMessageException(HttpStatus.BAD_REQUEST_400)
-                }
-
+                is PartEarlyEOF -> handleEarlyEOF()
             }
         }
     }
+
+    private fun createMultiPart() {
+        part = AsyncMultiPart(maxFileSize, fileSizeThreshold, Paths.get(path.toString(), UUID.randomUUID().toString()))
+    }
+
+    private fun addMultiPartField(message: PartField) {
+        part?.httpFields?.add(message.name, message.value)
+    }
+
+    private fun handleHeaderComplete() {
+        val contentDisposition = part?.httpFields?.get("Content-Disposition")
+        requireNotNull(contentDisposition) { "Missing Content-Disposition header" }
+
+        val token = QuotedStringTokenizer(contentDisposition, ";", false, true)
+        var formData = false
+        var name: String? = null
+        var fileName: String? = null
+        while (token.hasMoreTokens()) {
+            val tokenValue = token.nextToken().trim().toLowerCase()
+            when {
+                tokenValue.startsWith("form-data") -> formData = true
+                tokenValue.startsWith("name=") -> name = value(tokenValue)
+                tokenValue.startsWith("filename=") -> fileName = fileNameValue(tokenValue)
+            }
+        }
+
+        require(formData) { "Part not form-data" }
+        requireNotNull(name) { "No name in part" }
+        part?.name = name
+        part?.fileName = fileName ?: ""
+    }
+
+    private fun acceptContent(message: PartContent) {
+        part?.accept(message.byteBuffer, message.last)
+    }
+
+    private suspend fun handleEarlyEOF() {
+        part?.closeFileHandler()
+        throw BadMessageException(HttpStatus.BAD_REQUEST_400)
+    }
+
 
     private fun parseBoundary(contentType: String?): String {
         if (contentType == null) return ""
@@ -143,6 +150,20 @@ class MultiPartContentHandler(
             contentTypeBoundary = unquote(value(contentType.substring(start, end)).trim())
         }
         return contentTypeBoundary
+    }
+
+    private fun parseBoundaryAndCreateMultiPartParser(message: ParseMultiPartBoundary) {
+        val boundary = parseBoundary(message.contentType)
+        if (boundary.isNotBlank()) {
+            parser = MultiPartParser(multiPartHandler, boundary)
+        } else {
+            throw BadMessageException(HttpStatus.BAD_REQUEST_400)
+        }
+    }
+
+    private fun parseContent(message: ParseMultiPartContent) {
+        byteBuffer = message.byteBuffer
+        parser?.parse(message.byteBuffer, false)
     }
 
     private fun value(headerLine: String): String {

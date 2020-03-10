@@ -1,7 +1,12 @@
 package com.fireflysource.net.http.server.impl.content.handler
 
+import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.flipToFill
+import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.net.http.common.content.handler.AbstractByteBufferContentHandler
 import com.fireflysource.net.http.common.content.handler.AbstractFileContentHandler
+import com.fireflysource.net.http.common.content.provider.AbstractByteBufferContentProvider
+import com.fireflysource.net.http.common.content.provider.AbstractFileContentProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -22,10 +27,22 @@ class AsyncMultiPart(
     private val byteBufferHandler = object : AbstractByteBufferContentHandler<Any?>() {}
     private var fileHandler: AbstractFileContentHandler<Any?>? = null
     private var fileHandlerFuture: CompletableFuture<Void>? = null
+    private val fileProvider: AbstractFileContentProvider by lazy {
+        object : AbstractFileContentProvider(path, StandardOpenOption.READ) {}
+    }
+    private val byteBufferProvider: AbstractByteBufferContentProvider by lazy {
+        val size = byteBufferHandler.getByteBuffers().sumBy { it.remaining() }
+        val buf = BufferUtils.allocate(size)
+        val pos = buf.flipToFill()
+        byteBufferHandler.getByteBuffers().forEach { BufferUtils.put(it, buf) }
+        buf.flipToFlush(pos)
+        object : AbstractByteBufferContentProvider(buf) {}
+    }
     private val httpFields = HttpFields()
     private var size: Long = 0
     private var name: String = ""
     private var fileName: String = ""
+    private var exceededFileThreshold = false
 
     override fun getName(): String = name
 
@@ -59,6 +76,7 @@ class AsyncMultiPart(
                 if (fileHandler != null) {
                     fileHandler.accept(item, null)
                 } else {
+                    exceededFileThreshold = true
                     val newFileHandler = object : AbstractFileContentHandler<Any?>(
                         path,
                         StandardOpenOption.WRITE,
@@ -79,19 +97,20 @@ class AsyncMultiPart(
     override fun getContentType(): String = httpFields[HttpHeader.CONTENT_TYPE]
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
-        TODO("Not yet implemented")
+        return getProvider().read(byteBuffer)
     }
 
     override fun isOpen(): Boolean {
-        TODO("Not yet implemented")
+        return getProvider().isOpen
     }
 
     override fun close() {
-        TODO("Not yet implemented")
+        closeFuture()
     }
 
     override fun closeFuture(): CompletableFuture<Void> {
-        TODO("Not yet implemented")
+        return getProvider().closeFuture()
     }
 
+    private fun getProvider() = if (exceededFileThreshold) fileProvider else byteBufferProvider
 }
