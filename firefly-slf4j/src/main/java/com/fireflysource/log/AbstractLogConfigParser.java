@@ -51,8 +51,8 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                     if (formatter == null) {
                         try {
                             Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getFormatter());
-                            formatter = (LogFormatter) clazz.newInstance();
-                        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                            formatter = (LogFormatter) clazz.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
                             e.printStackTrace();
                             formatter = DEFAULT_LOG_FORMATTER;
                         }
@@ -82,8 +82,8 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                     if (formatter == null) {
                         try {
                             Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogNameFormatter());
-                            formatter = (LogNameFormatter) clazz.newInstance();
-                        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                            formatter = (LogNameFormatter) clazz.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
                             e.printStackTrace();
                             formatter = DEFAULT_LOG_NAME_FORMATTER;
                         }
@@ -107,8 +107,8 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
                     if (filter == null) {
                         try {
                             Class<?> clazz = AbstractLogConfigParser.class.getClassLoader().loadClass(c.getLogFilter());
-                            filter = (LogFilter) clazz.newInstance();
-                        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                            filter = (LogFilter) clazz.getDeclaredConstructor().newInstance();
+                        } catch (Exception e) {
                             e.printStackTrace();
                             filter = DEFAULT_LOG_FILTER;
                         }

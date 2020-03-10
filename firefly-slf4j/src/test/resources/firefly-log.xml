@@ -51,12 +51,6 @@
     </logger>
 
     <logger>
-        <name>firefly-system</name>
-        <level>INFO</level>
-        <enable-console>true</enable-console>
-    </logger>
-
-    <logger>
         <name>com.fireflysource.log.foo</name>
         <level>INFO</level>
         <path>${log.path}</path>

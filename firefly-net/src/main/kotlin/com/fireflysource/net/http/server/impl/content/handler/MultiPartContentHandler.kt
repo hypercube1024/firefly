@@ -21,6 +21,11 @@ class MultiPartContentHandler(
     private val fileSizeThreshold: Int = 0
 ) : HttpServerContentHandler {
 
+    init {
+        require(maxRequestSize >= maxFileSize) { "The max request size must be greater than the max file size." }
+        require(maxFileSize >= fileSizeThreshold) { "The max file size must be greater than the file size threshold." }
+    }
+
     private val multiParts: List<AsyncMultiPart> = mutableListOf()
     private val multiPartChannel: Channel<MultiPartHandlerMessage> = Channel(Channel.UNLIMITED)
     private var firstMessage = true
