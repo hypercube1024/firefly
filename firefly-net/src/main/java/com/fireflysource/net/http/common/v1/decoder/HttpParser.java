@@ -1690,7 +1690,7 @@ public class HttpParser {
 
         /**
          * Called to signal that an EOF was received unexpectedly
-         * during the parsing of a HTTP message
+         * during the parsing of an HTTP message
          */
         void earlyEOF();
 

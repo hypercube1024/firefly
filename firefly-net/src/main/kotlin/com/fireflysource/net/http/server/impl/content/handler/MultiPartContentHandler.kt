@@ -7,7 +7,9 @@ import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.codec.MultiPartParser
+import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.MultiPart
 import com.fireflysource.net.http.server.RoutingContext
@@ -37,6 +39,7 @@ class MultiPartContentHandler(
     private val multiParts: List<AsyncMultiPart> = mutableListOf()
     private val multiPartChannel: Channel<MultiPartHandlerMessage> = Channel(Channel.UNLIMITED)
     private var firstMessage = true
+    private var requestSize: Long = 0
     private var parser: MultiPartParser? = null
     private var byteBuffer: ByteBuffer = BufferUtils.EMPTY_BUFFER
     private val multiPartHandler = MultiPartHandler()
@@ -89,7 +92,8 @@ class MultiPartContentHandler(
                     byteBuffer = message.byteBuffer
                     parser?.parse(message.byteBuffer, false)
                 }
-                is StartPart -> part = AsyncMultiPart(fileSizeThreshold, path)
+                is EndMultiPartHandler -> parser?.parse(byteBuffer, true)
+                is StartPart -> part = AsyncMultiPart(maxFileSize, fileSizeThreshold, path)
                 is PartField -> part?.httpFields?.add(message.name, message.value)
                 is PartHeaderComplete -> {
                     val contentDisposition = part?.httpFields?.get("Content-Disposition")
@@ -113,19 +117,16 @@ class MultiPartContentHandler(
                     part?.name = name
                     part?.fileName = fileName ?: ""
                 }
-                is PartContent -> {
-                    TODO("")
-                }
+                is PartContent -> part?.accept(message.byteBuffer, message.last)
                 is PartMessageComplete -> {
-                    TODO("")
-                }
-                is PartEarlyEOF -> {
-                    TODO("")
-                }
-                is EndMultiPartHandler -> {
-                    parser?.parse(byteBuffer, true)
+                    part?.closeFileHandler()
                     break@parseLoop
                 }
+                is PartEarlyEOF -> {
+                    part?.closeFileHandler()
+                    throw BadMessageException(HttpStatus.BAD_REQUEST_400)
+                }
+
             }
         }
     }
@@ -170,6 +171,10 @@ class MultiPartContentHandler(
     }
 
     override fun accept(byteBuffer: ByteBuffer, ctx: RoutingContext) {
+        requestSize += byteBuffer.remaining()
+        if (requestSize > maxRequestSize) {
+            throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
+        }
         if (firstMessage) {
             multiPartChannel.offer(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
             firstMessage = false
@@ -178,9 +183,12 @@ class MultiPartContentHandler(
         }
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeFuture(): CompletableFuture<Void> =
+        event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
+
+    private suspend fun closeAwait() {
         multiPartChannel.offer(EndMultiPartHandler)
-        return job.asCompletableFuture().thenCompose { Result.DONE }
+        job.join()
     }
 
     override fun close() {

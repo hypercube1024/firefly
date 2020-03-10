@@ -27,13 +27,6 @@ public interface MultiPart extends InputChannel {
     String getFileName();
 
     /**
-     * Gets the file name specified by the client
-     *
-     * @return the submitted file name
-     */
-    String getSubmittedFileName();
-
-    /**
      * Returns the size of this file.
      *
      * @return a <code>long</code> specifying the size of this part, in bytes.
