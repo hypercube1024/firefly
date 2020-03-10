@@ -6,6 +6,7 @@ import com.fireflysource.common.string.QuotedStringTokenizer
 import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
 import com.fireflysource.common.sys.Result
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.codec.MultiPartParser
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -13,6 +14,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.MultiPart
 import com.fireflysource.net.http.server.RoutingContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
@@ -22,13 +24,14 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class MultiPartContentHandler(
-    private val maxFileSize: Long = 0,
-    private val maxRequestSize: Long = 0,
-    private val fileSizeThreshold: Int = 0,
+    private val maxFileSize: Long = 200 * 1024 * 1024,
+    private val maxRequestSize: Long = 200 * 1024 * 1024,
+    private val fileSizeThreshold: Int = 4 * 1024 * 1024,
     private val path: Path = tempPath
 ) : HttpServerContentHandler {
 
     companion object {
+        private val log = SystemLogger.create(MultiPartContentHandler::class.java)
         private val tempPath = Paths.get(System.getProperty("java.io.tmpdir"))
     }
 
@@ -44,7 +47,7 @@ class MultiPartContentHandler(
     private var parser: MultiPartParser? = null
     private var byteBuffer: ByteBuffer = BufferUtils.EMPTY_BUFFER
     private val multiPartHandler = MultiPartHandler()
-    private val job = parsingJob()
+    private var job: Job? = null
     private var part: AsyncMultiPart? = null
 
     private inner class MultiPartHandler : MultiPartParser.Handler {
@@ -99,6 +102,7 @@ class MultiPartContentHandler(
 
     private fun createMultiPart() {
         part = AsyncMultiPart(maxFileSize, fileSizeThreshold, Paths.get(path.toString(), UUID.randomUUID().toString()))
+        log.debug { "Create multi-part. maxFileSize: $maxFileSize, threshold: $fileSizeThreshold" }
     }
 
     private fun addMultiPartField(message: PartField) {
@@ -126,6 +130,7 @@ class MultiPartContentHandler(
         requireNotNull(name) { "No name in part" }
         part?.name = name
         part?.fileName = fileName ?: ""
+        log.debug { "Multi-part header complete. name: $name, fileName: $fileName, fields: ${part?.httpFields}" }
     }
 
     private fun acceptContent(message: PartContent) {
@@ -154,6 +159,7 @@ class MultiPartContentHandler(
 
     private fun parseBoundaryAndCreateMultiPartParser(message: ParseMultiPartBoundary) {
         val boundary = parseBoundary(message.contentType)
+        log.debug { "Parsed multi-part boundary: $boundary" }
         if (boundary.isNotBlank()) {
             parser = MultiPartParser(multiPartHandler, boundary)
         } else {
@@ -176,7 +182,7 @@ class MultiPartContentHandler(
         val idx = headerLine.indexOf('=')
         var value = headerLine.substring(idx + 1).trim()
 
-        return if (value.matches(".??[a-z,A-Z]\\:\\\\[^\\\\].*".toRegex())) {
+        return if (value.matches(".??[a-z,A-Z]:\\\\[^\\\\].*".toRegex())) {
             // incorrectly escaped IE filenames that have the whole path
             // we just strip any leading & trailing quotes and leave it as is
             val first = value[0]
@@ -197,6 +203,7 @@ class MultiPartContentHandler(
             throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
         }
         if (firstMessage) {
+            job = parsingJob()
             multiPartChannel.offer(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
             firstMessage = false
         } else {
@@ -209,7 +216,7 @@ class MultiPartContentHandler(
 
     private suspend fun closeAwait() {
         multiPartChannel.offer(EndMultiPartHandler)
-        job.join()
+        job?.join()
     }
 
     override fun close() {

@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server.impl.content.handler
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.content.handler.AbstractByteBufferContentHandler
 import com.fireflysource.net.http.common.content.handler.AbstractFileContentHandler
 import com.fireflysource.net.http.common.content.provider.AbstractByteBufferContentProvider
@@ -23,6 +24,10 @@ class AsyncMultiPart(
     private val fileSizeThreshold: Int,
     private val path: Path
 ) : MultiPart {
+
+    companion object {
+        private val log = SystemLogger.create(AsyncMultiPart::class.java)
+    }
 
     private val byteBufferHandler = object : AbstractByteBufferContentHandler<Any?>() {}
     private var fileHandler: AbstractFileContentHandler<Any?>? = null

@@ -67,7 +67,7 @@ class AsyncBoundObjectPool<T>(
         while (true) {
             val future = pollTaskChannel.receive()
             try {
-                val pooledObject = getPooledObjectOrCreateNew()
+                val pooledObject = createNew() ?: getFromPool()
                 initPooledObject(pooledObject)
                 future.complete(pooledObject)
             } catch (e: Exception) {
@@ -90,16 +90,12 @@ class AsyncBoundObjectPool<T>(
         pooledObject.released.set(false)
     }
 
-    private suspend fun getPooledObjectOrCreateNew(): PooledObject<T> {
-        return if (createdCount.get() < maxSize) {
-            val pooledObject = objectFactory.createNew(this).await()
-            createdCount.incrementAndGet()
-            log.debug { "create a new object. $pooledObject" }
-            pooledObject
-        } else {
-            getFromPool()
-        }
-    }
+    private suspend fun createNew(): PooledObject<T>? = if (createdCount.get() < maxSize) {
+        val pooledObject = objectFactory.createNew(this).await()
+        createdCount.incrementAndGet()
+        log.debug { "create a new object. $pooledObject" }
+        pooledObject
+    } else null
 
     private suspend fun getFromPool(): PooledObject<T> {
         val oldPooledObject = withTimeout(Duration.ofSeconds(timeout)) { poolChannel.receive() }
@@ -109,7 +105,9 @@ class AsyncBoundObjectPool<T>(
             oldPooledObject
         } else {
             destroyPooledObject(oldPooledObject)
-            getPooledObjectOrCreateNew()
+            val pooledObject = createNew()
+            requireNotNull(pooledObject)
+            pooledObject
         }
     }
 

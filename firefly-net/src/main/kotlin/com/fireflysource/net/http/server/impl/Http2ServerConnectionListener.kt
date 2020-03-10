@@ -36,8 +36,12 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
             headerComplete = notifyHeaderComplete(context)
         }
         if (frame.isEndStream) {
-            if (headerComplete != null) headerComplete.thenCompose { notifyRequestComplete(context) }
-            else notifyException(context, IllegalStateException("The header complete future must be not null"))
+            if (headerComplete != null) {
+                headerComplete.thenCompose { notifyRequestComplete(context) }
+                    .exceptionallyAccept { notifyException(context, it) }
+            } else {
+                notifyException(context, IllegalStateException("The header complete future must be not null"))
+            }
         }
 
         return object : Stream.Listener.Adapter() {
@@ -53,8 +57,12 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 }
                 if (frame.isEndStream) {
                     val future = headerComplete
-                    if (future != null) future.thenCompose { notifyRequestComplete(context) }
-                    else notifyException(context, IllegalStateException("The header complete future must be not null"))
+                    if (future != null) {
+                        future.thenCompose { notifyRequestComplete(context) }
+                            .exceptionallyAccept { notifyException(context, it) }
+                    } else {
+                        notifyException(context, IllegalStateException("The header complete future must be not null"))
+                    }
                 }
             }
 
@@ -73,6 +81,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                     if (future != null) {
                         future.thenCompose { context.request.contentHandler.closeFuture() }
                             .thenCompose { notifyRequestComplete(context) }
+                            .exceptionallyAccept { notifyException(context, it) }
                     } else {
                         notifyException(context, IllegalStateException("The header complete future must be not null"))
                     }
