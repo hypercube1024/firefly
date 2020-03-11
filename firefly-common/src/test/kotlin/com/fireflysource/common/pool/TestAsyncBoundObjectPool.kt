@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -20,6 +21,7 @@ class TestAsyncBoundObjectPool {
     data class TestObject(var id: Int, var closed: Boolean = false)
 
     @Test
+    @DisplayName("should get the pooled object successfully")
     fun test() = runBlocking {
         val id = AtomicInteger()
         val max = 4
@@ -36,7 +38,7 @@ class TestAsyncBoundObjectPool {
                 assertFalse(pooledObject.getObject().closed)
                 assertFalse(pooledObject.isReleased)
                 assertTrue(pooledObject.getObject().id in 0..max)
-                println("get pooled object success. object: $pooledObject")
+                println("1. get pooled object success. object: $pooledObject")
 
                 pooledObject.closeFuture().await()
                 assertTrue(pooledObject.isReleased)
@@ -46,17 +48,20 @@ class TestAsyncBoundObjectPool {
         assertEquals(max, pool.createdObjectCount)
         println("current size: ${pool.size()}")
 
-        pool.takePooledObject().use { pooledObject ->
-            assertFalse(pooledObject.getObject().closed)
-            assertFalse(pooledObject.isReleased)
-            assertTrue(pooledObject.getObject().id in 0..max)
-            println("get pooled object success. object: $pooledObject")
+        repeat(20) {
+            pool.takePooledObject().use { pooledObject ->
+                assertFalse(pooledObject.getObject().closed)
+                assertFalse(pooledObject.isReleased)
+                assertTrue(pooledObject.getObject().id in 0..max)
+                println("2. get pooled object success. object: $pooledObject")
+            }
         }
 
         pool.stop()
     }
 
     @Test
+    @DisplayName("should detect the pooled object is leak.")
     fun testPooledObjectLeak() = runBlocking {
         val id = AtomicInteger()
         val max = 10

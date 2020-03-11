@@ -1,21 +1,17 @@
 package com.fireflysource.common.pool
 
-import com.fireflysource.common.concurrent.Atomics
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.common.track.FixedTimeLeakDetector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.time.withTimeout
-import java.time.Duration
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.*
+import java.util.concurrent.*
 import java.util.function.Consumer
 
 /**
@@ -36,22 +32,19 @@ class AsyncBoundObjectPool<T>(
         private val log = SystemLogger.create(AsyncBoundObjectPool::class.java)
     }
 
-    private val createdCount = AtomicInteger(0)
-    private val size = AtomicInteger(0)
-    private val poolChannel = Channel<PooledObject<T>>(maxSize)
-    private val pollTaskChannel = Channel<CompletableFuture<PooledObject<T>>>(Channel.UNLIMITED)
-    private val releaseTaskChannel = Channel<ReleasePooledObjectMessage>(Channel.UNLIMITED)
+    private var createdCount = 0
+    private var size = 0
+    private val pool: LinkedList<PooledObject<T>> = LinkedList()
+    private val waitPollingQueue: LinkedList<PollObject<T>> = LinkedList()
+    private val poolMessageChannel: Channel<PoolMessage<T>> = Channel(Channel.UNLIMITED)
     private val leakDetector = FixedTimeLeakDetector<PooledObject<T>>(
         scheduler,
         leakDetectorInterval, leakDetectorInterval, releaseTimeout, TimeUnit.SECONDS,
         noLeakCallback
     )
-    private val pollObjectJob: Job
-    private val releaseObjectJob: Job
+    private val handlePoolMessageJob = handlePoolMessage()
 
     init {
-        pollObjectJob = launchPollObjectJob()
-        releaseObjectJob = launchReleaseObjectJob()
         start()
     }
 
@@ -59,25 +52,41 @@ class AsyncBoundObjectPool<T>(
 
     override fun poll(): CompletableFuture<PooledObject<T>> {
         val future = CompletableFuture<PooledObject<T>>()
-        pollTaskChannel.offer(future)
+        val timeoutJob: ScheduledFuture<*> = scheduler.schedule({
+            if (!future.isDone) {
+                future.completeExceptionally(TimeoutException("Poll object timeout"))
+            }
+        }, timeout, TimeUnit.SECONDS)
+        poolMessageChannel.offer(PollObject(future, timeoutJob))
         return future
     }
 
-    private fun launchPollObjectJob(): Job = event {
+    private fun handlePoolMessage(): Job = event {
         while (true) {
-            val future = pollTaskChannel.receive()
-            try {
-                val pooledObject = createNew() ?: getFromPool()
-                initPooledObject(pooledObject)
-                future.complete(pooledObject)
-            } catch (e: Exception) {
-                log.error(e) { "poll object from pool exception." }
-                future.completeExceptionally(e)
+            when (val message = poolMessageChannel.receive()) {
+                is PollObject<T> -> handlePollObjectMessage(message)
+                is ReleaseObject<T> -> handleReleaseObjectMessage(message)
             }
         }
     }
 
+    private suspend fun handlePollObjectMessage(message: PollObject<T>) {
+        try {
+            val pooledObject = createNew() ?: getFromPool()
+            if (pooledObject != null) {
+                initPooledObject(pooledObject)
+                message.future.complete(pooledObject)
+                message.timeoutJob.cancel(true)
+            } else waitPollingQueue.offer(message)
+        } catch (e: Exception) {
+            log.error(e) { "Handle poll object message exception." }
+            message.future.completeExceptionally(e)
+            message.timeoutJob.cancel(true)
+        }
+    }
+
     private fun initPooledObject(pooledObject: PooledObject<T>) {
+        pooledObject.released.set(false)
         leakDetector.register(pooledObject, Consumer {
             try {
                 pooledObject.leakCallback.accept(it)
@@ -87,28 +96,28 @@ class AsyncBoundObjectPool<T>(
                 destroyPooledObject(it)
             }
         })
-        pooledObject.released.set(false)
     }
 
-    private suspend fun createNew(): PooledObject<T>? = if (createdCount.get() < maxSize) {
-        val pooledObject = objectFactory.createNew(this).await()
-        createdCount.incrementAndGet()
-        log.debug { "create a new object. $pooledObject" }
-        pooledObject
+    private suspend fun createNew(): PooledObject<T>? = if (createdCount < maxSize) {
+        objectFactory.createNew(this).await()
+            .also { createdCount++ }
+            .also { log.debug { "create a new object. $it" } }
     } else null
 
-    private suspend fun getFromPool(): PooledObject<T> {
-        val oldPooledObject = withTimeout(Duration.ofSeconds(timeout)) { poolChannel.receive() }
-        size.decrementAndGet()
-        return if (isValid(oldPooledObject)) {
-            log.debug { "get an old object. $oldPooledObject" }
-            oldPooledObject
-        } else {
-            destroyPooledObject(oldPooledObject)
-            val pooledObject = createNew()
-            requireNotNull(pooledObject)
-            pooledObject
-        }
+    private suspend fun getFromPool(): PooledObject<T>? {
+        val oldPooledObject: PooledObject<T>? = pool.poll()
+        return if (oldPooledObject != null) {
+            size--
+            if (isValid(oldPooledObject)) {
+                log.debug { "get an old object. $oldPooledObject" }
+                oldPooledObject
+            } else {
+                destroyPooledObject(oldPooledObject)
+                val newPooledObject = createNew()
+                requireNotNull(newPooledObject)
+                newPooledObject
+            }
+        } else null
     }
 
     private fun destroyPooledObject(pooledObject: PooledObject<T>) {
@@ -118,36 +127,41 @@ class AsyncBoundObjectPool<T>(
             log.error(e) { "destroy pooled object exception." }
         } finally {
             log.debug { "destroy the object: $pooledObject ." }
-            Atomics.getAndDecrement(createdCount, 0)
+            createdCount--
+            if (createdCount < 0) {
+                log.error { "The created object count must be not less than 0" }
+                createdCount = 0
+            }
         }
     }
 
+    private suspend fun handleReleaseObjectMessage(message: ReleaseObject<T>) {
+        val (pooledObject, future) = message
+        if (pooledObject.released.compareAndSet(false, true)) {
+            leakDetector.clear(pooledObject)
+            pool.offer(pooledObject)
+            size++
+            Result.done(future)
+            log.debug { "release pooled object: $pooledObject, pool size: ${size()}." }
+            handleWaitingMessage()
+        }
+    }
 
-    // release task
-    private fun launchReleaseObjectJob(): Job = event {
+    private suspend fun handleWaitingMessage() {
         while (true) {
-            val message = releaseTaskChannel.receive()
-            val pooledObject = message.pooledObject
-            val future = message.future
-            try {
-                if (pooledObject.released.compareAndSet(false, true)) {
-                    leakDetector.clear(pooledObject)
-                    withTimeout(Duration.ofSeconds(timeout)) { poolChannel.send(pooledObject) }
-                    size.incrementAndGet()
-                    future.complete(null)
-                    log.debug { "release pooled object: $pooledObject, pool size: ${size()}." }
+            val pollObjectMessage: PollObject<T>? = waitPollingQueue.poll()
+            if (pollObjectMessage != null) {
+                if (!pollObjectMessage.future.isDone) {
+                    handlePollObjectMessage(pollObjectMessage)
+                    break
                 }
-            } catch (e: Exception) {
-                log.error(e) { "release pooled object exception" }
-                destroyPooledObject(pooledObject)
-                future.completeExceptionally(e)
-            }
+            } else break
         }
     }
 
     override fun release(pooledObject: PooledObject<T>): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        releaseTaskChannel.offer(ReleasePooledObjectMessage(pooledObject, future))
+        poolMessageChannel.offer(ReleaseObject(pooledObject, future))
         return future
     }
 
@@ -156,10 +170,15 @@ class AsyncBoundObjectPool<T>(
     }
 
     override fun isValid(pooledObject: PooledObject<T>): Boolean {
-        return validator.isValid(pooledObject)
+        return try {
+            validator.isValid(pooledObject)
+        } catch (e: Exception) {
+            log.error(e) { "Valid pooled object exception" }
+            false
+        }
     }
 
-    override fun size(): Int = size.get()
+    override fun size(): Int = size
 
     override fun isEmpty(): Boolean {
         return size() == 0
@@ -167,29 +186,22 @@ class AsyncBoundObjectPool<T>(
 
     override fun getLeakDetector(): FixedTimeLeakDetector<PooledObject<T>> = leakDetector
 
-    override fun getCreatedObjectCount(): Int = createdCount.get()
+    override fun getCreatedObjectCount(): Int = createdCount
 
     override fun init() {
     }
 
     override fun destroy() {
-        while (true) {
-            val o = poolChannel.poll()
-            if (o == null) {
-                break
-            } else {
-                dispose.destroy(o)
-            }
-        }
-
         leakDetector.stop()
-        poolChannel.close()
-        pollObjectJob.cancel(CancellationException("Cancel object pool polling job exception."))
-        releaseObjectJob.cancel(CancellationException("Cancel object pool release job exception."))
+        handlePoolMessageJob.cancel(CancellationException("Cancel object pool message job exception."))
+        pool.forEach { destroyPooledObject(it) }
+        pool.clear()
     }
 
-    inner class ReleasePooledObjectMessage(
-        val pooledObject: PooledObject<T>,
-        val future: CompletableFuture<Void>
-    )
 }
+
+sealed class PoolMessage<T>
+class PollObject<T>(val future: CompletableFuture<PooledObject<T>>, val timeoutJob: ScheduledFuture<*>) :
+    PoolMessage<T>()
+
+data class ReleaseObject<T>(val pooledObject: PooledObject<T>, val future: CompletableFuture<Void>) : PoolMessage<T>()
