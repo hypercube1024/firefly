@@ -12,8 +12,8 @@ import com.fireflysource.net.http.common.v2.frame.CloseState.*
 import com.fireflysource.net.http.common.v2.frame.CloseState.Event.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.delay
 import java.io.Closeable
 import java.io.IOException
 import java.time.Duration
@@ -81,15 +81,21 @@ class AsyncHttp2Stream(
 
     private fun launchIdleCheckJob() = asyncHttp2Connection.coroutineScope.launch {
         while (true) {
-            val duration = Duration.ofSeconds(idleTimeout)
-            delay(duration)
-            val idle = System.currentTimeMillis() - lastActiveTime
-            if (idle >= duration.toMillis()) {
+            val timeout = Duration.ofSeconds(idleTimeout).toMillis()
+            val delayTime = (timeout - getIdleTime()).coerceAtLeast(0)
+            log.debug { "Stream idle check delay: $delayTime" }
+            if (delayTime > 0) {
+                delay(delayTime)
+            }
+            val idle = getIdleTime()
+            if (idle >= timeout) {
                 notifyIdleTimeout()
                 break
             }
         }
     }
+
+    private fun getIdleTime() = System.currentTimeMillis() - lastActiveTime
 
     private fun notifyIdleTimeout() {
         try {
