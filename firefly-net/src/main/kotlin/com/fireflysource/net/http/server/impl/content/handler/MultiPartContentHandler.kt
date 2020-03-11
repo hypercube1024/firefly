@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.server.impl.content.handler
 
+import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.coroutine.event
-import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.string.QuotedStringTokenizer
 import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
@@ -40,15 +40,16 @@ class MultiPartContentHandler(
         require(maxFileSize >= fileSizeThreshold) { "The max file size must be greater than the file size threshold." }
     }
 
-    private val multiParts: List<AsyncMultiPart> = mutableListOf()
+    private val multiParts: LinkedList<AsyncMultiPart> = LinkedList()
     private val multiPartChannel: Channel<MultiPartHandlerMessage> = Channel(Channel.UNLIMITED)
     private var firstMessage = true
     private var requestSize: Long = 0
     private var parser: MultiPartParser? = null
-    private var byteBuffer: ByteBuffer = BufferUtils.EMPTY_BUFFER
+    private var byteBuffers: LinkedList<ByteBuffer> = LinkedList()
     private val multiPartHandler = MultiPartHandler()
     private var job: Job? = null
     private var part: AsyncMultiPart? = null
+    private var parsingException: Throwable? = null
 
     private inner class MultiPartHandler : MultiPartParser.Handler {
 
@@ -83,26 +84,35 @@ class MultiPartContentHandler(
 
     private fun parsingJob() = event {
         parseLoop@ while (true) {
-            when (val message = multiPartChannel.receive()) {
-                is ParseMultiPartBoundary -> parseBoundaryAndCreateMultiPartParser(message)
-                is ParseMultiPartContent -> parseContent(message)
-                is EndMultiPartHandler -> parser?.parse(byteBuffer, true)
-                is StartPart -> createMultiPart()
-                is PartField -> addMultiPartField(message)
-                is PartHeaderComplete -> handleHeaderComplete()
-                is PartContent -> acceptContent(message)
-                is PartMessageComplete -> {
-                    part?.closeFileHandler()
-                    break@parseLoop
+            try {
+                when (val message = multiPartChannel.receive()) {
+                    is ParseMultiPartBoundary -> parseBoundaryAndCreateMultiPartParser(message)
+                    is ParseMultiPartContent -> parseContent(message)
+                    is EndMultiPartHandler -> endMultiPartHandler()
+                    is StartPart -> createMultiPart()
+                    is PartField -> addMultiPartField(message)
+                    is PartHeaderComplete -> handleHeaderComplete()
+                    is PartContent -> acceptContent(message)
+                    is PartMessageComplete -> {
+                        handleMessageComplete()
+                        break@parseLoop
+                    }
+                    is PartEarlyEOF -> handleEarlyEOF()
                 }
-                is PartEarlyEOF -> handleEarlyEOF()
+            } catch (e: Throwable) {
+                this@MultiPartContentHandler.parsingException = e
+                throw e
             }
         }
     }
 
+
     private fun createMultiPart() {
-        part = AsyncMultiPart(maxFileSize, fileSizeThreshold, Paths.get(path.toString(), UUID.randomUUID().toString()))
-        log.debug { "Create multi-part. maxFileSize: $maxFileSize, threshold: $fileSizeThreshold" }
+        val part =
+            AsyncMultiPart(maxFileSize, fileSizeThreshold, Paths.get(path.toString(), UUID.randomUUID().toString()))
+        multiParts.add(part)
+        this.part = part
+        log.debug { "Create multi-part. $part" }
     }
 
     private fun addMultiPartField(message: PartField) {
@@ -130,15 +140,21 @@ class MultiPartContentHandler(
         requireNotNull(name) { "No name in part" }
         part?.name = name
         part?.fileName = fileName ?: ""
-        log.debug { "Multi-part header complete. name: $name, fileName: $fileName, fields: ${part?.httpFields}" }
+        log.debug { "Multi-part header complete. name: $name, fileName: $fileName, fields: ${part?.httpFields?.size()}" }
     }
 
     private fun acceptContent(message: PartContent) {
+        log.debug { "Accept multi-part content. size: ${message.byteBuffer.remaining()}, last: ${message.last}" }
         part?.accept(message.byteBuffer, message.last)
     }
 
+    private suspend fun handleMessageComplete() {
+        multiParts.forEach { it.closeFileHandler() }
+        log.debug { "Multi-part complete. part: $part" }
+    }
+
     private suspend fun handleEarlyEOF() {
-        part?.closeFileHandler()
+        multiParts.forEach { it.closeFileHandler() }
         throw BadMessageException(HttpStatus.BAD_REQUEST_400)
     }
 
@@ -168,8 +184,18 @@ class MultiPartContentHandler(
     }
 
     private fun parseContent(message: ParseMultiPartContent) {
-        byteBuffer = message.byteBuffer
-        parser?.parse(message.byteBuffer, false)
+        byteBuffers.offer(message.byteBuffer)
+        log.debug { "Parse multi part content. state: ${parser?.state}, size: ${message.byteBuffer.remaining()}" }
+        if (byteBuffers.size > 1) {
+            parser?.parse(byteBuffers.poll(), false)
+        }
+    }
+
+    private fun endMultiPartHandler() {
+        val buffer = byteBuffers.poll()
+        requireNotNull(buffer)
+        log.debug { "End multi-part handler. buffers: ${byteBuffers.size}, size: ${buffer.remaining()}" }
+        parser?.parse(buffer, true)
     }
 
     private fun value(headerLine: String): String {
@@ -202,17 +228,24 @@ class MultiPartContentHandler(
         if (requestSize > maxRequestSize) {
             throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
         }
+
         if (firstMessage) {
             job = parsingJob()
             multiPartChannel.offer(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
             firstMessage = false
-        } else {
-            multiPartChannel.offer(ParseMultiPartContent(byteBuffer))
         }
+        multiPartChannel.offer(ParseMultiPartContent(byteBuffer))
     }
 
-    override fun closeFuture(): CompletableFuture<Void> =
-        event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
+    override fun closeFuture(): CompletableFuture<Void> {
+        val parsingJob = job
+        return if (parsingJob != null) {
+            if (parsingJob.isCompleted) {
+                val e = parsingException
+                if (e != null) CompletableFutures.completeExceptionally(e) else Result.DONE
+            } else event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
+        } else CompletableFutures.completeExceptionally(IllegalStateException("The parsing job not start"))
+    }
 
     private suspend fun closeAwait() {
         multiPartChannel.offer(EndMultiPartHandler)

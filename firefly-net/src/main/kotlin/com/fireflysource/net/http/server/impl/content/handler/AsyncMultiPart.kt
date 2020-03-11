@@ -15,6 +15,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.MultiPart
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.CompletableFuture
@@ -72,14 +73,14 @@ class AsyncMultiPart(
         }
 
         if (size <= fileSizeThreshold) {
-            byteBufferHandler.accept(item, null)
+            if (item.hasRemaining()) byteBufferHandler.accept(item, null)
         } else {
             if (last) {
                 fileHandlerFuture = this.fileHandler?.closeFuture()
             } else {
                 val fileHandler = this.fileHandler
                 if (fileHandler != null) {
-                    fileHandler.accept(item, null)
+                    if (item.hasRemaining()) fileHandler.accept(item, null)
                 } else {
                     exceededFileThreshold = true
                     val newFileHandler = object : AbstractFileContentHandler<Any?>(
@@ -89,7 +90,7 @@ class AsyncMultiPart(
                     ) {}
                     this.fileHandler = newFileHandler
                     byteBufferHandler.getByteBuffers().forEach { newFileHandler.accept(it, null) }
-                    newFileHandler.accept(item, null)
+                    if (item.hasRemaining()) newFileHandler.accept(item, null)
                 }
             }
         }
@@ -105,6 +106,14 @@ class AsyncMultiPart(
         return getProvider().read(byteBuffer)
     }
 
+    override fun getStringBody(charset: Charset): String {
+        return if (exceededFileThreshold) ""
+        else {
+            val buffer = byteBufferProvider.toByteBuffer()
+            BufferUtils.toString(buffer, charset)
+        }
+    }
+
     override fun isOpen(): Boolean {
         return getProvider().isOpen
     }
@@ -118,4 +127,9 @@ class AsyncMultiPart(
     }
 
     private fun getProvider() = if (exceededFileThreshold) fileProvider else byteBufferProvider
+
+    override fun toString(): String {
+        return "AsyncMultiPart(maxFileSize=$maxFileSize, fileSizeThreshold=$fileSizeThreshold, path=$path, httpFields=${httpFields.size()}, size=$size, name='$name', fileName='$fileName', exceededFileThreshold=$exceededFileThreshold)"
+    }
+
 }
