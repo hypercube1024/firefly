@@ -101,7 +101,7 @@ class MultiPartContentHandler(
                 }
             } catch (e: Throwable) {
                 this@MultiPartContentHandler.parsingException = e
-                throw e
+                break@parseLoop
             }
         }
     }
@@ -241,11 +241,14 @@ class MultiPartContentHandler(
     override fun closeFuture(): CompletableFuture<Void> {
         val parsingJob = job
         return if (parsingJob != null) {
-            if (parsingJob.isCompleted) {
-                val e = parsingException
-                if (e != null) CompletableFutures.completeExceptionally(e) else Result.DONE
-            } else event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
-        } else CompletableFutures.completeExceptionally(IllegalStateException("The parsing job not start"))
+            if (parsingJob.isCompleted) complete()
+            else event { closeAwait() }.asCompletableFuture().thenCompose { complete() }
+        } else Result.DONE
+    }
+
+    private fun complete(): CompletableFuture<Void> {
+        val e = parsingException
+        return if (e != null) CompletableFutures.completeExceptionally(e) else Result.DONE
     }
 
     private suspend fun closeAwait() {

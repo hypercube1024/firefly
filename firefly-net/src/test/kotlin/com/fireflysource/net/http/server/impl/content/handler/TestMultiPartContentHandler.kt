@@ -5,12 +5,13 @@ import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.stringBody
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
+import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -25,12 +26,8 @@ class TestMultiPartContentHandler {
     fun test(): Unit = runBlocking {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
+        val ctx = mockRoutingContext(provider)
         val handler = MultiPartContentHandler()
-
-        val ctx = Mockito.mock(RoutingContext::class.java)
-        val httpFields = HttpFields()
-        httpFields.put(HttpHeader.CONTENT_TYPE, provider.contentType)
-        `when`(ctx.httpFields).thenReturn(httpFields)
 
         handler.accept(buffer, ctx)
         handler.closeFuture().await()
@@ -61,6 +58,34 @@ class TestMultiPartContentHandler {
         assertEquals("file body 1", filePart.stringBody)
         assertEquals("testFile.txt", filePart.fileName)
         assertEquals("g1", filePart.httpFields.get("f1"))
+    }
+
+    @Test
+    @DisplayName("should get the bad message exception.")
+    fun testEof(): Unit = runBlocking {
+        val provider = MultiPartContentProvider()
+        val ctx = mockRoutingContext(provider)
+        val handler = MultiPartContentHandler()
+
+        val buf = BufferUtils.toBuffer((1..100).joinToString { "a" })
+        handler.accept(buf, ctx)
+
+        val success = try {
+            handler.closeFuture().await()
+            true
+        } catch (e: Exception) {
+            assertTrue(e is BadMessageException)
+            false
+        }
+        assertFalse(success)
+    }
+
+    private fun mockRoutingContext(provider: MultiPartContentProvider): RoutingContext {
+        val ctx = Mockito.mock(RoutingContext::class.java)
+        val httpFields = HttpFields()
+        httpFields.put(HttpHeader.CONTENT_TYPE, provider.contentType)
+        `when`(ctx.httpFields).thenReturn(httpFields)
+        return ctx
     }
 
     private suspend fun createMultiPartContent(provider: MultiPartContentProvider): ByteBuffer {
