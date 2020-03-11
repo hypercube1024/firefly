@@ -19,6 +19,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 class TestMultiPartContentHandler {
 
@@ -28,6 +29,7 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
+        provider.closeFuture().await()
         val handler = MultiPartContentHandler()
 
         handler.accept(buffer, ctx)
@@ -67,6 +69,7 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val ctx = mockRoutingContext(provider)
         val handler = MultiPartContentHandler()
+        provider.closeFuture().await()
 
         val buf = BufferUtils.toBuffer((1..100).joinToString { "a" })
         handler.accept(buf, ctx)
@@ -87,9 +90,19 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
+        provider.closeFuture().await()
         val handler = MultiPartContentHandler(uploadFileSizeThreshold = 100)
 
-        handler.accept(buffer, ctx)
+        val buffers = LinkedList<ByteBuffer>()
+        while (buffer.hasRemaining()) {
+            val b = BufferUtils.allocate(32)
+            val pos = b.flipToFill()
+            BufferUtils.put(buffer, b)
+            b.flipToFlush(pos)
+            buffers.add(b)
+        }
+
+        buffers.forEach { handler.accept(it, ctx) }
         handler.closeFuture().await()
 
         val filePart = handler.getPart("file body")

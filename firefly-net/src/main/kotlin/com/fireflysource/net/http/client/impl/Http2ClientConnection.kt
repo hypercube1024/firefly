@@ -4,6 +4,7 @@ import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
@@ -184,28 +185,29 @@ class Http2ClientConnection(
         serverAccept: Boolean
     ) = tcpConnection.coroutineScope.async {
         if (contentProvider != null && serverAccept) {
-            val byteBuffers = LinkedList<ByteBuffer>()
-            readLoop@ while (true) {
-                val contentBuffer = BufferUtils.allocate(adaptiveBufferSize.getBufferSize())
-                val pos = contentBuffer.flipToFill()
-                val length = contentProvider.read(contentBuffer).await()
-                contentBuffer.flipToFlush(pos)
-                adaptiveBufferSize.update(length)
+            contentProvider.useAwait {
+                val byteBuffers = LinkedList<ByteBuffer>()
+                readLoop@ while (true) {
+                    val contentBuffer = BufferUtils.allocate(adaptiveBufferSize.getBufferSize())
+                    val pos = contentBuffer.flipToFill()
+                    val length = contentProvider.read(contentBuffer).await()
+                    contentBuffer.flipToFlush(pos)
+                    adaptiveBufferSize.update(length)
 
-                when {
-                    length > 0 -> byteBuffers.offer(contentBuffer)
-                    length < 0 -> break@readLoop
-                }
+                    when {
+                        length > 0 -> byteBuffers.offer(contentBuffer)
+                        length < 0 -> break@readLoop
+                    }
 
-                if (byteBuffers.size > 1) {
-                    val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), false)
-                    newStream.data(dataFrame)
+                    if (byteBuffers.size > 1) {
+                        val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), false)
+                        newStream.data(dataFrame)
+                    }
                 }
+                val last = metaDataRequest.trailerSupplier == null
+                val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), last)
+                newStream.data(dataFrame)
             }
-            val last = metaDataRequest.trailerSupplier == null
-            val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), last)
-            newStream.data(dataFrame)
-            contentProvider.closeFuture()
         }
         Pair(newStream, serverAccept)
     }.asCompletableFuture()

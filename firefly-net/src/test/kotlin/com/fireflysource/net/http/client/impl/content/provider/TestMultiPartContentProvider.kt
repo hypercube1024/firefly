@@ -40,6 +40,7 @@ class TestMultiPartContentProvider {
 
         println("Content-Type: ${provider.contentType}")
         println()
+        provider.closeFuture().await()
 
         val content = BufferUtils.toUTF8String(buffer)
         println(content)
