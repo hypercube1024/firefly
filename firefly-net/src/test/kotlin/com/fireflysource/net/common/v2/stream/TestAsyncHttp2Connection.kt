@@ -733,13 +733,13 @@ class TestAsyncHttp2Connection {
         val host = "localhost"
         val port = 4100
         val tcpConfig = TcpConfig(30, false)
-        val httpConfig = HttpConfig()
-        httpConfig.streamIdleTimeout = 1
+        val serverHttpConfig = HttpConfig()
+        serverHttpConfig.streamIdleTimeout = 1
 
         val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
             connection.beginHandshake().await()
             Http2ServerConnection(
-                httpConfig, connection, SimpleFlowControlStrategy(),
+                serverHttpConfig, connection, SimpleFlowControlStrategy(),
                 object : Http2Connection.Listener.Adapter() {
 
                     override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
@@ -777,7 +777,7 @@ class TestAsyncHttp2Connection {
         val connection = client.connect(host, port).await()
         connection.beginHandshake().await()
         val http2Connection: Http2Connection = Http2ClientConnection(
-            httpConfig, connection, SimpleFlowControlStrategy(),
+            HttpConfig(), connection, SimpleFlowControlStrategy(),
             createClientHttp2ConnectionListener()
         )
 
@@ -797,6 +797,89 @@ class TestAsyncHttp2Connection {
         val time = measureTimeMillis {
             val newStream = future.await()
             assertEquals(1, newStream.id)
+            val resetFrame = channel.receive()
+            assertEquals(1, resetFrame.streamId)
+        }
+        println("new stream time: $time ms")
+
+        http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
+
+        client.stop()
+        server.stop()
+    }
+
+    @Test
+    @DisplayName("should set the stream idle timeout successfully")
+    fun testSetStreamIdleTimeout(): Unit = runBlocking {
+        val host = "localhost"
+        val port = 4101
+        val tcpConfig = TcpConfig(30, false)
+        val httpConfig = HttpConfig()
+        httpConfig.streamIdleTimeout = 30
+
+        val channel: Channel<ResetFrame> = Channel(UNLIMITED)
+        val server = AioTcpServer(tcpConfig).onAcceptAsync { connection ->
+            connection.beginHandshake().await()
+            Http2ServerConnection(
+                httpConfig, connection, SimpleFlowControlStrategy(),
+                object : Http2Connection.Listener.Adapter() {
+
+                    override fun onFailure(http2Connection: Http2Connection, failure: Throwable) {
+                        failure.printStackTrace()
+                    }
+
+                    override fun onClose(http2Connection: Http2Connection, frame: GoAwayFrame) {
+                        println("Server receives go away frame: $frame")
+                    }
+
+                    override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
+                        println("Server creates the remote stream: $stream . the headers: $frame .")
+
+                        val fields = HttpFields()
+                        fields.put("Test-Idle-Timeout", "R1")
+                        val response = MetaData.Response(HttpVersion.HTTP_2, HttpStatus.OK_200, fields)
+                        val headersFrame = HeadersFrame(stream.id, response, null, false)
+                        stream.headers(headersFrame) { println("Server response success.") }
+                        return object : Stream.Listener.Adapter() {
+                            override fun onReset(stream: Stream, frame: ResetFrame) {
+                                println("Server received reset: $frame")
+                                channel.offer(frame)
+                            }
+
+                            override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {
+                                println("${x.message}: $stream")
+                                return true
+                            }
+                        }
+                    }
+                }
+            ).begin()
+        }.listen(host, port)
+
+        val client = AioTcpClient(tcpConfig)
+        val connection = client.connect(host, port).await()
+        connection.beginHandshake().await()
+        val http2Connection: Http2Connection = Http2ClientConnection(
+            httpConfig, connection, SimpleFlowControlStrategy(),
+            createClientHttp2ConnectionListener()
+        )
+
+        val headersFrame = createRequestHeadersFrame()
+
+        val future = http2Connection.newStream(headersFrame, object : Stream.Listener.Adapter() {
+            override fun onHeaders(stream: Stream, frame: HeadersFrame) {
+                println("Client received headers: $frame")
+            }
+
+            override fun onReset(stream: Stream, frame: ResetFrame) {
+                println("Client received reset: $frame")
+            }
+        })
+
+        val time = measureTimeMillis {
+            val newStream = future.await()
+            assertEquals(1, newStream.id)
+            newStream.idleTimeout = 1
             val resetFrame = channel.receive()
             assertEquals(1, resetFrame.streamId)
         }
