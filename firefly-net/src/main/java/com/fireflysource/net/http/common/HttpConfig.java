@@ -24,6 +24,9 @@ public class HttpConfig {
     private int maxConcurrentStreams = -1;
     private int initialSessionRecvWindow = 16 * 1024 * 1024;
     private long streamIdleTimeout = 0;
+    private long maxUploadFileSize = 200 * 1024 * 1024;
+    private long maxRequestBodySize = (4 * 1024) + (200 * 1024 * 1024);
+    private int uploadFileSizeThreshold = 4 * 1024 * 1024;
 
     public TcpChannelGroup getTcpChannelGroup() {
         return tcpChannelGroup;
@@ -145,22 +148,49 @@ public class HttpConfig {
         this.streamIdleTimeout = streamIdleTimeout;
     }
 
+    public long getMaxUploadFileSize() {
+        return maxUploadFileSize;
+    }
+
+    public void setMaxUploadFileSize(long maxUploadFileSize) {
+        this.maxUploadFileSize = maxUploadFileSize;
+    }
+
+    public long getMaxRequestBodySize() {
+        return maxRequestBodySize;
+    }
+
+    public void setMaxRequestBodySize(long maxRequestBodySize) {
+        this.maxRequestBodySize = maxRequestBodySize;
+    }
+
+    public int getUploadFileSizeThreshold() {
+        return uploadFileSizeThreshold;
+    }
+
+    public void setUploadFileSizeThreshold(int uploadFileSizeThreshold) {
+        this.uploadFileSizeThreshold = uploadFileSizeThreshold;
+    }
+
     @Override
     public String toString() {
-        return "HttpClientConfig{" +
+        return "HttpConfig{" +
                 "timeout=" + timeout +
                 ", connectionPoolSize=" + connectionPoolSize +
                 ", leakDetectorInterval=" + leakDetectorInterval +
                 ", releaseTimeout=" + releaseTimeout +
-                ", requestHeaderBufferSize=" + headerBufferSize +
+                ", headerBufferSize=" + headerBufferSize +
                 ", contentBufferSize=" + contentBufferSize +
-                ", secureEngineFactory=" + secureEngineFactory +
                 ", maxDynamicTableSize=" + maxDynamicTableSize +
                 ", maxHeaderSize=" + maxHeaderSize +
                 ", maxHeaderBlockFragment=" + maxHeaderBlockFragment +
                 ", initialStreamRecvWindow=" + initialStreamRecvWindow +
-                ", maxConcurrentPushedStreams=" + maxConcurrentStreams +
+                ", maxConcurrentStreams=" + maxConcurrentStreams +
                 ", initialSessionRecvWindow=" + initialSessionRecvWindow +
+                ", streamIdleTimeout=" + streamIdleTimeout +
+                ", maxUploadFileSize=" + maxUploadFileSize +
+                ", maxRequestBodySize=" + maxRequestBodySize +
+                ", uploadFileSizeThreshold=" + uploadFileSizeThreshold +
                 '}';
     }
 }

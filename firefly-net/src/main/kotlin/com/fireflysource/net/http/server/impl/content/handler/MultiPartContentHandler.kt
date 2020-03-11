@@ -24,9 +24,9 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class MultiPartContentHandler(
-    private val maxFileSize: Long = 200 * 1024 * 1024,
-    private val maxRequestSize: Long = 200 * 1024 * 1024,
-    private val fileSizeThreshold: Int = 4 * 1024 * 1024,
+    private val maxUploadFileSize: Long = 200 * 1024 * 1024,
+    private val maxRequestBodySize: Long = 200 * 1024 * 1024,
+    private val uploadFileSizeThreshold: Int = 4 * 1024 * 1024,
     private val path: Path = tempPath
 ) : HttpServerContentHandler {
 
@@ -36,8 +36,8 @@ class MultiPartContentHandler(
     }
 
     init {
-        require(maxRequestSize >= maxFileSize) { "The max request size must be greater than the max file size." }
-        require(maxFileSize >= fileSizeThreshold) { "The max file size must be greater than the file size threshold." }
+        require(maxRequestBodySize >= maxUploadFileSize) { "The max request size must be greater than the max file size." }
+        require(maxUploadFileSize >= uploadFileSizeThreshold) { "The max file size must be greater than the file size threshold." }
     }
 
     private val multiParts: LinkedList<AsyncMultiPart> = LinkedList()
@@ -109,7 +109,11 @@ class MultiPartContentHandler(
 
     private fun createMultiPart() {
         val part =
-            AsyncMultiPart(maxFileSize, fileSizeThreshold, Paths.get(path.toString(), UUID.randomUUID().toString()))
+            AsyncMultiPart(
+                maxUploadFileSize,
+                uploadFileSizeThreshold,
+                Paths.get(path.toString(), UUID.randomUUID().toString())
+            )
         multiParts.add(part)
         this.part = part
         log.debug { "Create multi-part. $part" }
@@ -226,7 +230,7 @@ class MultiPartContentHandler(
 
     override fun accept(byteBuffer: ByteBuffer, ctx: RoutingContext) {
         requestSize += byteBuffer.remaining()
-        if (requestSize > maxRequestSize) {
+        if (requestSize > maxRequestBodySize) {
             throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
         }
 

@@ -33,7 +33,7 @@ import kotlin.math.min
 
 abstract class AsyncHttp2Connection(
     private val initStreamId: Int,
-    protected val config: HttpConfig,
+    val config: HttpConfig,
     private val tcpConnection: TcpConnection,
     private val flowControl: FlowControl,
     private val listener: Http2Connection.Listener

@@ -79,23 +79,23 @@ class AsyncMultiPart(
         if (size <= fileSizeThreshold) {
             if (item.hasRemaining()) byteBufferHandler.accept(item, null)
         } else {
+            val fileHandler = this.fileHandler
+            if (fileHandler != null) {
+                if (item.hasRemaining()) fileHandler.accept(item, null)
+            } else {
+                exceededFileThreshold = true
+                val newFileHandler = object : AbstractFileContentHandler<Any?>(
+                    path,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE_NEW
+                ) {}
+                this.fileHandler = newFileHandler
+                byteBufferHandler.getByteBuffers().forEach { newFileHandler.accept(it, null) }
+                if (item.hasRemaining()) newFileHandler.accept(item, null)
+            }
+
             if (last) {
                 fileHandlerFuture = this.fileHandler?.closeFuture()
-            } else {
-                val fileHandler = this.fileHandler
-                if (fileHandler != null) {
-                    if (item.hasRemaining()) fileHandler.accept(item, null)
-                } else {
-                    exceededFileThreshold = true
-                    val newFileHandler = object : AbstractFileContentHandler<Any?>(
-                        path,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.CREATE_NEW
-                    ) {}
-                    this.fileHandler = newFileHandler
-                    byteBufferHandler.getByteBuffers().forEach { newFileHandler.accept(it, null) }
-                    if (item.hasRemaining()) newFileHandler.accept(item, null)
-                }
             }
         }
     }

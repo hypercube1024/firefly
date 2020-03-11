@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.codec.CookieParser
 import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
@@ -16,7 +17,10 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
 
-class AsyncHttpServerRequest(val request: MetaData.Request) : HttpServerRequest {
+class AsyncHttpServerRequest(
+    val request: MetaData.Request,
+    config: HttpConfig
+) : HttpServerRequest {
 
     private var cookieList: List<Cookie>? = null
     private var queryStringMap: UrlEncoded? = null
@@ -32,7 +36,9 @@ class AsyncHttpServerRequest(val request: MetaData.Request) : HttpServerRequest 
         contentHandler = if (contentType != null) {
             when {
                 contentType.contains("x-www-form-urlencoded", true) -> FormInputsContentHandler()
-                contentType.contains("multipart/form-data", true) -> MultiPartContentHandler()
+                contentType.contains("multipart/form-data", true) -> MultiPartContentHandler(
+                    config.maxUploadFileSize, config.maxRequestBodySize, config.uploadFileSizeThreshold
+                )
                 else -> StringContentHandler()
             }
         } else StringContentHandler()

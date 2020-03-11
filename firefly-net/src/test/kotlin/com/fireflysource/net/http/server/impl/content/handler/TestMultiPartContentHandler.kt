@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server.impl.content.handler
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.stringBody
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.common.exception.BadMessageException
@@ -80,6 +81,38 @@ class TestMultiPartContentHandler {
         assertFalse(success)
     }
 
+    @Test
+    @DisplayName("should save content to temp file successfully")
+    fun testFileSizeThreshold(): Unit = runBlocking {
+        val provider = MultiPartContentProvider()
+        val buffer = createMultiPartContent(provider)
+        val ctx = mockRoutingContext(provider)
+        val handler = MultiPartContentHandler(uploadFileSizeThreshold = 100)
+
+        handler.accept(buffer, ctx)
+        handler.closeFuture().await()
+
+        val filePart = handler.getPart("file body")
+        requireNotNull(filePart)
+        assertEquals("file body 1", filePart.stringBody)
+        assertEquals("testFile.txt", filePart.fileName)
+        assertEquals("g1", filePart.httpFields.get("f1"))
+
+        val bigFilePart = handler.getPart("bigFile")
+        requireNotNull(bigFilePart)
+        bigFilePart.useAwait {
+            assertTrue(bigFilePart.stringBody.isBlank())
+            val bigFileBuffer = BufferUtils.allocate(500)
+            val pos = bigFileBuffer.flipToFill()
+            bigFilePart.read(bigFileBuffer).await()
+            bigFileBuffer.flipToFlush(pos)
+
+            assertEquals(500, bigFileBuffer.remaining())
+            val content = BufferUtils.toString(bigFileBuffer)
+            assertTrue(content.contains("ccccc"))
+        }
+    }
+
     private fun mockRoutingContext(provider: MultiPartContentProvider): RoutingContext {
         val ctx = Mockito.mock(RoutingContext::class.java)
         val httpFields = HttpFields()
@@ -105,6 +138,10 @@ class TestMultiPartContentHandler {
         file1HttpFields.put("f1", "g1")
         provider.addFilePart("file body", "testFile.txt", file1Provider, file1HttpFields)
 
+        val bigFile = (1..500).joinToString(separator = "") { "c" }
+        val bigFileProvider = stringBody(bigFile, StandardCharsets.UTF_8)
+        provider.addFilePart("bigFile", "bigFile.txt", bigFileProvider, HttpFields())
+
         val buffer = BufferUtils.allocate(provider.length().toInt())
         val pos = BufferUtils.flipToFill(buffer)
         while (buffer.hasRemaining()) {
@@ -114,7 +151,6 @@ class TestMultiPartContentHandler {
             }
         }
         BufferUtils.flipToFlush(buffer, pos)
-//        println(BufferUtils.toString(buffer))
         return buffer
     }
 }

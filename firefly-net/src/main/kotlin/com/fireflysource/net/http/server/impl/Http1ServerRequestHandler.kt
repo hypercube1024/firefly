@@ -70,7 +70,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
         requireNotNull(request)
-        val httpServerRequest = AsyncHttpServerRequest(request)
+        val httpServerRequest = AsyncHttpServerRequest(request, connection.config)
 
         this.expectUpgradeHttp2 = HttpProtocolNegotiator.expectUpgradeHttp2(httpServerRequest)
         if (expectUpgradeHttp2) {

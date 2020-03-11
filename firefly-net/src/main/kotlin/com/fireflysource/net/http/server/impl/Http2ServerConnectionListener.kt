@@ -25,7 +25,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
         val http2Connection = stream.http2Connection as Http2ServerConnection
 
-        val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request)
+        val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request, http2Connection.config)
         val response = Http2ServerResponse(http2Connection, stream)
         val context = AsyncRoutingContext(request, response, http2Connection)
         val trailer: HttpFields by lazy { HttpFields() }
