@@ -1,8 +1,10 @@
 package com.fireflysource.net.http.server.impl.content.handler
 
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.deleteIfExistsAsync
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
+import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.content.handler.AbstractByteBufferContentHandler
 import com.fireflysource.net.http.common.content.handler.AbstractFileContentHandler
@@ -13,6 +15,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.MultiPart
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -68,6 +71,7 @@ class AsyncMultiPart(
 
     fun accept(item: ByteBuffer, last: Boolean) {
         size += item.remaining()
+        log.debug { "Multi part accepts data. name: $name size: ${item.remaining()}, last: $last" }
         if (size > maxFileSize) {
             throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
         }
@@ -124,6 +128,8 @@ class AsyncMultiPart(
 
     override fun closeFuture(): CompletableFuture<Void> {
         return getProvider().closeFuture()
+            .thenCompose { deleteIfExistsAsync(path).asCompletableFuture() }
+            .thenCompose { Result.DONE }
     }
 
     private fun getProvider() = if (exceededFileThreshold) fileProvider else byteBufferProvider

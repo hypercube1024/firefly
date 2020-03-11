@@ -83,6 +83,11 @@ fun readAllBytesAsync(file: Path) = blockingAsync {
     Files.readAllBytes(file)
 }
 
+fun deleteIfExistsAsync(file: Path) = blockingAsync {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    Files.deleteIfExists(file)
+}
+
 /**
  * Performs [AsynchronousFileChannel.read] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
