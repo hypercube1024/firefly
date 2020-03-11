@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -26,7 +27,7 @@ class TestAsyncBoundObjectPool {
         val id = AtomicInteger()
         val max = 4
         val destroyedChannel = Channel<PooledObject<TestObject>>(Channel.UNLIMITED)
-        val pool = createAsyncPool(id, max, 60, destroyedChannel)
+        val pool = createAsyncPool(id, max, 60, 60, destroyedChannel)
 
         assertNotNull(pool.leakDetector)
         assertEquals(0, pool.size())
@@ -66,7 +67,7 @@ class TestAsyncBoundObjectPool {
         val id = AtomicInteger()
         val max = 10
         val destroyedChannel = Channel<PooledObject<TestObject>>(Channel.UNLIMITED)
-        val pool = createAsyncPool(id, max, 1, destroyedChannel)
+        val pool = createAsyncPool(id, max, 1, 60, destroyedChannel)
         val pooledObject = pool.takePooledObject()
         val destroyedObject = destroyedChannel.receive()
         pool.leakDetector.clear(pooledObject)
@@ -74,17 +75,40 @@ class TestAsyncBoundObjectPool {
         assertTrue(pooledObject.getObject().closed)
     }
 
+    @Test
+    fun testTimeout(): Unit = runBlocking {
+        val id = AtomicInteger()
+        val max = 4
+        val destroyedChannel = Channel<PooledObject<TestObject>>(Channel.UNLIMITED)
+        val pool = createAsyncPool(id, max, 60, 1, destroyedChannel)
+        val array = Array(4) { pool.poll() }
+
+        (1..8).map { pool.poll() }.forEach {
+            try {
+                it.await()
+            } catch (e: Exception) {
+                println(e.message)
+                assertTrue(e is TimeoutException)
+            }
+        }
+
+        array.forEach { it.await().closeFuture().await() }
+        pool.takePooledObject().use { assertTrue(it.getObject().id in 0..max) }
+        Unit
+    }
+
     private fun createAsyncPool(
         id: AtomicInteger,
         max: Int,
-        time: Long,
+        leakTime: Long,
+        timeout: Long,
         destroyedChannel: Channel<PooledObject<TestObject>>
     ) = asyncPool<TestObject> {
 
         maxSize = max
-        timeout = 60
-        leakDetectorInterval = time
-        releaseTimeout = time
+        this.timeout = timeout
+        leakDetectorInterval = leakTime
+        releaseTimeout = leakTime
 
         objectFactory { pool ->
             delay(100)

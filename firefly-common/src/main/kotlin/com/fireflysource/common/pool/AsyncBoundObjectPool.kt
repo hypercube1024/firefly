@@ -35,7 +35,7 @@ class AsyncBoundObjectPool<T>(
     private var createdCount = 0
     private var size = 0
     private val pool: LinkedList<PooledObject<T>> = LinkedList()
-    private val waitPollingQueue: LinkedList<PollObject<T>> = LinkedList()
+    private val waitQueue: LinkedList<PollObject<T>> = LinkedList()
     private val poolMessageChannel: Channel<PoolMessage<T>> = Channel(Channel.UNLIMITED)
     private val leakDetector = FixedTimeLeakDetector<PooledObject<T>>(
         scheduler,
@@ -54,7 +54,7 @@ class AsyncBoundObjectPool<T>(
         val future = CompletableFuture<PooledObject<T>>()
         val timeoutJob: ScheduledFuture<*> = scheduler.schedule({
             if (!future.isDone) {
-                future.completeExceptionally(TimeoutException("Poll object timeout"))
+                future.completeExceptionally(TimeoutException("Take pooled object timeout"))
             }
         }, timeout, TimeUnit.SECONDS)
         poolMessageChannel.offer(PollObject(future, timeoutJob))
@@ -77,7 +77,7 @@ class AsyncBoundObjectPool<T>(
                 initPooledObject(pooledObject)
                 message.future.complete(pooledObject)
                 message.timeoutJob.cancel(true)
-            } else waitPollingQueue.offer(message)
+            } else waitQueue.offer(message)
         } catch (e: Exception) {
             log.error(e) { "Handle poll object message exception." }
             message.future.completeExceptionally(e)
@@ -149,11 +149,13 @@ class AsyncBoundObjectPool<T>(
 
     private suspend fun handleWaitingMessage() {
         while (true) {
-            val pollObjectMessage: PollObject<T>? = waitPollingQueue.poll()
+            val pollObjectMessage: PollObject<T>? = waitQueue.poll()
             if (pollObjectMessage != null) {
                 if (!pollObjectMessage.future.isDone) {
                     handlePollObjectMessage(pollObjectMessage)
                     break
+                } else {
+                    log.debug { "Discard the polling message when it is done." }
                 }
             } else break
         }
