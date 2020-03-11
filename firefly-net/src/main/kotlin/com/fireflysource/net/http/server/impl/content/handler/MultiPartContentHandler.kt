@@ -128,11 +128,12 @@ class MultiPartContentHandler(
         var name: String? = null
         var fileName: String? = null
         while (token.hasMoreTokens()) {
-            val tokenValue = token.nextToken().trim().toLowerCase()
+            val tokenValue = token.nextToken().trim()
+            val lowerCaseValue = tokenValue.toLowerCase()
             when {
-                tokenValue.startsWith("form-data") -> formData = true
-                tokenValue.startsWith("name=") -> name = value(tokenValue)
-                tokenValue.startsWith("filename=") -> fileName = fileNameValue(tokenValue)
+                lowerCaseValue.startsWith("form-data") -> formData = true
+                lowerCaseValue.startsWith("name=") -> name = value(tokenValue)
+                lowerCaseValue.startsWith("filename=") -> fileName = fileNameValue(tokenValue)
             }
         }
 
