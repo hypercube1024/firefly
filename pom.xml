@@ -73,7 +73,7 @@
         <jackson.version>2.10.2</jackson.version>
         <msgpack.version>0.8.20</msgpack.version>
         <redisson.version>3.12.2</redisson.version>
-        <conscrypt.version>2.2.1</conscrypt.version>
+        <conscrypt.version>2.4.0</conscrypt.version>
         <bouncycastle.version>1.64</bouncycastle.version>
         <openjsse.version>1.1.0</openjsse.version>
         <javassist.version>3.26.0-GA</javassist.version>
