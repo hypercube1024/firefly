@@ -117,11 +117,11 @@ class TestAsyncHttpClientRequestBuilder {
 
         val fields = HttpFields()
         fields.add("t1", "x1")
-        builder.addFieldPart("text1", stringBody("plain text1", StandardCharsets.UTF_8), fields)
+        builder.addPart("text1", stringBody("plain text1", StandardCharsets.UTF_8), fields)
 
         val fields2 = HttpFields()
         fields2.add("t2", "x2")
-        builder.addFieldPart("text2", stringBody("plain text2", StandardCharsets.UTF_8), fields2)
+        builder.addPart("text2", stringBody("plain text2", StandardCharsets.UTF_8), fields2)
 
         val metadata = toMetaDataRequest(builder.httpRequest)
         println(metadata)

@@ -144,7 +144,7 @@ public interface HttpClientRequestBuilder {
      * @param fields  Multi-part content header fields.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder addFieldPart(String name, HttpClientContentProvider content, HttpFields fields);
+    HttpClientRequestBuilder addPart(String name, HttpClientContentProvider content, HttpFields fields);
 
     /**
      * Add a multi-part mime content. Such as a file.

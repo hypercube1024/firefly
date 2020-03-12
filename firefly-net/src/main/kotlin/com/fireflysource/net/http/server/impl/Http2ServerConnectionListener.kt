@@ -40,7 +40,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 headerComplete.thenCompose { notifyRequestComplete(context) }
                     .exceptionallyAccept { notifyException(context, it) }
             } else {
-                notifyException(context, IllegalStateException("The header complete future must be not null"))
+                notifyException(context, IllegalStateException("The header complete future must not be null"))
             }
         }
 
@@ -61,7 +61,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                         future.thenCompose { notifyRequestComplete(context) }
                             .exceptionallyAccept { notifyException(context, it) }
                     } else {
-                        notifyException(context, IllegalStateException("The header complete future must be not null"))
+                        notifyException(context, IllegalStateException("The header complete future must not be null"))
                     }
                 }
             }
@@ -83,7 +83,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                             .thenCompose { notifyRequestComplete(context) }
                             .exceptionallyAccept { notifyException(context, it) }
                     } else {
-                        notifyException(context, IllegalStateException("The header complete future must be not null"))
+                        notifyException(context, IllegalStateException("The header complete future must not be null"))
                     }
                 }
             }

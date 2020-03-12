@@ -19,13 +19,13 @@ class TestMultiPartContentProvider {
 
         val str = "Hello string body"
         val strProvider = stringBody(str, StandardCharsets.UTF_8)
-        provider.addFieldPart("hello string", strProvider, null)
+        provider.addPart("hello string", strProvider, null)
 
         val str2 = "string body 2"
         val strProvider2 = stringBody(str2, StandardCharsets.UTF_8)
         val httpFields = HttpFields()
         httpFields.put("x1", "y1")
-        provider.addFieldPart("string 2", strProvider2, httpFields)
+        provider.addPart("string 2", strProvider2, httpFields)
 
         val buffer = BufferUtils.allocate(provider.length().toInt())
         val pos = BufferUtils.flipToFill(buffer)

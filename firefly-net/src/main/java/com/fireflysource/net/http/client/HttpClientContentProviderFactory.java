@@ -6,6 +6,7 @@ import com.fireflysource.net.http.client.impl.content.provider.StringContentProv
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
@@ -13,6 +14,10 @@ abstract public class HttpClientContentProviderFactory {
 
     public static HttpClientContentProvider bytesBody(ByteBuffer buffer) {
         return new ByteBufferContentProvider(buffer);
+    }
+
+    public static HttpClientContentProvider stringBody(String string) {
+        return new StringContentProvider(string, StandardCharsets.UTF_8);
     }
 
     public static HttpClientContentProvider stringBody(String string, Charset charset) {

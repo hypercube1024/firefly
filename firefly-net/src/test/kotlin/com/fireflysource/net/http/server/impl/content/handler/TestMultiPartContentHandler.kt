@@ -137,13 +137,13 @@ class TestMultiPartContentHandler {
     private suspend fun createMultiPartContent(provider: MultiPartContentProvider): ByteBuffer {
         val string1 = "Hello string body"
         val string1Provider = stringBody(string1, StandardCharsets.UTF_8)
-        provider.addFieldPart("hello string", string1Provider, null)
+        provider.addPart("hello string", string1Provider, null)
 
         val string2 = "string body 2"
         val string2Provider = stringBody(string2, StandardCharsets.UTF_8)
         val string2HttpFields = HttpFields()
         string2HttpFields.put("x1", "y1")
-        provider.addFieldPart("string 2", string2Provider, string2HttpFields)
+        provider.addPart("string 2", string2Provider, string2HttpFields)
 
         val file1 = "file body 1"
         val file1Provider = stringBody(file1, StandardCharsets.UTF_8)

@@ -86,7 +86,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
      * @param content the part content
      * @param fields  the headers associated with this part
      */
-    fun addFieldPart(name: String, content: HttpClientContentProvider, fields: HttpFields?) {
+    fun addPart(name: String, content: HttpClientContentProvider, fields: HttpFields?) {
         parts.add(Part(name, null, content, fields, "text/plain"))
     }
 

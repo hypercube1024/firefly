@@ -129,7 +129,7 @@ class AsyncBoundObjectPool<T>(
             log.debug { "destroy the object: $pooledObject ." }
             createdCount--
             if (createdCount < 0) {
-                log.error { "The created object count must be not less than 0" }
+                log.error { "The created object count must not be less than 0" }
                 createdCount = 0
             }
         }

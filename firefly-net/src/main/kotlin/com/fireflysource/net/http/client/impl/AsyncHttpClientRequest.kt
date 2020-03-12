@@ -134,7 +134,7 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
                     request.httpFields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
                 }
             } else {
-                val contentLength = request.contentProvider!!.length()
+                val contentLength = provider.length()
                 if (contentLength >= 0) {
                     request.httpFields.put(HttpHeader.CONTENT_LENGTH, contentLength.toString())
                 } else {

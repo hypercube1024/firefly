@@ -91,13 +91,13 @@ class AsyncHttpClientRequestBuilder(
         return this
     }
 
-    override fun addFieldPart(
+    override fun addPart(
         name: String,
         content: HttpClientContentProvider,
         fields: HttpFields?
     ): HttpClientRequestBuilder {
         contentProvider(multiPartContentProvider)
-        multiPartContentProvider.addFieldPart(name, content, fields)
+        multiPartContentProvider.addPart(name, content, fields)
         return this
     }
 

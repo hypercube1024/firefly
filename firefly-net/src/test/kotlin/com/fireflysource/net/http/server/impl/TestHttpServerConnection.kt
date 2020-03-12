@@ -4,6 +4,7 @@ import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClient
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
@@ -693,6 +694,67 @@ class TestHttpServerConnection {
             println(response)
             assertEquals(HttpStatus.OK_200, response.status)
             assertTrue(response.stringBody.contains("Received data success."))
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should receive multi part content successfully.")
+    fun testMultiPartContent(protocol: String, schema: String): Unit = runBlocking {
+        val count = 100
+
+        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
+            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return Result.DONE
+            }
+
+            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                val part1 = ctx.getPart("part1")
+                val part2 = ctx.getPart("part2")
+                val content = """
+                    |received part1: 
+                    |${part1.httpFields}
+                    |${part1.stringBody}
+                    |
+                    |received part2:
+                    |${part2.stringBody}
+                """.trimMargin()
+                return ctx.end(content)
+            }
+
+            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
+                println("server exception. ${exception.message}")
+                return Result.DONE
+            }
+        })
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                val part1 = HttpClientContentProviderFactory.stringBody("string content 1")
+                val fields1 = HttpFields()
+                fields1.put("hello", "hello part 1")
+                fields1.addCSV("part123", "1", "2", "3")
+
+                val part2 = HttpClientContentProviderFactory.stringBody("file content 2")
+                httpClient.post("$schema://${address.hostName}:${address.port}/multi-part-content-$it")
+                    .addPart("part1", part1, fields1)
+                    .addFilePart("part2", "fileContent.txt", part2, HttpFields())
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertTrue(response.stringBody.contains("hello"))
+            assertTrue(response.stringBody.contains("part123"))
+            assertTrue(response.stringBody.contains("string content 1"))
+            assertTrue(response.stringBody.contains("file content 2"))
         }
 
         finish(count, time, httpClient, httpServer)
