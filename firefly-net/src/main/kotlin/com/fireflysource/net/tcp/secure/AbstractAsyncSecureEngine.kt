@@ -39,7 +39,7 @@ abstract class AbstractAsyncSecureEngine(
     private var writeFunction: Function<ByteBuffer, CompletableFuture<Int>>? = null
 
     private var inPacketBuffer = EMPTY_BUFFER
-    private val inAppBuffer = BufferUtils.allocateDirect(sslEngine.session.applicationBufferSize)
+    private val inAppBuffer = BufferUtils.allocateDirect(sslEngine.session.applicationBufferSize * 2)
     private val outPacketBuffer = BufferUtils.allocateDirect(sslEngine.session.packetBufferSize)
 
     private val closed = AtomicBoolean(false)
@@ -112,32 +112,33 @@ abstract class AbstractAsyncSecureEngine(
         val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.hasRemaining()) {
             val length = writeFunction?.apply(bufferList)?.await()
-            log.info { "Wrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: $length" }
+            log.debug { "Wrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: $length" }
         }
     }
 
     private suspend fun doHandshakeUnwrap(stashedAppBuffers: MutableList<ByteBuffer>) {
-        val receivedBuffer = readSupplier?.get()?.await()
+        val receivedBuffer = if (inPacketBuffer.hasRemaining()) EMPTY_BUFFER else readSupplier?.get()?.await()
         if (receivedBuffer != null) {
-            val length = receivedBuffer.remaining()
+            val length = inPacketBuffer.remaining() + receivedBuffer.remaining()
             val inAppBuffer = decrypt(receivedBuffer)
             val remaining = inAppBuffer.remaining()
             if (remaining > 0) {
                 stashedAppBuffers.add(inAppBuffer)
             }
-            log.info { "Unwrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
+            log.debug { "Unwrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
         }
     }
 
     private suspend fun runDelegatedTasks() {
-        // Conscrypt delegated tasks are always null
-        val runnable: Runnable? = sslEngine.delegatedTask
-        if (runnable != null) {
-            log.info { "Run TLS handshake delegated tasks. status: ${sslEngine.handshakeStatus}" }
-            blocking { runnable.run() }.join()
+        while (true) {
+            val runnable: Runnable? = sslEngine.delegatedTask
+            if (runnable != null) {
+                log.debug { "Run TLS handshake delegated tasks. status: ${sslEngine.handshakeStatus}" }
+                blocking { runnable.run() }.join()
+            } else break
         }
         handshakeStatus = sslEngine.handshakeStatus
-        log.info { "After run TLS handshake delegated tasks. no tasks: ${sslEngine.delegatedTask == null}, status: $handshakeStatus" }
+        log.debug { "After run TLS handshake delegated tasks. no tasks: ${sslEngine.delegatedTask == null}, status: $handshakeStatus" }
     }
 
     private fun handshakeComplete() {
@@ -162,19 +163,6 @@ abstract class AbstractAsyncSecureEngine(
     override fun encrypt(byteBuffers: MutableList<ByteBuffer>, offset: Int, length: Int): ByteBuffer =
         encryptBuffers(OutputBufferList(byteBuffers, offset, length, discard()))
 
-
-//    private fun runTasks() {
-//        if (handshakeStatus == NEED_TASK) {
-//            val runnable: Runnable? = sslEngine.delegatedTask
-//            if (runnable != null) {
-//                log.info { "Run TLS handshake delegated tasks sync. status: ${sslEngine.handshakeStatus}" }
-//                runnable.run()
-//            }
-//            handshakeStatus = sslEngine.handshakeStatus
-//            log.info { "After run TLS handshake delegated tasks sync. no tasks: ${sslEngine.delegatedTask == null}, status: $handshakeStatus" }
-//        }
-//    }
-
     private fun encryptBuffers(outAppBuffer: OutputMessage): ByteBuffer {
         var packetBuffer = this.outPacketBuffer
         val pos = packetBuffer.flipToFill()
@@ -189,7 +177,6 @@ abstract class AbstractAsyncSecureEngine(
         wrap@ while (true) {
             val result = wrap()
             handshakeStatus = result.handshakeStatus
-//            runTasks()
 
             when (result.status) {
                 BUFFER_OVERFLOW -> {
@@ -199,6 +186,9 @@ abstract class AbstractAsyncSecureEngine(
                     log.debug { "Resize out packet buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
+                    if (handshakeStatus != NEED_WRAP && result.bytesProduced() == 0 && result.bytesConsumed() == 0) {
+                        break@wrap
+                    }
                     if (!outAppBuffer.hasRemaining()) break@wrap
                 }
                 CLOSED -> {
@@ -226,7 +216,6 @@ abstract class AbstractAsyncSecureEngine(
         unwrap@ while (true) {
             val result = sslEngine.unwrap(inPacketBuffer, appBuffer)
             handshakeStatus = result.handshakeStatus
-//            runTasks()
 
             when (result.status) {
                 BUFFER_UNDERFLOW -> {
@@ -241,6 +230,9 @@ abstract class AbstractAsyncSecureEngine(
                     log.debug { "Resize in app buffer. capacity: $capacity, remaining: $remaining" }
                 }
                 OK -> {
+                    if (handshakeStatus != NEED_UNWRAP && result.bytesProduced() == 0 && result.bytesConsumed() == 0) {
+                        break@unwrap
+                    }
                     if (!inPacketBuffer.hasRemaining()) {
                         inPacketBuffer = EMPTY_BUFFER
                         break@unwrap
