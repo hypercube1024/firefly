@@ -1,106 +1,54 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers;
-import com.fireflysource.common.slf4j.LazyLogger;
-import com.fireflysource.common.sys.SystemLogger;
+import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
 import com.fireflysource.net.tcp.secure.SecureEngine;
-import com.fireflysource.net.tcp.secure.SecureEngineFactory;
+import com.fireflysource.net.tcp.secure.common.AbstractSecureEngineFactory;
 import kotlinx.coroutines.CoroutineScope;
 import org.conscrypt.Conscrypt;
 
-import javax.net.ssl.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.*;
-import java.security.cert.CertificateException;
+import javax.net.ssl.SSLEngine;
+import java.security.Provider;
+import java.security.Security;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author Pengtao Qiu
  */
-abstract public class AbstractConscryptSecureEngineFactory implements SecureEngineFactory {
+abstract public class AbstractConscryptSecureEngineFactory extends AbstractSecureEngineFactory {
 
-    protected static final LazyLogger LOG = SystemLogger.create(AbstractConscryptSecureEngineFactory.class);
     public static final String SECURE_PROTOCOL = "TLSv1.3";
 
-    private static String provideName;
+    private static String providerName;
 
     static {
         Provider provider = Conscrypt.newProvider();
-        provideName = provider.getName();
+        providerName = provider.getName();
         Security.addProvider(provider);
-        final Conscrypt.Version version = Conscrypt.version();
-        LOG.info(() -> "Add Conscrypt security provider. version: " + version.major() + "." + version.minor() + "." + version.patch());
-    }
-
-    public static String getProvideName() {
-        return provideName;
-    }
-
-    public SSLContext getSSLContextWithManager(KeyManager[] km, TrustManager[] tm, SecureRandom random)
-            throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
-        long start = System.currentTimeMillis();
-
-        final SSLContext sslContext = SSLContext.getInstance(SECURE_PROTOCOL, provideName);
-        sslContext.init(km, tm, random);
-
-        long end = System.currentTimeMillis();
-        String protocol = sslContext.getProtocol();
-        LOG.info(() -> "Creating Conscrypt SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
-        return sslContext;
-    }
-
-    public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword)
-            throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
-            UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
-        return getSSLContext(in, keystorePassword, keyPassword, null, null, null);
-    }
-
-    public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword,
-                                    String keyManagerFactoryType, String trustManagerFactoryType, String sslProtocol)
-            throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
-            UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
-        long start = System.currentTimeMillis();
-        final SSLContext sslContext;
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
-
-        // PKIX, SunX509
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryType == null ? "SunX509" : keyManagerFactoryType);
-        kmf.init(ks, keyPassword != null ? keyPassword.toCharArray() : null);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerFactoryType == null ? "SunX509" : trustManagerFactoryType);
-        tmf.init(ks);
-
-        sslContext = SSLContext.getInstance(sslProtocol == null ? SECURE_PROTOCOL : sslProtocol, provideName);
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        long end = System.currentTimeMillis();
-        String protocol = sslContext.getProtocol();
-        LOG.info(() -> "Creating Conscrypt SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
-        return sslContext;
+        LOG.info("Add Conscrypt security provider. info: {}", provider.getInfo());
     }
 
     @Override
-    public SecureEngine create(CoroutineScope coroutineScope, boolean clientMode, List<String> supportedProtocols) {
-        SSLEngine sslEngine = getSSLContext().createSSLEngine();
-        sslEngine.setUseClientMode(clientMode);
-        ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
-        return new ConscryptSecureEngine(scope, sslEngine, selector);
+    public String getProviderName() {
+        return providerName;
     }
 
     @Override
-    public SecureEngine create(CoroutineScope coroutineScope, boolean clientMode, String peerHost, int peerPort,
-                               List<String> supportedProtocols) {
-        SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
-        sslEngine.setUseClientMode(clientMode);
-        ConscryptApplicationProtocolSelector selector = new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocols);
-        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
-        return new ConscryptSecureEngine(scope, sslEngine, selector);
+    public String getSecureProtocol() {
+        return SECURE_PROTOCOL;
     }
 
-    abstract public SSLContext getSSLContext();
+    @Override
+    public SecureEngine createSecureEngine(
+            CoroutineScope coroutineScope,
+            SSLEngine sslEngine,
+            ApplicationProtocolSelector applicationProtocolSelector) {
+        return new ConscryptSecureEngine(coroutineScope, sslEngine, applicationProtocolSelector);
+    }
+
+    @Override
+    public ApplicationProtocolSelector createApplicationProtocolSelector(
+            SSLEngine sslEngine, List<String> supportedProtocolList) {
+        return new ConscryptApplicationProtocolSelector(sslEngine, supportedProtocolList);
+    }
+
 }

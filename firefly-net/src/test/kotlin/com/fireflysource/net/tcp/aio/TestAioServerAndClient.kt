@@ -7,6 +7,8 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
+import com.fireflysource.net.tcp.secure.conscrypt.DefaultCredentialConscryptSSLContextFactory
+import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -35,19 +37,22 @@ class TestAioServerAndClient {
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                arguments("single", true, false),
-                arguments("array", true, false),
-                arguments("list", true, false),
-                arguments("single", false, false),
-                arguments("array", false, false),
-                arguments("list", false, false),
+                arguments("single", true, false, "default"),
+                arguments("array", true, false, "default"),
+                arguments("list", true, false, "default"),
+                arguments("single", true, false, "conscrypt"),
+                arguments("array", true, false, "conscrypt"),
+                arguments("list", true, false, "conscrypt"),
+                arguments("single", false, false, "default"),
+                arguments("array", false, false, "default"),
+                arguments("list", false, false, "default"),
 
-                arguments("single", true, true),
-                arguments("array", true, true),
-                arguments("list", true, true),
-                arguments("single", false, true),
-                arguments("array", false, true),
-                arguments("list", false, true)
+                arguments("single", true, true, "default"),
+                arguments("array", true, true, "default"),
+                arguments("list", true, true, "default"),
+                arguments("single", false, true, "default"),
+                arguments("array", false, true, "default"),
+                arguments("list", false, true, "default")
             )
         }
     }
@@ -55,7 +60,7 @@ class TestAioServerAndClient {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send and receive messages successfully.")
-    fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean) = runBlocking {
+    fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean, securityProvider: String) = runBlocking {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
 
@@ -70,7 +75,11 @@ class TestAioServerAndClient {
             enableOutputBuffer = enableBuffer
         )
 
-        val server = TcpServerFactory.create(tcpConfig).onAcceptAsync { connection ->
+        val server = TcpServerFactory.create(tcpConfig)
+        if (securityProvider == "conscrypt") {
+            server.secureEngineFactory(DefaultCredentialConscryptSSLContextFactory())
+        }
+        server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()
             recvLoop@ while (true) {
@@ -96,6 +105,9 @@ class TestAioServerAndClient {
         }.listen(host, port)
 
         val client = TcpClientFactory.create(tcpConfig)
+        if (securityProvider == "conscrypt") {
+            client.secureEngineFactory(NoCheckConscryptSSLContextFactory())
+        }
         val time = measureTimeMillis {
             val jobs = (1..connectionCount).map {
                 event {

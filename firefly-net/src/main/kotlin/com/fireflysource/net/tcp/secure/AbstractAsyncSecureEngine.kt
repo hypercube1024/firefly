@@ -134,10 +134,12 @@ abstract class AbstractAsyncSecureEngine(
 
     private suspend fun runDelegatedTasks() {
         // Conscrypt delegated tasks are always null
-        var runnable: Runnable
         val jobs = LinkedList<Job>()
-        while (sslEngine.delegatedTask.also { runnable = it } != null) {
-            jobs.add(blocking { runnable.run() })
+        while (true) {
+            val runnable: Runnable? = sslEngine.delegatedTask
+            if (runnable != null) {
+                jobs.add(blocking { runnable.run() })
+            } else break
         }
         jobs.forEach { it.join() }
         handshakeStatus = sslEngine.handshakeStatus
