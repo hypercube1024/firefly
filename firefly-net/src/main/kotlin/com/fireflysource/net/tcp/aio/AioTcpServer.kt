@@ -6,7 +6,7 @@ import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
-import com.fireflysource.net.tcp.secure.jdk.DefaultCredentialOpenJdkSSLContextFactory
+import com.fireflysource.net.tcp.secure.conscrypt.DefaultCredentialConscryptSSLContextFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -27,7 +27,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-server")
     private val connectionChannel = Channel<TcpConnection>(UNLIMITED)
     private var connectionConsumer: Consumer<TcpConnection> = Consumer { connectionChannel.offer(it) }
-    private var secureEngineFactory: SecureEngineFactory = DefaultCredentialOpenJdkSSLContextFactory()
+    private var secureEngineFactory: SecureEngineFactory = DefaultCredentialConscryptSSLContextFactory()
     private var supportedProtocols: List<String> = defaultSupportedProtocols
     private var peerHost: String = ""
     private var peerPort: Int = 0
