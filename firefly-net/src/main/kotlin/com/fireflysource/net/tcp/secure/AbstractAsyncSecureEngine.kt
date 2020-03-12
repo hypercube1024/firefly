@@ -12,7 +12,6 @@ import com.fireflysource.net.tcp.buffer.OutputBuffers
 import com.fireflysource.net.tcp.buffer.OutputMessage
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -134,14 +133,10 @@ abstract class AbstractAsyncSecureEngine(
 
     private suspend fun runDelegatedTasks() {
         // Conscrypt delegated tasks are always null
-        val jobs = LinkedList<Job>()
-        while (true) {
-            val runnable: Runnable? = sslEngine.delegatedTask
-            if (runnable != null) {
-                jobs.add(blocking { runnable.run() })
-            } else break
+        val runnable: Runnable? = sslEngine.delegatedTask
+        if (runnable != null) {
+            blocking { runnable.run() }.join()
         }
-        jobs.forEach { it.join() }
         handshakeStatus = sslEngine.handshakeStatus
     }
 
