@@ -99,9 +99,10 @@ class AsyncBoundObjectPool<T>(
     }
 
     private suspend fun createNew(): PooledObject<T>? = if (createdCount < maxSize) {
-        objectFactory.createNew(this).await()
-            .also { createdCount++ }
-            .also { log.debug { "create a new object. $it" } }
+        val pooledObject = objectFactory.createNew(this).await()
+        createdCount++
+        log.debug { "create a new object. $pooledObject" }
+        pooledObject
     } else null
 
     private suspend fun getFromPool(): PooledObject<T>? {

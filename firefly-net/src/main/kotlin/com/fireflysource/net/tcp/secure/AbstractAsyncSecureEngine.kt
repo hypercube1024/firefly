@@ -40,9 +40,9 @@ abstract class AbstractAsyncSecureEngine(
 
     private var inPacketBuffer = EMPTY_BUFFER
     private val inAppBuffer =
-        BufferUtils.allocateDirect((16 * 1024).coerceAtLeast(sslEngine.session.applicationBufferSize))
+        BufferUtils.allocateDirect(sslEngine.session.applicationBufferSize * 2)
     private val outPacketBuffer =
-        BufferUtils.allocateDirect((16 * 1024).coerceAtLeast(sslEngine.session.packetBufferSize))
+        BufferUtils.allocateDirect(sslEngine.session.packetBufferSize * 2)
 
     private val closed = AtomicBoolean(false)
     private var handshakeStatus = sslEngine.handshakeStatus
@@ -114,7 +114,7 @@ abstract class AbstractAsyncSecureEngine(
         val bufferList = encrypt(EMPTY_BUFFER)
         if (bufferList.hasRemaining()) {
             val length = writeFunction?.apply(bufferList)?.await()
-            log.debug { "Write TLS handshake data. mode: ${getMode()}, length: $length" }
+            log.info { "Wrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: $length" }
         }
     }
 
@@ -127,7 +127,7 @@ abstract class AbstractAsyncSecureEngine(
             if (remaining > 0) {
                 stashedAppBuffers.add(inAppBuffer)
             }
-            log.debug { "Receive TLS handshake data. mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
+            log.info { "Unwrap TLS handshake data. status: $handshakeStatus, mode: ${getMode()}, length: ${length}, stashedBuffer: $remaining" }
         }
     }
 
@@ -135,9 +135,11 @@ abstract class AbstractAsyncSecureEngine(
         // Conscrypt delegated tasks are always null
         val runnable: Runnable? = sslEngine.delegatedTask
         if (runnable != null) {
+            log.info { "Run TLS handshake delegated tasks. status: ${sslEngine.handshakeStatus}" }
             blocking { runnable.run() }.join()
         }
         handshakeStatus = sslEngine.handshakeStatus
+        log.info { "After run TLS handshake delegated tasks. no tasks: ${sslEngine.delegatedTask == null}, status: $handshakeStatus" }
     }
 
     private fun handshakeComplete() {
@@ -163,6 +165,18 @@ abstract class AbstractAsyncSecureEngine(
         encryptBuffers(OutputBufferList(byteBuffers, offset, length, discard()))
 
 
+//    private fun runTasks() {
+//        if (handshakeStatus == NEED_TASK) {
+//            val runnable: Runnable? = sslEngine.delegatedTask
+//            if (runnable != null) {
+//                log.info { "Run TLS handshake delegated tasks sync. status: ${sslEngine.handshakeStatus}" }
+//                runnable.run()
+//            }
+//            handshakeStatus = sslEngine.handshakeStatus
+//            log.info { "After run TLS handshake delegated tasks sync. no tasks: ${sslEngine.delegatedTask == null}, status: $handshakeStatus" }
+//        }
+//    }
+
     private fun encryptBuffers(outAppBuffer: OutputMessage): ByteBuffer {
         var packetBuffer = this.outPacketBuffer
         val pos = packetBuffer.flipToFill()
@@ -177,6 +191,8 @@ abstract class AbstractAsyncSecureEngine(
         wrap@ while (true) {
             val result = wrap()
             handshakeStatus = result.handshakeStatus
+//            runTasks()
+
             when (result.status) {
                 BUFFER_OVERFLOW -> {
                     packetBuffer = packetBuffer.addCapacity(sslEngine.session.packetBufferSize)
@@ -193,6 +209,7 @@ abstract class AbstractAsyncSecureEngine(
                 }
                 else -> throw SecureNetException("Wrap app data state exception. ${result.status}")
             }
+
         }
 
         return packetBuffer.flipToFlush(pos).copy().also { BufferUtils.clear(this.outPacketBuffer) }
@@ -211,6 +228,8 @@ abstract class AbstractAsyncSecureEngine(
         unwrap@ while (true) {
             val result = sslEngine.unwrap(inPacketBuffer, appBuffer)
             handshakeStatus = result.handshakeStatus
+//            runTasks()
+
             when (result.status) {
                 BUFFER_UNDERFLOW -> {
                     if (inPacketBuffer.remaining() < sslEngine.session.packetBufferSize) {
@@ -271,7 +290,6 @@ abstract class AbstractAsyncSecureEngine(
     override fun close() {
         if (closed.compareAndSet(false, true)) {
             sslEngine.closeOutbound()
-            sslEngine.closeInbound()
         }
     }
 
