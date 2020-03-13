@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server.impl
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.exception.HttpServerConnectionListenerNotSetException
 import com.fireflysource.net.http.common.v2.decoder.ServerParser
 import com.fireflysource.net.http.common.v2.frame.*
 import com.fireflysource.net.http.common.v2.stream.*
@@ -37,6 +38,9 @@ class Http2ServerConnection(
 
     override fun begin() {
         if (listener is Http2ServerConnectionListener) {
+            if (connectionListener === HttpServerConnection.EMPTY_LISTENER) {
+                throw HttpServerConnectionListenerNotSetException("Please set connection listener before begin parsing.")
+            }
             listener.connectionListener = connectionListener
         }
         launchParserJob(parser)

@@ -1,17 +1,15 @@
 package com.fireflysource.net.http.common.v1.encoder
 
-import com.fireflysource.common.`object`.Assert
+import com.fireflysource.net.http.common.exception.Http1GeneratingResultException
 
 fun HttpGenerator.Result.assert(expectResult: HttpGenerator.Result) {
-    Assert.state(
-        this == expectResult,
-        "The HTTP generator result is $this, but expect $expectResult"
-    )
+    if (this != expectResult) {
+        throw Http1GeneratingResultException("The HTTP generator result is $this, but expect $expectResult")
+    }
 }
 
 fun HttpGenerator.Result.assert(expectResults: Set<HttpGenerator.Result>) {
-    Assert.state(
-        expectResults.contains(this),
-        "The HTTP generator result is $this, but expect $expectResults"
-    )
+    if (!expectResults.contains(this)) {
+        throw Http1GeneratingResultException("The HTTP generator result is $this, but expect $expectResults")
+    }
 }

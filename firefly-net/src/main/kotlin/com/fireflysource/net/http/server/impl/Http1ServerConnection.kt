@@ -6,6 +6,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
+import com.fireflysource.net.http.common.exception.HttpServerConnectionListenerNotSetException
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parseAll
@@ -69,10 +70,9 @@ class Http1ServerConnection(
 
     override fun begin() {
         if (beginning.compareAndSet(false, true)) {
-            Assert.state(
-                requestHandler.connectionListener !== HttpServerConnection.EMPTY_LISTENER,
-                "The HTTP1 server connection listener is empty. Please set listener before begin parsing."
-            )
+            if (requestHandler.connectionListener === HttpServerConnection.EMPTY_LISTENER) {
+                throw HttpServerConnectionListenerNotSetException("Please set connection listener before begin parsing.")
+            }
             parseRequestJob()
             generateResponseJob()
         }

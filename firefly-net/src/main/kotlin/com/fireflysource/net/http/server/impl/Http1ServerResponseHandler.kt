@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
@@ -162,10 +161,9 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     private fun assert(expectState: HttpGenerator.State) {
-        Assert.state(
-            generator.isState(expectState),
-            "The HTTP generator state error. ${generator.state}"
-        )
+        if (!generator.isState(expectState)) {
+            throw Http1GeneratingResultException("The HTTP generator state error. ${generator.state}")
+        }
     }
 
     private suspend fun flushHeaderBuffer() {
