@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.coroutine.pollAll
+import com.fireflysource.common.exception.UnknownTypeException
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.io.*
 import com.fireflysource.common.sys.Result
@@ -90,6 +91,7 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffers -> message.result.accept(createFailedResult(-1, e))
                     is OutputBufferList -> message.result.accept(createFailedResult(-1, e))
                     is ShutdownOutput -> message.result.accept(createFailedResult(e))
+                    else -> throw UnknownTypeException("Unknown output message. $message")
                 }
             }
         }
@@ -98,6 +100,7 @@ abstract class AbstractAioTcpConnection(
             when (output) {
                 is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
+                else -> throw UnknownTypeException("Unknown output message. $output")
             }
         }
 
@@ -126,7 +129,7 @@ abstract class AbstractAioTcpConnection(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
                 maxIdleTime, timeUnit
             )
-            else -> throw IllegalArgumentException("The output message cannot write.")
+            else -> throw UnknownTypeException("The output message cannot write.")
         }
 
         private suspend fun writeBuffers(output: OutputMessage): Boolean {
@@ -162,7 +165,7 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffer -> output.result.accept(Result(true, totalLength.toInt(), null))
                     is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                     is OutputBufferList -> output.result.accept(Result(true, totalLength, null))
-                    else -> throw IllegalStateException("The output message type error")
+                    else -> throw UnknownTypeException("The output message type error")
                 }
             }
 
@@ -181,7 +184,7 @@ abstract class AbstractAioTcpConnection(
                 is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBufferList -> outputBuffers.result.accept(Result(false, -1, exception))
-                else -> throw IllegalStateException("The output message type error")
+                else -> throw UnknownTypeException("The output message type error")
             }
         }
     }

@@ -13,6 +13,8 @@ import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgra
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
+import com.fireflysource.net.http.common.exception.Http1GeneratingResultException
+import com.fireflysource.net.http.common.exception.NotSupportHttpVersionException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import com.fireflysource.net.http.common.v1.decoder.parse
@@ -179,7 +181,7 @@ class Http1ClientConnection(
                     requestMessage.contentProvider?.closeFuture()?.await()
                     break@genLoop
                 }
-                else -> throw IllegalStateException("The HTTP client generator state error. ${generator.state}")
+                else -> throw Http1GeneratingResultException("The HTTP client generator state error. ${generator.state}")
             }
         }
     }
@@ -206,7 +208,7 @@ class Http1ClientConnection(
                 CONTINUE -> { // ignore the generator result continue.
                 }
                 SHUTDOWN_OUT, DONE -> completeContent()
-                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+                else -> throw Http1GeneratingResultException("The HTTP client generator result error. $result")
             }
         } else {
             when (val result = generator.generateRequest(null, null, null, contentBuffer, last)) {
@@ -214,7 +216,7 @@ class Http1ClientConnection(
                 CONTINUE -> { // ignore the generator result continue.
                 }
                 SHUTDOWN_OUT, DONE -> completeContent()
-                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+                else -> throw Http1GeneratingResultException("The HTTP client generator result error. $result")
             }
         }
     }
@@ -225,7 +227,7 @@ class Http1ClientConnection(
                 FLUSH -> flushChunkBuffer()
                 CONTINUE, SHUTDOWN_OUT, DONE -> { // ignore the generator result done.
                 }
-                else -> throw IllegalStateException("The HTTP client generator result error. $result")
+                else -> throw Http1GeneratingResultException("The HTTP client generator result error. $result")
             }
         } else {
             generator.generateRequest(null, null, null, null, true)
@@ -277,7 +279,7 @@ class Http1ClientConnection(
         return when (httpVersion) {
             HttpVersion.HTTP_2 -> sendRequestViaHttp2(request)
             HttpVersion.HTTP_1_1 -> sendRequestViaHttp1(request)
-            else -> throw IllegalStateException("HTTP version not support. $httpVersion")
+            else -> throw NotSupportHttpVersionException("HTTP version not support. $httpVersion")
         }
     }
 

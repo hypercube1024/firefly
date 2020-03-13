@@ -7,6 +7,7 @@ import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.codec.CookieGenerator
+import com.fireflysource.net.http.common.exception.HttpServerResponseNotCommitException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.HttpServerContentProvider
@@ -142,7 +143,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     override fun getOutputChannel(): HttpServerOutputChannel {
         val outputChannel = serverOutputChannel
         if (outputChannel == null) {
-            throw IllegalStateException("The response not commit")
+            throw HttpServerResponseNotCommitException("The response not commit")
         } else {
             Assert.state(
                 contentProvider == null,

@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
+import com.fireflysource.common.exception.UnknownTypeException
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -67,7 +68,7 @@ class AioSecureTcpConnection(
             is OutputBuffers -> encryptAndFlushBuffers(outputMessage)
             is OutputBufferList -> encryptAndFlushBuffers(outputMessage)
             is ShutdownOutput -> shutdownOutput(outputMessage)
-            else -> throw IllegalStateException("The output message type error")
+            else -> throw UnknownTypeException("Unknown output message. $outputMessage")
         }
     }
 

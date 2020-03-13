@@ -13,6 +13,7 @@ import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.exception.MissingRemotePortException
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpClient
@@ -86,7 +87,8 @@ class AsyncHttpClientConnectionManager(
         val port: Int = if (request.uri.port > 0) {
             request.uri.port
         } else {
-            schemaDefaultPort[request.uri.scheme] ?: throw IllegalArgumentException("The port is missing")
+            schemaDefaultPort[request.uri.scheme]
+                ?: throw MissingRemotePortException("The address port is missing. uri: ${request.uri}")
         }
         val socketAddress = InetSocketAddress(request.uri.host, port)
         val secure = isSecureProtocol(request.uri.scheme)

@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.annotation.NoArg
+import com.fireflysource.net.tcp.exception.UnknownProtocolException
 
 /**
  * @author Pengtao Qiu
@@ -35,6 +36,6 @@ fun isSecureProtocol(scheme: String): Boolean {
     return when (scheme) {
         "wss", "https" -> true
         "ws", "http" -> false
-        else -> throw IllegalArgumentException("not support the protocol: $scheme")
+        else -> throw UnknownProtocolException("Unknown protocol $scheme")
     }
 }

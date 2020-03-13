@@ -85,7 +85,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun earlyEOF() {
-        throw IllegalStateException("Early EOF")
+        throw BadMessageException(HttpStatus.BAD_REQUEST_400)
     }
 
     suspend fun complete(): HttpClientResponse {

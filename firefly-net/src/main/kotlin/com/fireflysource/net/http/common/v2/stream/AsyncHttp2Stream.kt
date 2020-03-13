@@ -5,6 +5,7 @@ import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.common.exception.Http2StreamFrameProcessException
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v2.frame.*
@@ -132,7 +133,7 @@ class AsyncHttp2Stream(
             }
             FrameType.WINDOW_UPDATE -> result.accept(Result.SUCCESS)
             FrameType.FAILURE -> notifyFailure(this, frame as FailureFrame, result)
-            else -> throw UnsupportedOperationException()
+            else -> throw Http2StreamFrameProcessException("Process frame type error. ${frame.type}")
         }
     }
 

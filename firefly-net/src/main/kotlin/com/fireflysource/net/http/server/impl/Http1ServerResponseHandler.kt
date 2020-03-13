@@ -4,6 +4,7 @@ import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.common.exception.Http1GeneratingResultException
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.assert
@@ -125,7 +126,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
                         flushChunkBuffer()
                     }
                     HttpGenerator.Result.NEED_CHUNK_TRAILER -> generateTrailer()
-                    else -> throw IllegalStateException("The HTTP server generator result error. $generateResult")
+                    else -> throw Http1GeneratingResultException("The HTTP server generator result error. $generateResult")
                 }
             }
             end(endResponse)

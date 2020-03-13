@@ -1,6 +1,7 @@
 package com.fireflysource.net.tcp.secure
 
 import com.fireflysource.common.coroutine.blocking
+import com.fireflysource.common.exception.UnknownTypeException
 import com.fireflysource.common.io.*
 import com.fireflysource.common.io.BufferUtils.EMPTY_BUFFER
 import com.fireflysource.common.sys.Result
@@ -93,7 +94,7 @@ abstract class AbstractAsyncSecureEngine(
                     handshakeComplete()
                     break@handshakeLoop
                 }
-                else -> throw SecureNetException("Handshake state exception. $handshakeStatus")
+                else -> throw UnknownTypeException("Unknown handshake status. $handshakeStatus")
             }
         }
     }
@@ -177,7 +178,7 @@ abstract class AbstractAsyncSecureEngine(
             is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, packetBuffer)
             is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
             is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
-            else -> throw IllegalArgumentException("Out app buffer type error.")
+            else -> throw UnknownTypeException("Unknown out app buffer message type.")
         }
 
         wrap@ while (true) {
@@ -201,7 +202,7 @@ abstract class AbstractAsyncSecureEngine(
                     sslEngine.closeOutbound()
                     break@wrap
                 }
-                else -> throw SecureNetException("Wrap app data state exception. ${result.status}")
+                else -> throw SecureNetException("Wrap data result status error. ${result.status}")
             }
 
         }
