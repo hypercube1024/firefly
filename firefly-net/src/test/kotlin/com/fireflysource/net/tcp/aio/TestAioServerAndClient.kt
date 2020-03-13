@@ -8,7 +8,7 @@ import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFactory
-import com.fireflysource.net.tcp.secure.conscrypt.SelfSignedCredentialConscryptSSLContextFactory
+import com.fireflysource.net.tcp.secure.conscrypt.SelfSignedCertificateConscryptSSLContextFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -77,7 +77,7 @@ class TestAioServerAndClient {
 
         val server = TcpServerFactory.create(tcpConfig)
         if (securityProvider == "conscrypt") {
-            server.secureEngineFactory(SelfSignedCredentialConscryptSSLContextFactory())
+            server.secureEngineFactory(SelfSignedCertificateConscryptSSLContextFactory())
         }
         server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")

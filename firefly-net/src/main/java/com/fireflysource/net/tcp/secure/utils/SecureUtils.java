@@ -9,8 +9,8 @@ import java.security.cert.X509Certificate;
  */
 abstract public class SecureUtils {
 
-    public static InputStream getSelfSignedCredential() {
-        return SecureUtils.class.getClassLoader().getResourceAsStream("/fireflyKeystore.jks");
+    public static InputStream getSelfSignedCertificate() {
+        return SecureUtils.class.getClassLoader().getResourceAsStream("fireflyKeystore.jks");
     }
 
     public static X509TrustManager createX509TrustManagerNoCheck() {

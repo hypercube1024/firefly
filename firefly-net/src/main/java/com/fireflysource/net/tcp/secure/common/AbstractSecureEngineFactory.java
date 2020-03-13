@@ -33,20 +33,21 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
         return sslContext;
     }
 
-    public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword)
+    public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword, String keyStoreType)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
-        return getSSLContext(in, keystorePassword, keyPassword, null, null, null);
+        return getSSLContext(in, keystorePassword, keyPassword, keyStoreType, null, null, null);
     }
 
     public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword,
+                                    String keyStoreType,
                                     String keyManagerFactoryType, String trustManagerFactoryType, String sslProtocol)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException,
             UnrecoverableKeyException, KeyManagementException, NoSuchProviderException {
         long start = System.currentTimeMillis();
         final SSLContext sslContext;
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
         ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
 
         // PKIX, SunX509

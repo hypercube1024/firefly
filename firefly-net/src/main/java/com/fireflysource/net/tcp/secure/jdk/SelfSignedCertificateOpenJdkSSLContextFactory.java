@@ -1,4 +1,4 @@
-package com.fireflysource.net.tcp.secure.conscrypt;
+package com.fireflysource.net.tcp.secure.jdk;
 
 
 import com.fireflysource.net.tcp.secure.utils.SecureUtils;
@@ -9,13 +9,13 @@ import java.io.InputStream;
 /**
  * @author Pengtao Qiu
  */
-public class SelfSignedCredentialConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
+public class SelfSignedCertificateOpenJdkSSLContextFactory extends AbstractOpenJdkSecureEngineFactory {
 
     private SSLContext sslContext;
 
-    public SelfSignedCredentialConscryptSSLContextFactory() {
-        try (InputStream in = SecureUtils.getSelfSignedCredential()) {
-            sslContext = getSSLContext(in, "123456", null);
+    public SelfSignedCertificateOpenJdkSSLContextFactory() {
+        try (InputStream in = SecureUtils.getSelfSignedCertificate()) {
+            sslContext = getSSLContext(in, "123456", "654321", "JKS");
         } catch (Throwable e) {
             LOG.error(e, () -> "get SSL context error");
         }

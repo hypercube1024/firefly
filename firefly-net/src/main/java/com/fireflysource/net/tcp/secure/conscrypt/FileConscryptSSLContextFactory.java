@@ -10,17 +10,20 @@ public class FileConscryptSSLContextFactory extends AbstractConscryptSecureEngin
 
     private SSLContext sslContext;
 
-    public FileConscryptSSLContextFactory(String path, String keystorePassword, String keyPassword) {
+    public FileConscryptSSLContextFactory(String path, String keystorePassword, String keyPassword, String keyStoreType) {
         this(FileConscryptSSLContextFactory.class.getClassLoader().getResourceAsStream(path), keystorePassword, keyPassword,
-                null, null, null);
+                keyStoreType, null, null, null);
     }
 
-    public FileConscryptSSLContextFactory(InputStream inputStream, String keystorePassword, String keyPassword,
-                                          String keyManagerFactoryType,
-                                          String trustManagerFactoryType,
-                                          String sslProtocol) {
+    public FileConscryptSSLContextFactory(
+            InputStream inputStream, String keystorePassword, String keyPassword,
+            String keyStoreType,
+            String keyManagerFactoryType,
+            String trustManagerFactoryType,
+            String sslProtocol) {
         try (InputStream in = inputStream) {
-            sslContext = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
+            sslContext = getSSLContext(in, keystorePassword, keyPassword,
+                    keyStoreType, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
         } catch (Exception e) {
             LOG.error(e, () -> "get SSL context exception");
         }
