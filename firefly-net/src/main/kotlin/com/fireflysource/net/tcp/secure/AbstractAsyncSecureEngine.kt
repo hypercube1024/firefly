@@ -22,6 +22,7 @@ import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Supplier
 import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLEngineResult
 import javax.net.ssl.SSLEngineResult.HandshakeStatus.*
 import javax.net.ssl.SSLEngineResult.Status.*
 
@@ -46,6 +47,7 @@ abstract class AbstractAsyncSecureEngine(
     private var handshakeStatus = sslEngine.handshakeStatus
     private val handshakeFinished = AtomicBoolean(false)
     private val beginHandshake = AtomicBoolean(false)
+    private var unwrapResultStatus: SSLEngineResult.Status = OK
 
     override fun onHandshakeRead(supplier: Supplier<CompletableFuture<ByteBuffer>>): SecureEngine {
         this.readSupplier = supplier
@@ -117,7 +119,11 @@ abstract class AbstractAsyncSecureEngine(
     }
 
     private suspend fun doHandshakeUnwrap(stashedAppBuffers: MutableList<ByteBuffer>) {
-        val receivedBuffer = if (inPacketBuffer.hasRemaining()) EMPTY_BUFFER else readSupplier?.get()?.await()
+        val receivedBuffer = when {
+            unwrapResultStatus == BUFFER_UNDERFLOW -> readSupplier?.get()?.await()
+            inPacketBuffer.hasRemaining() -> EMPTY_BUFFER
+            else -> readSupplier?.get()?.await()
+        }
         if (receivedBuffer != null) {
             val length = inPacketBuffer.remaining() + receivedBuffer.remaining()
             val inAppBuffer = decrypt(receivedBuffer)
@@ -216,6 +222,7 @@ abstract class AbstractAsyncSecureEngine(
         unwrap@ while (true) {
             val result = sslEngine.unwrap(inPacketBuffer, appBuffer)
             handshakeStatus = result.handshakeStatus
+            unwrapResultStatus = result.status
 
             when (result.status) {
                 BUFFER_UNDERFLOW -> {
