@@ -39,7 +39,7 @@ abstract class AbstractAsyncSecureEngine(
     private var writeFunction: Function<ByteBuffer, CompletableFuture<Int>>? = null
 
     private var inPacketBuffer = EMPTY_BUFFER
-    private val inAppBuffer = BufferUtils.allocateDirect(sslEngine.session.applicationBufferSize * 2)
+    private val inAppBuffer = BufferUtils.allocateDirect(sslEngine.session.applicationBufferSize)
     private val outPacketBuffer = BufferUtils.allocateDirect(sslEngine.session.packetBufferSize)
 
     private val closed = AtomicBoolean(false)
