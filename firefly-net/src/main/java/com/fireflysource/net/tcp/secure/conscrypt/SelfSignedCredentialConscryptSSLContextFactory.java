@@ -4,18 +4,18 @@ package com.fireflysource.net.tcp.secure.conscrypt;
 import com.fireflysource.net.tcp.secure.utils.SecureUtils;
 
 import javax.net.ssl.SSLContext;
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * @author Pengtao Qiu
  */
-public class DefaultCredentialConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
+public class SelfSignedCredentialConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
 
     private SSLContext sslContext;
 
-    public DefaultCredentialConscryptSSLContextFactory() {
-        try {
-            sslContext = getSSLContext(new ByteArrayInputStream(SecureUtils.DEFAULT_CREDENTIAL), "ptmima1234", "ptmima4321");
+    public SelfSignedCredentialConscryptSSLContextFactory() {
+        try (InputStream in = SecureUtils.getSelfSignedCredential()) {
+            sslContext = getSSLContext(in, "123456", null);
         } catch (Throwable e) {
             LOG.error(e, () -> "get SSL context error");
         }

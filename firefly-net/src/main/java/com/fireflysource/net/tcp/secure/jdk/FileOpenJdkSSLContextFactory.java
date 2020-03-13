@@ -1,8 +1,7 @@
 package com.fireflysource.net.tcp.secure.jdk;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
  * @author Pengtao Qiu
@@ -12,14 +11,15 @@ public class FileOpenJdkSSLContextFactory extends AbstractOpenJdkSecureEngineFac
     private SSLContext sslContext;
 
     public FileOpenJdkSSLContextFactory(String path, String keystorePassword, String keyPassword) {
-        this(new File(path), keystorePassword, keyPassword, null, null, null);
+        this(FileOpenJdkSSLContextFactory.class.getClassLoader().getResourceAsStream(path), keystorePassword, keyPassword,
+                null, null, null);
     }
 
-    public FileOpenJdkSSLContextFactory(File file, String keystorePassword, String keyPassword,
+    public FileOpenJdkSSLContextFactory(InputStream inputStream, String keystorePassword, String keyPassword,
                                         String keyManagerFactoryType,
                                         String trustManagerFactoryType,
                                         String sslProtocol) {
-        try (FileInputStream in = new FileInputStream(file)) {
+        try (InputStream in = inputStream) {
             sslContext = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
         } catch (Exception e) {
             LOG.error(e, () -> "get SSL context exception");

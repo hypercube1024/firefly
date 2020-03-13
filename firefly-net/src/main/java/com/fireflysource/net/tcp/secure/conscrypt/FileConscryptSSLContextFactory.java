@@ -1,8 +1,7 @@
 package com.fireflysource.net.tcp.secure.conscrypt;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
  * @author Pengtao Qiu
@@ -12,14 +11,15 @@ public class FileConscryptSSLContextFactory extends AbstractConscryptSecureEngin
     private SSLContext sslContext;
 
     public FileConscryptSSLContextFactory(String path, String keystorePassword, String keyPassword) {
-        this(new File(path), keystorePassword, keyPassword, null, null, null);
+        this(FileConscryptSSLContextFactory.class.getClassLoader().getResourceAsStream(path), keystorePassword, keyPassword,
+                null, null, null);
     }
 
-    public FileConscryptSSLContextFactory(File file, String keystorePassword, String keyPassword,
+    public FileConscryptSSLContextFactory(InputStream inputStream, String keystorePassword, String keyPassword,
                                           String keyManagerFactoryType,
                                           String trustManagerFactoryType,
                                           String sslProtocol) {
-        try (FileInputStream in = new FileInputStream(file)) {
+        try (InputStream in = inputStream) {
             sslContext = getSSLContext(in, keystorePassword, keyPassword, keyManagerFactoryType, trustManagerFactoryType, sslProtocol);
         } catch (Exception e) {
             LOG.error(e, () -> "get SSL context exception");
