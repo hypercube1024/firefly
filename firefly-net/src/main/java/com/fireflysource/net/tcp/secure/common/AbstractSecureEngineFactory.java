@@ -16,6 +16,9 @@ import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.fireflysource.net.tcp.secure.utils.SecureUtils.KEY_MANAGER_FACTORY_TYPE;
+import static com.fireflysource.net.tcp.secure.utils.SecureUtils.TRUST_MANAGER_FACTORY_TYPE;
+
 abstract public class AbstractSecureEngineFactory implements SecureEngineFactory {
 
     protected static final LazyLogger LOG = SystemLogger.create(AbstractSecureEngineFactory.class);
@@ -50,11 +53,10 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
         KeyStore ks = KeyStore.getInstance(keyStoreType);
         ks.load(in, keystorePassword != null ? keystorePassword.toCharArray() : null);
 
-        // PKIX, SunX509
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryType == null ? "SunX509" : keyManagerFactoryType);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryType == null ? KEY_MANAGER_FACTORY_TYPE : keyManagerFactoryType);
         kmf.init(ks, keyPassword != null ? keyPassword.toCharArray() : null);
 
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerFactoryType == null ? "SunX509" : trustManagerFactoryType);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerFactoryType == null ? TRUST_MANAGER_FACTORY_TYPE : trustManagerFactoryType);
         tmf.init(ks);
 
         sslContext = SSLContext.getInstance(sslProtocol == null ? getSecureProtocol() : sslProtocol, getProviderName());
