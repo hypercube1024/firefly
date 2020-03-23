@@ -11,9 +11,9 @@ fun main(): Unit = runBlocking {
     // http://nghttp2.org
     val httpClient = HttpClientFactory.create()
 
-    val count = 20
+    val count = 1
     (1..count).forEach {
-        val response = httpClient.get("http://localhost:8080/hello-world")
+        val response = httpClient.get("http://nghttp2.org")
             .putQueryString("name", "PT_$it")
             .upgradeHttp2()
             .submit().await()

@@ -25,7 +25,10 @@ class TestSSLContextFactory {
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                arguments("jsse", FileOpenJdkSSLContextFactory("fireflyKeystore.jks", "123456", "654321", "JKS")),
+                arguments(
+                    "jsse",
+                    FileOpenJdkSSLContextFactory("fireflyKeystore.jks", "123456", "654321", "JKS")
+                ),
                 arguments(
                     "jsse",
                     SelfSignedCertificateOpenJdkSSLContextFactory()

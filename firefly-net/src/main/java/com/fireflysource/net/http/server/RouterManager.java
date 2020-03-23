@@ -4,8 +4,6 @@ import java.util.*;
 
 public interface RouterManager {
 
-    int DEFAULT_LAST_ROUTER_ID = Integer.MAX_VALUE / 2;
-
     class RouterMatchResult implements Comparable<RouterMatchResult> {
 
         private final Router router;
