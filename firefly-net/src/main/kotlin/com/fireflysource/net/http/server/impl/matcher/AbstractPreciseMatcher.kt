@@ -8,7 +8,7 @@ import kotlin.collections.HashMap
 
 abstract class AbstractPreciseMatcher : Matcher {
 
-    protected val map: MutableMap<String, MutableSet<Router>> by lazy { HashMap<String, MutableSet<Router>>() }
+    private val map: MutableMap<String, MutableSet<Router>> by lazy { HashMap<String, MutableSet<Router>>() }
 
     override fun add(rule: String, router: Router) {
         map.computeIfAbsent(rule) { HashSet<Router>() }.add(router)
