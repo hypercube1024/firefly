@@ -8,10 +8,23 @@ import java.util.*
 
 abstract class AbstractPatternMatcher : Matcher {
 
-    protected val patternMap: MutableMap<PatternRule, MutableSet<Router>> by lazy { HashMap<PatternRule, MutableSet<Router>>() }
+    private val patternMap: MutableMap<PatternRule, MutableSet<Router>> by lazy { HashMap<PatternRule, MutableSet<Router>>() }
 
-    protected data class PatternRule(val rule: String) {
+    private class PatternRule(val rule: String) {
+
         val pattern: Pattern = Pattern.compile(rule, "*")
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as PatternRule
+            return rule == other.rule
+        }
+
+        override fun hashCode(): Int {
+            return rule.hashCode()
+        }
     }
 
     override fun add(rule: String, router: Router) {

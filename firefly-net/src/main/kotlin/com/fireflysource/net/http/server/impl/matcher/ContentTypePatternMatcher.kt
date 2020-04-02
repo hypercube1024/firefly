@@ -8,12 +8,12 @@ import com.fireflysource.net.http.server.Matcher.MatchType
 
 class ContentTypePatternMatcher : AbstractPatternMatcher() {
 
-    override fun getMatchType(): MatchType {
-        return MatchType.CONTENT_TYPE
-    }
-
     override fun match(value: String): Matcher.MatchResult? {
         val mimeType = MimeTypes.getContentTypeMIMEType(value)
         return if (StringUtils.hasText(mimeType)) super.match(mimeType) else null
+    }
+
+    override fun getMatchType(): MatchType {
+        return MatchType.CONTENT_TYPE
     }
 }
