@@ -8,7 +8,7 @@ import java.util.*
 
 abstract class AbstractPatternMatcher : Matcher {
 
-    private val patternMap: MutableMap<PatternRule, MutableSet<Router>> by lazy { HashMap<PatternRule, MutableSet<Router>>() }
+    private val patternMap: MutableMap<PatternRule, NavigableSet<Router>> by lazy { HashMap<PatternRule, NavigableSet<Router>>() }
 
     private class PatternRule(val rule: String) {
 
@@ -28,12 +28,12 @@ abstract class AbstractPatternMatcher : Matcher {
     }
 
     override fun add(rule: String, router: Router) {
-        patternMap.computeIfAbsent(PatternRule(rule)) { HashSet() }.add(router)
+        patternMap.computeIfAbsent(PatternRule(rule)) { TreeSet() }.add(router)
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        val routers: MutableSet<Router> = HashSet()
-        val parameters: MutableMap<Router, Map<String, String>> = HashMap()
+        val routers = TreeSet<Router>()
+        val parameters = HashMap<Router, Map<String, String>>()
 
         patternMap.forEach { (rule, routerSet) ->
             val strings: Array<String>? = rule.pattern.match(value)

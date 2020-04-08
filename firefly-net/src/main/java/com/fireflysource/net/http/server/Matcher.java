@@ -2,7 +2,7 @@ package com.fireflysource.net.http.server;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
 
 public interface Matcher {
 
@@ -11,17 +11,17 @@ public interface Matcher {
     }
 
     class MatchResult {
-        private final Set<Router> routers;
+        private final SortedSet<Router> routers;
         private final Map<Router, Map<String, String>> parameters;
         private final MatchType matchType;
 
-        public MatchResult(Set<Router> routers, Map<Router, Map<String, String>> parameters, MatchType matchType) {
+        public MatchResult(SortedSet<Router> routers, Map<Router, Map<String, String>> parameters, MatchType matchType) {
             this.routers = routers;
             this.parameters = Collections.unmodifiableMap(parameters);
             this.matchType = matchType;
         }
 
-        public Set<Router> getRouters() {
+        public SortedSet<Router> getRouters() {
             return routers;
         }
 
