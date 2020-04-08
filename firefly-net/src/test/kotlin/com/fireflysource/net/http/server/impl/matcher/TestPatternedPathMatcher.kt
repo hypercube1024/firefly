@@ -8,14 +8,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
-class TestPathPatternMatcher {
+class TestPatternedPathMatcher {
 
     private val routerManager = Mockito.mock(AsyncRouterManager::class.java)
 
     @Test
     @DisplayName("should match router by the path successfully.")
     fun test() {
-        val matcher = PathPatternMatcher()
+        val matcher = PatternedPathMatcher()
         val router1 = AsyncRouter(1, routerManager)
         val router2 = AsyncRouter(2, routerManager)
         val router3 = AsyncRouter(3, routerManager)

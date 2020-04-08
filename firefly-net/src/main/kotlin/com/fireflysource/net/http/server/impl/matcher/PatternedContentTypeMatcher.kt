@@ -6,7 +6,7 @@ import com.fireflysource.net.http.server.Matcher
 import com.fireflysource.net.http.server.Matcher.MatchType
 
 
-class ContentTypePatternMatcher : AbstractPatternMatcher() {
+class PatternedContentTypeMatcher : AbstractPatternMatcher() {
 
     override fun match(value: String): Matcher.MatchResult? {
         val mimeType = MimeTypes.getContentTypeMIMEType(value)

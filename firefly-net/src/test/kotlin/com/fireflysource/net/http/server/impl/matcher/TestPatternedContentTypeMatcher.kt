@@ -9,14 +9,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
-class TestContentTypePatternMatcher {
+class TestPatternedContentTypeMatcher {
 
     private val routerManager = Mockito.mock(AsyncRouterManager::class.java)
 
     @Test
     @DisplayName("should match router by content type successfully.")
     fun test() {
-        val matcher = ContentTypePatternMatcher()
+        val matcher = PatternedContentTypeMatcher()
         val router1 = AsyncRouter(1, routerManager)
         val router2 = AsyncRouter(2, routerManager)
         matcher.add("*/json", router1)
