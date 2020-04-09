@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.server.impl.matcher
 
-import com.fireflysource.common.collection.CollectionUtils
 import com.fireflysource.common.string.StringUtils
 import com.fireflysource.net.http.common.model.AcceptMIMEMatchType
 import com.fireflysource.net.http.common.model.AcceptMIMEType
@@ -19,25 +18,19 @@ class AcceptHeaderMatcher : AbstractPreciseMatcher() {
 
     override fun match(value: String): Matcher.MatchResult? {
         val acceptMIMETypes = parseAcceptMIMETypes(value)
-        if (CollectionUtils.isEmpty(acceptMIMETypes)) {
-            return null
-        }
-        for (type in acceptMIMETypes) {
-            val routers = map.entries
-                .filter { match(it, type) }
-                .flatMap { it.value }
-                .toSortedSet()
-            if (!CollectionUtils.isEmpty(routers)) {
-                return Matcher.MatchResult(routers, emptyMap(), matchType)
-            }
-        }
-        return null
+        if (acceptMIMETypes.isNullOrEmpty()) return null
+
+        return acceptMIMETypes
+            .map { findRouters(it) }
+            .filter { !it.isNullOrEmpty() }
+            .map { Matcher.MatchResult(it, emptyMap(), matchType) }
+            .firstOrNull()
     }
 
-    private fun match(
-        e: MutableMap.MutableEntry<String, NavigableSet<Router>>,
-        type: AcceptMIMEType
-    ): Boolean {
+    private fun findRouters(type: AcceptMIMEType) =
+        map.entries.filter { matchMimeType(it, type) }.flatMap { it.value }.toSortedSet()
+
+    private fun matchMimeType(e: MutableMap.MutableEntry<String, SortedSet<Router>>, type: AcceptMIMEType): Boolean {
         val acceptType: Array<String> = StringUtils.split(e.key, '/')
         val parentType = acceptType[0].trim()
         val childType = acceptType[1].trim()

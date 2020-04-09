@@ -8,7 +8,7 @@ import java.util.*
 
 abstract class AbstractPatternMatcher : Matcher {
 
-    private val patternMap: MutableMap<PatternRule, NavigableSet<Router>> by lazy { HashMap<PatternRule, NavigableSet<Router>>() }
+    private val patternMap: MutableMap<PatternRule, SortedSet<Router>> by lazy { HashMap<PatternRule, SortedSet<Router>>() }
 
     private class PatternRule(val rule: String) {
 
