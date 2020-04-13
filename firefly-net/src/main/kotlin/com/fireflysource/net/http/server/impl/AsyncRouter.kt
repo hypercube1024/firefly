@@ -3,54 +3,70 @@ package com.fireflysource.net.http.server.impl
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.server.Matcher
 import com.fireflysource.net.http.server.Router
+import com.fireflysource.net.http.server.Router.EMPTY_HANDLER
 
 class AsyncRouter(
     private val id: Int,
     private val routerManager: AsyncRouterManager
 ) : Router {
 
+    private val matchTypes = HashSet<Matcher.MatchType>()
+    private var handler: Router.Handler = EMPTY_HANDLER
+    private var enabled = true
+
     override fun method(httpMethod: String): Router {
-        TODO("Not yet implemented")
+        routerManager.method(httpMethod)
+        return this
     }
 
     override fun method(httpMethod: HttpMethod): Router {
-        TODO("Not yet implemented")
+        routerManager.method(httpMethod)
+        return this
     }
 
     override fun path(url: String): Router {
-        TODO("Not yet implemented")
+        routerManager.path(url)
+        return this
     }
 
     override fun paths(urlList: MutableList<String>): Router {
-        TODO("Not yet implemented")
+        routerManager.paths(urlList)
+        return this
     }
 
-    override fun pathRegex(regex: String?): Router {
-        TODO("Not yet implemented")
+    override fun pathRegex(regex: String): Router {
+        routerManager.pathRegex(regex)
+        return this
     }
 
     override fun get(url: String): Router {
-        TODO("Not yet implemented")
+        routerManager.get(url)
+        return this
     }
 
     override fun post(url: String): Router {
-        TODO("Not yet implemented")
+        routerManager.post(url)
+        return this
     }
 
     override fun put(url: String): Router {
-        TODO("Not yet implemented")
+        routerManager.put(url)
+        return this
     }
 
     override fun delete(url: String): Router {
-        TODO("Not yet implemented")
+        routerManager.delete(url)
+        return this
     }
 
     override fun consumes(contentType: String): Router {
-        TODO("Not yet implemented")
+        routerManager.consumes(contentType)
+        return this
     }
 
     override fun produces(accept: String): Router {
-        TODO("Not yet implemented")
+        routerManager.produces(accept)
+        return this
     }
 
     override fun getId(): Int = id
@@ -58,23 +74,22 @@ class AsyncRouter(
     override fun compareTo(other: Router): Int = id.compareTo(other.id)
 
     override fun handler(handler: Router.Handler): Router {
-        TODO("Not yet implemented")
+        this.handler = handler
+        return this
     }
 
-    override fun getMatchTypes(): MutableSet<Matcher.MatchType> {
-        TODO("Not yet implemented")
-    }
+    override fun getMatchTypes(): MutableSet<Matcher.MatchType> = matchTypes
 
     override fun enable(): Router {
-        TODO("Not yet implemented")
+        enabled = true
+        return this
     }
 
-    override fun isEnable(): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun isEnable(): Boolean = enabled
 
     override fun disable(): Router {
-        TODO("Not yet implemented")
+        enabled = false
+        return this
     }
 
     override fun equals(other: Any?): Boolean {

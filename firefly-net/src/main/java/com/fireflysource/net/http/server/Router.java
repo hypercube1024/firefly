@@ -8,6 +8,9 @@ import java.util.function.Consumer;
 
 public interface Router extends Comparable<Router> {
 
+    Handler EMPTY_HANDLER = ctx -> {
+    };
+
     /**
      * Get router id.
      *
