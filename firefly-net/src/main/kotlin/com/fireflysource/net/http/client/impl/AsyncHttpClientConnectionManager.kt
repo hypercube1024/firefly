@@ -45,8 +45,7 @@ class AsyncHttpClientConnectionManager(
         if (config.tcpChannelGroup != null) config.tcpChannelGroup
         else AioTcpChannelGroup("async-http-client")
 
-    private fun createTcpClient() =
-        AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
+    private fun createTcpClient() = AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
 
     private fun createSecureTcpClient(): TcpClient =
         if (config.secureEngineFactory != null)

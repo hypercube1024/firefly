@@ -21,10 +21,13 @@ class AioTcpChannelGroup(threadName: String) : AbstractLifeCycle(), TcpChannelGr
     }
 
     private val id: AtomicInteger = AtomicInteger(0)
-    private val group: AsynchronousChannelGroup =
+    private val group: AsynchronousChannelGroup by lazy {
         withThreadPool(newSingleThreadExecutor("firefly-aio-channel-group-thread"))
-    private val dispatchers: Array<CoroutineDispatcher> = Array(defaultPoolSize) { i ->
-        newSingleThreadDispatcher("firefly-$threadName-$i")
+    }
+    private val dispatchers: Array<CoroutineDispatcher> by lazy {
+        Array(defaultPoolSize) { i ->
+            newSingleThreadDispatcher("firefly-$threadName-$i")
+        }
     }
 
     override fun getDispatcher(connectionId: Int): CoroutineDispatcher {
