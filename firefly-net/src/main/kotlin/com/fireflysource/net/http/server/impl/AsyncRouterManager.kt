@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.RouterManager
 import com.fireflysource.net.http.server.impl.matcher.*
@@ -34,10 +33,6 @@ class AsyncRouterManager : RouterManager {
 
     fun method(httpMethod: String, router: AsyncRouter) {
         httpMethodMatcher.add(httpMethod, router)
-    }
-
-    fun method(httpMethod: HttpMethod, router: AsyncRouter) {
-        httpMethodMatcher.add(httpMethod.value, router)
     }
 
     fun path(url: String, router: AsyncRouter) {

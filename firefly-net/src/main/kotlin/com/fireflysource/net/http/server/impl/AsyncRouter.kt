@@ -16,26 +16,31 @@ class AsyncRouter(
 
     override fun method(httpMethod: String): Router {
         routerManager.method(httpMethod, this)
+        matchTypes.add(Matcher.MatchType.METHOD)
         return this
     }
 
     override fun method(httpMethod: HttpMethod): Router {
-        routerManager.method(httpMethod, this)
+        routerManager.method(httpMethod.value, this)
+        matchTypes.add(Matcher.MatchType.METHOD)
         return this
     }
 
     override fun path(url: String): Router {
         routerManager.path(url, this)
+        matchTypes.add(Matcher.MatchType.PATH)
         return this
     }
 
     override fun paths(urlList: MutableList<String>): Router {
         routerManager.paths(urlList, this)
+        matchTypes.add(Matcher.MatchType.PATH)
         return this
     }
 
     override fun pathRegex(regex: String): Router {
         routerManager.pathRegex(regex, this)
+        matchTypes.add(Matcher.MatchType.PATH)
         return this
     }
 
@@ -57,11 +62,13 @@ class AsyncRouter(
 
     override fun consumes(contentType: String): Router {
         routerManager.consumes(contentType, this)
+        matchTypes.add(Matcher.MatchType.CONTENT_TYPE)
         return this
     }
 
     override fun produces(accept: String): Router {
         routerManager.produces(accept, this)
+        matchTypes.add(Matcher.MatchType.ACCEPT)
         return this
     }
 
