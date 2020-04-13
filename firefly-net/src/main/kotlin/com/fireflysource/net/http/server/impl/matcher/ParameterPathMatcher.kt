@@ -7,6 +7,31 @@ import java.util.*
 
 class ParameterPathMatcher : Matcher {
 
+    companion object {
+        fun isParameterPath(path: String): Boolean {
+            val paths = split(path)
+            return paths.any { it[0] == ':' }
+        }
+
+        fun split(path: String): List<String> {
+            val paths: MutableList<String> = LinkedList()
+            var start = 1
+            val last = path.lastIndex
+
+            for (i in 1..last) {
+                if (path[i] == '/') {
+                    paths.add(path.substring(start, i).trim())
+                    start = i + 1
+                }
+            }
+
+            if (path[last] != '/') {
+                paths.add(path.substring(start).trim())
+            }
+            return paths
+        }
+    }
+
     private val parameterRuleMap: MutableMap<ParameterRule, SortedSet<Router>> by lazy { HashMap<ParameterRule, SortedSet<Router>>() }
 
     private inner class ParameterRule(val rule: String) {
@@ -42,24 +67,6 @@ class ParameterPathMatcher : Matcher {
         override fun hashCode(): Int {
             return rule.hashCode()
         }
-    }
-
-    fun split(path: String): List<String> {
-        val paths: MutableList<String> = LinkedList()
-        var start = 1
-        val last = path.lastIndex
-
-        for (i in 1..last) {
-            if (path[i] == '/') {
-                paths.add(path.substring(start, i).trim())
-                start = i + 1
-            }
-        }
-
-        if (path[last] != '/') {
-            paths.add(path.substring(start).trim())
-        }
-        return paths
     }
 
     override fun getMatchType(): Matcher.MatchType {

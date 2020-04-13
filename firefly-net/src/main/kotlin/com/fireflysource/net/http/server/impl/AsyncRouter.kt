@@ -15,57 +15,53 @@ class AsyncRouter(
     private var enabled = true
 
     override fun method(httpMethod: String): Router {
-        routerManager.method(httpMethod)
+        routerManager.method(httpMethod, this)
         return this
     }
 
     override fun method(httpMethod: HttpMethod): Router {
-        routerManager.method(httpMethod)
+        routerManager.method(httpMethod, this)
         return this
     }
 
     override fun path(url: String): Router {
-        routerManager.path(url)
+        routerManager.path(url, this)
         return this
     }
 
     override fun paths(urlList: MutableList<String>): Router {
-        routerManager.paths(urlList)
+        routerManager.paths(urlList, this)
         return this
     }
 
     override fun pathRegex(regex: String): Router {
-        routerManager.pathRegex(regex)
+        routerManager.pathRegex(regex, this)
         return this
     }
 
     override fun get(url: String): Router {
-        routerManager.get(url)
-        return this
+        return method(HttpMethod.GET).path(url)
     }
 
     override fun post(url: String): Router {
-        routerManager.post(url)
-        return this
+        return method(HttpMethod.POST).path(url)
     }
 
     override fun put(url: String): Router {
-        routerManager.put(url)
-        return this
+        return method(HttpMethod.PUT).path(url)
     }
 
     override fun delete(url: String): Router {
-        routerManager.delete(url)
-        return this
+        return method(HttpMethod.DELETE).path(url)
     }
 
     override fun consumes(contentType: String): Router {
-        routerManager.consumes(contentType)
+        routerManager.consumes(contentType, this)
         return this
     }
 
     override fun produces(accept: String): Router {
-        routerManager.produces(accept)
+        routerManager.produces(accept, this)
         return this
     }
 
