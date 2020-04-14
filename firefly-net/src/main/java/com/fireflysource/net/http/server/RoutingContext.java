@@ -262,6 +262,15 @@ public interface RoutingContext {
     }
 
     /**
+     * Get HTTP request content type.
+     *
+     * @return The content type.
+     */
+    default String getContentType() {
+        return getHttpFields().get(HttpHeader.CONTENT_TYPE);
+    }
+
+    /**
      * Get HTTP request cookies.
      *
      * @return The HTTP request cookies.

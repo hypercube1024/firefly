@@ -65,11 +65,8 @@ public interface RouterManager {
     /**
      * Find routers.
      *
-     * @param method      The HTTP method.
-     * @param path        The path.
-     * @param contentType Content type.
-     * @param accept      Accepted content type.
+     * @param context The routing context.
      * @return The registered routers.
      */
-    NavigableSet<RouterMatchResult> findRouter(String method, String path, String contentType, String accept);
+    SortedSet<RouterMatchResult> findRouters(RoutingContext context);
 }
