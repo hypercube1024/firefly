@@ -1,15 +1,16 @@
 package com.fireflysource.net.http.server;
 
+import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.http.common.model.HttpMethod;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public interface Router extends Comparable<Router> {
 
-    Handler EMPTY_HANDLER = ctx -> {
-    };
+    Handler EMPTY_HANDLER = ctx -> Result.DONE;
 
     /**
      * Get router id.
@@ -143,7 +144,7 @@ public interface Router extends Comparable<Router> {
      */
     Router disable();
 
-    interface Handler extends Consumer<RoutingContext> {
+    interface Handler extends Function<RoutingContext, CompletableFuture<Void>> {
 
     }
 }

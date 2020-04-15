@@ -1,13 +1,13 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.expectServerAcceptsContent
-import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.HttpServerRequest
-import com.fireflysource.net.http.server.HttpServerResponse
-import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
+import com.fireflysource.net.http.server.impl.matcher.AbstractPatternMatcher
+import com.fireflysource.net.http.server.impl.matcher.AbstractRegexMatcher
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,6 +18,8 @@ class AsyncRoutingContext(
 ) : RoutingContext {
 
     private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
+    var routerMatchResult: RouterManager.RouterMatchResult? = null
+    var routerIterator: Iterator<RouterManager.RouterMatchResult>? = null
 
     override fun getAttribute(key: String): Any? = attributes[key]
 
@@ -32,15 +34,21 @@ class AsyncRoutingContext(
     override fun getResponse(): HttpServerResponse = response
 
     override fun getPathParameter(name: String): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = routerMatchResult
+        return if (result == null) ""
+        else result.parameters[name] ?: ""
     }
 
     override fun getPathParameter(index: Int): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = routerMatchResult
+        return if (result == null) ""
+        else result.parameters[AbstractPatternMatcher.paramName + index] ?: ""
     }
 
     override fun getPathParameterByRegexGroup(index: Int): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = routerMatchResult
+        return if (result == null) ""
+        else result.parameters[AbstractRegexMatcher.paramName + index] ?: ""
     }
 
     override fun expect100Continue(): Boolean {
@@ -55,12 +63,19 @@ class AsyncRoutingContext(
             .end()
     }
 
-    override fun <T> next(): CompletableFuture<T> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun next(): CompletableFuture<Void> {
+        val result = routerIterator?.next()
+        return if (result != null) {
+            routerMatchResult = result
+            val asyncRouter = result.router as AsyncRouter
+            asyncRouter.getHandler().apply(this)
+        } else {
+            Result.DONE
+        }
     }
 
     override fun hasNext(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return routerIterator?.hasNext() ?: false
     }
 
     override fun getConnection(): HttpServerConnection = connection

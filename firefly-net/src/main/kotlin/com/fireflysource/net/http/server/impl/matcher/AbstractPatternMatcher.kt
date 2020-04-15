@@ -8,6 +8,10 @@ import java.util.*
 
 abstract class AbstractPatternMatcher : Matcher {
 
+    companion object {
+        const val paramName = "param"
+    }
+
     protected val patternMap: MutableMap<PatternRule, SortedSet<Router>> by lazy { HashMap<PatternRule, SortedSet<Router>>() }
 
     class PatternRule(val rule: String) {
@@ -42,7 +46,7 @@ abstract class AbstractPatternMatcher : Matcher {
                 if (strings.isNotEmpty()) {
                     val param: MutableMap<String, String> = HashMap()
                     for (i in strings.indices) {
-                        param["param$i"] = strings[i]
+                        param["$paramName$i"] = strings[i]
                     }
                     routerSet.forEach { router -> parameters[router] = param }
                 }

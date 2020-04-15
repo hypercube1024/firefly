@@ -4,7 +4,9 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
+import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
@@ -81,11 +83,30 @@ class AsyncHttpServer(val config: HttpConfig) : HttpServer, AbstractLifeCycle() 
             }
 
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                TODO("Not yet implemented")
+                val results = routerManager.findRouters(ctx)
+                val asyncCtx = ctx as AsyncRoutingContext
+                val iterator = results.iterator()
+                return if (iterator.hasNext()) {
+                    val result = iterator.next()
+                    asyncCtx.routerMatchResult = result
+                    asyncCtx.routerIterator = iterator
+                    (result.router as AsyncRouter).getHandler().apply(ctx)
+                } else {
+                    ctx.setStatus(HttpStatus.NOT_FOUND_404)
+                        .setReason(HttpStatus.Code.NOT_FOUND.message)
+                        .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+                        .end()
+                }
             }
 
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                return Result.DONE
+            override fun onException(ctx: RoutingContext?, e: Throwable): CompletableFuture<Void> {
+                log.error(e) { "The internal server error" }
+                return if (ctx != null && !ctx.response.isCommitted) {
+                    ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                        .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+                        .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, e, ctx))
+                        .end()
+                } else Result.DONE
             }
         }
 

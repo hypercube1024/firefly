@@ -8,6 +8,10 @@ import java.util.regex.Pattern
 
 abstract class AbstractRegexMatcher : Matcher {
 
+    companion object {
+        const val paramName = "group"
+    }
+
     protected val regexMap: MutableMap<RegexRule, SortedSet<Router>> by lazy { HashMap<RegexRule, SortedSet<Router>>() }
 
     class RegexRule(val rule: String) {
@@ -42,7 +46,7 @@ abstract class AbstractRegexMatcher : Matcher {
                 val param: MutableMap<String, String> = HashMap()
                 while (matcher.find()) {
                     for (i in 1..matcher.groupCount()) {
-                        param["group$i"] = matcher.group(i)
+                        param["$paramName$i"] = matcher.group(i)
                     }
                 }
                 if (param.isNotEmpty()) {

@@ -82,6 +82,8 @@ class AsyncRouter(
         return routerManager.httpServer
     }
 
+    fun getHandler() = this.handler
+
     override fun getMatchTypes(): MutableSet<Matcher.MatchType> = matchTypes
 
     override fun enable(): Router {

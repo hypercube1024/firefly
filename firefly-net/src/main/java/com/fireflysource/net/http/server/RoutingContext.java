@@ -543,10 +543,9 @@ public interface RoutingContext {
     /**
      * Execute the next handler of the router chain.
      *
-     * @param <T> The handler result type.
      * @return The handler future result.
      */
-    <T> CompletableFuture<T> next();
+    CompletableFuture<Void> next();
 
     /**
      * Get the HTTP server connection.
