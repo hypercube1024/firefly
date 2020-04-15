@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.server;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
-import com.fireflysource.net.http.common.model.HttpMethod;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 import java.net.InetSocketAddress;
@@ -16,128 +15,17 @@ public interface HttpServer extends LifeCycle {
     /**
      * Register a new router.
      *
-     * @return The HTTP server.
+     * @return The router.
      */
-    HttpServer router();
+    Router router();
 
     /**
      * Register a new router.
      *
      * @param id The router id.
-     * @return The HTTP server.
+     * @return The router.
      */
-    HttpServer router(int id);
-
-    /**
-     * Bind a URL for this router.
-     *
-     * @param url The URL.
-     * @return The HTTP server.
-     */
-    HttpServer path(String url);
-
-    /**
-     * Bind some URLs for this router.
-     *
-     * @param urlList The URL list.
-     * @return The HTTP server.
-     */
-    HttpServer paths(List<String> urlList);
-
-    /**
-     * Bind URL using regex.
-     *
-     * @param regex The URL regex.
-     * @return The HTTP server.
-     */
-    HttpServer pathRegex(String regex);
-
-    /**
-     * Bind HTTP method.
-     *
-     * @param httpMethod The HTTP method.
-     * @return The HTTP server.
-     */
-    HttpServer method(String httpMethod);
-
-    /**
-     * Bind HTTP method.
-     *
-     * @param httpMethod The HTTP method.
-     * @return The HTTP server.
-     */
-    HttpServer method(HttpMethod httpMethod);
-
-    /**
-     * Bind get method and URL.
-     *
-     * @param url The URL.
-     * @return The HTTP server.
-     */
-    HttpServer get(String url);
-
-    /**
-     * Bind post method and URL.
-     *
-     * @param url The URL.
-     * @return The HTTP server.
-     */
-    HttpServer post(String url);
-
-    /**
-     * Bind put method and URL.
-     *
-     * @param url The URL.
-     * @return The HTTP server.
-     */
-    HttpServer put(String url);
-
-    /**
-     * Bind delete method and URL.
-     *
-     * @param url The URL.
-     * @return The HTTP server.
-     */
-    HttpServer delete(String url);
-
-    /**
-     * Bind the request content type.
-     *
-     * @param contentType The request content type.
-     * @return The HTTP server.
-     */
-    HttpServer consumes(String contentType);
-
-    /**
-     * Bind remote accepted content type.
-     *
-     * @param accept The remote accepted content type.
-     * @return The HTTP server.
-     */
-    HttpServer produces(String accept);
-
-    /**
-     * Set router handler. When the HTTP server accepted request, and the request match this router,
-     * the server will call this handler to process request.
-     *
-     * @param handler router handler.
-     * @return The HTTP server.
-     */
-    HttpServer handler(Router.Handler handler);
-
-    /**
-     * Enable this router.
-     *
-     * @return The HTTP server.
-     */
-    HttpServer enable();
-
-    /**
-     * Disable this router.
-     *
-     * @return The HTTP server.
-     */
-    HttpServer disable();
+    Router router(int id);
 
     /**
      * Set the TLS engine factory.
@@ -194,18 +82,16 @@ public interface HttpServer extends LifeCycle {
      * Bind a server TCP address
      *
      * @param address The server TCP address.
-     * @return The HTTP server.
      */
-    HttpServer listen(SocketAddress address);
+    void listen(SocketAddress address);
 
     /**
      * Bind the server host and port.
      *
      * @param host The server host.
      * @param port The server port.
-     * @return The HTTP server.
      */
-    default HttpServer listen(String host, int port) {
-        return listen(new InetSocketAddress(host, port));
+    default void listen(String host, int port) {
+        listen(new InetSocketAddress(host, port));
     }
 }

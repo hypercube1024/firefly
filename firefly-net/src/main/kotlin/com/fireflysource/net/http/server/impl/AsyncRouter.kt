@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.model.HttpMethod
+import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.Matcher
 import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.Router.EMPTY_HANDLER
@@ -76,9 +77,9 @@ class AsyncRouter(
 
     override fun compareTo(other: Router): Int = id.compareTo(other.id)
 
-    override fun handler(handler: Router.Handler): Router {
+    override fun handler(handler: Router.Handler): HttpServer {
         this.handler = handler
-        return this
+        return routerManager.httpServer
     }
 
     override fun getMatchTypes(): MutableSet<Matcher.MatchType> = matchTypes

@@ -381,7 +381,7 @@ public class MimeTypes {
     }
 
     public static String getContentTypeMIMEType(String contentType) {
-        if (contentType != null) {
+        if (StringUtils.hasText(contentType)) {
             // parsing content-type
             String[] strings = StringUtils.split(contentType, ';');
             return strings[0];
@@ -391,7 +391,7 @@ public class MimeTypes {
     }
 
     public static List<String> getAcceptMIMETypes(String accept) {
-        if (accept != null) {
+        if (StringUtils.hasText(accept)) {
             List<String> list = new ArrayList<>();
             // parsing accept
             String[] strings = StringUtils.split(accept, ',');

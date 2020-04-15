@@ -2,15 +2,12 @@ package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.net.http.common.codec.URIUtils.canonicalPath
 import com.fireflysource.net.http.common.model.HttpHeader
-import com.fireflysource.net.http.server.Matcher
-import com.fireflysource.net.http.server.Router
-import com.fireflysource.net.http.server.RouterManager
-import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.matcher.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class AsyncRouterManager : RouterManager {
+class AsyncRouterManager(val httpServer: HttpServer) : RouterManager {
 
     private val routerId = AtomicInteger()
 
@@ -47,21 +44,21 @@ class AsyncRouterManager : RouterManager {
         val regexPathResult = regexPathMatcher.match(path)
         collectRouterResult(regexPathResult, routerMatchTypeMap, routerParameterMap)
 
-        val contentType = ctx.contentType
+        val contentType = ctx.contentType ?: ""
         val preciseContentTypeResult = preciseContentTypeMatcher.match(contentType)
         collectRouterResult(preciseContentTypeResult, routerMatchTypeMap, routerParameterMap)
 
         val patternedContentTypeResult = patternedContentTypeMatcher.match(contentType)
         collectRouterResult(patternedContentTypeResult, routerMatchTypeMap, routerParameterMap)
 
-        val accept = ctx.httpFields[HttpHeader.ACCEPT]
+        val accept = ctx.httpFields[HttpHeader.ACCEPT] ?: ""
         val acceptHeaderResult = acceptHeaderMatcher.match(accept)
         collectRouterResult(acceptHeaderResult, routerMatchTypeMap, routerParameterMap)
 
         return routerMatchTypeMap
             .filter { it.key.isEnable }
             .filter { it.key.matchTypes == it.value }
-            .map { RouterManager.RouterMatchResult(it.key, routerParameterMap[it.key], it.value) }
+            .map { RouterManager.RouterMatchResult(it.key, routerParameterMap[it.key] ?: emptyMap(), it.value) }
             .toSortedSet()
     }
 

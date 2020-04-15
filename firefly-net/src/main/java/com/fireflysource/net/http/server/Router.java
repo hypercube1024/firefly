@@ -125,9 +125,9 @@ public interface Router extends Comparable<Router> {
      * the server will call this handler to process request.
      *
      * @param handler router handler.
-     * @return router.
+     * @return The HTTP server.
      */
-    Router handler(Handler handler);
+    HttpServer handler(Handler handler);
 
     /**
      * Enable this router.
