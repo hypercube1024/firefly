@@ -15,6 +15,8 @@ import com.fireflysource.net.tcp.secure.SecureEngineFactory
 import kotlinx.coroutines.future.await
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
+import java.util.function.BiFunction
+import java.util.function.Function
 
 class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, AbstractLifeCycle() {
 
@@ -25,10 +27,34 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     private val routerManager: RouterManager = AsyncRouterManager(this)
     private val tcpServer = AioTcpServer()
     private var address: SocketAddress? = null
+    private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> =
+        Function { ctx ->
+            if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
+        }
+    private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> =
+        BiFunction { ctx, e ->
+            log.error(e) { "The internal server error" }
+            if (ctx != null && !ctx.response.isCommitted) {
+                ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                    .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, e, ctx))
+                    .end()
+            } else Result.DONE
+        }
 
     override fun router(): Router = routerManager.register()
 
     override fun router(id: Int): Router = routerManager.register(id)
+
+    override fun onHeaderComplete(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
+        this.onHeaderComplete = function
+        return this
+    }
+
+    override fun onException(biFunction: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>>): HttpServer {
+        this.onException = biFunction
+        return this
+    }
 
     override fun timeout(timeout: Long): HttpServer {
         tcpServer.timeout(timeout)
@@ -79,7 +105,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
 
         val listener = object : HttpServerConnection.Listener.Adapter() {
             override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
+                return onHeaderComplete.apply(ctx)
             }
 
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
@@ -100,13 +126,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             }
 
             override fun onException(ctx: RoutingContext?, e: Throwable): CompletableFuture<Void> {
-                log.error(e) { "The internal server error" }
-                return if (ctx != null && !ctx.response.isCommitted) {
-                    ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                        .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
-                        .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, e, ctx))
-                        .end()
-                } else Result.DONE
+                return onException.apply(ctx, e)
             }
         }
 

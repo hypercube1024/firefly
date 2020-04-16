@@ -9,21 +9,17 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
-import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
-import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
-import com.fireflysource.net.tcp.TcpServer
-import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
-import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -60,13 +56,8 @@ class TestHttpServerConnection {
         address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
     }
 
-    private fun createHttpServer(
-        protocol: String,
-        schema: String,
-        listener: HttpServerConnection.Listener,
-        httpConfig: HttpConfig = HttpConfig()
-    ): TcpServer {
-        val server = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
+    private fun createHttpServer(protocol: String, schema: String, httpConfig: HttpConfig = HttpConfig()): HttpServer {
+        val server = HttpServerFactory.create(httpConfig)
         when (protocol) {
             "http1" -> server.supportedProtocols(listOf(HTTP1.value))
             "http2" -> server.supportedProtocols(listOf(HTTP2.value, HTTP1.value))
@@ -74,23 +65,10 @@ class TestHttpServerConnection {
         if (schema == "https") {
             server.enableSecureConnection()
         }
-        return server.onAcceptAsync { connection ->
-            println("accept connection. ${connection.id}")
-            connection.beginHandshake().await()
-            when (protocol) {
-                "http1" -> {
-                    val http1Connection = Http1ServerConnection(httpConfig, connection)
-                    http1Connection.setListener(listener).begin()
-                }
-                "http2" -> {
-                    val http2Connection = Http2ServerConnection(httpConfig, connection)
-                    http2Connection.setListener(listener).begin()
-                }
-            }
-        }.listen(address)
+        return server
     }
 
-    private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: TcpServer) {
+    private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: HttpServer) {
         try {
             val throughput = count / (time / 1000.00)
             println("success. $time ms, ${throughput.roundToLong()} qps")
@@ -107,29 +85,23 @@ class TestHttpServerConnection {
     fun test(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                ctx.write(BufferUtils.toBuffer("response buffer.", StandardCharsets.UTF_8))
-                val arr = arrayOf(
-                    BufferUtils.toBuffer("array 1.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("array 2.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("array 3.", StandardCharsets.UTF_8)
-                )
-                val list = listOf(
-                    BufferUtils.toBuffer("list 1.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("list 2.", StandardCharsets.UTF_8),
-                    BufferUtils.toBuffer("list 3.", StandardCharsets.UTF_8)
-                )
-                return ctx.write(arr, 0, arr.size)
-                    .write(list, 1, 2)
-                    .end("hello http1 server!")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/test-*").handler { ctx ->
+            ctx.write(BufferUtils.toBuffer("response buffer.", StandardCharsets.UTF_8))
+            val arr = arrayOf(
+                BufferUtils.toBuffer("array 1.", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("array 2.", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("array 3.", StandardCharsets.UTF_8)
+            )
+            val list = listOf(
+                BufferUtils.toBuffer("list 1.", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("list 2.", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("list 3.", StandardCharsets.UTF_8)
+            )
+            ctx.write(arr, 0, arr.size)
+                .write(list, 1, 2)
+                .end("hello http1 server!")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -159,18 +131,12 @@ class TestHttpServerConnection {
     fun testResponseContentLength(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                val buffer = BufferUtils.toBuffer("response text with content length.", StandardCharsets.UTF_8)
-                ctx.put(HttpHeader.CONTENT_LENGTH, buffer.remaining().toString())
-                return ctx.write(buffer).end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/length-*").handler { ctx ->
+            val buffer = BufferUtils.toBuffer("response text with content length.", StandardCharsets.UTF_8)
+            ctx.put(HttpHeader.CONTENT_LENGTH, buffer.remaining().toString())
+            ctx.write(buffer).end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -197,27 +163,21 @@ class TestHttpServerConnection {
     fun testQueryStringsAndFormInputs(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                val query = ctx.getQueryString("key1")
-                val queryList = ctx.getQueryStrings("list1")
-                val querySize = ctx.queryStrings.size
-                val message = ctx.getFormInput("key1")
-                val formList = ctx.getFormInputs("list1")
-                val formSize = ctx.formInputs.size
-                val method = ctx.method
-                return ctx.write(method).write(", ")
-                    .write(query).write(queryList.toString()).write(", size: $querySize")
-                    .write(", ")
-                    .write(message).write(formList.toString()).write(", size: $formSize")
-                    .end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().post("/query-form-*").handler { ctx ->
+            val query = ctx.getQueryString("key1")
+            val queryList = ctx.getQueryStrings("list1")
+            val querySize = ctx.queryStrings.size
+            val message = ctx.getFormInput("key1")
+            val formList = ctx.getFormInputs("list1")
+            val formSize = ctx.formInputs.size
+            val method = ctx.method
+            ctx.write(method).write(", ")
+                .write(query).write(queryList.toString()).write(", size: $querySize")
+                .write(", ")
+                .write(message).write(formList.toString()).write(", size: $formSize")
+                .end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -248,19 +208,13 @@ class TestHttpServerConnection {
     fun testContentProvider(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.setStatus(HttpStatus.NOT_FOUND_404).setReason("Just so so")
-                    .setHttpVersion(HttpVersion.HTTP_1_1)
-                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
-                    .end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/not-found-*").handler { ctx ->
+            ctx.setStatus(HttpStatus.NOT_FOUND_404).setReason("Just so so")
+                .setHttpVersion(HttpVersion.HTTP_1_1)
+                .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+                .end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -288,26 +242,20 @@ class TestHttpServerConnection {
     fun testTrailer(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
-                    .setTrailerSupplier {
-                        val fields = HttpFields()
-                        fields.put("t1", "trailer1")
-                        fields.put("t2", "trailer2")
-                        fields.put("t3", "trailer3")
-                        fields
-                    }
-                    .write("response text success.")
-                    .write("trailer.")
-                    .end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/trailer-*").handler { ctx ->
+            ctx.addCSV(HttpHeader.TRAILER, "t1", "t2", "t3")
+                .setTrailerSupplier {
+                    val fields = HttpFields()
+                    fields.put("t1", "trailer1")
+                    fields.put("t2", "trailer2")
+                    fields.put("t3", "trailer3")
+                    fields
+                }
+                .write("response text success.")
+                .write("trailer.")
+                .end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -325,7 +273,6 @@ class TestHttpServerConnection {
             assertEquals("trailer1", response.trailerSupplier.get()["t1"])
             assertEquals("trailer2", response.trailerSupplier.get()["t2"])
             assertEquals("trailer3", response.trailerSupplier.get()["t3"])
-
         }
 
         finish(count, time, httpClient, httpServer)
@@ -337,16 +284,10 @@ class TestHttpServerConnection {
     fun testRedirect(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.redirect("http://${address.hostName}:${address.port}/r0")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/redirect-*").handler { ctx ->
+            ctx.redirect("http://${address.hostName}:${address.port}/r0")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -372,22 +313,16 @@ class TestHttpServerConnection {
     fun testCookies(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                ctx.cookies = listOf(
-                    Cookie("s1", "v1"),
-                    Cookie("s2", "v2"),
-                    Cookie("s3", ctx.cookies[0].value),
-                    Cookie("s4", ctx.cookies[1].value)
-                )
-                return ctx.end("receive ${ctx.stringBody} ok.")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().post("/cookies-*").handler { ctx ->
+            ctx.cookies = listOf(
+                Cookie("s1", "v1"),
+                Cookie("s2", "v2"),
+                Cookie("s3", ctx.cookies[0].value),
+                Cookie("s4", ctx.cookies[1].value)
+            )
+            ctx.end("receive ${ctx.stringBody} ok.")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -418,17 +353,11 @@ class TestHttpServerConnection {
         val count = 100
         val charset = Charset.forName("GBK")
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                val content = ctx.getStringBody(charset)
-                return ctx.contentProvider(stringBody("收到：${content}。长度：${ctx.contentLength}", charset)).end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().post("/gbk-*").handler { ctx ->
+            val content = ctx.getStringBody(charset)
+            ctx.contentProvider(stringBody("收到：${content}。长度：${ctx.contentLength}", charset)).end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -456,20 +385,10 @@ class TestHttpServerConnection {
     fun testAccept100Continue(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.end("receive ${ctx.stringBody} OK")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                exception.printStackTrace()
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().post("/100-continue-*").handler { ctx ->
+            ctx.end("receive ${ctx.stringBody} OK")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -498,20 +417,16 @@ class TestHttpServerConnection {
     fun testNotAccept100Continue(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer
+            .onHeaderComplete { ctx ->
+                ctx.setStatus(HttpStatus.PAYLOAD_TOO_LARGE_413).end("Content too large")
             }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
+            .router().post("/100-continue-*").handler { ctx ->
+                if (ctx.response.isCommitted) Result.DONE
+                else ctx.end("receive ${ctx.stringBody} OK")
             }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        })
+            .listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -539,22 +454,12 @@ class TestHttpServerConnection {
     fun testCloseConnection(): Unit = runBlocking {
         val count = 20
 
-        val httpServer = createHttpServer("http1", "http", object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                    .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
-                    .end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer("http1", "http")
+        httpServer.router().get("/close-*").handler { ctx ->
+            ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
+                .end()
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -577,65 +482,14 @@ class TestHttpServerConnection {
     }
 
     @Test
-    @Disabled
-    @DisplayName("should try to send request again when the request sends failure.")
-    fun testServerCloseConnection(): Unit = runBlocking {
-        val count = 30
-
-        val httpServer = createHttpServer("http1", "http", object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                    .contentProvider(stringBody("Server closed connection success", StandardCharsets.UTF_8))
-                    .end()
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        })
-
-        val httpClient = HttpClientFactory.create()
-        val time = measureTimeMillis {
-            val futures = (1..count).map {
-                httpClient.get("http://${address.hostName}:${address.port}/server-close-$it").submit()
-            }
-            CompletableFuture.allOf(*futures.toTypedArray()).await()
-            val allDone = futures.all { it.isDone }
-            assertTrue(allDone)
-            val response = futures[0].await()
-
-            println(response)
-            assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("Server closed connection success", response.stringBody)
-        }
-
-        finish(count, time, httpClient, httpServer)
-    }
-
-    @Test
     @DisplayName("should upgrade http2 protocol successfully.")
     fun testUpgradeHttp2(): Unit = runBlocking {
         val count = 30
 
-        val httpServer = createHttpServer("http1", "http", object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.end("Upgrade http2 success")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        })
+        val httpServer = createHttpServer("http1", "http")
+        httpServer.router().get("/upgrade-http2-*").handler { ctx ->
+            ctx.end("Upgrade http2 success")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {
@@ -664,20 +518,10 @@ class TestHttpServerConnection {
         httpConfig.initialSessionRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
         httpConfig.initialStreamRecvWindow = HttpConfig.DEFAULT_WINDOW_SIZE
 
-        val httpServer = createHttpServer("http2", "https", object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return ctx.end("Received data success. length: ${ctx.stringBody.length}")
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        }, httpConfig)
+        val httpServer = createHttpServer("http2", "https", httpConfig)
+        httpServer.router().post("/big-data-http2-*").handler { ctx ->
+            ctx.end("Received data success. length: ${ctx.stringBody.length}")
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create(httpConfig)
         val time = measureTimeMillis {
@@ -705,15 +549,11 @@ class TestHttpServerConnection {
     fun testMultiPartContent(protocol: String, schema: String): Unit = runBlocking {
         val count = 100
 
-        val httpServer = createHttpServer(protocol, schema, object : HttpServerConnection.Listener.Adapter() {
-            override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                return Result.DONE
-            }
-
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                val part1 = ctx.getPart("part1")
-                val part2 = ctx.getPart("part2")
-                val content = """
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().post("/multi-part-content-*").handler { ctx ->
+            val part1 = ctx.getPart("part1")
+            val part2 = ctx.getPart("part2")
+            val content = """
                     |received part1: 
                     |${part1.httpFields}
                     |${part1.stringBody}
@@ -721,14 +561,8 @@ class TestHttpServerConnection {
                     |received part2:
                     |${part2.stringBody}
                 """.trimMargin()
-                return ctx.end(content)
-            }
-
-            override fun onException(ctx: RoutingContext?, exception: Throwable): CompletableFuture<Void> {
-                println("server exception. ${exception.message}")
-                return Result.DONE
-            }
-        })
+            ctx.end(content)
+        }.listen(address)
 
         val httpClient = HttpClientFactory.create()
         val time = measureTimeMillis {

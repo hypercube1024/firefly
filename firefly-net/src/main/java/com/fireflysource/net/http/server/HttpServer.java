@@ -6,6 +6,9 @@ import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * @author Pengtao Qiu
@@ -26,6 +29,22 @@ public interface HttpServer extends LifeCycle {
      * @return The router.
      */
     Router router(int id);
+
+    /**
+     * HTTP headers received callback.
+     *
+     * @param function The HTTP headers received callback.
+     * @return The HTTP server.
+     */
+    HttpServer onHeaderComplete(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
+     * HTTP server exception callback.
+     *
+     * @param biFunction The HTTP server exception callback.
+     * @return The HTTP server.
+     */
+    HttpServer onException(BiFunction<RoutingContext, Throwable, CompletableFuture<Void>> biFunction);
 
     /**
      * Set the TLS engine factory.
