@@ -1,18 +1,12 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
-import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
-import com.fireflysource.net.http.server.HttpServerConnection
-import com.fireflysource.net.http.server.RoutingContext
-import com.fireflysource.net.http.server.impl.Http1ServerConnection
-import com.fireflysource.net.tcp.TcpServer
-import com.fireflysource.net.tcp.TcpServerFactory
-import com.fireflysource.net.tcp.onAcceptAsync
+import com.fireflysource.net.http.server.HttpServer
+import com.fireflysource.net.http.server.HttpServerFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -32,39 +26,28 @@ import kotlin.system.measureTimeMillis
 class TestHttpClient {
 
     private lateinit var address: InetSocketAddress
-    private lateinit var httpServer: TcpServer
+    private lateinit var httpServer: HttpServer
     private val content = (1..50000).joinToString("") { it.toString() }
 
     @BeforeEach
     fun init() {
         address = InetSocketAddress("localhost", Random.nextInt(2000, 5000))
-        val listener = object : HttpServerConnection.Listener.Adapter() {
-            override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
-                when (ctx.uri.path) {
-                    "/testHttpClient" -> {
-                        ctx.cookies = listOf(Cookie("cookie1", "value1"), Cookie("cookie2", "value2"))
-                        ctx.put(HttpHeader.CONTENT_LENGTH, "14").write("test client ok")
-                    }
-                    "/testChunkedEncoding" -> ctx.write("test chunked encoding success")
-                    "/testNoChunkedEncoding" -> ctx.put(HttpHeader.CONTENT_LENGTH, "32")
-                        .write("test no chunked encoding success")
-                }
-                return ctx.end()
+        httpServer = HttpServerFactory.create()
+        httpServer
+            .router().path("/testHttpClient").handler { ctx ->
+                ctx.cookies = listOf(Cookie("cookie1", "value1"), Cookie("cookie2", "value2"))
+                ctx.put(HttpHeader.CONTENT_LENGTH, "14").write("test client ok")
+                ctx.end()
             }
-
-            override fun onException(context: RoutingContext, e: Throwable): CompletableFuture<Void> {
-                e.printStackTrace()
-                return Result.DONE
+            .router().path("/testChunkedEncoding").handler { ctx -> ctx.end("test chunked encoding success") }
+            .router().path("/testNoChunkedEncoding").handler { ctx ->
+                ctx.put(HttpHeader.CONTENT_LENGTH, "32")
+                    .write("test no chunked encoding success")
+                    .end()
             }
-        }
+            .timeout(120 * 1000)
+            .listen(address)
 
-        httpServer = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
-            .onAcceptAsync { connection ->
-                println("accept connection. ${connection.id}")
-                connection.beginHandshake().await()
-                val http1Connection = Http1ServerConnection(HttpConfig(), connection)
-                http1Connection.setListener(listener).begin()
-            }.listen(address)
     }
 
     @AfterEach

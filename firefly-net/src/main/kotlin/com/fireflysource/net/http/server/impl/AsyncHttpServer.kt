@@ -16,7 +16,7 @@ import kotlinx.coroutines.future.await
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 
-class AsyncHttpServer(val config: HttpConfig) : HttpServer, AbstractLifeCycle() {
+class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, AbstractLifeCycle() {
 
     companion object {
         private val log = SystemLogger.create(AsyncHttpServer::class.java)
@@ -127,7 +127,7 @@ class AsyncHttpServer(val config: HttpConfig) : HttpServer, AbstractLifeCycle() 
             }
         }
 
-        tcpServer.listen(address)
+        tcpServer.enableOutputBuffer().listen(address)
     }
 
     override fun destroy() {
