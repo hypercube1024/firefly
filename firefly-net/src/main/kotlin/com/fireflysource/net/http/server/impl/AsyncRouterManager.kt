@@ -20,7 +20,7 @@ class AsyncRouterManager(val httpServer: HttpServer) : RouterManager {
     private val patternedContentTypeMatcher: PatternedContentTypeMatcher = PatternedContentTypeMatcher()
     private val acceptHeaderMatcher: AcceptHeaderMatcher = AcceptHeaderMatcher()
 
-    override fun register(): Router = AsyncRouter(routerId.getAndIncrement(), this)
+    override fun register(): Router = this.register(routerId.getAndIncrement())
 
     override fun register(id: Int): Router = AsyncRouter(id, this)
 
