@@ -26,16 +26,20 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         httpServer
             .router().get("/hello/:foo").handler { ctx ->
                 val p = ctx.getPathParameter("foo")
-                ctx.write("visit foo: $p ").next()
+                ctx.write("visit foo: $p |").next()
             }
             .router().get("/hello/*").handler { ctx ->
                 val p = ctx.getPathParameter(0)
-                ctx.write("visit pattern: $p ").next()
+                ctx.write("visit pattern: $p |").next()
+            }
+            .router().method(HttpMethod.GET).pathRegex("/hello/([a-z]+)").handler { ctx ->
+                val p = ctx.getPathParameterByRegexGroup(1)
+                ctx.write("regex group: $p |").next()
             }
             .router().get("/hello/test").handler { ctx ->
                 ctx.write("visit test ").next()
             }
-            .router().path("*").handler { ctx ->
+            .router(99).path("*").handler { ctx ->
                 ctx.end()
             }
             .listen(address)
@@ -53,7 +57,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals(
-                "visit foo: bar visit pattern: bar ",
+                "visit foo: bar |visit pattern: bar |regex group: bar |",
                 response.stringBody
             )
             println(response)
@@ -120,10 +124,14 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             }
             .router().get("/hello/:bar").handler { ctx ->
                 ctx.attributes["B"] = "TestB"
+                ctx.setAttribute("C", "TestC")
+                ctx.setAttribute("D", "TestD")
+                ctx.removeAttribute("D")
+                ctx.removeAttribute("E")
                 ctx.next()
             }
             .router().method("GET").path("/hello/*").handler { ctx ->
-                ctx.write("${ctx.attributes["A"]} ${ctx.attributes["B"]}").next()
+                ctx.write("${ctx.attributes["A"]} ${ctx.attributes["B"]} ${ctx.getAttribute("C")}").next()
             }
             .router().method(HttpMethod.GET).handler { ctx -> ctx.end() }
             .listen(address)
@@ -141,7 +149,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals(
-                "TestA TestB",
+                "TestA TestB TestC",
                 response.stringBody
             )
             println(response)
