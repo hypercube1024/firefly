@@ -3,81 +3,28 @@ package com.fireflysource.net.http.server.impl
 import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
-import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.*
-import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
-import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
-import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
-import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
-import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
-import java.util.stream.Stream
-import kotlin.math.roundToLong
-import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-class TestHttpServerConnection {
-
-    companion object {
-        @JvmStatic
-        fun testParametersProvider(): Stream<Arguments> {
-            return Stream.of(
-                arguments("http1", "http"),
-                arguments("http1", "https"),
-                arguments("http2", "https")
-            )
-        }
-    }
-
-    private lateinit var address: InetSocketAddress
-
-    @BeforeEach
-    fun init() {
-        address = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
-    }
-
-    private fun createHttpServer(protocol: String, schema: String, httpConfig: HttpConfig = HttpConfig()): HttpServer {
-        val server = HttpServerFactory.create(httpConfig)
-        when (protocol) {
-            "http1" -> server.supportedProtocols(listOf(HTTP1.value))
-            "http2" -> server.supportedProtocols(listOf(HTTP2.value, HTTP1.value))
-        }
-        if (schema == "https") {
-            server.enableSecureConnection()
-        }
-        return server
-    }
-
-    private fun finish(count: Int, time: Long, httpClient: HttpClient, httpServer: HttpServer) {
-        try {
-            val throughput = count / (time / 1000.00)
-            println("success. $time ms, ${throughput.roundToLong()} qps")
-            httpClient.stop()
-            httpServer.stop()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
+class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @ParameterizedTest
     @MethodSource("testParametersProvider")

@@ -64,14 +64,14 @@ class AsyncRoutingContext(
     }
 
     override fun next(): CompletableFuture<Void> {
+        if (!hasNext()) return Result.DONE
+
         val result = routerIterator?.next()
         return if (result != null) {
             routerMatchResult = result
             val asyncRouter = result.router as AsyncRouter
             asyncRouter.getHandler().apply(this)
-        } else {
-            Result.DONE
-        }
+        } else Result.DONE
     }
 
     override fun hasNext(): Boolean {
