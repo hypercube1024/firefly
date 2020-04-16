@@ -35,15 +35,16 @@ class TestHttpClient {
         httpServer = HttpServerFactory.create()
         httpServer
             .router().path("/testHttpClient").handler { ctx ->
-                ctx.cookies = listOf(Cookie("cookie1", "value1"), Cookie("cookie2", "value2"))
-                ctx.put(HttpHeader.CONTENT_LENGTH, "14").write("test client ok")
-                ctx.end()
-            }
-            .router().path("/testChunkedEncoding").handler { ctx -> ctx.end("test chunked encoding success") }
-            .router().path("/testNoChunkedEncoding").handler { ctx ->
-                ctx.put(HttpHeader.CONTENT_LENGTH, "32")
-                    .write("test no chunked encoding success")
+                ctx.setCookies(listOf(Cookie("cookie1", "value1"), Cookie("cookie2", "value2")))
+                    .put(HttpHeader.CONTENT_LENGTH, "14")
+                    .write("test client ok")
                     .end()
+            }
+            .router().path("/testChunkedEncoding").handler { ctx ->
+                ctx.end("test chunked encoding success")
+            }
+            .router().path("/testNoChunkedEncoding").handler { ctx ->
+                ctx.put(HttpHeader.CONTENT_LENGTH, "32").end("test no chunked encoding success")
             }
             .timeout(120 * 1000)
             .listen(address)
