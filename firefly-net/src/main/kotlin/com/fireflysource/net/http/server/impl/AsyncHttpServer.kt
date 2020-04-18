@@ -38,7 +38,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             if (ctx != null && !ctx.response.isCommitted) {
                 ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
                     .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
-                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, e, ctx))
+                    .contentProvider(DefaultContentProvider(HttpStatus.INTERNAL_SERVER_ERROR_500, e, ctx))
                     .end()
             } else Result.DONE
         }
