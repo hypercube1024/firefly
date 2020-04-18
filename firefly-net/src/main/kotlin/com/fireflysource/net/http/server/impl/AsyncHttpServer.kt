@@ -7,6 +7,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
+import com.fireflysource.net.http.server.impl.exception.RouterNotCommitException
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
@@ -116,13 +117,23 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                     val result = iterator.next()
                     asyncCtx.routerMatchResult = result
                     asyncCtx.routerIterator = iterator
-                    (result.router as AsyncRouter).getHandler().apply(ctx)
-                } else {
-                    ctx.setStatus(HttpStatus.NOT_FOUND_404)
-                        .setReason(HttpStatus.Code.NOT_FOUND.message)
-                        .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
-                        .end()
-                }
+                    (result.router as AsyncRouter).getHandler().apply(ctx).thenCompose {
+                        if (ctx.response.isCommitted) Result.DONE
+                        else ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                            .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+                            .contentProvider(
+                                DefaultContentProvider(
+                                    HttpStatus.INTERNAL_SERVER_ERROR_500,
+                                    RouterNotCommitException("The router does not commit"),
+                                    ctx
+                                )
+                            )
+                            .end()
+                    }
+                } else ctx.setStatus(HttpStatus.NOT_FOUND_404)
+                    .setReason(HttpStatus.Code.NOT_FOUND.message)
+                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+                    .end()
             }
 
             override fun onException(ctx: RoutingContext?, e: Throwable): CompletableFuture<Void> {

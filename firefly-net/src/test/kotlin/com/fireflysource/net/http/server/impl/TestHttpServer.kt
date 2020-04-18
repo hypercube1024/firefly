@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
@@ -152,6 +153,64 @@ class TestHttpServer : AbstractHttpServerTestBase() {
                 "TestA TestB TestC",
                 response.stringBody
             )
+            println(response)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 500 when the router does not commit.")
+    fun testRouterNotCommit(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/hello").handler {
+            Result.DONE
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.status)
+            println(response)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 400 when the resource not found.")
+    fun testResourceNotFound(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer.router().get("/hello").handler {
+            Result.DONE
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("$schema://${address.hostName}:${address.port}/hellox").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.NOT_FOUND_404, response.status)
             println(response)
         }
 
