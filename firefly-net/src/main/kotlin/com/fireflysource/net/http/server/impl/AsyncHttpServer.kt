@@ -124,7 +124,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                             .contentProvider(
                                 DefaultContentProvider(
                                     HttpStatus.INTERNAL_SERVER_ERROR_500,
-                                    RouterNotCommitException("The router does not commit"),
+                                    RouterNotCommitException("The response does not commit"),
                                     ctx
                                 )
                             )
