@@ -9,6 +9,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.http.server.impl.exception.RouterNotCommitException
+import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
@@ -173,23 +174,26 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         }
 
         tcpServer.onAcceptAsync { connection ->
-            when (connection.beginHandshake().await()) {
-                HTTP2.value -> {
-                    val http2Connection = Http2ServerConnection(config, connection)
-                    http2Connection.setListener(listener).begin()
+            if (connection.isSecureConnection) {
+                when (connection.beginHandshake().await()) {
+                    HTTP2.value -> createHttp2Connection(connection, listener)
+                    HTTP1.value -> createHttp1Connection(connection, listener)
+                    else -> createHttp1Connection(connection, listener)
                 }
-                HTTP1.value -> {
-                    val http1Connection = Http1ServerConnection(config, connection)
-                    http1Connection.setListener(listener).begin()
-                }
-                else -> {
-                    val http1Connection = Http1ServerConnection(config, connection)
-                    http1Connection.setListener(listener).begin()
-                }
-            }
+            } else createHttp1Connection(connection, listener)
         }
 
         tcpServer.enableOutputBuffer().listen(address)
+    }
+
+    private fun createHttp2Connection(connection: TcpConnection, listener: HttpServerConnection.Listener.Adapter) {
+        val http2Connection = Http2ServerConnection(config, connection)
+        http2Connection.setListener(listener).begin()
+    }
+
+    private fun createHttp1Connection(connection: TcpConnection, listener: HttpServerConnection.Listener.Adapter) {
+        val http1Connection = Http1ServerConnection(config, connection)
+        http1Connection.setListener(listener).begin()
     }
 
     override fun destroy() {
