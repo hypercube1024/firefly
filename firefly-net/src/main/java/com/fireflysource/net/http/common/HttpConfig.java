@@ -10,6 +10,7 @@ public class HttpConfig {
     public static int DEFAULT_HEADER_TABLE_SIZE = 4096;
 
     private TcpChannelGroup tcpChannelGroup;
+    private boolean stopTcpChannelGroup = true;
     private long timeout = 30;
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
@@ -34,6 +35,14 @@ public class HttpConfig {
 
     public void setTcpChannelGroup(TcpChannelGroup tcpChannelGroup) {
         this.tcpChannelGroup = tcpChannelGroup;
+    }
+
+    public boolean isStopTcpChannelGroup() {
+        return stopTcpChannelGroup;
+    }
+
+    public void setStopTcpChannelGroup(boolean stopTcpChannelGroup) {
+        this.stopTcpChannelGroup = stopTcpChannelGroup;
     }
 
     public long getTimeout() {

@@ -45,17 +45,25 @@ class AsyncHttpClientConnectionManager(
         if (config.tcpChannelGroup != null) config.tcpChannelGroup
         else AioTcpChannelGroup("async-http-client")
 
-    private fun createTcpClient() = AioTcpClient().tcpChannelGroup(group).timeout(config.timeout)
+    private fun createTcpClient() =
+        AioTcpClient()
+            .tcpChannelGroup(group)
+            .stopTcpChannelGroup(config.isStopTcpChannelGroup)
+            .timeout(config.timeout)
 
     private fun createSecureTcpClient(): TcpClient =
         if (config.secureEngineFactory != null)
-            AioTcpClient().timeout(config.timeout)
+            AioTcpClient()
+                .timeout(config.timeout)
                 .tcpChannelGroup(group)
+                .stopTcpChannelGroup(config.isStopTcpChannelGroup)
                 .secureEngineFactory(config.secureEngineFactory)
                 .enableSecureConnection()
         else
-            AioTcpClient().timeout(config.timeout)
+            AioTcpClient()
+                .timeout(config.timeout)
                 .tcpChannelGroup(group)
+                .stopTcpChannelGroup(config.isStopTcpChannelGroup)
                 .enableSecureConnection()
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {

@@ -25,6 +25,14 @@ public interface TcpServer extends LifeCycle {
     TcpServer tcpChannelGroup(TcpChannelGroup group);
 
     /**
+     * Stop the TCP group when the TCP server stops.
+     *
+     * @param stop If true, stop the TCP group when the TCP server stops.
+     * @return The TCP client.
+     */
+    TcpServer stopTcpChannelGroup(boolean stop);
+
+    /**
      * Set the TLS engine factory.
      *
      * @param secureEngineFactory The TLS engine factory.

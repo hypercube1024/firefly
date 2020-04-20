@@ -100,6 +100,8 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             tcpServer.tcpChannelGroup(config.tcpChannelGroup)
         }
 
+        tcpServer.stopTcpChannelGroup(config.isStopTcpChannelGroup)
+
         if (config.secureEngineFactory != null) {
             tcpServer.secureEngineFactory(config.secureEngineFactory)
         }

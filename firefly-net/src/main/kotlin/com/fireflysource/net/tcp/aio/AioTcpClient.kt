@@ -26,17 +26,23 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
     private var secureEngineFactory: SecureEngineFactory = NoCheckOpenJdkSSLContextFactory()
     private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-client")
+    private var stopGroup = true
 
     override fun init() {
         group.start()
     }
 
     override fun destroy() {
-        group.stop()
+        if (stopGroup) group.stop()
     }
 
     override fun tcpChannelGroup(group: TcpChannelGroup): TcpClient {
         this.group = group
+        return this
+    }
+
+    override fun stopTcpChannelGroup(stop: Boolean): TcpClient {
+        this.stopGroup = stop
         return this
     }
 

@@ -25,6 +25,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     }
 
     private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-server")
+    private var stopGroup = true
     private val connectionChannel = Channel<TcpConnection>(UNLIMITED)
     private var connectionConsumer: Consumer<TcpConnection> = Consumer { connectionChannel.offer(it) }
     private var secureEngineFactory: SecureEngineFactory =
@@ -54,11 +55,16 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
         } catch (e: Exception) {
             log.error(e) { "close server socket channel exception" }
         }
-        group.stop()
+        if (stopGroup) group.stop()
     }
 
     override fun tcpChannelGroup(group: TcpChannelGroup): TcpServer {
         this.group = group
+        return this
+    }
+
+    override fun stopTcpChannelGroup(stop: Boolean): TcpServer {
+        this.stopGroup = stop
         return this
     }
 
