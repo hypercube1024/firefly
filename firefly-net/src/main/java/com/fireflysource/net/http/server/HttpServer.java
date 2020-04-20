@@ -47,6 +47,22 @@ public interface HttpServer extends LifeCycle {
     HttpServer onException(BiFunction<RoutingContext, Throwable, CompletableFuture<Void>> biFunction);
 
     /**
+     * The router not found callback.
+     *
+     * @param function Invoke this function when the HTTP server does not find the router.
+     * @return The HTTP server.
+     */
+    HttpServer onRouterNotFound(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
+     * The router complete callback.
+     *
+     * @param function Invoke this function when the last router executes successfully.
+     * @return The HTTP server.
+     */
+    HttpServer onRouterComplete(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
      * Set the TLS engine factory.
      *
      * @param secureEngineFactory The TLS engine factory.

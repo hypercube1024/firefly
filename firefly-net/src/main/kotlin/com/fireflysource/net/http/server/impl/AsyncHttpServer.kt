@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
@@ -28,20 +29,38 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     private val routerManager: RouterManager = AsyncRouterManager(this)
     private val tcpServer = AioTcpServer()
     private var address: SocketAddress? = null
-    private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> =
-        Function { ctx ->
-            if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
-        }
-    private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> =
-        BiFunction { ctx, e ->
-            log.error(e) { "The internal server error" }
-            if (ctx != null && !ctx.response.isCommitted) {
-                ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                    .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
-                    .contentProvider(DefaultContentProvider(HttpStatus.INTERNAL_SERVER_ERROR_500, e, ctx))
-                    .end()
-            } else Result.DONE
-        }
+    private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
+        if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
+    }
+    private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> = BiFunction { ctx, e ->
+        log.error(e) { "The internal server error" }
+        if (ctx != null && !ctx.response.isCommitted) {
+            ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+                .contentProvider(DefaultContentProvider(HttpStatus.INTERNAL_SERVER_ERROR_500, e, ctx))
+                .end()
+        } else Result.DONE
+    }
+    private var onRouterNotFound: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
+        ctx.setStatus(HttpStatus.NOT_FOUND_404)
+            .setReason(HttpStatus.Code.NOT_FOUND.message)
+            .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+            .end()
+    }
+    private var onRouterComplete: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
+        if (ctx.response.isCommitted) Result.DONE
+        else ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+            .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+            .contentProvider(
+                DefaultContentProvider(
+                    HttpStatus.INTERNAL_SERVER_ERROR_500,
+                    RouterNotCommitException("The response does not commit"),
+                    ctx
+                )
+            )
+            .end()
+    }
+
 
     override fun router(): Router = routerManager.register()
 
@@ -54,6 +73,16 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
 
     override fun onException(biFunction: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>>): HttpServer {
         this.onException = biFunction
+        return this
+    }
+
+    override fun onRouterComplete(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
+        this.onRouterComplete = function
+        return this
+    }
+
+    override fun onRouterNotFound(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
+        this.onRouterNotFound = function
         return this
     }
 
@@ -119,23 +148,23 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                     val result = iterator.next()
                     asyncCtx.routerMatchResult = result
                     asyncCtx.routerIterator = iterator
-                    (result.router as AsyncRouter).getHandler().apply(ctx).thenCompose {
-                        if (ctx.response.isCommitted) Result.DONE
-                        else ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                            .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
-                            .contentProvider(
-                                DefaultContentProvider(
-                                    HttpStatus.INTERNAL_SERVER_ERROR_500,
-                                    RouterNotCommitException("The response does not commit"),
-                                    ctx
-                                )
-                            )
-                            .end()
-                    }
-                } else ctx.setStatus(HttpStatus.NOT_FOUND_404)
-                    .setReason(HttpStatus.Code.NOT_FOUND.message)
-                    .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
-                    .end()
+                    (result.router as AsyncRouter).getHandler()
+                        .apply(ctx)
+                        .thenCompose { handleRouterComplete(ctx) }
+                        .exceptionallyCompose { handleRouterException(ctx, it) }
+                } else handleRouterNotFound(ctx)
+            }
+
+            private fun handleRouterNotFound(ctx: RoutingContext): CompletableFuture<Void> {
+                return onRouterNotFound.apply(ctx)
+            }
+
+            private fun handleRouterException(ctx: RoutingContext, e: Throwable): CompletableFuture<Void> {
+                return onException.apply(ctx, e)
+            }
+
+            private fun handleRouterComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                return onRouterComplete.apply(ctx)
             }
 
             override fun onException(ctx: RoutingContext?, e: Throwable): CompletableFuture<Void> {

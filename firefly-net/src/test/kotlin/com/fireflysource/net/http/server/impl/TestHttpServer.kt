@@ -216,4 +216,39 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
         finish(count, time, httpClient, httpServer)
     }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 500 when the router happens exception.")
+    fun testRouterException(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer
+            .router().get("/exception").handler {
+                throw IllegalStateException("test exception")
+            }
+            .router().get("/exception").handler { ctx ->
+                println("bad end?")
+                ctx.end("bad end")
+            }
+            .listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("$schema://${address.hostName}:${address.port}/exception").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.status)
+            println(response)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
 }
