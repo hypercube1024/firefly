@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
 import com.fireflysource.common.io.readAllBytesAsync
+import com.fireflysource.net.http.client.HttpClientContentHandlerFactory.fileHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -37,7 +38,7 @@ class TestFileContentHandler {
     @Test
     @DisplayName("should write data to file successfully")
     fun test() = runBlocking {
-        val handler = FileContentHandler(tmpFile, WRITE)
+        val handler = fileHandler(tmpFile, WRITE)
         arrayOf(
             ByteBuffer.wrap("hello".toByteArray()),
             ByteBuffer.wrap(" file".toByteArray()),

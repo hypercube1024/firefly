@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
+import com.fireflysource.net.http.client.HttpClientContentHandlerFactory.stringHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -12,7 +13,7 @@ class TestStringContentHandler {
 
     @Test
     fun test() {
-        val handler = StringContentHandler()
+        val handler = stringHandler()
         arrayOf(
             ByteBuffer.wrap("hello".toByteArray()),
             ByteBuffer.wrap(" buffer".toByteArray())
