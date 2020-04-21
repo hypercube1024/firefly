@@ -35,7 +35,12 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
             isSimpleRequest(ctx) -> handleSimpleRequest(ctx)
             isPreflightRequest(ctx) -> handlePreflightRequest(ctx)
             else -> {
-
+                val origin: String? = ctx.httpFields[ORIGIN]
+                if (!origin.isNullOrBlank()) {
+                    if (allowOrigin(ctx)) {
+                        setAccessControlHeaders(ctx, origin)
+                    }
+                }
             }
         }
         return if (ctx.response.isCommitted) Result.DONE else ctx.next()
@@ -64,13 +69,16 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
         if (allowOrigin(ctx)) {
             val origin: String? = ctx.httpFields[ORIGIN]
             requireNotNull(origin)
-
-            ctx.put(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
-                .put(ACCESS_CONTROL_ALLOW_CREDENTIALS, config.allowCredentials.toString())
-            if (config.exposeHeaders.isNotEmpty()) {
-                ctx.addCSV(ACCESS_CONTROL_EXPOSE_HEADERS, *config.exposeHeaders.toTypedArray())
-            }
+            setAccessControlHeaders(ctx, origin)
         } else handleNotAllowOrigin(ctx)
+    }
+
+    private fun setAccessControlHeaders(ctx: RoutingContext, origin: String) {
+        ctx.put(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
+            .put(ACCESS_CONTROL_ALLOW_CREDENTIALS, config.allowCredentials.toString())
+        if (config.exposeHeaders.isNotEmpty()) {
+            ctx.addCSV(ACCESS_CONTROL_EXPOSE_HEADERS, *config.exposeHeaders.toTypedArray())
+        }
     }
 
     private fun handlePreflightRequest(ctx: RoutingContext) {
