@@ -5,6 +5,7 @@ import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.server.impl.router.asyncHandler
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,6 +26,11 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
         val httpServer = createHttpServer(protocol, schema)
         httpServer
+            .router().path("*").asyncHandler { ctx ->
+                ctx.write("into router -> ")
+                ctx.next().await()
+                ctx.end("end router.")
+            }
             .router().get("/hello/:foo").handler { ctx ->
                 val p = ctx.getPathParameter("foo")
                 ctx.write("visit foo: $p |").next()
@@ -39,9 +45,6 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             }
             .router().get("/hello/test").handler { ctx ->
                 ctx.write("visit test ").next()
-            }
-            .router(99).path("*").handler { ctx ->
-                ctx.end()
             }
             .listen(address)
 
@@ -58,7 +61,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
             assertEquals(HttpStatus.OK_200, response.status)
             assertEquals(
-                "visit foo: bar |visit pattern: bar |regex group: bar |",
+                "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
                 response.stringBody
             )
             println(response)

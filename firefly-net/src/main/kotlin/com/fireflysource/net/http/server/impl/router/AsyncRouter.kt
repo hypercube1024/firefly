@@ -1,10 +1,14 @@
 package com.fireflysource.net.http.server.impl.router
 
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.Matcher
 import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.Router.EMPTY_HANDLER
+import com.fireflysource.net.http.server.RoutingContext
+import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.launch
 
 class AsyncRouter(
     private val id: Int,
@@ -110,4 +114,13 @@ class AsyncRouter(
         return id
     }
 
+}
+
+suspend fun Router.asyncHandler(block: suspend (RoutingContext) -> Unit): HttpServer {
+    return this.handler { ctx ->
+        ctx.connection.coroutineScope
+            .launch { block(ctx) }
+            .asCompletableFuture()
+            .thenCompose { Result.DONE }
+    }
 }
