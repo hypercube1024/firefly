@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl.router.handler
 
+import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.string.Pattern
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.HttpHeader.*
@@ -133,13 +134,14 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
     }
 }
 
-data class CorsConfig(
-    val allowOriginPattern: String,
-    val exposeHeaders: Set<String>,
-    val allowHeaders: Set<String>,
-    val preflightMaxAge: Int = 86400,
-    val allowCredentials: Boolean = true,
-    val allowMethods: Set<String> = setOf(
+@NoArg
+data class CorsConfig @JvmOverloads constructor(
+    var allowOriginPattern: String,
+    var exposeHeaders: Set<String>,
+    var allowHeaders: Set<String>,
+    var preflightMaxAge: Int = 86400,
+    var allowCredentials: Boolean = true,
+    var allowMethods: Set<String> = setOf(
         HttpMethod.GET.value,
         HttpMethod.POST.value,
         HttpMethod.PUT.value,
@@ -148,7 +150,7 @@ data class CorsConfig(
         HttpMethod.HEAD.value,
         HttpMethod.PATCH.value
     ),
-    val handleNotAllowOrigin: Consumer<RoutingContext> = Consumer { ctx ->
+    var handleNotAllowOrigin: Consumer<RoutingContext> = Consumer { ctx ->
         val origin: String? = ctx.httpFields[ORIGIN]
         ctx.contentProvider(
             DefaultContentProvider(
@@ -158,7 +160,7 @@ data class CorsConfig(
             )
         ).end()
     },
-    val handleNotAllowMethod: Consumer<RoutingContext> = Consumer { ctx ->
+    var handleNotAllowMethod: Consumer<RoutingContext> = Consumer { ctx ->
         val accessControlRequestMethods = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_METHOD, false)
         ctx.contentProvider(
             DefaultContentProvider(
@@ -168,7 +170,7 @@ data class CorsConfig(
             )
         ).end()
     },
-    val handleNotAllowHeader: Consumer<RoutingContext> = Consumer { ctx ->
+    var handleNotAllowHeader: Consumer<RoutingContext> = Consumer { ctx ->
         val accessControlRequestHeaders = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_HEADERS, false)
         ctx.contentProvider(
             DefaultContentProvider(

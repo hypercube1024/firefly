@@ -7,7 +7,7 @@ import com.fireflysource.net.tcp.exception.UnknownProtocolException
  * @author Pengtao Qiu
  */
 @NoArg
-data class TcpConfig(
+data class TcpConfig @JvmOverloads constructor(
     var timeout: Long = 30,
     var enableSecureConnection: Boolean = false,
     var backlog: Int = 16 * 1024,
