@@ -28,7 +28,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     private var contentProvider: HttpServerContentProvider? = null
     private var cookieList: List<Cookie>? = null
     private val committed = AtomicBoolean(false)
-    private val committing = AtomicBoolean(false)
+    private val callCommit = AtomicBoolean(false)
     private var serverOutputChannel: HttpServerOutputChannel? = null
     private val mutex = Mutex()
 
@@ -76,10 +76,10 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         response.trailerSupplier = supplier
     }
 
-    override fun isCommitted(): Boolean = committed.get() || committing.get()
+    override fun isCommitted(): Boolean = callCommit.get()
 
     override fun commit(): CompletableFuture<Void> {
-        committing.set(true)
+        callCommit.set(true)
         return httpServerConnection.coroutineScope
             .launch { commitAwait() }
             .asCompletableFuture()
