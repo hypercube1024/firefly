@@ -520,6 +520,7 @@ public class MimeTypes {
         FORM_ENCODED("application/x-www-form-urlencoded"),
         MESSAGE_HTTP("message/http"),
         MULTIPART_BYTERANGES("multipart/byteranges"),
+        MULTIPART_FORM_DATA("multipart/form-data"),
 
         TEXT_HTML("text/html"),
         TEXT_PLAIN("text/plain"),
