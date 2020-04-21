@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.v2.decoder.SettingsBodyParser
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -116,7 +117,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             val http2ServerConnection = createHttp2Connection()
             val stream = http2ServerConnection.upgradeHttp2(settings)
             val response = Http2ServerResponse(http2ServerConnection, stream)
-            val http2Context = AsyncRoutingContext(context.request, response, http2ServerConnection)
+            val http2Context = AsyncRoutingContext(
+                context.request,
+                response,
+                http2ServerConnection
+            )
 
             connection.notifyUpgradeHttp2(true)
             endRequestHandler()

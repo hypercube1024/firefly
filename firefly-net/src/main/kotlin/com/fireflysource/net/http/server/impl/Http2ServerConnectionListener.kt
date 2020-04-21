@@ -11,6 +11,7 @@ import com.fireflysource.net.http.common.v2.stream.Http2Connection
 import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -27,7 +28,11 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
 
         val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request, http2Connection.config)
         val response = Http2ServerResponse(http2Connection, stream)
-        val context = AsyncRoutingContext(request, response, http2Connection)
+        val context = AsyncRoutingContext(
+            request,
+            response,
+            http2Connection
+        )
         val trailer: HttpFields by lazy { HttpFields() }
         var receivedData = false
         var headerComplete: CompletableFuture<Void>? = null

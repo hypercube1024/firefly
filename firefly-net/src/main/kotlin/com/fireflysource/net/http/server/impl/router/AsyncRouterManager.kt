@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.server.impl
+package com.fireflysource.net.http.server.impl.router
 
 import com.fireflysource.net.http.common.codec.URIUtils.canonicalPath
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -22,7 +22,8 @@ class AsyncRouterManager(val httpServer: HttpServer) : RouterManager {
 
     override fun register(): Router = this.register(routerId.getAndIncrement())
 
-    override fun register(id: Int): Router = AsyncRouter(id, this)
+    override fun register(id: Int): Router =
+        AsyncRouter(id, this)
 
     override fun findRouters(ctx: RoutingContext): SortedSet<RouterManager.RouterMatchResult> {
         val routerMatchTypeMap = TreeMap<Router, MutableSet<Matcher.MatchType>>()

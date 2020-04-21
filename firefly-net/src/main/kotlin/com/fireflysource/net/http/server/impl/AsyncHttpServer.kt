@@ -9,6 +9,9 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.http.server.impl.exception.RouterNotCommitException
+import com.fireflysource.net.http.server.impl.router.AsyncRouter
+import com.fireflysource.net.http.server.impl.router.AsyncRouterManager
+import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
@@ -27,7 +30,8 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         private val log = SystemLogger.create(AsyncHttpServer::class.java)
     }
 
-    private val routerManager: RouterManager = AsyncRouterManager(this)
+    private val routerManager: RouterManager =
+        AsyncRouterManager(this)
     private val tcpServer = AioTcpServer()
     private var address: SocketAddress? = null
     private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
