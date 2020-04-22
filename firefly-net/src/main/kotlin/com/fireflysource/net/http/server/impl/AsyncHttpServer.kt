@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
@@ -17,9 +18,7 @@ import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
-import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
-import kotlinx.coroutines.future.await
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
@@ -190,12 +189,17 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             }
         }
 
-        tcpServer.onAcceptAsync { connection ->
+        tcpServer.onAccept { connection ->
             if (connection.isSecureConnection) {
-                when (connection.beginHandshake().await()) {
-                    HTTP2.value -> createHttp2Connection(connection, listener)
-                    HTTP1.value -> createHttp1Connection(connection, listener)
-                    else -> createHttp1Connection(connection, listener)
+                connection.beginHandshake().thenAccept { protocol ->
+                    when (protocol) {
+                        HTTP2.value -> createHttp2Connection(connection, listener)
+                        HTTP1.value -> createHttp1Connection(connection, listener)
+                        else -> createHttp1Connection(connection, listener)
+                    }
+                }.exceptionallyAccept { e ->
+                    log.error(e) { "TLS handshake exception. id: ${connection.id}" }
+                    connection.close()
                 }
             } else createHttp1Connection(connection, listener)
         }
