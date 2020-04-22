@@ -18,7 +18,6 @@ fun main() {
             )
         }
         .router().get("/test").handler {
-            println(it.uri)
             it.end("Welcome")
         }
         .listen("localhost", 9999)
