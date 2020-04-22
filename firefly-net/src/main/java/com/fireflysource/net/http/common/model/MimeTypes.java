@@ -418,11 +418,11 @@ public class MimeTypes {
         return stream.map(String::trim)
                      .filter(StringUtils::hasText)
                      .map(type -> {
-                         String[] mimeTypeAndQuality = StringUtils.split(type, ';');
+                         String[] mimeTypeAndFields = StringUtils.split(type, ';');
                          AcceptMIMEType acceptMIMEType = new AcceptMIMEType();
 
                          // parse the MIME type
-                         String[] mimeType = StringUtils.split(mimeTypeAndQuality[0].trim(), '/');
+                         String[] mimeType = StringUtils.split(mimeTypeAndFields[0].trim(), '/');
                          String parentType = mimeType[0].trim();
                          String childType = mimeType[1].trim();
                          acceptMIMEType.setParentType(parentType);
@@ -442,10 +442,16 @@ public class MimeTypes {
                          }
 
                          // parse the quality
-                         if (mimeTypeAndQuality.length > 1) {
-                             String q = mimeTypeAndQuality[1];
-                             String[] qualityKV = StringUtils.split(q, '=');
-                             acceptMIMEType.setQuality(Float.parseFloat(qualityKV[1].trim()));
+                         if (mimeTypeAndFields.length > 1) {
+                             Arrays.stream(mimeTypeAndFields)
+                                   .filter(v -> v.contains("="))
+                                   .map(v -> StringUtils.split(v, '='))
+                                   .filter(v -> v.length > 1)
+                                   .filter(v -> v[0].contains("q"))
+                                   .map(v -> v[1].trim())
+                                   .map(Float::parseFloat)
+                                   .findAny()
+                                   .ifPresent(acceptMIMEType::setQuality);
                          }
 
                          return acceptMIMEType;

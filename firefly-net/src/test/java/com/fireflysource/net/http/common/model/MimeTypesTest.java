@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.common.model;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -139,5 +140,16 @@ class MimeTypesTest {
         assertEquals("*", list.get(3).getChildType());
         assertEquals(0.8F, list.get(3).getQuality());
         assertEquals(AcceptMIMEMatchType.ALL, list.get(3).getMatchType());
+
+
+    }
+
+    @Test
+    @DisplayName("should skip the non quality field")
+    void testSkipNonQualityField() {
+        List<AcceptMIMEType> list = MimeTypes.parseAcceptMIMETypes("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+        assertEquals("application", list.get(5).getParentType());
+        assertEquals("signed-exchange", list.get(5).getChildType());
+        assertEquals(0.9F, list.get(5).getQuality());
     }
 }

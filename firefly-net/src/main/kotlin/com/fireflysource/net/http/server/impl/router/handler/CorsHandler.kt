@@ -105,8 +105,8 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
             .put(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
             .put(ACCESS_CONTROL_ALLOW_CREDENTIALS, config.allowCredentials.toString())
             .put(ACCESS_CONTROL_MAX_AGE, config.preflightMaxAge.toString())
-            .addCSV(ACCESS_CONTROL_REQUEST_METHOD, *config.allowMethods.toTypedArray())
-            .addCSV(ACCESS_CONTROL_REQUEST_HEADERS, *config.allowHeaders.toTypedArray())
+            .addCSV(ACCESS_CONTROL_ALLOW_METHODS, *config.allowMethods.toTypedArray())
+            .addCSV(ACCESS_CONTROL_ALLOW_HEADERS, *config.allowHeaders.toTypedArray())
             .end()
     }
 
@@ -117,7 +117,9 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
 
     private fun allowHeaders(ctx: RoutingContext): Boolean {
         val accessControlRequestHeaders = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_HEADERS, false)
-        return config.allowHeaders.containsAll(accessControlRequestHeaders)
+        return if (accessControlRequestHeaders.isNullOrEmpty()) true
+        else config.allowHeaders.map { it.toLowerCase() }
+            .containsAll(accessControlRequestHeaders.map { it.toLowerCase() })
     }
 
 
@@ -137,8 +139,8 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
 @NoArg
 data class CorsConfig @JvmOverloads constructor(
     var allowOriginPattern: String,
-    var exposeHeaders: Set<String>,
-    var allowHeaders: Set<String>,
+    var exposeHeaders: Set<String> = setOf(),
+    var allowHeaders: Set<String> = setOf("Content-Type"),
     var preflightMaxAge: Int = 86400,
     var allowCredentials: Boolean = true,
     var allowMethods: Set<String> = setOf(
@@ -152,33 +154,39 @@ data class CorsConfig @JvmOverloads constructor(
     ),
     var handleNotAllowOrigin: Consumer<RoutingContext> = Consumer { ctx ->
         val origin: String? = ctx.httpFields[ORIGIN]
-        ctx.contentProvider(
-            DefaultContentProvider(
-                HttpStatus.FORBIDDEN_403,
-                NotAllowOriginException("Not allow origin: $origin"),
-                ctx
+        ctx.setStatus(HttpStatus.FORBIDDEN_403)
+            .contentProvider(
+                DefaultContentProvider(
+                    HttpStatus.FORBIDDEN_403,
+                    NotAllowOriginException("Not allow origin: $origin"),
+                    ctx
+                )
             )
-        ).end()
+            .end()
     },
     var handleNotAllowMethod: Consumer<RoutingContext> = Consumer { ctx ->
         val accessControlRequestMethods = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_METHOD, false)
-        ctx.contentProvider(
-            DefaultContentProvider(
-                HttpStatus.METHOD_NOT_ALLOWED_405,
-                NotAllowMethodException("Not allow methods: $accessControlRequestMethods"),
-                ctx
+        ctx.setStatus(HttpStatus.METHOD_NOT_ALLOWED_405)
+            .contentProvider(
+                DefaultContentProvider(
+                    HttpStatus.METHOD_NOT_ALLOWED_405,
+                    NotAllowMethodException("Not allow methods: $accessControlRequestMethods"),
+                    ctx
+                )
             )
-        ).end()
+            .end()
     },
     var handleNotAllowHeader: Consumer<RoutingContext> = Consumer { ctx ->
         val accessControlRequestHeaders = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_HEADERS, false)
-        ctx.contentProvider(
-            DefaultContentProvider(
-                HttpStatus.BAD_REQUEST_400,
-                NotAllowHeaderException("Not allow headers: $accessControlRequestHeaders"),
-                ctx
+        ctx.setStatus(HttpStatus.BAD_REQUEST_400)
+            .contentProvider(
+                DefaultContentProvider(
+                    HttpStatus.BAD_REQUEST_400,
+                    NotAllowHeaderException("Not allow headers: $accessControlRequestHeaders"),
+                    ctx
+                )
             )
-        ).end()
+            .end()
     }
 )
 

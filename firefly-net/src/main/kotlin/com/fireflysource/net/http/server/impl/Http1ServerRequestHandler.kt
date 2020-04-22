@@ -15,7 +15,6 @@ import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import java.net.URL
 import java.nio.ByteBuffer
 
 class Http1ServerRequestHandler(private val connection: Http1ServerConnection) : HttpParser.RequestHandler {
@@ -61,7 +60,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     private fun newRequest(message: StartRequest): MetaData.Request {
-        return MetaData.Request(message.method, HttpURI(URL(message.uri).toURI()), message.version, HttpFields())
+        return MetaData.Request(message.method, HttpURI(message.uri), message.version, HttpFields())
     }
 
     private fun addHeader(request: MetaData.Request?, message: ParsedHeader) {
