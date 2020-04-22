@@ -541,4 +541,55 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 413 when the payload too large.")
+    fun testPayloadTooLarge(protocol: String, schema: String): Unit = runBlocking {
+        val count = 100
+
+        val httpConfig = HttpConfig()
+        httpConfig.maxUploadFileSize = 10
+        httpConfig.maxRequestBodySize = 10
+        httpConfig.uploadFileSizeThreshold = 10
+        val httpServer = createHttpServer(protocol, schema, httpConfig)
+        httpServer.router().post("/multi-part-content-*").handler { ctx ->
+            val part1 = ctx.getPart("part1")
+            val part2 = ctx.getPart("part2")
+            val content = """
+                    |received part1: 
+                    |${part1.httpFields}
+                    |${part1.stringBody}
+                    |
+                    |received part2:
+                    |${part2.stringBody}
+                """.trimMargin()
+            ctx.end(content)
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                val part1 = HttpClientContentProviderFactory.stringBody("string content 1")
+                val fields1 = HttpFields()
+                fields1.put("hello", "hello part 1")
+                fields1.addCSV("part123", "1", "2", "3")
+
+                val part2 = HttpClientContentProviderFactory.stringBody("file content 2")
+                httpClient.post("$schema://${address.hostName}:${address.port}/multi-part-content-$it")
+                    .addPart("part1", part1, fields1)
+                    .addFilePart("part2", "fileContent.txt", part2, HttpFields())
+                    .submit()
+            }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
+
+            val response = futures[0].await()
+            println(response)
+            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
 }

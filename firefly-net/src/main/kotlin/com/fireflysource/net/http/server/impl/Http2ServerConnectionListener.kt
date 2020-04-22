@@ -76,20 +76,32 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                 try {
                     context.request.contentHandler.accept(frame.data, context)
                     log.debug { "HTTP2 server accepts content success. id: ${stream.id}" }
-                    result.accept(Result.SUCCESS)
+
+                    if (frame.isEndStream) {
+                        val future = headerComplete
+                        if (future != null) {
+                            future.thenCompose { context.request.contentHandler.closeFuture() }
+                                .thenCompose { notifyRequestComplete(context) }
+                                .thenAccept { result.accept(Result.SUCCESS) }
+                                .exceptionallyAccept { e ->
+                                    notifyException(context, e)
+                                        .thenAccept { result.accept(Result.createFailedResult(e)) }
+                                        .exceptionallyAccept { result.accept(Result.createFailedResult(e)) }
+                                }
+                        } else {
+                            val e = IllegalStateException("The header complete future must not be null")
+                            notifyException(context, e)
+                                .thenAccept { result.accept(Result.createFailedResult(e)) }
+                                .exceptionallyAccept { result.accept(Result.createFailedResult(e)) }
+                        }
+                    } else {
+                        result.accept(Result.SUCCESS)
+                    }
                 } catch (e: Exception) {
                     log.error(e) { "HTTP2 server accepts content exception. id: ${stream.id}" }
-                    result.accept(Result.createFailedResult(e))
-                }
-                if (frame.isEndStream) {
-                    val future = headerComplete
-                    if (future != null) {
-                        future.thenCompose { context.request.contentHandler.closeFuture() }
-                            .thenCompose { notifyRequestComplete(context) }
-                            .exceptionallyAccept { notifyException(context, it) }
-                    } else {
-                        notifyException(context, IllegalStateException("The header complete future must not be null"))
-                    }
+                    notifyException(context, e)
+                        .thenAccept { result.accept(Result.createFailedResult(e)) }
+                        .exceptionallyAccept { result.accept(Result.createFailedResult(e)) }
                 }
             }
 

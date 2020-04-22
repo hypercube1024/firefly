@@ -5,6 +5,7 @@ import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
@@ -40,10 +41,16 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> = BiFunction { ctx, e ->
         log.error(e) { "The internal server error" }
         if (ctx != null && !ctx.response.isCommitted) {
-            ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
-                .contentProvider(DefaultContentProvider(HttpStatus.INTERNAL_SERVER_ERROR_500, e, ctx))
-                .end()
+            if (e is BadMessageException) {
+                ctx.setStatus(e.code)
+                    .contentProvider(DefaultContentProvider(e.code, e, ctx))
+                    .end()
+            } else {
+                ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                    .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
+                    .contentProvider(DefaultContentProvider(HttpStatus.INTERNAL_SERVER_ERROR_500, e, ctx))
+                    .end()
+            }
         } else Result.DONE
     }
     private var onRouterNotFound: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
@@ -127,6 +134,9 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     }
 
     override fun init() {
+        require(config.maxRequestBodySize >= config.maxUploadFileSize) { "The max request size must be greater than the max file size." }
+        require(config.maxUploadFileSize >= config.uploadFileSizeThreshold) { "The max file size must be greater than the file size threshold." }
+
         val address = this.address
         requireNotNull(address)
 
@@ -146,6 +156,8 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             }
 
             override fun onHttpRequestComplete(ctx: RoutingContext): CompletableFuture<Void> {
+                if (ctx.response.isCommitted) return Result.DONE
+
                 val results = routerManager.findRouters(ctx)
                 val asyncCtx = ctx as AsyncRoutingContext
                 val iterator = results.iterator()
