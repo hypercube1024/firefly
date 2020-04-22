@@ -59,8 +59,8 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
 
     @ParameterizedTest
     @MethodSource("testParametersProvider")
-    @DisplayName("should not allow simple request.")
-    fun testNotAllowSimpleRequest(protocol: String, schema: String): Unit = runBlocking {
+    @DisplayName("should not allow origin via simple request.")
+    fun testNotAllowOriginSimpleRequest(protocol: String, schema: String): Unit = runBlocking {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -110,10 +110,11 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
         val time = measureTimeMillis {
             val futures = (1..count)
                 .map {
-                    httpClient.request(
-                        HttpMethod.OPTIONS,
-                        "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
-                    )
+                    httpClient
+                        .request(
+                            HttpMethod.OPTIONS,
+                            "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
+                        )
                         .put(HttpHeader.ORIGIN, "data.request.cors.test.com")
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.POST.value)
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_HEADERS, HttpHeader.CONTENT_TYPE.lowerCaseValue)
@@ -169,10 +170,11 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
         val time = measureTimeMillis {
             val futures = (1..count)
                 .map {
-                    httpClient.request(
-                        HttpMethod.OPTIONS,
-                        "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
-                    )
+                    httpClient
+                        .request(
+                            HttpMethod.OPTIONS,
+                            "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
+                        )
                         .put(HttpHeader.ORIGIN, "data.request.cors.test.com")
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.POST.value)
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_HEADERS, "x1-x2")
@@ -227,10 +229,11 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
         val time = measureTimeMillis {
             val futures = (1..count)
                 .map {
-                    httpClient.request(
-                        HttpMethod.OPTIONS,
-                        "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
-                    )
+                    httpClient
+                        .request(
+                            HttpMethod.OPTIONS,
+                            "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
+                        )
                         .put(HttpHeader.ORIGIN, "data.request.cors.test.com")
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.POST.value)
                         .put(HttpHeader.ACCESS_CONTROL_REQUEST_HEADERS, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
@@ -261,6 +264,65 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
             val response = futures[0].await()
 
             assertEquals(HttpStatus.METHOD_NOT_ALLOWED_405, response.status)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should not allow origin via preflight.")
+    fun testNotAllowOriginPreflight(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        val corsConfig = CorsConfig("*.cors.test.com")
+        corsConfig.allowMethods = setOf(HttpMethod.GET.value)
+        httpServer
+            .router().path("*").handler(CorsHandler(corsConfig))
+            .router().post("/cors-data-request/*").handler { it.end("success") }
+            .listen(address)
+
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map {
+                    httpClient
+                        .request(
+                            HttpMethod.OPTIONS,
+                            "$schema://${address.hostName}:${address.port}/cors-data-request/$it"
+                        )
+                        .put(HttpHeader.ORIGIN, "www.fireflysource.com")
+                        .put(HttpHeader.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.POST.value)
+                        .put(HttpHeader.ACCESS_CONTROL_REQUEST_HEADERS, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
+                        .submit()
+                        .thenCompose { resp ->
+                            if (resp.status == HttpStatus.NO_CONTENT_204) {
+                                httpClient.post("$schema://${address.hostName}:${address.port}/cors-data-request/$it")
+                                    .put(HttpHeader.ORIGIN, "data.request.cors.test.com")
+                                    .put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
+                                    .body(
+                                        """
+                                        |{"id": 333}
+                                    """.trimMargin()
+                                    )
+                                    .submit()
+                            } else {
+                                val future = CompletableFuture<HttpClientResponse>()
+                                future.complete(resp)
+                                future
+                            }
+                        }
+                }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            Assertions.assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.FORBIDDEN_403, response.status)
         }
 
         finish(count, time, httpClient, httpServer)
