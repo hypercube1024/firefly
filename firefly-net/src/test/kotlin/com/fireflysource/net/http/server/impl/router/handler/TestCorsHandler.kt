@@ -59,6 +59,45 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
 
     @ParameterizedTest
     @MethodSource("testParametersProvider")
+    @DisplayName("should response expose headers successfully.")
+    fun testExposeHeaders(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        val corsConfig = CorsConfig("*.cors.test.com")
+        corsConfig.exposeHeaders = setOf("x1-x2", "x3-x4")
+        httpServer
+            .router().path("*").handler(CorsHandler(corsConfig))
+            .router().get("/cors-simple-request/*").handler { it.end("success") }
+            .listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map {
+                    httpClient.get("$schema://${address.hostName}:${address.port}/cors-simple-request/$it")
+                        .put(HttpHeader.ORIGIN, "simple.request.cors.test.com")
+                        .submit()
+                }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            Assertions.assertTrue(allDone)
+
+            val response = futures[0].await()
+
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("success", response.stringBody)
+            assertEquals("simple.request.cors.test.com", response.httpFields[HttpHeader.ACCESS_CONTROL_ALLOW_ORIGIN])
+            assertEquals("x1-x2, x3-x4", response.httpFields[HttpHeader.ACCESS_CONTROL_EXPOSE_HEADERS])
+            println(response)
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
     @DisplayName("should not allow origin via simple request.")
     fun testNotAllowOriginSimpleRequest(protocol: String, schema: String): Unit = runBlocking {
         val count = 1
