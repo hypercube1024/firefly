@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
@@ -71,6 +70,7 @@ class AsyncHttpClientConnectionManager(
         val nonPersistence = request.httpFields.isCloseConnection(request.httpVersion)
         return if (nonPersistence) {
             createTcpConnection(address)
+                .thenCompose { connection -> connection.beginHandshake().thenApply { connection } }
                 .thenApply { createHttp1ClientConnection(it) }
                 .thenCompose { sendAndCloseConnection(it, request) }
                 .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
@@ -144,12 +144,13 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
-        return Http1ClientConnection(config, connection).onUnhandledRequestMessage { request, future ->
-            log.info { "Send request failure, try it again. uri: ${request.uri.path}" }
-            this@AsyncHttpClientConnectionManager.send(request)
-                .thenAccept { future.complete(it) }
-                .exceptionallyAccept { future.completeExceptionally(it) }
-        }
+//        return Http1ClientConnection(config, connection).onUnhandledRequestMessage { request, future ->
+//            log.info { "Send request failure, try it again. uri: ${request.uri.path}" }
+//            this@AsyncHttpClientConnectionManager.send(request)
+//                .thenAccept { future.complete(it) }
+//                .exceptionallyAccept { future.completeExceptionally(it) }
+//        }
+        return Http1ClientConnection(config, connection)
     }
 
     private fun createHttp2ClientConnection(connection: TcpConnection): HttpClientConnection {
