@@ -32,7 +32,8 @@ class ParameterPathMatcher : Matcher {
         }
     }
 
-    private val parameterRuleMap: MutableMap<ParameterRule, SortedSet<Router>> by lazy { HashMap<ParameterRule, SortedSet<Router>>() }
+    private val parameterRuleMap: MutableMap<ParameterRule, SortedSet<Router>> =
+        HashMap<ParameterRule, SortedSet<Router>>()
 
     private inner class ParameterRule(val rule: String) {
 
@@ -79,6 +80,8 @@ class ParameterPathMatcher : Matcher {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
+        if (parameterRuleMap.isEmpty()) return null
+
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
         val paths = split(value)

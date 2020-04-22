@@ -12,7 +12,7 @@ abstract class AbstractPatternMatcher : Matcher {
         const val paramName = "param"
     }
 
-    protected val patternMap: MutableMap<PatternRule, SortedSet<Router>> by lazy { HashMap<PatternRule, SortedSet<Router>>() }
+    protected val patternMap: MutableMap<PatternRule, SortedSet<Router>> = HashMap<PatternRule, SortedSet<Router>>()
 
     class PatternRule(val rule: String) {
 
@@ -36,6 +36,8 @@ abstract class AbstractPatternMatcher : Matcher {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
+        if (patternMap.isEmpty()) return null
+
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
 

@@ -10,7 +10,7 @@ class HttpMethodMatcher : AbstractPreciseMatcher() {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        return super.match(value.toUpperCase())
+        return if (map.isEmpty()) null else super.match(value.toUpperCase())
     }
 
     override fun getMatchType(): Matcher.MatchType {

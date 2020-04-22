@@ -12,7 +12,7 @@ abstract class AbstractRegexMatcher : Matcher {
         const val paramName = "group"
     }
 
-    protected val regexMap: MutableMap<RegexRule, SortedSet<Router>> by lazy { HashMap<RegexRule, SortedSet<Router>>() }
+    protected val regexMap: MutableMap<RegexRule, SortedSet<Router>> = HashMap<RegexRule, SortedSet<Router>>()
 
     class RegexRule(val rule: String) {
         val pattern = Pattern.compile(rule)
@@ -35,6 +35,8 @@ abstract class AbstractRegexMatcher : Matcher {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
+        if (regexMap.isEmpty()) return null
+
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
 

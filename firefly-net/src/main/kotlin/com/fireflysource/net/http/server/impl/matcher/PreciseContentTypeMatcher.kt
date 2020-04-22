@@ -7,6 +7,8 @@ import com.fireflysource.net.http.server.Matcher
 class PreciseContentTypeMatcher : AbstractPreciseMatcher() {
 
     override fun match(value: String): Matcher.MatchResult? {
+        if (map.isEmpty()) return null
+
         val mimeType = MimeTypes.getContentTypeMIMEType(value)
         return if (StringUtils.hasText(mimeType)) super.match(mimeType) else null
     }

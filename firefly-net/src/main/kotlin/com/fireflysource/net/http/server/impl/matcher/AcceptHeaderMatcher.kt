@@ -17,6 +17,8 @@ class AcceptHeaderMatcher : AbstractPreciseMatcher() {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
+        if (map.isEmpty()) return null
+
         val acceptMIMETypes = parseAcceptMIMETypes(value)
         if (acceptMIMETypes.isNullOrEmpty()) return null
 
