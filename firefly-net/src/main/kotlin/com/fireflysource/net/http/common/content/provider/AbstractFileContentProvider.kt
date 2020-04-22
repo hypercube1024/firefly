@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.common.content.provider
 
 import com.fireflysource.common.coroutine.event
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.InputChannel
 import com.fireflysource.common.io.closeJob
@@ -15,31 +16,45 @@ import java.nio.file.Files
 import java.nio.file.OpenOption
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 
-abstract class AbstractFileContentProvider(val path: Path, vararg options: OpenOption) : InputChannel {
+abstract class AbstractFileContentProvider(
+    val path: Path,
+    val options: Set<OpenOption>,
+    var position: Long,
+    val length: Long
+) : InputChannel {
 
     private val readChannel: Channel<ReadFileMessage> = Channel(Channel.UNLIMITED)
     private val readJob: Job
-    private val length = Files.size(path)
-    private var position: Long = 0
+    private val closed = AtomicBoolean(false)
+    private val lastPosition = position + length
 
-    @Volatile
-    private var closed: Boolean = false
+    constructor(path: Path, vararg options: OpenOption) : this(path, options.toSet(), 0, Files.size(path))
 
     init {
         readJob = event {
-            val fileChannel = openFileChannelAsync(path, *options).await()
+            val fileChannel = openFileChannelAsync(path, options).await()
 
             readMessageLoop@ while (true) {
                 when (val readFileMessage = readChannel.receive()) {
                     is ReadFileRequest -> {
                         val (buf, future) = readFileMessage
+
+                        suspend fun endRead() {
+                            fileChannel.closeJob().join()
+                            closed.set(true)
+                            future.complete(-1)
+                        }
+
+                        if (position >= lastPosition) {
+                            endRead()
+                            break@readMessageLoop
+                        }
                         try {
                             val len = fileChannel.readAwait(buf, position)
                             if (len < 0) {
-                                fileChannel.closeJob().join()
-                                closed = true
-                                future.complete(len)
+                                endRead()
                                 break@readMessageLoop
                             } else {
                                 position += len
@@ -51,17 +66,19 @@ abstract class AbstractFileContentProvider(val path: Path, vararg options: OpenO
                     }
                     is EndReadFile -> {
                         fileChannel.closeJob().join()
-                        closed = true
+                        closed.set(true)
                         break@readMessageLoop
                     }
                 }
             }
+
+            readChannel.pollAll { }
         }
     }
 
     fun length(): Long = length
 
-    override fun isOpen(): Boolean = !closed
+    override fun isOpen(): Boolean = !closed.get()
 
     fun toByteBuffer(): ByteBuffer {
         throw UnsupportedOperationException("The file content does not support this method")
@@ -71,7 +88,7 @@ abstract class AbstractFileContentProvider(val path: Path, vararg options: OpenO
         event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
 
     override fun close() {
-        readChannel.offer(EndReadFile)
+        if (isOpen) readChannel.offer(EndReadFile)
     }
 
     private suspend fun closeAwait() {

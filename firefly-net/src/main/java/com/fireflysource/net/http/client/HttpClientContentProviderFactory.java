@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.util.Set;
 
 abstract public class HttpClientContentProviderFactory {
 
@@ -26,6 +27,10 @@ abstract public class HttpClientContentProviderFactory {
 
     public static HttpClientContentProvider fileBody(Path path, OpenOption... openOptions) {
         return new FileContentProvider(path, openOptions);
+    }
+
+    public static HttpClientContentProvider fileBody(Path path, Set<OpenOption> openOptions, long position, long length) {
+        return new FileContentProvider(path, openOptions, position, length);
     }
 
 }

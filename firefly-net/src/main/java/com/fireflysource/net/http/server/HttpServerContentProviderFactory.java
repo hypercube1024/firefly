@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.util.Set;
 
 abstract public class HttpServerContentProviderFactory {
 
@@ -21,5 +22,9 @@ abstract public class HttpServerContentProviderFactory {
 
     public static HttpServerContentProvider fileBody(Path path, OpenOption... openOptions) {
         return new FileContentProvider(path, openOptions);
+    }
+
+    public static HttpServerContentProvider fileBody(Path path, Set<OpenOption> openOptions, long position, long length) {
+        return new FileContentProvider(path, openOptions, position, length);
     }
 }

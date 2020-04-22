@@ -78,6 +78,11 @@ fun openFileChannelAsync(file: Path, vararg options: OpenOption) = blockingAsync
     AsynchronousFileChannel.open(file, setOf(*options), ioBlockingThreadPool)
 }
 
+fun openFileChannelAsync(file: Path, options: Set<OpenOption>) = blockingAsync {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    AsynchronousFileChannel.open(file, options, ioBlockingThreadPool)
+}
+
 fun readAllBytesAsync(file: Path) = blockingAsync {
     @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAllBytes(file)
