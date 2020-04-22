@@ -152,6 +152,7 @@ abstract class AbstractAioTcpConnection(
                     log.warn { "The TCP connection writing timeout. id: $id" }
                     success = false
                     exception = e
+                    break
                 } catch (e: Exception) {
                     log.warn { "The TCP connection writing exception. ${e.message} id: $id" }
                     success = false

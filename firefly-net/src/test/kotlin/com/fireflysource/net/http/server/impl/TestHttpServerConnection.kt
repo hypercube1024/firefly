@@ -412,7 +412,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         val time = measureTimeMillis {
             val futures = (1..count).map {
                 httpClient.get("http://${address.hostName}:${address.port}/close-$it")
-//                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
                     .submit()
             }
 
@@ -550,7 +550,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @MethodSource("testParametersProvider")
     @DisplayName("should response 413 when the payload too large.")
     fun testPayloadTooLarge(protocol: String, schema: String): Unit = runBlocking {
-        val count = 30
+        val count = 1
 
         val httpConfig = HttpConfig()
         httpConfig.maxUploadFileSize = 10

@@ -144,12 +144,6 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
-//        return Http1ClientConnection(config, connection).onUnhandledRequestMessage { request, future ->
-//            log.info { "Send request failure, try it again. uri: ${request.uri.path}" }
-//            this@AsyncHttpClientConnectionManager.send(request)
-//                .thenAccept { future.complete(it) }
-//                .exceptionallyAccept { future.completeExceptionally(it) }
-//        }
         return Http1ClientConnection(config, connection)
     }
 
