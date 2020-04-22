@@ -2,6 +2,7 @@ package com.fireflysource.net.http.server.impl.content.handler
 
 import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.coroutine.event
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.string.QuotedStringTokenizer
 import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
@@ -104,6 +105,13 @@ class MultiPartContentHandler(
                 break@parseLoop
             }
         }
+
+        multiPartChannel.pollAll { }
+        try {
+            closeAllFileHandlers()
+        } catch (e: Exception) {
+            log.error(e) { "close file handlers exception" }
+        }
     }
 
 
@@ -154,15 +162,29 @@ class MultiPartContentHandler(
     }
 
     private suspend fun handleMessageComplete() {
-        multiParts.forEach { it.closeFileHandler() }
+        closeAllFileHandlers()
         log.debug { "Multi-part complete. part: $part" }
     }
 
     private suspend fun handleEarlyEOF() {
-        multiParts.forEach { it.closeFileHandler() }
+        closeAllFileHandlers()
         throw BadMessageException(HttpStatus.BAD_REQUEST_400)
     }
 
+    private suspend fun closeAllFileHandlers() {
+        var ex: Exception? = null
+        multiParts.forEach {
+            try {
+                it.closeFileHandler()
+            } catch (e: Exception) {
+                ex = e
+            }
+        }
+        val e = ex
+        if (e != null) {
+            throw e
+        }
+    }
 
     private fun parseBoundary(contentType: String?): String {
         if (contentType == null) return ""

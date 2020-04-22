@@ -102,15 +102,15 @@ class Http1ClientConnection(
             log.info { "The HTTP1 request message job completion. cause: ${cause.message}" }
         }
         when {
-            this@Http1ClientConnection.isClosed -> requestChannel.pollAll { message ->
-                unhandledRequestMessage(message.httpClientRequest, message.response)
-            }
             isUpgradeToHttp2Success() -> requestChannel.pollAll { message ->
                 log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
                 val future = message.response
                 sendRequestViaHttp2(message.httpClientRequest)
                     .thenAccept { future.complete(it) }
                     .exceptionallyAccept { future.completeExceptionally(it) }
+            }
+            else -> requestChannel.pollAll { message ->
+                unhandledRequestMessage(message.httpClientRequest, message.response)
             }
         }
     }
