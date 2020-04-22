@@ -545,7 +545,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @MethodSource("testParametersProvider")
     @DisplayName("should response 413 when the payload too large.")
     fun testPayloadTooLarge(protocol: String, schema: String): Unit = runBlocking {
-        val count = 100
+        val count = 1
 
         val httpConfig = HttpConfig()
         httpConfig.maxUploadFileSize = 10
