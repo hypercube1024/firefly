@@ -75,11 +75,7 @@ abstract class AsyncHttp2Connection(
     private val flusher = FrameEntryFlusher()
 
     init {
-        tcpConnection.onClose {
-            http2StreamMap.values.map { it as AsyncHttp2Stream }.forEach {
-                it.notifyTerminal(it)
-            }
-        }
+        tcpConnection.onClose { clearStreams() }
     }
 
     private inner class FrameEntryFlusher {
@@ -821,12 +817,7 @@ abstract class AsyncHttp2Connection(
             when (val current = closeState.get()) {
                 CloseState.NOT_CLOSED, CloseState.LOCALLY_CLOSED, CloseState.REMOTELY_CLOSED -> {
                     if (closeState.compareAndSet(current, CloseState.CLOSED)) {
-                        log.debug { "HTTP2 connection terminated. id: $id, stream size: ${http2StreamMap.size}" }
-                        http2StreamMap.values.map { it as AsyncHttp2Stream }.forEach {
-                            it.notifyTerminal(it)
-                            it.close()
-                        }
-                        http2StreamMap.clear()
+                        clearStreams()
                         disconnect()
                         break@terminateLoop
                     }
@@ -842,6 +833,15 @@ abstract class AsyncHttp2Connection(
     private fun disconnect() {
         log.debug { "Disconnecting $this" }
         tcpConnection.close()
+    }
+
+    private fun clearStreams() {
+        log.debug { "HTTP2 connection terminated. id: $id, stream size: ${http2StreamMap.size}" }
+        http2StreamMap.values.map { it as AsyncHttp2Stream }.forEach {
+            it.notifyTerminal(it)
+            it.close()
+        }
+        http2StreamMap.clear()
     }
 
     override fun closeFuture(): CompletableFuture<Void> {
