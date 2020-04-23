@@ -589,7 +589,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     .submit()
             }
             try {
-                withTimeout(Duration.ofSeconds(3).toMillis()) {
+                withTimeout(Duration.ofSeconds(5).toMillis()) {
                     CompletableFuture.allOf(*futures.toTypedArray()).await()
                     val allDone = futures.all { it.isDone }
                     assertTrue(allDone)

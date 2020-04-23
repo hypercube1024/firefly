@@ -116,15 +116,34 @@ class Http2ClientStreamListener(
     }
 
     override fun onReset(stream: Stream, frame: ResetFrame) {
-        val error = ErrorCode.toString(frame.error, "http2_request_error")
-        val exception = IllegalStateException(error)
-        future.completeExceptionally(exception)
+        if (!future.isDone) {
+            val error = ErrorCode.toString(frame.error, "http2_request_error")
+            val exception = IllegalStateException(error)
+            future.completeExceptionally(exception)
+        }
     }
 
     override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {
-        val exception = IllegalStateException("http2_stream_timeout")
-        future.completeExceptionally(exception)
+        if (!future.isDone) {
+            val exception = IllegalStateException("http2_stream_timeout")
+            future.completeExceptionally(exception)
+        }
         return true
+    }
+
+    override fun onClosed(stream: Stream) {
+        if (!future.isDone) {
+            val exception = IllegalStateException("The stream is closed")
+            future.completeExceptionally(exception)
+        }
+    }
+
+    override fun onFailure(stream: Stream, error: Int, reason: String, result: Consumer<Result<Void>>) {
+        if (!future.isDone) {
+            val exception = IllegalStateException("The stream is failure")
+            future.completeExceptionally(exception)
+        }
+        result.accept(Result.SUCCESS)
     }
 
 }
