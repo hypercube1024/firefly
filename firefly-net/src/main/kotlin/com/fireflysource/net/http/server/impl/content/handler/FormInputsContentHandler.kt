@@ -2,7 +2,8 @@ package com.fireflysource.net.http.server.impl.content.handler
 
 import com.fireflysource.net.http.common.codec.UrlEncoded
 
-class FormInputsContentHandler : StringContentHandler() {
+class FormInputsContentHandler(maxRequestBodySize: Long = 200 * 1024 * 1024) :
+    StringContentHandler(maxRequestBodySize) {
 
     private val urlEncoded: UrlEncoded by lazy { UrlEncoded(this@FormInputsContentHandler.toString()) }
 

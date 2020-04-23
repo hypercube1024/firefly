@@ -35,13 +35,15 @@ class AsyncHttpServerRequest(
         val contentType = request.fields[HttpHeader.CONTENT_TYPE]
         contentHandler = if (contentType != null) {
             when {
-                contentType.contains("x-www-form-urlencoded", true) -> FormInputsContentHandler()
-                contentType.contains("multipart/form-data", true) -> MultiPartContentHandler(
-                    config.maxUploadFileSize, config.maxRequestBodySize, config.uploadFileSizeThreshold
-                )
-                else -> StringContentHandler()
+                contentType.contains("x-www-form-urlencoded", true) ->
+                    FormInputsContentHandler(config.maxRequestBodySize)
+                contentType.contains("multipart/form-data", true) ->
+                    MultiPartContentHandler(
+                        config.maxUploadFileSize, config.maxRequestBodySize, config.uploadFileSizeThreshold
+                    )
+                else -> StringContentHandler(config.maxRequestBodySize)
             }
-        } else StringContentHandler()
+        } else StringContentHandler(config.maxRequestBodySize)
 
     }
 

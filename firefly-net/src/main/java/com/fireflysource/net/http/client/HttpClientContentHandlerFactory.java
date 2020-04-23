@@ -13,8 +13,16 @@ abstract public class HttpClientContentHandlerFactory {
         return new ByteBufferContentHandler();
     }
 
+    public static HttpClientContentHandler bytesHandler(long maxRequestBodySize) {
+        return new ByteBufferContentHandler(maxRequestBodySize);
+    }
+
     public static HttpClientContentHandler stringHandler() {
         return new StringContentHandler();
+    }
+
+    public static HttpClientContentHandler stringHandler(long maxRequestBodySize) {
+        return new StringContentHandler(maxRequestBodySize);
     }
 
     public static HttpClientContentHandler fileHandler(Path path, OpenOption... openOptions) {

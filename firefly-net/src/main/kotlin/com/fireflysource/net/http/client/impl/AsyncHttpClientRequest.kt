@@ -157,7 +157,7 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
     }
 
     if (request.contentHandler == null) {
-        request.contentHandler = StringContentHandler()
+        request.contentHandler = StringContentHandler(Long.MAX_VALUE)
     }
 
     val len = request.contentProvider?.length() ?: -1

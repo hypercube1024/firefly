@@ -5,6 +5,8 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.common.exception.BadMessageException
+import com.fireflysource.net.http.common.model.HttpStatus
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -12,12 +14,20 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
-abstract class AbstractByteBufferContentHandler<T> : AsyncCloseable, BiConsumer<ByteBuffer, T> {
+abstract class AbstractByteBufferContentHandler<T>(
+    private val maxRequestBodySize: Long = 200 * 1024 * 1024
+) : AsyncCloseable, BiConsumer<ByteBuffer, T> {
 
     private val byteBufferList = LinkedList<ByteBuffer>()
+    private var requestSize: Long = 0
     private val utf8String: String by lazy { toString(StandardCharsets.UTF_8) }
 
     override fun accept(byteBuffer: ByteBuffer, u: T) {
+        requestSize += byteBuffer.remaining()
+        if (requestSize > maxRequestBodySize) {
+            throw BadMessageException(HttpStatus.PAYLOAD_TOO_LARGE_413)
+        }
+
         byteBufferList.add(byteBuffer)
     }
 
