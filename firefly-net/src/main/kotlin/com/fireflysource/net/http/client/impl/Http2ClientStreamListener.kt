@@ -131,7 +131,7 @@ class Http2ClientStreamListener(
         return true
     }
 
-    override fun onClosed(stream: Stream) {
+    override fun onTerminal(stream: Stream) {
         if (!future.isDone) {
             val exception = IllegalStateException("The stream is closed")
             future.completeExceptionally(exception)

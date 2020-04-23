@@ -383,6 +383,14 @@ class AsyncHttp2Stream(
         }
     }
 
+    fun notifyTerminal(stream: Stream) {
+        try {
+            listener.onTerminal(stream)
+        } catch (x: Throwable) {
+            log.info("Failure while notifying listener $listener", x)
+        }
+    }
+
 
     override fun toString(): String {
         return String.format(

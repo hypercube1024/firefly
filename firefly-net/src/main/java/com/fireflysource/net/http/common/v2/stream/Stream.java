@@ -242,6 +242,15 @@ public interface Stream {
         }
 
         /**
+         * <p>Callback method invoked after the connection is terminal.</p>
+         *
+         * @param stream The stream.
+         */
+        default void onTerminal(Stream stream) {
+
+        }
+
+        /**
          * <p>Empty implementation of {@link Listener}</p>
          */
         class Adapter implements Listener {
