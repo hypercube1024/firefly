@@ -44,7 +44,6 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                 ctx.setStatus(e.code)
                     .contentProvider(DefaultContentProvider(e.code, e, ctx))
                     .end()
-                    .thenCompose { ctx.connection.closeFuture() }
             } else {
                 ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
                     .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
