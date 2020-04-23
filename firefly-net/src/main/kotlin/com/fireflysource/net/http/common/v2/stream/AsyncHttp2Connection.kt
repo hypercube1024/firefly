@@ -74,6 +74,14 @@ abstract class AsyncHttp2Connection(
 
     private val flusher = FrameEntryFlusher()
 
+    init {
+        tcpConnection.onClose {
+            http2StreamMap.values.map { it as AsyncHttp2Stream }.forEach {
+                it.notifyTerminal(it)
+            }
+        }
+    }
+
     private inner class FrameEntryFlusher {
 
         private val frameEntryChannel = Channel<FlushFrameMessage>(Channel.UNLIMITED)
