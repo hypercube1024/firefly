@@ -90,7 +90,10 @@ class Http1ClientConnection(
                 if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) break@handleRequestLoop
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
-                message.response.completeExceptionally(e)
+                if (!message.response.isDone) {
+                    message.response.completeExceptionally(e)
+                }
+                closeFuture()
                 break@handleRequestLoop
             } finally {
                 handler.reset()

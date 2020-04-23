@@ -12,6 +12,7 @@ import com.fireflysource.net.http.server.HttpServerContentProviderFactory.string
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -21,6 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import kotlin.system.measureTimeMillis
 
@@ -587,13 +589,15 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     .submit()
             }
             try {
-                CompletableFuture.allOf(*futures.toTypedArray()).await()
-                val allDone = futures.all { it.isDone }
-                assertTrue(allDone)
+                withTimeout(Duration.ofSeconds(3).toMillis()) {
+                    CompletableFuture.allOf(*futures.toTypedArray()).await()
+                    val allDone = futures.all { it.isDone }
+                    assertTrue(allDone)
 
-                val response = futures[0].await()
-                println(response)
-                assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
+                    val response = futures[0].await()
+                    println(response)
+                    assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
+                }
             } catch (e: Exception) {
                 println(e.message)
             }
