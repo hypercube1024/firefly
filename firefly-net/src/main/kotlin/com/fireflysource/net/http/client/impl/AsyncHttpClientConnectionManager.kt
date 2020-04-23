@@ -123,7 +123,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         validator { pooledObject ->
-            !pooledObject.getObject().isClosed
+            !pooledObject.getObject().isInvalid
         }
 
         dispose { pooledObject ->

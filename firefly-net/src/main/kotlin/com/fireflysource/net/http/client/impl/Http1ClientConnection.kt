@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
-import com.fireflysource.common.coroutine.blocking
 import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
@@ -92,7 +91,7 @@ class Http1ClientConnection(
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
                 message.response.completeExceptionally(e)
-                blocking { tcpConnection.closeNow() }
+                break@handleRequestLoop
             } finally {
                 handler.reset()
                 parser.reset()

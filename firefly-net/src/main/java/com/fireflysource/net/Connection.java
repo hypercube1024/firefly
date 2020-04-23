@@ -41,4 +41,6 @@ public interface Connection extends AsyncCloseable {
 
     InetSocketAddress getRemoteAddress();
 
+    boolean isInvalid();
+
 }

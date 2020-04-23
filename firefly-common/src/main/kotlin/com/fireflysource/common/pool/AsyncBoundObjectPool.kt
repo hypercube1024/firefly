@@ -2,6 +2,7 @@ package com.fireflysource.common.pool
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
 import com.fireflysource.common.coroutine.event
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
@@ -61,12 +62,37 @@ class AsyncBoundObjectPool<T>(
         return future
     }
 
-    private fun handlePoolMessage(): Job = event {
-        while (true) {
-            when (val message = poolMessageChannel.receive()) {
-                is PollObject<T> -> handlePollObjectMessage(message)
-                is ReleaseObject<T> -> handleReleaseObjectMessage(message)
+    private fun handlePoolMessage(): Job {
+        val job = event {
+            while (true) {
+                when (val message = poolMessageChannel.receive()) {
+                    is PollObject<T> -> handlePollObjectMessage(message)
+                    is ReleaseObject<T> -> handleReleaseObjectMessage(message)
+                }
             }
+        }
+        job.invokeOnCompletion { cause ->
+            if (cause != null) {
+                log.info { "The pool message job completion. cause: ${cause.message}" }
+            }
+
+            clearMessage()
+        }
+        return job
+    }
+
+    private fun clearMessage() {
+        poolMessageChannel.pollAll {
+            when (it) {
+                is PollObject<T> -> it.future.completeExceptionally(IllegalStateException("The pool has closed."))
+                is ReleaseObject<T> -> it.future.completeExceptionally(IllegalStateException("The pool has closed."))
+            }
+        }
+        while (true) {
+            val m: PollObject<T>? = waitQueue.poll()
+            if (m != null) {
+                m.future.completeExceptionally(IllegalStateException("The pool has closed."))
+            } else break
         }
     }
 
@@ -197,6 +223,7 @@ class AsyncBoundObjectPool<T>(
     override fun destroy() {
         leakDetector.stop()
         handlePoolMessageJob.cancel(CancellationException("Cancel object pool message job exception."))
+        clearMessage()
         pool.forEach { destroyPooledObject(it) }
         pool.clear()
     }

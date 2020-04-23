@@ -395,6 +395,9 @@ abstract class AbstractAioTcpConnection(
 
     override fun isClosed(): Boolean = socketChannelClosed.get()
 
+    override fun isInvalid(): Boolean =
+        closeRequest.get() || isShutdownInput || isShutdownOutput || socketChannelClosed.get()
+
     override fun getLocalAddress(): InetSocketAddress = socketChannel.localAddress as InetSocketAddress
 
     override fun getRemoteAddress(): InetSocketAddress = socketChannel.remoteAddress as InetSocketAddress
