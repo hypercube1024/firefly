@@ -550,8 +550,8 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @ParameterizedTest
     @MethodSource("testParametersProvider")
-    @DisplayName("should response 413 when the payload too large.")
-    fun testPayloadTooLarge(protocol: String, schema: String): Unit = runBlocking {
+    @DisplayName("should response 413 when the multi-part too large.")
+    fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking {
         val count = 20
 
         val httpConfig = HttpConfig()
@@ -586,6 +586,47 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                 httpClient.post("$schema://${address.hostName}:${address.port}/multi-part-content-$it")
                     .addPart("part1", part1, fields1)
                     .addFilePart("part2", "fileContent.txt", part2, HttpFields())
+                    .submit()
+            }
+            try {
+                withTimeout(Duration.ofSeconds(5).toMillis()) {
+                    CompletableFuture.allOf(*futures.toTypedArray()).await()
+                    val allDone = futures.all { it.isDone }
+                    assertTrue(allDone)
+
+                    val response = futures[0].await()
+                    println(response)
+                    assertEquals(HttpStatus.PAYLOAD_TOO_LARGE_413, response.status)
+                }
+            } catch (e: Exception) {
+                println(e.message)
+            }
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 413 when the http body too large.")
+    fun testHttpBodyTooLarge(protocol: String, schema: String): Unit = runBlocking {
+        val count = 20
+
+        val content = (1..30_000_000).joinToString("") { "a" }
+        val httpConfig = HttpConfig()
+        httpConfig.maxUploadFileSize = 10
+        httpConfig.maxRequestBodySize = 10
+        httpConfig.uploadFileSizeThreshold = 10
+        val httpServer = createHttpServer(protocol, schema, httpConfig)
+        httpServer.router().post("/content-*").handler { ctx ->
+            ctx.end("ok")
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.post("$schema://${address.hostName}:${address.port}/content-$it")
+                    .body(content)
                     .submit()
             }
             try {
