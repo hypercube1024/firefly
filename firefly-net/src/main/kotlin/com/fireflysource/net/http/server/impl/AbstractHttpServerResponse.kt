@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -163,7 +164,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
             httpServerConnection.coroutineScope.launch {
                 commit().await()
                 outputChannel.closeFuture().await()
-            }.asCompletableFuture().thenCompose { Result.DONE }
+            }.asVoidFuture()
         } else Result.DONE
     }
 

@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.common.content.provider
 
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.exception.UnsupportedOperationException
@@ -7,10 +8,8 @@ import com.fireflysource.common.io.InputChannel
 import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.readAwait
-import com.fireflysource.common.sys.Result
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.OpenOption
@@ -84,8 +83,7 @@ abstract class AbstractFileContentProvider(
         throw UnsupportedOperationException("The file content does not support this method")
     }
 
-    override fun closeFuture(): CompletableFuture<Void> =
-        event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
+    override fun closeFuture(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
         if (isOpen) readChannel.offer(EndReadFile)

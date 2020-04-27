@@ -1,15 +1,14 @@
 package com.fireflysource.net.http.common.content.handler
 
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
-import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
 import java.nio.file.OpenOption
 import java.nio.file.Path
@@ -79,8 +78,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
         inputChannel.offer(WriteFileRequest(buffer))
     }
 
-    override fun closeFuture(): CompletableFuture<Void> =
-        event { closeAwait() }.asCompletableFuture().thenCompose { Result.DONE }
+    override fun closeFuture(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
         inputChannel.offer(EndWriteFile)

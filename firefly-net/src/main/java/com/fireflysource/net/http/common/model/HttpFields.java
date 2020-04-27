@@ -266,7 +266,7 @@ public class HttpFields implements Iterable<HttpField> {
      * @return List the values
      */
     public List<String> getValuesList(HttpHeader header) {
-        final List<String> list = new ArrayList<>();
+        final List<String> list = new LinkedList<>();
         for (HttpField f : this)
             if (f.getHeader() == header)
                 list.add(f.getValue());
@@ -280,7 +280,7 @@ public class HttpFields implements Iterable<HttpField> {
      * @return List the header values
      */
     public List<String> getValuesList(String name) {
-        final List<String> list = new ArrayList<>();
+        final List<String> list = new LinkedList<>();
         for (HttpField f : this)
             if (f.getName().equalsIgnoreCase(name))
                 list.add(f.getValue());

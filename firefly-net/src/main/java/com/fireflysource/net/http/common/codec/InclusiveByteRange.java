@@ -97,6 +97,23 @@ public class InclusiveByteRange {
         return sb.toString();
     }
 
+    public static List<InclusiveByteRange> satisfiableRanges(List<String> headers, long size) {
+        Iterator<String> iterator = headers.iterator();
+        Enumeration<String> enumeration = new Enumeration<String>() {
+
+            @Override
+            public boolean hasMoreElements() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public String nextElement() {
+                return iterator.next();
+            }
+        };
+        return satisfiableRanges(enumeration, size);
+    }
+
     /**
      * @param headers Enumeration of Range header fields.
      * @param size    Size of the resource.
