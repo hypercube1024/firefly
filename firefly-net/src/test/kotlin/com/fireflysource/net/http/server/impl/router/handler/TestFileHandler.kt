@@ -149,7 +149,7 @@ class TestFileHandler : AbstractHttpServerTestBase() {
             .map { it.toURI() }
             .map { Paths.get(it) }
             .map { it.toString() }
-            .orElseThrow { throw NoSuchElementException("No value present") }
+            .orElse("")
         val fileConfig = FileConfig(path)
 
         httpServer
