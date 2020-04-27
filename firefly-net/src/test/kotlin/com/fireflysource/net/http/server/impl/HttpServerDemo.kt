@@ -15,7 +15,7 @@ fun main() {
         .map { it.toURI() }
         .map { Paths.get(it) }
         .map { it.toString() }
-        .orElseThrow()
+        .orElseThrow { throw NoSuchElementException("No value present") }
     val fileConfig = FileConfig(path)
 
     httpServer
