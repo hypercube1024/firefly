@@ -89,7 +89,7 @@ class TestFileHandler : AbstractHttpServerTestBase() {
 
             val response = futures[0].await()
 
-            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.status)
+            assertEquals(HttpStatus.NOT_FOUND_404, response.status)
             println(response)
         }
 

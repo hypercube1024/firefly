@@ -29,13 +29,13 @@ class FileHandler(val config: FileConfig) : Router.Handler {
         val path = URIUtils.canonicalPath(ctx.uri.decodedPath)
         val filePath = Paths.get(config.rootPath, path)
         if (!exists(filePath).await()) {
-            ctx.next().await()
+            responseFileNotFound(ctx)
             return
         }
 
         val fileAttributes = readAttributes(filePath).await()
         if (fileAttributes.isDirectory) {
-            ctx.next().await()
+            responseFileNotFound(ctx)
             return
         }
 
@@ -56,6 +56,14 @@ class FileHandler(val config: FileConfig) : Router.Handler {
                 }
             }
         }
+    }
+
+    private suspend fun responseFileNotFound(ctx: RoutingContext) {
+        ctx.setStatus(HttpStatus.NOT_FOUND_404)
+            .setReason(HttpStatus.Code.NOT_FOUND.message)
+            .contentProvider(DefaultContentProvider(HttpStatus.NOT_FOUND_404, null, ctx))
+            .end()
+            .await()
     }
 
     private suspend fun responseFile(ctx: RoutingContext, filePath: Path) {
