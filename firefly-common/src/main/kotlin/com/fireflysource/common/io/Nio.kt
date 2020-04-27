@@ -15,7 +15,6 @@ import java.nio.file.LinkOption
 import java.nio.file.OpenOption
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.attribute.FileAttributeView
 import java.util.concurrent.TimeUnit
 
 /**
@@ -103,10 +102,6 @@ fun exists(file: Path, vararg options: LinkOption) = blockingAsync {
 fun readAttributes(file: Path, vararg options: LinkOption) = blockingAsync {
     @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAttributes(file, BasicFileAttributes::class.java, *options)
-}
-
-fun getFileAttributeView(file: Path, vararg options: LinkOption) = blockingAsync {
-    Files.getFileAttributeView(file, FileAttributeView::class.java, *options)
 }
 
 /**

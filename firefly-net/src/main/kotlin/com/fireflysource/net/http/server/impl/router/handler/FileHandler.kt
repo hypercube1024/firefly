@@ -3,7 +3,6 @@ package com.fireflysource.net.http.server.impl.router.handler
 import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.io.exists
-import com.fireflysource.common.io.getFileAttributeView
 import com.fireflysource.common.io.readAttributes
 import com.fireflysource.net.http.common.codec.InclusiveByteRange
 import com.fireflysource.net.http.common.codec.URIUtils
@@ -23,16 +22,21 @@ import java.util.concurrent.CompletableFuture
 
 class FileHandler(val config: FileConfig) : Router.Handler {
 
-    override fun apply(ctx: RoutingContext): CompletableFuture<Void> = ctx.connection.coroutineScope.launch {
+    override fun apply(ctx: RoutingContext): CompletableFuture<Void> =
+        ctx.connection.coroutineScope.launch { handleFile(ctx) }.asVoidFuture()
+
+    private suspend fun handleFile(ctx: RoutingContext) {
         val path = URIUtils.canonicalPath(ctx.uri.decodedPath)
         val filePath = Paths.get(config.rootPath, path)
         if (!exists(filePath).await()) {
             ctx.next().await()
+            return
         }
 
         val fileAttributes = readAttributes(filePath).await()
         if (fileAttributes.isDirectory) {
             ctx.next().await()
+            return
         }
 
         val ranges = ctx.httpFields.getValuesList(HttpHeader.RANGE)
@@ -52,7 +56,7 @@ class FileHandler(val config: FileConfig) : Router.Handler {
                 }
             }
         }
-    }.asVoidFuture()
+    }
 
     private suspend fun responseFile(ctx: RoutingContext, filePath: Path) {
         setContentType(ctx, filePath)
@@ -94,8 +98,8 @@ class FileHandler(val config: FileConfig) : Router.Handler {
             .await()
     }
 
-    private suspend fun setContentType(ctx: RoutingContext, filePath: Path) {
-        val fileName = getFileAttributeView(filePath).await().name()
+    private fun setContentType(ctx: RoutingContext, filePath: Path) {
+        val fileName = filePath.fileName.toString()
         val mimeType: String? = MimeTypes.getDefaultMimeByExtension(fileName)
         if (!mimeType.isNullOrBlank()) {
             ctx.put(HttpHeader.CONTENT_TYPE, mimeType)

@@ -75,6 +75,15 @@
                 </includes>
             </testResource>
             <testResource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.ico</include>
+                    <include>**/*.html</include>
+                    <include>**/*.txt</include>
+                </includes>
+            </testResource>
+            <testResource>
                 <directory>src/test/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
