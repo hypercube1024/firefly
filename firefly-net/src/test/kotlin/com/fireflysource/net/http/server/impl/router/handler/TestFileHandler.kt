@@ -30,7 +30,7 @@ class TestFileHandler : AbstractHttpServerTestBase() {
             .map { it.toURI() }
             .map { Paths.get(it) }
             .map { it.toString() }
-            .orElseThrow()
+            .orElse("")
         val fileConfig = FileConfig(path)
 
         httpServer
@@ -70,7 +70,7 @@ class TestFileHandler : AbstractHttpServerTestBase() {
             .map { it.toURI() }
             .map { Paths.get(it) }
             .map { it.toString() }
-            .orElseThrow()
+            .orElse("")
         val fileConfig = FileConfig(path)
 
         httpServer
@@ -109,7 +109,7 @@ class TestFileHandler : AbstractHttpServerTestBase() {
             .map { it.toURI() }
             .map { Paths.get(it) }
             .map { it.toString() }
-            .orElseThrow()
+            .orElse("")
         val fileConfig = FileConfig(path)
 
         httpServer
