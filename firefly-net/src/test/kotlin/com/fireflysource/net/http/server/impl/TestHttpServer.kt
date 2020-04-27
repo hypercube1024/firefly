@@ -182,10 +182,14 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             val allDone = futures.all { it.isDone }
             assertTrue(allDone)
 
-            val response = futures[0].await()
+            try {
+                val response = futures[0].await()
 
-            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.status)
-            println(response)
+                assertEquals(HttpStatus.INTERNAL_SERVER_ERROR_500, response.status)
+                println(response)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         finish(count, time, httpClient, httpServer)
