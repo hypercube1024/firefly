@@ -1,18 +1,33 @@
 package com.fireflysource.common.io
 
+import java.io.EOFException
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
 class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
 
     private val buffers: LinkedList<ByteBuffer> = LinkedList()
+    private val closed = AtomicBoolean(false)
 
     override fun read(): Int {
-        if (buffers.isEmpty()) return -1
+        check()
 
-        val buffer = buffers.peek()
+        fun peekBuffer(): ByteBuffer {
+            while (buffers.isNotEmpty()) {
+                val buffer = buffers.peek()
+                if (buffer.hasRemaining()) {
+                    return@peekBuffer buffer
+                } else {
+                    buffers.poll()
+                }
+            }
+            throw EmptyBufferException("The temp buffer is empty.")
+        }
+
+        val buffer = peekBuffer()
         val b = buffer.get().toInt()
         if (!buffer.hasRemaining()) {
             buffers.poll()
@@ -24,7 +39,7 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
         require(off >= 0) { "The offset must be greater than or equals 0." }
         require(len <= b.size - off) { "The length must be less than or equals the array size." }
 
-        if (buffers.isEmpty()) return -1
+        check()
 
         val remaining = b.size - off
         val maxLength = remaining.coerceAtMost(len)
@@ -63,5 +78,17 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
 
     override fun accept(buffer: ByteBuffer) {
         buffers.offer(buffer)
+    }
+
+    override fun close() {
+        if (closed.compareAndSet(false, true)) {
+            buffers.clear()
+        }
+    }
+
+    private fun check() {
+        if (closed.get()) throw EOFException("The stream is closed")
+
+        if (buffers.isEmpty()) throw EmptyBufferException("The temp buffer is empty.")
     }
 }
