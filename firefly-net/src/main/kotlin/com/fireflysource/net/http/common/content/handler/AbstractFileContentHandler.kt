@@ -2,7 +2,6 @@ package com.fireflysource.net.http.common.content.handler
 
 import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.coroutine.event
-import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
@@ -13,10 +12,8 @@ import java.nio.ByteBuffer
 import java.nio.file.OpenOption
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
-import java.util.function.BiConsumer
 
-abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: OpenOption) :
-    AsyncCloseable, BiConsumer<ByteBuffer, T> {
+abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: OpenOption) : HttpContentHandler<T> {
 
     companion object {
         private val log = SystemLogger.create(AbstractFileContentHandler::class.java)

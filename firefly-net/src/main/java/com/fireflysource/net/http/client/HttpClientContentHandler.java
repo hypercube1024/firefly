@@ -1,13 +1,9 @@
 package com.fireflysource.net.http.client;
 
-import com.fireflysource.common.io.AsyncCloseable;
-
-import java.nio.ByteBuffer;
-import java.util.function.BiConsumer;
+import com.fireflysource.net.http.common.content.handler.HttpContentHandler;
 
 /**
  * @author Pengtao Qiu
  */
-public interface HttpClientContentHandler extends BiConsumer<ByteBuffer, HttpClientResponse>, AsyncCloseable {
-
+public interface HttpClientContentHandler extends HttpContentHandler<HttpClientResponse> {
 }

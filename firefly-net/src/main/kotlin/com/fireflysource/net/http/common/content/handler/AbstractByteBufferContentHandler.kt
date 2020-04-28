@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.common.content.handler
 
-import com.fireflysource.common.io.AsyncCloseable
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -12,11 +11,10 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.function.BiConsumer
 
 abstract class AbstractByteBufferContentHandler<T>(
     private val maxRequestBodySize: Long = 200 * 1024 * 1024
-) : AsyncCloseable, BiConsumer<ByteBuffer, T> {
+) : HttpContentHandler<T> {
 
     private val byteBufferList = LinkedList<ByteBuffer>()
     private var requestSize: Long = 0
