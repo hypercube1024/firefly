@@ -12,6 +12,7 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
     private val buffers: LinkedList<ByteBuffer> = LinkedList()
     private val closed = AtomicBoolean(false)
 
+    @ExperimentalUnsignedTypes
     override fun read(): Int {
         check()
 
@@ -28,7 +29,7 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
         }
 
         val buffer = peekBuffer()
-        val b = buffer.get().toInt()
+        val b = buffer.get().toUByte().toInt()
         if (!buffer.hasRemaining()) {
             buffers.poll()
         }
