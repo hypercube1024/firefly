@@ -39,7 +39,7 @@ abstract class AbstractByteBufferContentHandler<T>(
     fun toString(charset: Charset): String {
         if (byteBufferList.isEmpty()) return ""
 
-        val size = byteBufferList.map { it.remaining() }.sum()
+        val size = byteBufferList.sumBy { it.remaining() }
         if (size <= 0) {
             return ""
         }
