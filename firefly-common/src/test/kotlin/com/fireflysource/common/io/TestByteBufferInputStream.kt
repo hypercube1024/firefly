@@ -4,16 +4,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.io.EOFException
 import java.nio.ByteBuffer
 
-class TestByteBufferTempInputStream {
+class TestByteBufferInputStream {
 
     @Test
     @DisplayName("should read data from temp input stream successfully")
     fun testReadData() {
-        val inputStream = ByteBufferTempInputStream()
+        val inputStream = ByteBufferInputStream()
 
         var buffer = BufferUtils.allocate(16)
         var pos = buffer.flipToFill()
@@ -65,17 +63,16 @@ class TestByteBufferTempInputStream {
             }
         }
 
-        assertThrows<EmptyBufferException> {
-            bytes = ByteArray(3)
-            len = inputStream.read(bytes)
-        }
+        bytes = ByteArray(3)
+        len = inputStream.read(bytes)
+        assertEquals(-1, len)
         inputStream.close()
     }
 
     @Test
     @DisplayName("should read byte from temp input stream successfully")
     fun testReadByte() {
-        val inputStream = ByteBufferTempInputStream()
+        val inputStream = ByteBufferInputStream()
 
         var buffer = BufferUtils.allocate(16)
         var pos = buffer.flipToFill()
@@ -95,16 +92,16 @@ class TestByteBufferTempInputStream {
             assertEquals(it, b)
         }
 
-        assertThrows<EmptyBufferException> { inputStream.read() }
+        assertEquals(-1, inputStream.read())
         inputStream.close()
     }
 
     @Test
     @DisplayName("should throw the EOF exception when the stream is end")
     fun testEof() {
-        val inputStream = ByteBufferTempInputStream()
-        assertThrows<EmptyBufferException> { inputStream.read() }
+        val inputStream = ByteBufferInputStream()
+        assertEquals(-1, inputStream.read())
         inputStream.close()
-        assertThrows<EOFException> { inputStream.read() }
+        assertEquals(-1, inputStream.read())
     }
 }

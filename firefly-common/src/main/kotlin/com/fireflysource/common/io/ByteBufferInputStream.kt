@@ -1,22 +1,22 @@
 package com.fireflysource.common.io
 
-import java.io.EOFException
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
-class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
+class ByteBufferInputStream : InputStream(), Consumer<ByteBuffer> {
 
     private val buffers: LinkedList<ByteBuffer> = LinkedList()
     private val closed = AtomicBoolean(false)
 
-    @ExperimentalUnsignedTypes
     override fun read(): Int {
-        check()
+        if (closed.get()) return -1
 
-        fun peekBuffer(): ByteBuffer {
+        if (buffers.isEmpty()) return -1
+
+        fun peekBuffer(): ByteBuffer? {
             while (buffers.isNotEmpty()) {
                 val buffer = buffers.peek()
                 if (buffer.hasRemaining()) {
@@ -25,10 +25,11 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
                     buffers.poll()
                 }
             }
-            throw EmptyBufferException("The temp buffer is empty.")
+            return null
         }
 
-        val buffer = peekBuffer()
+        val buffer = peekBuffer() ?: return -1
+
         val b = buffer.get().toUByte().toInt()
         if (!buffer.hasRemaining()) {
             buffers.poll()
@@ -40,7 +41,9 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
         require(off >= 0) { "The offset must be greater than or equals 0." }
         require(len <= b.size - off) { "The length must be less than or equals the array size." }
 
-        check()
+        if (closed.get()) return -1
+
+        if (buffers.isEmpty()) return -1
 
         val remaining = b.size - off
         val maxLength = remaining.coerceAtMost(len)
@@ -85,11 +88,5 @@ class ByteBufferTempInputStream : InputStream(), Consumer<ByteBuffer> {
         if (closed.compareAndSet(false, true)) {
             buffers.clear()
         }
-    }
-
-    private fun check() {
-        if (closed.get()) throw EOFException("The stream is closed")
-
-        if (buffers.isEmpty()) throw EmptyBufferException("The temp buffer is empty.")
     }
 }
