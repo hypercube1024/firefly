@@ -21,6 +21,10 @@ public enum ContentEncoding {
         Holder.map.put(value, this);
     }
 
+    public String getValue() {
+        return value;
+    }
+
     public static Optional<ContentEncoding> from(String value) {
         return Optional.ofNullable(Holder.map.get(value));
     }

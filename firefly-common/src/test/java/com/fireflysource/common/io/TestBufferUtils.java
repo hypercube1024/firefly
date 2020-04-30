@@ -1,11 +1,13 @@
 package com.fireflysource.common.io;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -350,6 +352,40 @@ class TestBufferUtils {
         b.flip();
         String result = BufferUtils.toDetailString(b);
         assertTrue(result.contains("\\x7f"));
+    }
+
+    @Test
+    @DisplayName("should merge buffers successfully")
+    void testMergeBuffers() {
+        List<ByteBuffer> buffers = new LinkedList<>();
+        for (int i = 0; i < 10; i++) {
+            ByteBuffer buf = BufferUtils.allocate(16);
+            int pos = BufferUtils.flipToFill(buf);
+            for (int j = 0; j < 4; j++) {
+                int e = i * 4 + j;
+                buf.putInt(e);
+            }
+            BufferUtils.flipToFlush(buf, pos);
+            buffers.add(buf);
+        }
+
+        ByteBuffer newBuffer = BufferUtils.merge(buffers);
+        buffers.forEach(buf -> assertEquals(0, buf.remaining()));
+        assertEquals(160, newBuffer.remaining());
+        for (int i = 0; i < 40; i++) {
+            assertEquals(i, newBuffer.getInt());
+        }
+    }
+
+    @Test
+    @DisplayName("should convert buffers to string successfully")
+    void testBuffersToString() {
+        List<ByteBuffer> buffers = Arrays.asList(
+                BufferUtils.toBuffer("hello ", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("测试 ", StandardCharsets.UTF_8),
+                BufferUtils.toBuffer("ok ", StandardCharsets.UTF_8));
+        String str = BufferUtils.toString(buffers, StandardCharsets.UTF_8);
+        assertEquals("hello 测试 ok ", str);
     }
 
 

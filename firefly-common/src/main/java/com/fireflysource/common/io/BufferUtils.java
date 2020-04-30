@@ -1,5 +1,6 @@
 package com.fireflysource.common.io;
 
+import com.fireflysource.common.collection.CollectionUtils;
 import com.fireflysource.common.object.TypeUtils;
 
 import java.io.*;
@@ -488,6 +489,15 @@ public class BufferUtils {
             return new String(to, 0, to.length, charset);
         }
         return new String(array, buffer.arrayOffset() + buffer.position(), buffer.remaining(), charset);
+    }
+
+    public static String toString(List<ByteBuffer> buffers, Charset charset) {
+        ByteBuffer buffer = merge(buffers);
+        if (buffer.hasRemaining()) {
+            return toString(buffer, charset);
+        } else {
+            return "";
+        }
     }
 
     /**
@@ -1019,6 +1029,19 @@ public class BufferUtils {
             BufferUtils.flipToFlush(buffer, 0);
             newBuffer.put(buffer);
         }
+        return newBuffer;
+    }
+
+    public static ByteBuffer merge(List<ByteBuffer> buffers) {
+        if (CollectionUtils.isEmpty(buffers)) return EMPTY_BUFFER;
+
+        int size = buffers.stream().collect(Collectors.summingInt(ByteBuffer::remaining));
+        if (size == 0) return EMPTY_BUFFER;
+
+        ByteBuffer newBuffer = allocate(size);
+        int pos = flipToFill(newBuffer);
+        buffers.forEach(srcBuffer -> put(srcBuffer, newBuffer));
+        flipToFlush(newBuffer, pos);
         return newBuffer;
     }
 }
