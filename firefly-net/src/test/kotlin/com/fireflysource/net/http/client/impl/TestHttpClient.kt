@@ -2,10 +2,12 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
+import com.fireflysource.net.http.common.model.ContentEncoding
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServer
+import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.HttpServerFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -45,6 +47,11 @@ class TestHttpClient {
             }
             .router().path("/testNoChunkedEncoding").handler { ctx ->
                 ctx.put(HttpHeader.CONTENT_LENGTH, "32").end("test no chunked encoding success")
+            }
+            .router().get("/testCompressedContent").handler { ctx ->
+                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.DEFLATE.value)
+                    .contentProvider(stringBody("测试压缩内容", StandardCharsets.UTF_8, ContentEncoding.DEFLATE))
+                    .end()
             }
             .timeout(120 * 1000)
             .listen(address)
@@ -124,6 +131,19 @@ class TestHttpClient {
             assertEquals("test no chunked encoding success", response.stringBody)
             assertEquals(32, response.contentLength)
         }
+
+        httpClient.stop()
+    }
+
+    @Test
+    @DisplayName("should get compressed content successfully")
+    fun testCompressedContent() = runBlocking {
+        val httpClient = HttpClientFactory.create()
+        val response = httpClient.get("http://${address.hostName}:${address.port}/testCompressedContent")
+            .submit().await()
+        assertEquals(HttpStatus.OK_200, response.status)
+        assertEquals("测试压缩内容", response.stringBody)
+        println(response)
 
         httpClient.stop()
     }
