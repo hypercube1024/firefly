@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.codec.CookieParser
 import com.fireflysource.net.http.common.model.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.function.Supplier
 
@@ -38,25 +39,28 @@ class AsyncHttpClientResponse(
     override fun getTrailerSupplier(): Supplier<HttpFields> =
         Optional.ofNullable(response.trailerSupplier).orElseGet { Supplier { HttpFields() } }
 
-    override fun getStringBody(): String = Optional
-        .ofNullable(contentHandler)
-        .filter { it is StringContentHandler }
-        .map { it.toString() }
-        .orElse("")
+    override fun getStringBody(): String = getStringBody(StandardCharsets.UTF_8)
 
     override fun getStringBody(charset: Charset): String = Optional
         .ofNullable(contentHandler)
         .filter { it is StringContentHandler }
         .map { it as StringContentHandler }
-        .map { it.toString(charset) }
+        .map { it.toString(charset, getContentEncoding()) }
         .orElse("")
 
     override fun getBody(): List<ByteBuffer> = Optional
         .ofNullable(contentHandler)
         .filter { it is ByteBufferContentHandler }
         .map { it as ByteBufferContentHandler }
-        .map { it.getByteBuffers() }
+        .map { it.getByteBuffers(getContentEncoding()) }
         .orElse(listOf())
+
+    private fun getContentEncoding(): Optional<ContentEncoding> {
+        return Optional.ofNullable(this.httpFields[HttpHeader.CONTENT_ENCODING])
+            .map { it.trim() }
+            .map { it.toLowerCase() }
+            .flatMap { ContentEncoding.from(it) }
+    }
 
     override fun toString(): String {
         return """

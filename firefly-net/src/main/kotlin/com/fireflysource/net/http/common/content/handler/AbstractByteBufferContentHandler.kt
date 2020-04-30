@@ -2,7 +2,9 @@ package com.fireflysource.net.http.common.content.handler
 
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.common.codec.ContentEncoded
 import com.fireflysource.net.http.common.exception.BadMessageException
+import com.fireflysource.net.http.common.model.ContentEncoding
 import com.fireflysource.net.http.common.model.HttpStatus
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -32,10 +34,24 @@ abstract class AbstractByteBufferContentHandler<T>(
     override fun close() {
     }
 
-    fun getByteBuffers(): List<ByteBuffer> = byteBufferList
+    fun getByteBuffers(encoding: Optional<ContentEncoding> = Optional.empty()): List<ByteBuffer> {
+        return if (encoding.isPresent) {
+            val data = decode(encoding.get())
+            listOf(ByteBuffer.wrap(data))
+        } else byteBufferList.map { it.duplicate() }
+    }
 
-    fun toString(charset: Charset): String {
-        return BufferUtils.toString(byteBufferList.map { it.duplicate() }, charset)
+    fun toString(charset: Charset, encoding: Optional<ContentEncoding> = Optional.empty()): String {
+        return if (encoding.isPresent) {
+            val data = decode(encoding.get())
+            String(data, charset)
+        } else BufferUtils.toString(byteBufferList.map { it.duplicate() }, charset)
+    }
+
+    private fun decode(encoding: ContentEncoding): ByteArray {
+        val buffer = BufferUtils.merge(byteBufferList.map { it.duplicate() })
+        val bytes = BufferUtils.toArray(buffer)
+        return ContentEncoded.decode(bytes, encoding)
     }
 
     override fun toString(): String = utf8String

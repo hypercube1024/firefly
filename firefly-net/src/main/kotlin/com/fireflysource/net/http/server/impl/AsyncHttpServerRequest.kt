@@ -13,6 +13,7 @@ import com.fireflysource.net.http.server.impl.content.handler.MultiPartContentHa
 import com.fireflysource.net.http.server.impl.content.handler.StringContentHandler
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
@@ -89,19 +90,14 @@ class AsyncHttpServerRequest(
         this.requestComplete.set(requestComplete)
     }
 
-    override fun getStringBody(): String = Optional
-        .ofNullable(contentHandler)
-        .filter { isRequestComplete }
-        .filter { it is StringContentHandler }
-        .map { it.toString() }
-        .orElse("")
+    override fun getStringBody(): String = getStringBody(StandardCharsets.UTF_8)
 
     override fun getStringBody(charset: Charset): String = Optional
         .ofNullable(contentHandler)
         .filter { isRequestComplete }
         .filter { it is StringContentHandler }
         .map { it as StringContentHandler }
-        .map { it.toString(charset) }
+        .map { it.toString(charset, getContentEncoding()) }
         .orElse("")
 
     override fun getBody(): List<ByteBuffer> = Optional
@@ -109,7 +105,7 @@ class AsyncHttpServerRequest(
         .filter { isRequestComplete }
         .filter { it is ByteBufferContentHandler }
         .map { it as ByteBufferContentHandler }
-        .map { it.getByteBuffers() }
+        .map { it.getByteBuffers(getContentEncoding()) }
         .orElse(listOf())
 
     override fun getFormInput(name: String): String = Optional
@@ -117,7 +113,7 @@ class AsyncHttpServerRequest(
         .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
-        .map { it.getFormInput(name) }
+        .map { it.getFormInput(name, getContentEncoding()) }
         .orElse("")
 
     override fun getFormInputs(name: String): List<String> = Optional
@@ -125,7 +121,7 @@ class AsyncHttpServerRequest(
         .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
-        .map { it.getFormInputs(name) }
+        .map { it.getFormInputs(name, getContentEncoding()) }
         .orElse(listOf())
 
     override fun getFormInputs(): Map<String, List<String>> = Optional
@@ -133,7 +129,7 @@ class AsyncHttpServerRequest(
         .filter { isRequestComplete }
         .filter { it is FormInputsContentHandler }
         .map { it as FormInputsContentHandler }
-        .map { it.getFormInputs() }
+        .map { it.getFormInputs(getContentEncoding()) }
         .orElse(mapOf())
 
     override fun getPart(name: String): MultiPart? = Optional
@@ -153,6 +149,13 @@ class AsyncHttpServerRequest(
         .orElse(listOf())
 
     override fun getTrailerSupplier(): Supplier<HttpFields> = request.trailerSupplier
+
+    private fun getContentEncoding(): Optional<ContentEncoding> {
+        return Optional.ofNullable(this.httpFields[HttpHeader.CONTENT_ENCODING])
+            .map { it.trim() }
+            .map { it.toLowerCase() }
+            .flatMap { ContentEncoding.from(it) }
+    }
 
     override fun toString(): String {
         return """
