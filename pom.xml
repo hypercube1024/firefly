@@ -78,7 +78,7 @@
         <openjsse.version>1.1.0</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>Dysprosium-SR5</spring.reactor.version>
+        <spring.reactor.version>Dysprosium-SR7</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.6.0</junit.version>
