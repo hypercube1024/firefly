@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.common.codec;
 
+import com.fireflysource.net.http.common.exception.NotSupportContentEncoding;
 import com.fireflysource.net.http.common.model.ContentEncoding;
 
 import java.io.*;
@@ -48,7 +49,7 @@ abstract public class ContentEncoded {
             case DEFLATE:
                 return new InflaterInputStream(in, new Inflater(), bufferSize);
             default:
-                throw new IOException("Not support the content encoding");
+                throw new NotSupportContentEncoding("Not support the content encoding");
         }
     }
 
@@ -59,7 +60,9 @@ abstract public class ContentEncoded {
             case DEFLATE:
                 return new DeflaterOutputStream(out, new Deflater(), bufferSize);
             default:
-                throw new IOException("Not support the content encoding");
+                throw new NotSupportContentEncoding("Not support the content encoding");
         }
     }
+
+
 }

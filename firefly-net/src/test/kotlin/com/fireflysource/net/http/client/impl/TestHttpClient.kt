@@ -49,8 +49,8 @@ class TestHttpClient {
                 ctx.put(HttpHeader.CONTENT_LENGTH, "32").end("test no chunked encoding success")
             }
             .router().get("/testCompressedContent").handler { ctx ->
-                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.DEFLATE.value)
-                    .contentProvider(stringBody("测试压缩内容", StandardCharsets.UTF_8, ContentEncoding.DEFLATE))
+                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.GZIP.value)
+                    .contentProvider(stringBody("测试压缩内容", StandardCharsets.UTF_8, ContentEncoding.GZIP))
                     .end()
             }
             .timeout(120 * 1000)

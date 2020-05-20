@@ -26,7 +26,7 @@ public enum ContentEncoding {
     }
 
     public static Optional<ContentEncoding> from(String value) {
-        return Optional.ofNullable(Holder.map.get(value));
+        return Optional.ofNullable(value).map(Holder.map::get);
     }
 
 }
