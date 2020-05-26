@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.server.HttpServerConnection
@@ -14,6 +15,7 @@ import java.util.function.Function
 /**
  * @author Pengtao Qiu
  */
+@NoArg
 class AsyncHttpServerConnectionListener(
     private val routerManager: RouterManager,
     private val onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>>,
