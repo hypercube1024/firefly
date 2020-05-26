@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
@@ -23,6 +24,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
+@NoArg
 class AsyncHttpClientConnectionManager(
     private val config: HttpConfig = HttpConfig()
 ) : HttpClientConnectionManager, AbstractLifeCycle() {
