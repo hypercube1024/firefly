@@ -75,7 +75,7 @@
         <redisson.version>3.12.3</redisson.version>
         <conscrypt.version>2.4.0</conscrypt.version>
         <bouncycastle.version>1.64</bouncycastle.version>
-        <openjsse.version>1.1.0</openjsse.version>
+        <openjsse.version>1.1.2</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>Dysprosium-SR7</spring.reactor.version>
