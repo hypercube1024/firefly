@@ -6,6 +6,7 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.impl.router.asyncHandler
+import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,6 +28,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         val httpServer = createHttpServer(protocol, schema)
         httpServer
             .router().path("*").asyncHandler { ctx ->
+                assertTrue(getCurrentRoutingContext() != null)
                 ctx.write("into router -> ")
                 ctx.next().await()
                 ctx.end("end router.")

@@ -7,7 +7,7 @@ class AioTcpCoroutineDispatcher(
     id: Int,
     private val dispatcher: CoroutineDispatcher,
     private val supervisor: CompletableJob = SupervisorJob(),
-    private val scope: CoroutineScope = CoroutineScope(dispatcher + supervisor + CoroutineName("ConnectionScope#$id"))
+    private val scope: CoroutineScope = CoroutineScope(dispatcher + supervisor + CoroutineName("TcpConnection#$id"))
 ) : TcpCoroutineDispatcher {
     
     override fun getCoroutineDispatcher(): CoroutineDispatcher = dispatcher

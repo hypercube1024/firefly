@@ -29,6 +29,7 @@ class TestCoroutineLocal {
         val key = "index"
         val jobs = List(5) { i ->
             async(dispatcher + ctx.asElement(mutableMapOf(key to i))) {
+                testAttr(key, i)
                 withTimeout(2000) {
                     assertEquals(i, ctx.getAttr<Int>(key))
                     ctx.computeIfAbsent("key33") { 33 }
@@ -43,6 +44,11 @@ class TestCoroutineLocal {
             it.join()
         }
 
+    }
+
+    private suspend fun testAttr(key: String, expect: Int) {
+        event { println("hello") }.join()
+        assertEquals(expect, ctx.getAttr<Int>(key))
     }
 
     private suspend fun testLocalAttr(key: String, expect: Int) = withContextInheritable {
