@@ -19,6 +19,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Supplier
@@ -111,7 +112,15 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
             response.fields.put(HttpHeader.CONTENT_LENGTH, provider.length().toString())
         }
 
-        val output = createHttpServerOutputChannel(response)
+        val contentEncoding = Optional
+            .ofNullable(response.fields[HttpHeader.CONTENT_ENCODING])
+            .flatMap { ContentEncoding.from(it) }
+
+        val output = if (contentEncoding.isPresent) {
+            val out = createHttpServerOutputChannel(response)
+            CompressedServerOutputChannel(out, contentEncoding.get())
+        } else createHttpServerOutputChannel(response)
+
         if (provider != null) {
             output.useAwait {
                 it.commit().await()

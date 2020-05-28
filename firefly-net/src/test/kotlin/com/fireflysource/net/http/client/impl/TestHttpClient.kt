@@ -7,7 +7,6 @@ import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServer
-import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.HttpServerFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -49,9 +48,7 @@ class TestHttpClient {
                 ctx.put(HttpHeader.CONTENT_LENGTH, "32").end("test no chunked encoding success")
             }
             .router().get("/testCompressedContent").handler { ctx ->
-                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.GZIP.value)
-                    .contentProvider(stringBody("测试压缩内容", StandardCharsets.UTF_8, ContentEncoding.GZIP))
-                    .end()
+                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.GZIP.value).write("测试压缩内容").end()
             }
             .timeout(120 * 1000)
             .listen(address)
@@ -139,8 +136,9 @@ class TestHttpClient {
     @DisplayName("should get compressed content successfully")
     fun testCompressedContent() = runBlocking {
         val httpClient = HttpClientFactory.create()
-        val response = httpClient.get("http://${address.hostName}:${address.port}/testCompressedContent")
-            .submit().await()
+        val response =
+            httpClient.get("http://${address.hostName}:${address.port}/testCompressedContent").submit().await()
+
         assertEquals(HttpStatus.OK_200, response.status)
         assertEquals("测试压缩内容", response.stringBody)
         println(response)
