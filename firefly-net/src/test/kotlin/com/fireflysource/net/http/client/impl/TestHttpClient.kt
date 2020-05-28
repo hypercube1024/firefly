@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.model.ContentEncoding
@@ -48,7 +49,18 @@ class TestHttpClient {
                 ctx.put(HttpHeader.CONTENT_LENGTH, "32").end("test no chunked encoding success")
             }
             .router().get("/testCompressedContent").handler { ctx ->
-                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.GZIP.value).write("测试压缩内容").end()
+                ctx.put(HttpHeader.CONTENT_ENCODING, ContentEncoding.GZIP.value)
+                    .write("测试压缩内容：")
+                    .write(
+                        mutableListOf(
+                            BufferUtils.toBuffer("跳过", StandardCharsets.UTF_8),
+                            BufferUtils.toBuffer("跳过", StandardCharsets.UTF_8),
+                            BufferUtils.toBuffer("今天，", StandardCharsets.UTF_8),
+                            BufferUtils.toBuffer("非常愉快的", StandardCharsets.UTF_8),
+                            BufferUtils.toBuffer("搞定了这个功能。", StandardCharsets.UTF_8)
+                        ), 2, 3
+                    )
+                    .end()
             }
             .timeout(120 * 1000)
             .listen(address)
@@ -140,7 +152,7 @@ class TestHttpClient {
             httpClient.get("http://${address.hostName}:${address.port}/testCompressedContent").submit().await()
 
         assertEquals(HttpStatus.OK_200, response.status)
-        assertEquals("测试压缩内容", response.stringBody)
+        assertEquals("测试压缩内容：今天，非常愉快的搞定了这个功能。", response.stringBody)
         println(response)
 
         httpClient.stop()
