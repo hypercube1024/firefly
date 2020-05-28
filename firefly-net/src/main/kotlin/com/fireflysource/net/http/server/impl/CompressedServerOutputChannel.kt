@@ -16,11 +16,10 @@ class CompressedServerOutputChannel(
     private val outputChannel: HttpServerOutputChannel,
     private val contentEncoding: ContentEncoding,
     private val bufferSize: Int = 512
-) : HttpServerOutputChannel by outputChannel {
+) : HttpServerOutputChannel {
 
     private var compressedOutputStream: OutputStream? = null
     private var outputStreamAdapter: ServerOutputStreamAdapter? = null
-
 
     private inner class ServerOutputStreamAdapter : OutputStream() {
 
@@ -42,6 +41,8 @@ class CompressedServerOutputChannel(
 
     }
 
+    override fun isCommitted(): Boolean = outputChannel.isCommitted
+
     override fun commit(): CompletableFuture<Void> {
         return outputChannel.commit().thenAccept {
             val adapter = ServerOutputStreamAdapter()
@@ -51,7 +52,7 @@ class CompressedServerOutputChannel(
 
     override fun write(byteBuffer: ByteBuffer): CompletableFuture<Int> {
         val bytes = BufferUtils.toArray(byteBuffer)
-        compressedOutputStream?.write(bytes)
+        getOutput().write(bytes)
         val future = CompletableFuture<Int>()
         future.complete(bytes.size)
         return future
@@ -61,7 +62,7 @@ class CompressedServerOutputChannel(
         val last = offset + length - 1
         val buffer = BufferUtils.merge((offset..last).map { byteBuffers[it].duplicate() })
         val bytes = BufferUtils.toArray(buffer)
-        compressedOutputStream?.write(bytes)
+        getOutput().write(bytes)
         val future = CompletableFuture<Long>()
         future.complete(bytes.size.toLong())
         return future
@@ -80,9 +81,21 @@ class CompressedServerOutputChannel(
         return write(buffer)
     }
 
+    private fun getOutput(): OutputStream {
+        val output = compressedOutputStream
+        requireNotNull(output) { "The compressed output stream not create" }
+        return output
+    }
+
     override fun closeFuture(): CompletableFuture<Void> {
         compressedOutputStream?.close()
         outputStreamAdapter?.close()
         return outputChannel.closeFuture()
     }
+
+    override fun close() {
+        closeFuture()
+    }
+
+    override fun isOpen(): Boolean = outputChannel.isOpen
 }
