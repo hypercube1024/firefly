@@ -839,4 +839,21 @@ public class StringUtils {
         }
         return true;
     }
+
+    /**
+     * Truncate a string to a max size.
+     *
+     * @param str     the string to possibly truncate
+     * @param maxSize the maximum size of the string
+     * @return the truncated string.  if <code>str</code> param is null, then the returned string will also be null.
+     */
+    public static String truncate(String str, int maxSize) {
+        if (str == null) {
+            return null;
+        }
+        if (str.length() <= maxSize) {
+            return str;
+        }
+        return str.substring(0, maxSize);
+    }
 }
