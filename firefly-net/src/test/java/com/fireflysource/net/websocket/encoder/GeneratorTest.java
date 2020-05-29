@@ -4,9 +4,10 @@ import com.fireflysource.common.io.BufferUtils;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
+import com.fireflysource.net.websocket.decoder.Parser;
+import com.fireflysource.net.websocket.decoder.UnitParser;
 import com.fireflysource.net.websocket.frame.*;
-import com.fireflysource.net.websocket.model.CloseInfo;
-import com.fireflysource.net.websocket.model.StatusCode;
+import com.fireflysource.net.websocket.model.*;
 import com.fireflysource.net.websocket.utils.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -219,53 +220,51 @@ public class GeneratorTest {
         assertEquals(expectedSize, completeBuffer.remaining());
     }
 
-//    @Test
-//    public void testWindowedGenerateWithMasking()
-//    {
-//        // A decent sized frame, with masking
-//        byte[] payload = new byte[10240];
-//        Arrays.fill(payload, (byte)0x55);
-//
-//        byte[] mask = new byte[]
-//            {0x2A, (byte)0xF0, 0x0F, 0x00};
-//
-//        WebSocketFrame frame = new BinaryFrame().setPayload(payload);
-//        frame.setMask(mask); // masking!
-//
-//        // Generate
-//        int windowSize = 2929;
-//        WindowHelper helper = new WindowHelper(windowSize);
-//        ByteBuffer completeBuffer = helper.generateWindowed(frame);
-//
-//        // Validate
-//        int expectedHeaderSize = 8;
-//        int expectedSize = payload.length + expectedHeaderSize;
-//        int expectedParts = 1;
-//
-//        helper.assertTotalParts(expectedParts);
-//        helper.assertTotalBytes(payload.length + expectedHeaderSize);
-//
-//        assertEquals(expectedSize, completeBuffer.remaining());
-//
-//        // Parse complete buffer.
-//        WebSocketPolicy policy = WebSocketPolicy.newServerPolicy();
-//        Parser parser = new UnitParser(policy);
-//        IncomingFramesCapture capture = new IncomingFramesCapture();
-//        parser.setIncomingFramesHandler(capture);
-//
-//        parser.parse(completeBuffer);
-//
-//        // Assert validity of frame
-//        WebSocketFrame actual = capture.getFrames().poll();
-//        assertThat("Frame.opcode", actual.getOpCode(), is(OpCode.BINARY));
-//        assertThat("Frame.payloadLength", actual.getPayloadLength(), is(payload.length));
-//
-//        // Validate payload contents for proper masking
-//        ByteBuffer actualData = actual.getPayload().slice();
-//        assertThat("Frame.payload.remaining", actualData.remaining(), is(payload.length));
-//        while (actualData.remaining() > 0)
-//        {
-//            assertThat("Actual.payload[" + actualData.position() + "]", actualData.get(), is((byte)0x55));
-//        }
-//    }
+    @Test
+    public void testWindowedGenerateWithMasking() {
+        // A decent sized frame, with masking
+        byte[] payload = new byte[10240];
+        Arrays.fill(payload, (byte) 0x55);
+
+        byte[] mask = new byte[]
+                {0x2A, (byte) 0xF0, 0x0F, 0x00};
+
+        WebSocketFrame frame = new BinaryFrame().setPayload(payload);
+        frame.setMask(mask); // masking!
+
+        // Generate
+        int windowSize = 2929;
+        WindowHelper helper = new WindowHelper(windowSize);
+        ByteBuffer completeBuffer = helper.generateWindowed(frame);
+
+        // Validate
+        int expectedHeaderSize = 8;
+        int expectedSize = payload.length + expectedHeaderSize;
+        int expectedParts = 1;
+
+        helper.assertTotalParts(expectedParts);
+        helper.assertTotalBytes(payload.length + expectedHeaderSize);
+
+        assertEquals(expectedSize, completeBuffer.remaining());
+
+        // Parse complete buffer.
+        WebSocketPolicy policy = WebSocketPolicy.newServerPolicy();
+        Parser parser = new UnitParser(policy);
+        IncomingFramesCapture capture = new IncomingFramesCapture();
+        parser.setIncomingFramesHandler(capture);
+
+        parser.parse(completeBuffer);
+
+        // Assert validity of frame
+        WebSocketFrame actual = capture.getFrames().poll();
+        assertEquals(OpCode.BINARY, actual.getOpCode());
+        assertEquals(payload.length, actual.getPayloadLength());
+
+        // Validate payload contents for proper masking
+        ByteBuffer actualData = actual.getPayload().slice();
+        assertEquals(payload.length, actualData.remaining());
+        while (actualData.remaining() > 0) {
+            assertEquals((byte) 0x55, actualData.get());
+        }
+    }
 }
