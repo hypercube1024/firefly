@@ -197,7 +197,7 @@ public class WebSocketPolicy {
      * Get the maximum size of a binary message during parsing.
      * <p>
      * This is a memory conservation option, memory over this limit will not be
-     * allocated by Jetty for handling binary messages.  This applies to individual frames,
+     * allocated by handling binary messages.  This applies to individual frames,
      * whole message handling, and partial message handling.
      * </p>
      * <p>
@@ -223,7 +223,7 @@ public class WebSocketPolicy {
      * Get the maximum size of a text message during parsing.
      * <p>
      * This is a memory conservation option, memory over this limit will not be
-     * allocated by Jetty for handling text messages.  This applies to individual frames,
+     * allocated by handling text messages.  This applies to individual frames,
      * whole message handling, and partial message handling.
      * </p>
      * <p>
@@ -285,7 +285,7 @@ public class WebSocketPolicy {
      * The maximum size of a binary message during parsing.
      * <p>
      * This is a memory conservation option, memory over this limit will not be
-     * allocated by Jetty for handling binary messages.  This applies to individual frames,
+     * allocated by handling binary messages.  This applies to individual frames,
      * whole message handling, and partial message handling.
      * </p>
      * <p>
@@ -317,7 +317,7 @@ public class WebSocketPolicy {
      * The maximum size of a text message during parsing.
      * <p>
      * This is a memory conservation option, memory over this limit will not be
-     * allocated by Jetty for handling text messages.  This applies to individual frames,
+     * allocated by handling text messages.  This applies to individual frames,
      * whole message handling, and partial message handling.
      * </p>
      * <p>
