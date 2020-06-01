@@ -35,7 +35,6 @@ class TestAsyncWebSocketConnection {
                 arguments("deflate-frame"),
                 arguments("permessage-deflate"),
                 arguments("x-webkit-deflate-frame")
-
             )
         }
     }
