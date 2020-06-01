@@ -3,6 +3,7 @@ package com.fireflysource.net.websocket.common;
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
+import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.IncomingFrames;
 import com.fireflysource.net.websocket.common.model.OutgoingFrames;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
@@ -10,6 +11,8 @@ import com.fireflysource.net.websocket.common.stream.IOState;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+
+import static com.fireflysource.common.sys.Result.futureToConsumer;
 
 /**
  * @author Pengtao Qiu
@@ -52,6 +55,18 @@ public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher,
      * @return The future result.
      */
     CompletableFuture<Void> sendData(ByteBuffer data);
+
+    /**
+     * Send websocket frame.
+     *
+     * @param frame The websocket frame.
+     * @return The future result.
+     */
+    default CompletableFuture<Void> sendFrame(Frame frame) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        outgoingFrame(frame, futureToConsumer(future));
+        return future;
+    }
 
     /**
      * Set the next incoming frames.

@@ -86,7 +86,7 @@ class AsyncWebSocketConnection(
                 val closeFrame = frame as CloseFrame
                 val closeInfo = CloseInfo(closeFrame.payload, false)
                 ioState.onCloseRemote(closeInfo)
-                this.closeFuture()
+                tcpConnection.closeFuture()
             }
             else -> {
             }
@@ -96,7 +96,6 @@ class AsyncWebSocketConnection(
 
     override fun setNextIncomingFrames(nextIncomingFrames: IncomingFrames) {
         extensionNegotiator.nextIncomingFrames = nextIncomingFrames
-
     }
 
     override fun outgoingFrame(frame: Frame, result: Consumer<Result<Void>>) {
@@ -106,6 +105,12 @@ class AsyncWebSocketConnection(
     override fun getUpgradeRequest(): MetaData.Request = upgradeRequest
 
     override fun getUpgradeResponse(): MetaData.Response = upgradeResponse
+
+    override fun closeFuture(): CompletableFuture<Void> = sendFrame(CloseFrame())
+
+    override fun close() {
+        closeFuture()
+    }
 
     override fun begin() {
         if (extensionNegotiator.nextIncomingFrames == null) {
@@ -152,7 +157,7 @@ class AsyncWebSocketConnection(
             }
         }
 
-        this.coroutineScope.launch {
+        tcpConnection.coroutineScope.launch {
             while (true) {
                 try {
                     val buffer = tcpConnection.read().await()
@@ -160,6 +165,7 @@ class AsyncWebSocketConnection(
                 } catch (e: Exception) {
                     log.error(e) { "WebSocket frame parsing error." }
                     tcpConnection.closeFuture()
+                    break
                 }
             }
         }

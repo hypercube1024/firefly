@@ -46,10 +46,11 @@ public class ExtensionNegotiator {
     }
 
     public List<ExtensionConfig> createExtensionConfigs(HttpFields fields) {
-        return ExtensionConfig.parseEnum(fields.getValues(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.getValue()))
-                              .stream()
-                              .filter(c -> factory.isAvailable(c.getName()))
-                              .collect(Collectors.toList());
+        return ExtensionConfig
+                .parseEnum(fields.getValues(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.getValue()))
+                .stream()
+                .filter(c -> factory.isAvailable(c.getName()))
+                .collect(Collectors.toList());
     }
 
     public List<Extension> createExtensionChain(HttpFields fields) {
@@ -84,17 +85,18 @@ public class ExtensionNegotiator {
     }
 
     private List<Extension> createExtensions(HttpFields fields) {
-        return ExtensionConfig.parseEnum(fields.getValues(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.getValue()))
-                              .stream().filter(c -> factory.isAvailable(c.getName()))
-                              .map(c -> {
-                                  Extension e = factory.newInstance(c);
-                                  if (e instanceof AbstractExtension) {
-                                      AbstractExtension abstractExtension = (AbstractExtension) e;
-                                      abstractExtension.setConfig(c);
-                                  }
-                                  return e;
-                              })
-                              .collect(Collectors.toList());
+        return ExtensionConfig
+                .parseEnum(fields.getValues(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.getValue()))
+                .stream().filter(c -> factory.isAvailable(c.getName()))
+                .map(c -> {
+                    Extension e = factory.newInstance(c);
+                    if (e instanceof AbstractExtension) {
+                        AbstractExtension abstractExtension = (AbstractExtension) e;
+                        abstractExtension.setConfig(c);
+                    }
+                    return e;
+                })
+                .collect(Collectors.toList());
     }
 
     public IncomingFrames getNextIncomingFrames() {
