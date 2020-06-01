@@ -1,7 +1,10 @@
 package com.fireflysource.net.websocket.common;
 
 import com.fireflysource.net.Connection;
+import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
+import com.fireflysource.net.websocket.common.model.IncomingFrames;
+import com.fireflysource.net.websocket.common.model.OutgoingFrames;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 import com.fireflysource.net.websocket.common.stream.IOState;
 
@@ -11,14 +14,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author Pengtao Qiu
  */
-public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher {
-
-    /**
-     * Get the read/write idle timeout.
-     *
-     * @return the idle timeout in milliseconds
-     */
-    long getIdleTimeout();
+public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher, OutgoingFrames {
 
     /**
      * Get the IOState of the connection.
@@ -57,4 +53,29 @@ public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher 
      */
     CompletableFuture<Void> sendData(ByteBuffer data);
 
+    /**
+     * Set the next incoming frames.
+     *
+     * @param nextIncomingFrames The next incoming frames.
+     */
+    void setNextIncomingFrames(IncomingFrames nextIncomingFrames);
+
+    /**
+     * Get the websocket upgrade request.
+     *
+     * @return The upgrade request.
+     */
+    MetaData.Request getUpgradeRequest();
+
+    /**
+     * Get the websocket upgrade response.
+     *
+     * @return The upgrade response.
+     */
+    MetaData.Response getUpgradeResponse();
+
+    /**
+     * Begin to receive websocket data.
+     */
+    void begin();
 }
