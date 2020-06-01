@@ -8,7 +8,6 @@ import com.fireflysource.net.websocket.common.exception.ProtocolException;
 import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.ExtensionConfig;
 import com.fireflysource.net.websocket.common.model.OpCode;
-import com.fireflysource.net.websocket.common.model.WebSocketBehavior;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
@@ -119,10 +118,10 @@ public class PerMessageDeflateExtension extends CompressExtension {
                 case "client_no_context_takeover": {
                     configNegotiated.setParameter("client_no_context_takeover");
                     switch (getPolicy().getBehavior()) {
-                        case WebSocketBehavior.CLIENT:
+                        case CLIENT:
                             incomingContextTakeover = false;
                             break;
-                        case WebSocketBehavior.SERVER:
+                        case SERVER:
                             outgoingContextTakeover = false;
                             break;
                     }
@@ -131,10 +130,10 @@ public class PerMessageDeflateExtension extends CompressExtension {
                 case "server_no_context_takeover": {
                     configNegotiated.setParameter("server_no_context_takeover");
                     switch (getPolicy().getBehavior()) {
-                        case WebSocketBehavior.CLIENT:
+                        case CLIENT:
                             outgoingContextTakeover = false;
                             break;
-                        case WebSocketBehavior.SERVER:
+                        case SERVER:
                             incomingContextTakeover = false;
                             break;
                     }

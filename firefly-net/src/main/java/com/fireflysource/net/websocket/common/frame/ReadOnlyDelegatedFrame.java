@@ -51,12 +51,6 @@ public class ReadOnlyDelegatedFrame implements Frame {
     }
 
     @Override
-    @Deprecated
-    public boolean isLast() {
-        return delegate.isLast();
-    }
-
-    @Override
     public boolean isMasked() {
         return delegate.isMasked();
     }
