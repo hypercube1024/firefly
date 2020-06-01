@@ -10,10 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ExtensionConfigTest {
 
     private void assertConfig(ExtensionConfig cfg, String expectedName, Map<String, String> expectedParams) {
-        String prefix = "ExtensionConfig";
         assertEquals(expectedName, cfg.getName());
 
-        prefix += ".getParameters()";
         Map<String, String> actualParams = cfg.getParameters();
         assertNotNull(actualParams);
         assertEquals(expectedParams.size(), actualParams.size());
