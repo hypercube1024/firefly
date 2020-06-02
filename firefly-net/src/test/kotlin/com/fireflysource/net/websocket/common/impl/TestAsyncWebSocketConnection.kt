@@ -1,5 +1,6 @@
 package com.fireflysource.net.websocket.common.impl
 
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpServerFactory
@@ -64,16 +65,15 @@ class TestAsyncWebSocketConnection {
                 policy,
                 upgradeRequest, upgradeResponse
             )
-            webSocketConnection.setNextIncomingFrames { frame ->
+            webSocketConnection.setWebSocketMessageHandler { frame, c ->
                 println("Server receive: ${frame.type}")
                 when (frame.type) {
                     Frame.Type.TEXT -> {
                         val textFrame = frame as TextFrame
                         println("server receive: ${textFrame.payloadAsUTF8}")
-                        webSocketConnection.sendText("response ${textFrame.payloadAsUTF8}")
+                        c.sendText("response ${textFrame.payloadAsUTF8}")
                     }
-                    else -> {
-                    }
+                    else -> Result.DONE
                 }
             }
             webSocketConnection.begin()
@@ -100,16 +100,16 @@ class TestAsyncWebSocketConnection {
             policy,
             upgradeRequest, upgradeResponse
         )
-        webSocketConnection.setNextIncomingFrames { frame ->
+        webSocketConnection.setWebSocketMessageHandler { frame, _ ->
             when (frame.type) {
                 Frame.Type.TEXT -> {
                     val textFrame = frame as TextFrame
                     val str = textFrame.payloadAsUTF8
                     println("Client receive: $str")
                     channel.offer(str)
+                    Result.DONE
                 }
-                else -> {
-                }
+                else -> Result.DONE
             }
         }
         webSocketConnection.begin()

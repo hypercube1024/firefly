@@ -6,9 +6,7 @@ import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.websocket.common.extension.AbstractExtension;
-import com.fireflysource.net.websocket.common.frame.DataFrame;
-import com.fireflysource.net.websocket.common.frame.Frame;
-import com.fireflysource.net.websocket.common.frame.TextFrame;
+import com.fireflysource.net.websocket.common.frame.*;
 import com.fireflysource.net.websocket.common.model.OpCode;
 
 import java.io.ByteArrayOutputStream;
@@ -120,10 +118,19 @@ public abstract class CompressExtension extends AbstractExtension {
 
     protected void forwardIncoming(Frame frame, ByteAccumulator accumulator) {
         DataFrame newFrame;
-        if (frame.getType() == Frame.Type.TEXT) {
-            newFrame = new TextFrame(frame);
-        } else {
-            newFrame = new DataFrame(frame);
+        switch (frame.getType()) {
+            case TEXT:
+                newFrame = new TextFrame(frame);
+                break;
+            case BINARY:
+                newFrame = new BinaryFrame(frame);
+                break;
+            case CONTINUATION:
+                newFrame = new ContinuationFrame(frame);
+                break;
+            default:
+                newFrame = new DataFrame(frame);
+                break;
         }
         // Unset RSV1 since it's not compressed anymore.
         newFrame.setRsv1(false);

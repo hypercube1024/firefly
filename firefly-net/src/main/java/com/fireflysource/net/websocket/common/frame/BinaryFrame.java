@@ -6,8 +6,13 @@ import com.fireflysource.net.websocket.common.model.OpCode;
 import java.nio.ByteBuffer;
 
 public class BinaryFrame extends DataFrame {
+
     public BinaryFrame() {
         super(OpCode.BINARY);
+    }
+
+    public BinaryFrame(Frame basedOn) {
+        super(basedOn);
     }
 
     @Override

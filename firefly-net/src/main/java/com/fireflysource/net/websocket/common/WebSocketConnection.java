@@ -4,20 +4,18 @@ import com.fireflysource.net.Connection;
 import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
 import com.fireflysource.net.websocket.common.frame.Frame;
-import com.fireflysource.net.websocket.common.model.IncomingFrames;
-import com.fireflysource.net.websocket.common.model.OutgoingFrames;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 import com.fireflysource.net.websocket.common.stream.IOState;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
-import static com.fireflysource.common.sys.Result.futureToConsumer;
-
 /**
+ * The websocket connection.
+ *
  * @author Pengtao Qiu
  */
-public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher, OutgoingFrames {
+public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher {
 
     /**
      * Get the IOState of the connection.
@@ -62,18 +60,14 @@ public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher,
      * @param frame The websocket frame.
      * @return The future result.
      */
-    default CompletableFuture<Void> sendFrame(Frame frame) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        outgoingFrame(frame, futureToConsumer(future));
-        return future;
-    }
+    CompletableFuture<Void> sendFrame(Frame frame);
 
     /**
-     * Set the next incoming frames.
+     * Set the websocket message handler.
      *
-     * @param nextIncomingFrames The next incoming frames.
+     * @param handler The websocket message handler.
      */
-    void setNextIncomingFrames(IncomingFrames nextIncomingFrames);
+    void setWebSocketMessageHandler(WebSocketMessageHandler handler);
 
     /**
      * Get the websocket upgrade request.

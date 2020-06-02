@@ -6,8 +6,13 @@ import com.fireflysource.net.websocket.common.model.OpCode;
 import java.nio.ByteBuffer;
 
 public class ContinuationFrame extends DataFrame {
+
     public ContinuationFrame() {
         super(OpCode.CONTINUATION);
+    }
+
+    public ContinuationFrame(Frame basedOn) {
+        super(basedOn);
     }
 
     @Override

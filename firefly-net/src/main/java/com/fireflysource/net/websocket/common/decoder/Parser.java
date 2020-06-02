@@ -207,8 +207,6 @@ public class Parser {
     }
 
     private void reset() {
-        if (frame != null)
-            frame.reset();
         frame = null;
         payload = null;
     }

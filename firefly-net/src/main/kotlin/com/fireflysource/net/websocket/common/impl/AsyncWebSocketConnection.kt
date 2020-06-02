@@ -11,17 +11,16 @@ import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import com.fireflysource.net.websocket.common.WebSocketConnection
+import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.decoder.Parser
 import com.fireflysource.net.websocket.common.encoder.Generator
 import com.fireflysource.net.websocket.common.exception.NextIncomingFramesNotSetException
 import com.fireflysource.net.websocket.common.extension.AbstractExtension
 import com.fireflysource.net.websocket.common.frame.*
-import com.fireflysource.net.websocket.common.model.CloseInfo
-import com.fireflysource.net.websocket.common.model.IncomingFrames
-import com.fireflysource.net.websocket.common.model.WebSocketBehavior
-import com.fireflysource.net.websocket.common.model.WebSocketPolicy
+import com.fireflysource.net.websocket.common.model.*
 import com.fireflysource.net.websocket.common.stream.ExtensionNegotiator
 import com.fireflysource.net.websocket.common.stream.IOState
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -38,7 +37,8 @@ class AsyncWebSocketConnection(
     private val webSocketPolicy: WebSocketPolicy,
     private val upgradeRequest: MetaData.Request,
     private val upgradeResponse: MetaData.Response
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, WebSocketConnection, IncomingFrames {
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, WebSocketConnection,
+    IncomingFrames, OutgoingFrames {
 
     companion object {
         private val log = SystemLogger.create(AsyncWebSocketConnection::class.java)
@@ -48,6 +48,8 @@ class AsyncWebSocketConnection(
     private val ioState = IOState()
     private val parser = Parser(webSocketPolicy)
     private val generator = Generator(webSocketPolicy)
+    private val messageChannel = Channel<Frame>(Channel.UNLIMITED)
+    private var messageHandler: WebSocketMessageHandler? = null
 
     override fun getPolicy(): WebSocketPolicy = webSocketPolicy
 
@@ -62,16 +64,18 @@ class AsyncWebSocketConnection(
     override fun sendData(data: ByteBuffer): CompletableFuture<Void> {
         val binaryFrame = BinaryFrame()
         binaryFrame.payload = data
-        val future = CompletableFuture<Void>()
-        outgoingFrame(binaryFrame, futureToConsumer(future))
-        return future
+        return sendFrame(binaryFrame)
     }
 
     override fun sendText(text: String): CompletableFuture<Void> {
         val textFrame = TextFrame()
         textFrame.setPayload(text)
+        return sendFrame(textFrame)
+    }
+
+    override fun sendFrame(frame: Frame): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        outgoingFrame(textFrame, futureToConsumer(future))
+        outgoingFrame(frame, futureToConsumer(future))
         return future
     }
 
@@ -94,8 +98,9 @@ class AsyncWebSocketConnection(
         extensionNegotiator.incomingFrames?.incomingFrame(frame)
     }
 
-    override fun setNextIncomingFrames(nextIncomingFrames: IncomingFrames) {
-        extensionNegotiator.nextIncomingFrames = nextIncomingFrames
+    override fun setWebSocketMessageHandler(handler: WebSocketMessageHandler) {
+        extensionNegotiator.setNextIncomingFrames { messageChannel.offer(it) }
+        messageHandler = handler
     }
 
     override fun outgoingFrame(frame: Frame, result: Consumer<Result<Void>>) {
@@ -120,6 +125,58 @@ class AsyncWebSocketConnection(
         parser.incomingFramesHandler = this
         ioState.onOpened()
 
+        setNextOutgoingFrames()
+        configureFromExtensions()
+        receiveMessageJob()
+        parseFrameJob()
+    }
+
+    private fun parseFrameJob() {
+        tcpConnection.coroutineScope.launch {
+            while (true) {
+                try {
+                    val buffer = tcpConnection.read().await()
+                    parser.parse(buffer)
+                } catch (e: Exception) {
+                    log.error(e) { "Websocket frame parsing error." }
+                    tcpConnection.closeFuture()
+                    break
+                }
+            }
+        }
+    }
+
+    private fun receiveMessageJob() {
+        tcpConnection.coroutineScope.launch {
+            while (true) {
+                val frame = messageChannel.receive()
+                try {
+                    messageHandler?.handle(frame, this@AsyncWebSocketConnection)?.await()
+                } catch (e: Exception) {
+                    log.error(e) { "handle websocket frame exception." }
+                }
+            }
+        }
+    }
+
+    private fun configureFromExtensions() {
+        val metaData =
+            if (upgradeResponse.fields.contains(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)) upgradeResponse
+            else upgradeRequest
+
+        val extensions = extensionNegotiator.createExtensionChain(metaData.fields)
+        if (extensions.isNotEmpty()) {
+            generator.configureFromExtensions(extensions)
+            parser.configureFromExtensions(extensions)
+            extensions.forEach {
+                if (it is AbstractExtension) {
+                    it.policy = policy
+                }
+            }
+        }
+    }
+
+    private fun setNextOutgoingFrames() {
         extensionNegotiator.setNextOutgoingFrames { frame, result ->
             if (policy.behavior == WebSocketBehavior.CLIENT && frame is WebSocketFrame) {
                 if (!frame.isMasked) {
@@ -139,34 +196,6 @@ class AsyncWebSocketConnection(
                 val closeInfo = CloseInfo(frame.getPayload(), false)
                 getIOState().onCloseLocal(closeInfo)
                 tcpConnection.closeFuture()
-            }
-        }
-
-        val metaData =
-            if (upgradeResponse.fields.contains(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)) upgradeResponse
-            else upgradeRequest
-
-        val extensions = extensionNegotiator.createExtensionChain(metaData.fields)
-        if (extensions.isNotEmpty()) {
-            generator.configureFromExtensions(extensions)
-            parser.configureFromExtensions(extensions)
-            extensions.forEach {
-                if (it is AbstractExtension) {
-                    it.policy = policy
-                }
-            }
-        }
-
-        tcpConnection.coroutineScope.launch {
-            while (true) {
-                try {
-                    val buffer = tcpConnection.read().await()
-                    parser.parse(buffer)
-                } catch (e: Exception) {
-                    log.error(e) { "WebSocket frame parsing error." }
-                    tcpConnection.closeFuture()
-                    break
-                }
             }
         }
     }
