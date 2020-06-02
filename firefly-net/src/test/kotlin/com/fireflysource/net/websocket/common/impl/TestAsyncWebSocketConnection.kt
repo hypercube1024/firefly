@@ -109,7 +109,7 @@ class TestAsyncWebSocketConnection {
             assertEquals("response text: $it", text)
         }
 
-        webSocketConnection.closeFuture().await()
+        webSocketConnection.closeFuture()
         client.stop()
         server.stop()
     }
