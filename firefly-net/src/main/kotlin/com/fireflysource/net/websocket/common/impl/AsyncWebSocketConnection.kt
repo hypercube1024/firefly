@@ -142,7 +142,6 @@ class AsyncWebSocketConnection(
                     parser.parse(buffer)
                 } catch (e: CancellationException) {
                     log.info { "The websocket parsing job canceled. id: ${this@AsyncWebSocketConnection.id}" }
-                    tcpConnection.closeFuture()
                     break
                 } catch (e: Exception) {
                     log.error(e) { "Parse websocket frame error. id: ${this@AsyncWebSocketConnection.id}" }
@@ -161,7 +160,6 @@ class AsyncWebSocketConnection(
                     messageHandler?.handle(frame, this@AsyncWebSocketConnection)?.await()
                 } catch (e: CancellationException) {
                     log.info { "The websocket receiving message job canceled. id: ${this@AsyncWebSocketConnection.id}" }
-                    break
                 } catch (e: Exception) {
                     log.error(e) { "Handle websocket frame exception. id: ${this@AsyncWebSocketConnection.id}" }
                 }
