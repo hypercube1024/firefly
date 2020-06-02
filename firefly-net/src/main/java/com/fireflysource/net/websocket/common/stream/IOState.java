@@ -149,7 +149,11 @@ public class IOState {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("{}.onConnectionStateChange({})", listener.getClass().getSimpleName(), state.name());
             }
-            listener.onConnectionStateChange(state);
+            try {
+                listener.onConnectionStateChange(state);
+            } catch (Exception e) {
+                LOG.error("handle websocket connection state change event exception.", e);
+            }
         }
     }
 
@@ -456,7 +460,7 @@ public class IOState {
         closeAndNotify(close);
     }
 
-    public void closeAndNotify(CloseInfo close) {
+    private void closeAndNotify(CloseInfo close) {
         this.cleanClose = false;
         this.state = ConnectionState.CLOSED;
         this.closeInfo = close;
@@ -496,19 +500,19 @@ public class IOState {
         return str.toString();
     }
 
-    public boolean wasAbnormalClose() {
+    public boolean isAbnormalClose() {
         return closeHandshakeSource == CloseHandshakeSource.ABNORMAL;
     }
 
-    public boolean wasCleanClose() {
+    public boolean isCleanClose() {
         return cleanClose;
     }
 
-    public boolean wasLocalCloseInitiated() {
+    public boolean isLocalCloseInitiated() {
         return closeHandshakeSource == CloseHandshakeSource.LOCAL;
     }
 
-    public boolean wasRemoteCloseInitiated() {
+    public boolean isRemoteCloseInitiated() {
         return closeHandshakeSource == CloseHandshakeSource.REMOTE;
     }
 

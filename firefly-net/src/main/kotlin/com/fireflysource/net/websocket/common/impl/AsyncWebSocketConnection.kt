@@ -20,6 +20,7 @@ import com.fireflysource.net.websocket.common.encoder.Generator
 import com.fireflysource.net.websocket.common.exception.NextIncomingFramesNotSetException
 import com.fireflysource.net.websocket.common.frame.*
 import com.fireflysource.net.websocket.common.model.*
+import com.fireflysource.net.websocket.common.stream.ConnectionState
 import com.fireflysource.net.websocket.common.stream.ExtensionNegotiator
 import com.fireflysource.net.websocket.common.stream.IOState
 import kotlinx.coroutines.channels.Channel
@@ -93,7 +94,6 @@ class AsyncWebSocketConnection(
                 val closeFrame = frame as CloseFrame
                 val closeInfo = CloseInfo(closeFrame.payload, false)
                 ioState.onCloseRemote(closeInfo)
-                tcpConnection.closeFuture()
             }
             else -> {
             }
@@ -114,7 +114,15 @@ class AsyncWebSocketConnection(
 
     override fun getUpgradeResponse(): MetaData.Response = upgradeResponse
 
-    override fun closeFuture(): CompletableFuture<Void> = sendFrame(CloseFrame())
+    private fun close(code: Int, reason: String?): CompletableFuture<Void> {
+        val closeInfo = CloseInfo(code, reason)
+        val closeFrame = closeInfo.asFrame()
+        return sendFrame(closeFrame)
+    }
+
+    override fun closeFuture(): CompletableFuture<Void> {
+        return close(StatusCode.NORMAL, null)
+    }
 
     override fun close() {
         closeFuture()
@@ -126,12 +134,25 @@ class AsyncWebSocketConnection(
         }
 
         parser.incomingFramesHandler = this
-        ioState.onOpened()
-
         setNextOutgoingFrames()
         configureFromExtensions()
+        ioState.onConnected()
+
         receiveMessageJob()
         parseFrameJob()
+        ioState.addListener { state ->
+            when (state) {
+                ConnectionState.CLOSED -> tcpConnection.closeFuture()
+                ConnectionState.CLOSING -> {
+                    if (ioState.isOutputAvailable && ioState.isRemoteCloseInitiated) {
+                        close(StatusCode.NORMAL, null)
+                    }
+                }
+                else -> {
+                }
+            }
+        }
+        ioState.onOpened()
     }
 
     private fun parseFrameJob() {
@@ -145,7 +166,7 @@ class AsyncWebSocketConnection(
                     break
                 } catch (e: Exception) {
                     log.error(e) { "Parse websocket frame error. id: ${this@AsyncWebSocketConnection.id}" }
-                    tcpConnection.closeFuture()
+                    ioState.onReadFailure(e)
                     break
                 }
             }
@@ -193,17 +214,17 @@ class AsyncWebSocketConnection(
             buf.flipToFlush(pos)
             tcpConnection.write(buf)
                 .thenCompose { tcpConnection.flush() }
-                .thenCompose {
+                .thenAccept {
                     if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
                         val closeInfo = CloseInfo(frame.getPayload(), false)
                         getIOState().onCloseLocal(closeInfo)
-                        tcpConnection.closeFuture()
-                    } else Result.DONE
+                    }
+                    result.accept(Result.SUCCESS)
                 }
-                .thenAccept { result.accept(Result.SUCCESS) }
-                .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
-
-
+                .exceptionallyAccept {
+                    result.accept(Result.createFailedResult(it))
+                    ioState.onWriteFailure(it)
+                }
         }
     }
 
