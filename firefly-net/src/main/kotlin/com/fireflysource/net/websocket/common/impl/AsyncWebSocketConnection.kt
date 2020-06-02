@@ -183,10 +183,8 @@ class AsyncWebSocketConnection(
 
     private fun setNextOutgoingFrames() {
         extensionNegotiator.setNextOutgoingFrames { frame, result ->
-            if (policy.behavior == WebSocketBehavior.CLIENT && frame is WebSocketFrame) {
-                if (!frame.isMasked) {
-                    frame.mask = generateMask()
-                }
+            if (policy.behavior == WebSocketBehavior.CLIENT && frame is WebSocketFrame && !frame.isMasked) {
+                frame.mask = generateMask()
             }
 
             val buf = BufferUtils.allocate(Generator.MAX_HEADER_LENGTH + frame.payloadLength)
@@ -195,14 +193,18 @@ class AsyncWebSocketConnection(
             buf.flipToFlush(pos)
             tcpConnection.write(buf)
                 .thenCompose { tcpConnection.flush() }
+                .thenCompose {
+                    if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
+                        val closeInfo = CloseInfo(frame.getPayload(), false)
+                        getIOState().onCloseLocal(closeInfo)
+                        tcpConnection.closeFuture()
+                    } else Result.DONE
+                }
                 .thenAccept { result.accept(Result.SUCCESS) }
                 .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
 
-            if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
-                val closeInfo = CloseInfo(frame.getPayload(), false)
-                getIOState().onCloseLocal(closeInfo)
-                tcpConnection.closeFuture()
-            }
+
         }
     }
+
 }
