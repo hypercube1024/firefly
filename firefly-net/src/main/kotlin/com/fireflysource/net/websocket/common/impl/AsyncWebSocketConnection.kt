@@ -6,7 +6,6 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
@@ -15,7 +14,6 @@ import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.decoder.Parser
 import com.fireflysource.net.websocket.common.encoder.Generator
 import com.fireflysource.net.websocket.common.exception.NextIncomingFramesNotSetException
-import com.fireflysource.net.websocket.common.extension.AbstractExtension
 import com.fireflysource.net.websocket.common.frame.*
 import com.fireflysource.net.websocket.common.model.*
 import com.fireflysource.net.websocket.common.stream.ExtensionNegotiator
@@ -95,7 +93,7 @@ class AsyncWebSocketConnection(
             else -> {
             }
         }
-        extensionNegotiator.incomingFrames?.incomingFrame(frame)
+        extensionNegotiator.incomingFrames.incomingFrame(frame)
     }
 
     override fun setWebSocketMessageHandler(handler: WebSocketMessageHandler) {
@@ -160,20 +158,8 @@ class AsyncWebSocketConnection(
     }
 
     private fun configureFromExtensions() {
-        val metaData =
-            if (upgradeResponse.fields.contains(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)) upgradeResponse
-            else upgradeRequest
-
-        val extensions = extensionNegotiator.createExtensionChain(metaData.fields)
-        if (extensions.isNotEmpty()) {
-            generator.configureFromExtensions(extensions)
-            parser.configureFromExtensions(extensions)
-            extensions.forEach {
-                if (it is AbstractExtension) {
-                    it.policy = policy
-                }
-            }
-        }
+        val fields = upgradeResponse.fields
+        extensionNegotiator.configureExtensions(fields, parser, generator, policy)
     }
 
     private fun setNextOutgoingFrames() {
