@@ -15,14 +15,8 @@ public class TextFrame extends DataFrame {
         super(basedOn);
     }
 
-    public TextFrame(Frame basedOn, boolean continuation) {
-        super(basedOn, continuation);
-    }
-
     @Override
     public Type getType() {
-        if (getOpCode() == OpCode.CONTINUATION)
-            return Type.CONTINUATION;
         return Type.TEXT;
     }
 

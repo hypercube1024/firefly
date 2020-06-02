@@ -52,10 +52,4 @@ public class DataFrame extends WebSocketFrame {
         return true;
     }
 
-    /**
-     * Set the data frame to continuation mode
-     */
-    public void setIsContinuation() {
-        setOpCode(OpCode.CONTINUATION);
-    }
 }

@@ -1,6 +1,10 @@
 package com.fireflysource.net.websocket.common.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.flipToFill
+import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
@@ -22,6 +26,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
 import java.util.function.Consumer
@@ -135,8 +140,12 @@ class AsyncWebSocketConnection(
                 try {
                     val buffer = tcpConnection.read().await()
                     parser.parse(buffer)
+                } catch (e: CancellationException) {
+                    log.info { "The websocket parsing job canceled. id: ${this@AsyncWebSocketConnection.id}" }
+                    tcpConnection.closeFuture()
+                    break
                 } catch (e: Exception) {
-                    log.error(e) { "Websocket frame parsing error." }
+                    log.error(e) { "Parse websocket frame error. id: ${this@AsyncWebSocketConnection.id}" }
                     tcpConnection.closeFuture()
                     break
                 }
@@ -150,8 +159,20 @@ class AsyncWebSocketConnection(
                 val frame = messageChannel.receive()
                 try {
                     messageHandler?.handle(frame, this@AsyncWebSocketConnection)?.await()
+                } catch (e: CancellationException) {
+                    log.info { "The websocket receiving message job canceled. id: ${this@AsyncWebSocketConnection.id}" }
+                    break
                 } catch (e: Exception) {
-                    log.error(e) { "handle websocket frame exception." }
+                    log.error(e) { "Handle websocket frame exception. id: ${this@AsyncWebSocketConnection.id}" }
+                }
+            }
+        }.invokeOnCompletion { cause ->
+            log.info { "The websocket connection closed, handle the remaining message. id: ${this@AsyncWebSocketConnection.id},  cause: ${cause?.message}" }
+            messageChannel.pollAll { frame ->
+                try {
+                    messageHandler?.handle(frame, this@AsyncWebSocketConnection)
+                } catch (e: Exception) {
+                    log.error(e) { "Handle websocket frame exception. id: ${this@AsyncWebSocketConnection.id}" }
                 }
             }
         }
@@ -170,13 +191,14 @@ class AsyncWebSocketConnection(
                 }
             }
 
-            val buf = ByteBuffer.allocate(Generator.MAX_HEADER_LENGTH + frame.payloadLength)
+            val buf = BufferUtils.allocate(Generator.MAX_HEADER_LENGTH + frame.payloadLength)
+            val pos = buf.flipToFill()
             generator.generateWholeFrame(frame, buf)
-            BufferUtils.flipToFlush(buf, 0)
-            tcpConnection.write(buf) {
-                if (it.isSuccess) result.accept(Result.SUCCESS)
-                else result.accept(Result.createFailedResult(it.throwable))
-            }
+            buf.flipToFlush(pos)
+            tcpConnection.write(buf)
+                .thenCompose { tcpConnection.flush() }
+                .thenAccept { result.accept(Result.SUCCESS) }
+                .exceptionallyAccept { result.accept(Result.createFailedResult(it)) }
 
             if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
                 val closeInfo = CloseInfo(frame.getPayload(), false)

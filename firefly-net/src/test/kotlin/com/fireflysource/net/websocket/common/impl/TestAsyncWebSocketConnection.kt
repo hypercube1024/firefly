@@ -5,8 +5,9 @@ import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServerFactory
+import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.websocket.common.WebSocketConnection
-import com.fireflysource.net.websocket.common.frame.DataFrame
+import com.fireflysource.net.websocket.common.frame.TextFrame
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
 import kotlinx.coroutines.channels.Channel
@@ -30,14 +31,23 @@ class TestAsyncWebSocketConnection {
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                arguments("none"),
-                arguments("fragment"),
-                arguments("identity"),
-                arguments("deflate-frame"),
-                arguments("permessage-deflate"),
-                arguments("x-webkit-deflate-frame"),
-                arguments("identity,permessage-deflate"),
-                arguments("fragment,identity,permessage-deflate")
+                arguments("none", false),
+                arguments("fragment", false),
+                arguments("identity", false),
+                arguments("deflate-frame", false),
+                arguments("permessage-deflate", false),
+                arguments("x-webkit-deflate-frame", false),
+                arguments("identity,permessage-deflate", false),
+                arguments("fragment,identity,permessage-deflate", false),
+
+                arguments("none", true),
+                arguments("fragment", true),
+                arguments("identity", true),
+                arguments("deflate-frame", true),
+                arguments("permessage-deflate", true),
+                arguments("x-webkit-deflate-frame", true),
+                arguments("identity,permessage-deflate", true),
+                arguments("fragment,identity,permessage-deflate", true)
             )
         }
     }
@@ -45,20 +55,24 @@ class TestAsyncWebSocketConnection {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send and receive websocket messages successfully.")
-    fun test(extension: String) = runBlocking {
+    fun test(extension: String, tls: Boolean) = runBlocking {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
 
         val server = TcpServerFactory.create()
-        server.onAccept { connection ->
+        if (tls) {
+            server.enableSecureConnection()
+        }
+        server.onAcceptAsync { connection ->
+            connection.beginHandshake().await()
             val webSocketConnection = createWebSocketConnection(WebSocketBehavior.SERVER, extension, connection)
-            webSocketConnection.setWebSocketMessageHandler { frame, c ->
+            webSocketConnection.setWebSocketMessageHandler { frame, conn ->
                 println("Server receive: ${frame.type}")
                 when (frame) {
-                    is DataFrame -> {
+                    is TextFrame -> {
                         val payload = frame.payloadAsUTF8
                         println("server receive: $payload")
-                        c.sendText("response $payload")
+                        conn.sendText("response $payload")
                     }
                     else -> Result.DONE
                 }
@@ -69,11 +83,15 @@ class TestAsyncWebSocketConnection {
 
         val channel = Channel<String>(Channel.UNLIMITED)
         val client = TcpClientFactory.create()
+        if (tls) {
+            client.enableSecureConnection()
+        }
         val connection = client.connect(host, port).await()
+        connection.beginHandshake().await()
         val webSocketConnection = createWebSocketConnection(WebSocketBehavior.CLIENT, extension, connection)
         webSocketConnection.setWebSocketMessageHandler { frame, _ ->
             when (frame) {
-                is DataFrame -> {
+                is TextFrame -> {
                     val payload = frame.payloadAsUTF8
                     println("Client receive: $payload")
                     channel.offer(payload)

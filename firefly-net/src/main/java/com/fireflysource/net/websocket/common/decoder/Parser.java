@@ -79,7 +79,6 @@ public class Parser {
                 if (len == 1) {
                     throw new ProtocolException("Invalid close frame payload length, [" + payloadLength + "]");
                 }
-                // fallthru
             case OpCode.PING:
             case OpCode.PONG:
                 if (len > ControlFrame.MAX_CONTROL_PAYLOAD) {
