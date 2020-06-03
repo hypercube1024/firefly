@@ -7,7 +7,6 @@ import com.fireflysource.net.websocket.common.model.CloseInfo;
 import com.fireflysource.net.websocket.common.model.StatusCode;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -82,7 +81,7 @@ public class IOState {
     private AtomicReference<CloseInfo> finalClose = new AtomicReference<>();
     /**
      * Tracker for if the close handshake was completed successfully by
-     * both sides.  False if close was sudden or abnormal.
+     * both sides. False if close was sudden or abnormal.
      */
     private boolean cleanClose;
 
@@ -100,18 +99,6 @@ public class IOState {
 
     public void addListener(ConnectionStateListener listener) {
         listeners.add(listener);
-    }
-
-    public void assertInputOpen() throws IOException {
-        if (!isInputAvailable()) {
-            throw new IOException("Connection input is closed");
-        }
-    }
-
-    public void assertOutputOpen() throws IOException {
-        if (!isOutputAvailable()) {
-            throw new IOException("Connection output is closed");
-        }
     }
 
     public CloseInfo getCloseInfo() {
@@ -338,21 +325,6 @@ public class IOState {
     }
 
     /**
-     * A websocket connection has failed its upgrade handshake, and is now closed.
-     */
-    public void onFailedUpgrade() {
-        assert (this.state == ConnectionState.CONNECTING);
-
-        this.state = ConnectionState.CLOSED;
-        cleanClose = false;
-        inputAvailable = false;
-        outputAvailable = false;
-        ConnectionState event = this.state;
-
-        notifyStateListeners(event);
-    }
-
-    /**
      * A websocket connection has finished its upgrade handshake, and is now open.
      */
     public void onOpened() {
@@ -471,6 +443,26 @@ public class IOState {
         notifyStateListeners(event);
     }
 
+    public boolean isAbnormalClose() {
+        return closeHandshakeSource == CloseHandshakeSource.ABNORMAL;
+    }
+
+    public boolean isCleanClose() {
+        return cleanClose;
+    }
+
+    public boolean isLocalCloseInitiated() {
+        return closeHandshakeSource == CloseHandshakeSource.LOCAL;
+    }
+
+    public boolean isRemoteCloseInitiated() {
+        return closeHandshakeSource == CloseHandshakeSource.REMOTE;
+    }
+
+    public CloseHandshakeSource getCloseHandshakeSource() {
+        return closeHandshakeSource;
+    }
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
@@ -499,21 +491,4 @@ public class IOState {
         str.append(']');
         return str.toString();
     }
-
-    public boolean isAbnormalClose() {
-        return closeHandshakeSource == CloseHandshakeSource.ABNORMAL;
-    }
-
-    public boolean isCleanClose() {
-        return cleanClose;
-    }
-
-    public boolean isLocalCloseInitiated() {
-        return closeHandshakeSource == CloseHandshakeSource.LOCAL;
-    }
-
-    public boolean isRemoteCloseInitiated() {
-        return closeHandshakeSource == CloseHandshakeSource.REMOTE;
-    }
-
 }

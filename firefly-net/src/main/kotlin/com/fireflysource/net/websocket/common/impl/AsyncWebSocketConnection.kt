@@ -116,6 +116,10 @@ class AsyncWebSocketConnection(
 
     private fun close(code: Int, reason: String?): CompletableFuture<Void> {
         val closeInfo = CloseInfo(code, reason)
+        return close(closeInfo)
+    }
+
+    private fun close(closeInfo: CloseInfo): CompletableFuture<Void> {
         val closeFrame = closeInfo.asFrame()
         return sendFrame(closeFrame)
     }
@@ -217,7 +221,7 @@ class AsyncWebSocketConnection(
                 .thenAccept {
                     if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
                         val closeInfo = CloseInfo(frame.getPayload(), false)
-                        getIOState().onCloseLocal(closeInfo)
+                        ioState.onCloseLocal(closeInfo)
                     }
                     result.accept(Result.SUCCESS)
                 }

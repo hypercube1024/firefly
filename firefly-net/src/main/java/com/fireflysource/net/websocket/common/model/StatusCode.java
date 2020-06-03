@@ -139,7 +139,6 @@ public final class StatusCode {
      * @param statusCode the status code to test
      * @return true if fatal status code
      */
-    @SuppressWarnings("Duplicates")
     public static boolean isFatal(int statusCode) {
         return (statusCode == ABNORMAL) ||
                 (statusCode == PROTOCOL) ||
@@ -161,7 +160,6 @@ public final class StatusCode {
      * @param statusCode the statusCode to test
      * @return true if transmittable
      */
-    @SuppressWarnings("Duplicates")
     public static boolean isTransmittable(int statusCode) {
         return (statusCode == NORMAL) ||
                 (statusCode == SHUTDOWN) ||
