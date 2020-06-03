@@ -10,7 +10,6 @@ import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.Result.futureToConsumer
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import com.fireflysource.net.websocket.common.WebSocketConnection
@@ -40,8 +39,9 @@ import java.util.function.Consumer
 class AsyncWebSocketConnection(
     private val tcpConnection: TcpConnection,
     private val webSocketPolicy: WebSocketPolicy,
-    private val upgradeRequest: MetaData.Request,
-    private val upgradeResponse: MetaData.Response,
+    private val url: String,
+    private val extensions: List<String> = listOf(),
+    private val subProtocols: List<String> = listOf(),
     private val ioState: IOState = IOState()
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection,
     WebSocketConnectionState by ioState, WebSocketConnection,
@@ -56,6 +56,12 @@ class AsyncWebSocketConnection(
     private val generator = Generator(webSocketPolicy)
     private val messageChannel = Channel<Frame>(Channel.UNLIMITED)
     private var messageHandler: WebSocketMessageHandler? = null
+
+    override fun getUrl(): String = url
+
+    override fun getExtensions(): List<String> = extensions
+
+    override fun getSubProtocols(): List<String> = subProtocols
 
     override fun getPolicy(): WebSocketPolicy = webSocketPolicy
 
@@ -110,10 +116,6 @@ class AsyncWebSocketConnection(
         extensionNegotiator.outgoingFrames.outgoingFrame(frame, result)
     }
 
-    override fun getUpgradeRequest(): MetaData.Request = upgradeRequest
-
-    override fun getUpgradeResponse(): MetaData.Response = upgradeResponse
-
     private fun close(code: Int, reason: String?): CompletableFuture<Void> {
         val closeInfo = CloseInfo(code, reason)
         return close(closeInfo)
@@ -139,7 +141,7 @@ class AsyncWebSocketConnection(
 
         parser.incomingFramesHandler = this
         setNextOutgoingFrames()
-        configureFromExtensions()
+        configureExtensions()
         ioState.onConnected()
 
         receiveMessageJob()
@@ -201,9 +203,8 @@ class AsyncWebSocketConnection(
         }
     }
 
-    private fun configureFromExtensions() {
-        val fields = upgradeResponse.fields
-        extensionNegotiator.configureExtensions(fields, parser, generator, policy)
+    private fun configureExtensions() {
+        extensionNegotiator.configureExtensions(extensions, parser, generator, policy)
     }
 
     private fun setNextOutgoingFrames() {

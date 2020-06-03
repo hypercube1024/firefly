@@ -3,8 +3,6 @@ package com.fireflysource.net.websocket.common.stream;
 
 import com.fireflysource.common.collection.CollectionUtils;
 import com.fireflysource.common.object.Assert;
-import com.fireflysource.net.http.common.model.HttpFields;
-import com.fireflysource.net.http.common.model.HttpHeader;
 import com.fireflysource.net.websocket.common.decoder.Parser;
 import com.fireflysource.net.websocket.common.encoder.Generator;
 import com.fireflysource.net.websocket.common.extension.AbstractExtension;
@@ -44,19 +42,19 @@ public class ExtensionNegotiator {
         this.factory = factory;
     }
 
-    public List<ExtensionConfig> createExtensionConfigs(HttpFields fields) {
+    public List<ExtensionConfig> createExtensionConfigs(List<String> rawSecWebSocketExtensions) {
         return ExtensionConfig
-                .parseEnum(fields.getValues(HttpHeader.SEC_WEBSOCKET_EXTENSIONS.getValue()))
+                .parseList(rawSecWebSocketExtensions)
                 .stream()
                 .filter(c -> factory.isAvailable(c.getName()))
                 .collect(Collectors.toList());
     }
 
-    public void configureExtensions(HttpFields fields, Parser parser, Generator generator, WebSocketPolicy policy) {
+    public void configureExtensions(List<String> rawSecWebSocketExtensions, Parser parser, Generator generator, WebSocketPolicy policy) {
         Assert.notNull(nextIncomingFrames, "The next incoming frames MUST be not null");
         Assert.notNull(nextOutgoingFrames, "The next outgoing frames MUST be not null");
 
-        List<ExtensionConfig> extensionConfigs = createExtensionConfigs(fields);
+        List<ExtensionConfig> extensionConfigs = createExtensionConfigs(rawSecWebSocketExtensions);
         if (CollectionUtils.isEmpty(extensionConfigs)) {
             incomingFrames = nextIncomingFrames;
             outgoingFrames = nextOutgoingFrames;

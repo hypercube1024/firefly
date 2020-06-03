@@ -1,7 +1,6 @@
 package com.fireflysource.net.websocket.common.impl
 
 import com.fireflysource.common.sys.Result
-import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpServerFactory
@@ -120,20 +119,7 @@ class TestAsyncWebSocketConnection {
         connection: TcpConnection
     ): WebSocketConnection {
         val policy = WebSocketPolicy(behavior)
-        val uri = HttpURI()
-        val fields = HttpFields()
-        val upgradeRequest = MetaData.Request(HttpMethod.GET.value, uri, HttpVersion.HTTP_1_1, fields)
-        if (extension != "none") {
-            upgradeRequest.fields.put(HttpHeader.SEC_WEBSOCKET_EXTENSIONS, extension)
-        }
-        val upgradeResponse = MetaData.Response(HttpFields())
-        if (extension != "none") {
-            upgradeResponse.fields.put(HttpHeader.SEC_WEBSOCKET_EXTENSIONS, extension)
-        }
-        return AsyncWebSocketConnection(
-            connection,
-            policy,
-            upgradeRequest, upgradeResponse
-        )
+        val extensions = if (extension != "none") listOf(extension) else listOf()
+        return AsyncWebSocketConnection(connection, policy, "localhost", extensions)
     }
 }

@@ -1,12 +1,12 @@
 package com.fireflysource.net.websocket.common;
 
 import com.fireflysource.net.Connection;
-import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
 import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -62,18 +62,25 @@ public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher,
     void setWebSocketMessageHandler(WebSocketMessageHandler handler);
 
     /**
-     * Get the websocket upgrade request.
+     * Get the absolute URL of the WebSocket.
      *
-     * @return The upgrade request.
+     * @return The absolute URL of the WebSocket.
      */
-    MetaData.Request getUpgradeRequest();
+    String getUrl();
 
     /**
-     * Get the websocket upgrade response.
+     * Get the websocket extensions.
      *
-     * @return The upgrade response.
+     * @return The websocket extensions.
      */
-    MetaData.Response getUpgradeResponse();
+    List<String> getExtensions();
+
+    /**
+     * Get the websocket sub protocols.
+     *
+     * @return The websocket sub protocols.
+     */
+    List<String> getSubProtocols();
 
     /**
      * Begin to receive websocket data.

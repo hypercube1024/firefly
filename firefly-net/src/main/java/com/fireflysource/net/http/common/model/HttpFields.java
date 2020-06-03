@@ -493,52 +493,6 @@ public class HttpFields implements Iterable<HttpField> {
         return Collections.enumeration(empty);
     }
 
-    /**
-     * Get multi field values with separator. The multiple values can be
-     * represented as separate headers of the same name, or by a single header
-     * using the separator(s), or a combination of both. Separators may be
-     * quoted.
-     *
-     * @param name       the case-insensitive field name
-     * @param separators String of separators.
-     * @return Enumeration of the values, or null if no such header.
-     */
-    @Deprecated
-    public Enumeration<String> getValues(String name, final String separators) {
-        final Enumeration<String> e = getValues(name);
-        if (e == null)
-            return null;
-        return new Enumeration<String>() {
-            QuotedStringTokenizer tok = null;
-
-            @Override
-            public boolean hasMoreElements() {
-                if (tok != null && tok.hasMoreElements())
-                    return true;
-                while (e.hasMoreElements()) {
-                    String value = e.nextElement();
-                    if (value != null) {
-                        tok = new QuotedStringTokenizer(value, separators, false, false);
-                        if (tok.hasMoreElements())
-                            return true;
-                    }
-                }
-                tok = null;
-                return false;
-            }
-
-            @Override
-            public String nextElement() throws NoSuchElementException {
-                if (!hasMoreElements())
-                    throw new NoSuchElementException();
-                String next = (String) tok.nextElement();
-                if (next != null)
-                    next = next.trim();
-                return next;
-            }
-        };
-    }
-
     public void put(HttpField field) {
         boolean put = false;
         for (int i = size; i-- > 0; ) {

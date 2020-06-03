@@ -46,7 +46,7 @@ public class ExtensionConfig {
      * @param rawSecWebSocketExtensions the raw header values
      * @return the list of extension configs
      */
-    public static List<ExtensionConfig> parseList(String... rawSecWebSocketExtensions) {
+    public static List<ExtensionConfig> parseList(List<String> rawSecWebSocketExtensions) {
         List<ExtensionConfig> configs = new ArrayList<>();
 
         for (String rawValue : rawSecWebSocketExtensions) {
