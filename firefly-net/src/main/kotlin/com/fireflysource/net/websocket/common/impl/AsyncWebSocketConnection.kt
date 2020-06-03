@@ -14,6 +14,7 @@ import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import com.fireflysource.net.websocket.common.WebSocketConnection
+import com.fireflysource.net.websocket.common.WebSocketConnectionState
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.decoder.Parser
 import com.fireflysource.net.websocket.common.encoder.Generator
@@ -40,8 +41,10 @@ class AsyncWebSocketConnection(
     private val tcpConnection: TcpConnection,
     private val webSocketPolicy: WebSocketPolicy,
     private val upgradeRequest: MetaData.Request,
-    private val upgradeResponse: MetaData.Response
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, WebSocketConnection,
+    private val upgradeResponse: MetaData.Response,
+    private val ioState: IOState = IOState()
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection,
+    WebSocketConnectionState by ioState, WebSocketConnection,
     IncomingFrames, OutgoingFrames {
 
     companion object {
@@ -49,15 +52,12 @@ class AsyncWebSocketConnection(
     }
 
     private val extensionNegotiator = ExtensionNegotiator()
-    private val ioState = IOState()
     private val parser = Parser(webSocketPolicy)
     private val generator = Generator(webSocketPolicy)
     private val messageChannel = Channel<Frame>(Channel.UNLIMITED)
     private var messageHandler: WebSocketMessageHandler? = null
 
     override fun getPolicy(): WebSocketPolicy = webSocketPolicy
-
-    override fun getIOState(): IOState = ioState
 
     override fun generateMask(): ByteArray {
         val mask = ByteArray(4)
@@ -156,7 +156,7 @@ class AsyncWebSocketConnection(
                 }
             }
         }
-        ioState.onOpened()
+        ioState.onOpen()
     }
 
     private fun parseFrameJob() {

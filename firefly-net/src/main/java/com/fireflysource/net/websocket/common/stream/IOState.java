@@ -3,6 +3,7 @@ package com.fireflysource.net.websocket.common.stream;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
 import com.fireflysource.common.sys.SystemLogger;
+import com.fireflysource.net.websocket.common.WebSocketConnectionState;
 import com.fireflysource.net.websocket.common.model.CloseInfo;
 import com.fireflysource.net.websocket.common.model.StatusCode;
 
@@ -16,10 +17,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * Use the various known .on*() methods to trigger a state change.
  * <ul>
- * <li>{@link #onOpened()} - connection has been opened</li>
+ * <li>{@link #onOpen()} - connection has been opened</li>
  * </ul>
  */
-public class IOState {
+public class IOState implements WebSocketConnectionState {
     /**
      * The source of a close handshake. (ie: who initiated it).
      */
@@ -206,7 +207,7 @@ public class IOState {
 
     private void openAndCloseLocal(CloseInfo closeInfo) {
         // Force the state open (to allow read/write to endpoint)
-        onOpened();
+        onOpen();
         if (LOG.isDebugEnabled())
             LOG.debug("FastClose continuing with Closure");
         closeLocal(closeInfo);
@@ -327,7 +328,7 @@ public class IOState {
     /**
      * A websocket connection has finished its upgrade handshake, and is now open.
      */
-    public void onOpened() {
+    public void onOpen() {
         if (LOG.isDebugEnabled())
             LOG.debug("onOpened()");
 
@@ -457,10 +458,6 @@ public class IOState {
 
     public boolean isRemoteCloseInitiated() {
         return closeHandshakeSource == CloseHandshakeSource.REMOTE;
-    }
-
-    public CloseHandshakeSource getCloseHandshakeSource() {
-        return closeHandshakeSource;
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.fireflysource.net.http.common.model.MetaData;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
 import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
-import com.fireflysource.net.websocket.common.stream.IOState;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -15,14 +14,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Pengtao Qiu
  */
-public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher {
-
-    /**
-     * Get the IOState of the connection.
-     *
-     * @return the IOState of the connection.
-     */
-    IOState getIOState();
+public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher, WebSocketConnectionState {
 
     /**
      * The policy that the connection is running under.
