@@ -4,7 +4,6 @@ import com.fireflysource.net.websocket.common.WebSocketConnection;
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 
-import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -19,7 +18,7 @@ public interface WebSocketClientConnectionBuilder {
      * @param url The websocket url.
      * @return The websocket client connection builder.
      */
-    WebSocketClientConnectionBuilder url(URL url);
+    WebSocketClientConnectionBuilder url(String url);
 
     /**
      * Set the websocket policy.
@@ -36,14 +35,6 @@ public interface WebSocketClientConnectionBuilder {
      * @return The websocket client connection builder.
      */
     WebSocketClientConnectionBuilder putExtensions(List<String> extensions);
-
-    /**
-     * Add the websocket extension.
-     *
-     * @param extension The websocket extension.
-     * @return The websocket client connection builder.
-     */
-    WebSocketClientConnectionBuilder addExtension(String extension);
 
     /**
      * Put the websocket sub protocols.

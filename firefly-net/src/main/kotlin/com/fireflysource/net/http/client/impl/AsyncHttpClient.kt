@@ -47,7 +47,7 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     }
 
     override fun request(method: String, url: String): HttpClientRequestBuilder {
-        return request(method, URL(url))
+        return request(method, HttpURI(url))
     }
 
     override fun request(method: String, url: URL): HttpClientRequestBuilder {
