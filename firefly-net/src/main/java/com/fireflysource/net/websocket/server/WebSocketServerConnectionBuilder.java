@@ -9,6 +9,14 @@ import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 public interface WebSocketServerConnectionBuilder {
 
     /**
+     * Set the websocket url.
+     *
+     * @param url The websocket url.
+     * @return The websocket server connection builder.
+     */
+    WebSocketServerConnectionBuilder url(String url);
+
+    /**
      * Select the extensions.
      *
      * @param selector The websocket extension selector.

@@ -2,6 +2,7 @@ package com.fireflysource.net.websocket.common;
 
 import com.fireflysource.net.Connection;
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher;
+import com.fireflysource.net.websocket.common.extension.ExtensionFactory;
 import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 
@@ -17,11 +18,39 @@ import java.util.concurrent.CompletableFuture;
 public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher, WebSocketConnectionState {
 
     /**
-     * The policy that the connection is running under.
+     * Get the absolute URL of the WebSocket.
+     *
+     * @return The absolute URL of the WebSocket.
+     */
+    String getUrl();
+
+    /**
+     * Get the websocket extensions.
+     *
+     * @return The websocket extensions.
+     */
+    List<String> getExtensions();
+
+    /**
+     * Get the websocket sub protocols.
+     *
+     * @return The websocket sub protocols.
+     */
+    List<String> getSubProtocols();
+
+    /**
+     * Get the policy that the connection is running under.
      *
      * @return the policy for the connection
      */
     WebSocketPolicy getPolicy();
+
+    /**
+     * Get the websocket extension factory.
+     *
+     * @return The websocket extension factory.
+     */
+    ExtensionFactory getExtensionFactory();
 
     /**
      * Generate random 4bytes mask key
@@ -60,27 +89,6 @@ public interface WebSocketConnection extends Connection, TcpCoroutineDispatcher,
      * @param handler The websocket message handler.
      */
     void setWebSocketMessageHandler(WebSocketMessageHandler handler);
-
-    /**
-     * Get the absolute URL of the WebSocket.
-     *
-     * @return The absolute URL of the WebSocket.
-     */
-    String getUrl();
-
-    /**
-     * Get the websocket extensions.
-     *
-     * @return The websocket extensions.
-     */
-    List<String> getExtensions();
-
-    /**
-     * Get the websocket sub protocols.
-     *
-     * @return The websocket sub protocols.
-     */
-    List<String> getSubProtocols();
 
     /**
      * Begin to receive websocket data.

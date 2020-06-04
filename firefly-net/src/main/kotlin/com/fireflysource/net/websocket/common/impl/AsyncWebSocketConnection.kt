@@ -18,6 +18,8 @@ import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.decoder.Parser
 import com.fireflysource.net.websocket.common.encoder.Generator
 import com.fireflysource.net.websocket.common.exception.NextIncomingFramesNotSetException
+import com.fireflysource.net.websocket.common.extension.ExtensionFactory
+import com.fireflysource.net.websocket.common.extension.WebSocketExtensionFactory
 import com.fireflysource.net.websocket.common.frame.*
 import com.fireflysource.net.websocket.common.model.*
 import com.fireflysource.net.websocket.common.stream.ConnectionState
@@ -41,6 +43,7 @@ class AsyncWebSocketConnection(
     private val webSocketPolicy: WebSocketPolicy,
     private val url: String,
     private val extensions: List<String> = listOf(),
+    private val extensionFactory: ExtensionFactory = WebSocketExtensionFactory(),
     private val subProtocols: List<String> = listOf(),
     private val ioState: IOState = IOState()
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection,
@@ -51,7 +54,7 @@ class AsyncWebSocketConnection(
         private val log = SystemLogger.create(AsyncWebSocketConnection::class.java)
     }
 
-    private val extensionNegotiator = ExtensionNegotiator()
+    private val extensionNegotiator = ExtensionNegotiator(extensionFactory)
     private val parser = Parser(webSocketPolicy)
     private val generator = Generator(webSocketPolicy)
     private val messageChannel = Channel<Frame>(Channel.UNLIMITED)
@@ -64,6 +67,8 @@ class AsyncWebSocketConnection(
     override fun getSubProtocols(): List<String> = subProtocols
 
     override fun getPolicy(): WebSocketPolicy = webSocketPolicy
+
+    override fun getExtensionFactory(): ExtensionFactory = extensionFactory
 
     override fun generateMask(): ByteArray {
         val mask = ByteArray(4)
