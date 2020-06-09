@@ -30,13 +30,13 @@ class Http1ServerConnection(
     private val parser = HttpParser(requestHandler)
     private val responseHandler = Http1ServerResponseHandler(this)
     private val beginning = AtomicBoolean(false)
-    private val upgradeHttp2Signal: Signal<Boolean> = Signal()
+    private val upgradeProtocolSignal: Signal<Boolean> = Signal()
 
     private fun parseRequestJob() = coroutineScope.launch {
         parseLoop@ while (!tcpConnection.isClosed) {
             try {
                 parser.parseAll(tcpConnection)
-                if (upgradeHttp2()) {
+                if (waitToUpgradeProtocol()) {
                     responseHandler.endResponseHandler()
                     log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
                     break@parseLoop
@@ -51,15 +51,15 @@ class Http1ServerConnection(
         }
     }
 
-    private suspend fun upgradeHttp2() = upgradeHttp2Signal.wait()
+    private suspend fun waitToUpgradeProtocol() = upgradeProtocolSignal.wait()
 
-    fun notifyUpgradeHttp2(success: Boolean) {
-        upgradeHttp2Signal.notify(success)
+    fun notifyUpgradeProtocol(success: Boolean) {
+        upgradeProtocolSignal.notify(success)
     }
 
     fun resetParser() {
         parser.reset()
-        upgradeHttp2Signal.reset()
+        upgradeProtocolSignal.reset()
     }
 
     private fun generateResponseJob() = responseHandler.generateResponseJob()

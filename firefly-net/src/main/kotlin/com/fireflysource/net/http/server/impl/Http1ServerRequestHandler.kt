@@ -12,6 +12,8 @@ import com.fireflysource.net.http.common.v2.frame.SettingsFrame
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
+import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection
+import com.fireflysource.net.websocket.common.model.AcceptHash
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -27,6 +29,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private val parserChannel: Channel<ParserMessage> = Channel(Channel.UNLIMITED)
     private var expectUpgradeHttp2 = false
     private var settingsFrame: SettingsFrame? = null
+    private var expectUpgradeWebsocket = false
 
     init {
         handleParserMessageJob()
@@ -79,6 +82,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             this.settingsFrame = settings
             this.expectUpgradeHttp2 = settings != null
         }
+        this.expectUpgradeWebsocket = HttpProtocolNegotiator.expectUpgradeWebsocket(httpServerRequest)
 
         val expect100 = request.fields.expectServerAcceptsContent()
         val closeConnection = request.fields.isCloseConnection(request.httpVersion)
@@ -112,7 +116,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             val settings = settingsFrame
             requireNotNull(settings)
 
-            switchingHttp2()
+            switchingHttp2Response()
             val http2ServerConnection = createHttp2Connection()
             val stream = http2ServerConnection.upgradeHttp2(settings)
             val response = Http2ServerResponse(http2ServerConnection, stream)
@@ -122,27 +126,74 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 http2ServerConnection
             )
 
-            connection.notifyUpgradeHttp2(true)
+            connection.notifyUpgradeProtocol(true)
             endRequestHandler()
             connectionListener.onHttpRequestComplete(http2Context).await()
+        } else if (expectUpgradeWebsocket && !context.response.isCommitted) {
+            switchingWebSocket(context)
+
+            connection.notifyUpgradeProtocol(true)
+            endRequestHandler()
         } else {
-            connection.notifyUpgradeHttp2(false)
+            connection.notifyUpgradeProtocol(false)
             connectionListener.onHttpRequestComplete(context).await()
         }
         log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
+    }
+
+    private suspend fun switchingWebSocket(ctx: RoutingContext) {
+        val handler = connectionListener.onWebSocketHandshake(ctx).await()
+
+        val clientKey = ctx.httpFields[HttpHeader.SEC_WEBSOCKET_KEY]
+        val serverAccept = AcceptHash.hashKey(clientKey)
+
+        val clientExtensions = ctx.httpFields.getValuesList(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)
+        val serverExtensions = handler.extensionSelector.select(clientExtensions)
+
+        val clientSubProtocols = ctx.httpFields.getValuesList(HttpHeader.SEC_WEBSOCKET_SUBPROTOCOL)
+        val serverSubProtocols = handler.subProtocolSelector.select(clientSubProtocols)
+
+        val message = buildString {
+            append("HTTP/1.1 101 Switching Protocols\r\n")
+            append("Connection: Upgrade\r\n")
+            append("${HttpHeader.SEC_WEBSOCKET_ACCEPT.value}: ${serverAccept}\r\n")
+            if (!serverExtensions.isNullOrEmpty()) {
+                append("${HttpHeader.SEC_WEBSOCKET_EXTENSIONS.value}: ${serverExtensions.joinToString(", ")}\r\n")
+            }
+            if (!serverSubProtocols.isNullOrEmpty()) {
+                append("${HttpHeader.SEC_WEBSOCKET_SUBPROTOCOL.value}: ${serverSubProtocols.joinToString(", ")}\r\n")
+            }
+            append("\r\n")
+        }
+        connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
+        connection.tcpConnection.flush().await()
+        log.info { "Server response 101 Switching Protocols. upgrade: websocket, id: ${connection.id}" }
+
+        val webSocketConnection = AsyncWebSocketConnection(
+            connection.tcpConnection,
+            handler.policy,
+            handler.url,
+            serverExtensions ?: listOf(),
+            AsyncWebSocketConnection.defaultExtensionFactory,
+            serverSubProtocols ?: listOf()
+        )
+        webSocketConnection.setWebSocketMessageHandler(handler.messageHandler)
+        webSocketConnection.begin()
+        handler.connectionListener.accept(webSocketConnection).await()
     }
 
     private fun createHttp2Connection() =
         Http2ServerConnection(connection.config, connection.tcpConnection)
             .also { it.setListener(connectionListener).begin() }
 
-    private suspend fun switchingHttp2() {
+    private suspend fun switchingHttp2Response() {
         val message = "HTTP/1.1 101 Switching Protocols\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Upgrade: h2c\r\n" +
                 "\r\n"
         connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
-        log.info { "Server response 101 Switching Protocols. id: ${connection.id}" }
+        connection.tcpConnection.flush().await()
+        log.info { "Server response 101 Switching Protocols. upgrade: h2c, id: ${connection.id}" }
     }
 
     private fun endRequestHandler() {
@@ -151,7 +202,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun notifyException(context: RoutingContext?, exception: Throwable) {
         try {
-            connection.notifyUpgradeHttp2(false)
+            connection.notifyUpgradeProtocol(false)
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
             connectionListener.onException(context, exception).await()
         } catch (e: Exception) {

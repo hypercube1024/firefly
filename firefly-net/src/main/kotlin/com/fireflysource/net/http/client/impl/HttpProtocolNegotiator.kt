@@ -6,6 +6,7 @@ import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
+import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.v2.encoder.SettingsGenerator.generateSettingsBody
 import com.fireflysource.net.http.common.v2.frame.SettingsFrame
@@ -60,5 +61,12 @@ object HttpProtocolNegotiator {
         return request.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")
                 && request.httpFields.contains(HttpHeader.UPGRADE, "h2c")
                 && request.httpFields.contains(HttpHeader.HTTP2_SETTINGS)
+    }
+
+    fun expectUpgradeWebsocket(request: HttpServerRequest): Boolean {
+        return request.method == HttpMethod.GET.value
+                && request.httpFields.contains(HttpHeader.UPGRADE, "websocket")
+                && request.httpFields.contains(HttpHeader.SEC_WEBSOCKET_VERSION, "13")
+                && request.httpFields.contains(HttpHeader.SEC_WEBSOCKET_KEY)
     }
 }

@@ -43,7 +43,7 @@ class AsyncWebSocketConnection(
     private val webSocketPolicy: WebSocketPolicy,
     private val url: String,
     private val extensions: List<String> = listOf(),
-    private val extensionFactory: ExtensionFactory = WebSocketExtensionFactory(),
+    private val extensionFactory: ExtensionFactory = defaultExtensionFactory,
     private val subProtocols: List<String> = listOf(),
     private val ioState: IOState = IOState()
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection,
@@ -52,6 +52,7 @@ class AsyncWebSocketConnection(
 
     companion object {
         private val log = SystemLogger.create(AsyncWebSocketConnection::class.java)
+        val defaultExtensionFactory = WebSocketExtensionFactory()
     }
 
     private val extensionNegotiator = ExtensionNegotiator(extensionFactory)

@@ -8,6 +8,7 @@ import com.fireflysource.net.http.server.RouterManager
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.AsyncRouter
 import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
+import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
 import java.util.function.Function
@@ -47,6 +48,10 @@ class AsyncHttpServerConnectionListener(
 
     override fun onException(ctx: RoutingContext?, e: Throwable): CompletableFuture<Void> {
         return onException.apply(ctx, e)
+    }
+
+    override fun onWebSocketHandshake(context: RoutingContext): CompletableFuture<WebSocketServerConnectionHandler> {
+        TODO("not implement")
     }
 
     private fun handleRouterNotFound(ctx: RoutingContext): CompletableFuture<Void> {

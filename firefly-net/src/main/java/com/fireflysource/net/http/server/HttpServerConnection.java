@@ -2,6 +2,7 @@ package com.fireflysource.net.http.server;
 
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.http.common.HttpConnection;
+import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -57,6 +58,8 @@ public interface HttpServerConnection extends HttpConnection {
          */
         CompletableFuture<Void> onException(RoutingContext context, Throwable throwable);
 
+        CompletableFuture<WebSocketServerConnectionHandler> onWebSocketHandshake(RoutingContext context);
+
         /**
          * The empty listener implement.
          */
@@ -75,6 +78,13 @@ public interface HttpServerConnection extends HttpConnection {
             @Override
             public CompletableFuture<Void> onException(RoutingContext context, Throwable throwable) {
                 return Result.DONE;
+            }
+
+            @Override
+            public CompletableFuture<WebSocketServerConnectionHandler> onWebSocketHandshake(RoutingContext context) {
+                CompletableFuture<WebSocketServerConnectionHandler> future = new CompletableFuture<>();
+                future.complete(new WebSocketServerConnectionHandler());
+                return future;
             }
         }
     }
