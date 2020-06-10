@@ -16,10 +16,10 @@ import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
-import com.fireflysource.net.websocket.server.AsyncWebSocketManager
-import com.fireflysource.net.websocket.server.AsyncWebSocketServerConnectionBuilder
 import com.fireflysource.net.websocket.server.WebSocketManager
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionBuilder
+import com.fireflysource.net.websocket.server.impl.AsyncWebSocketManager
+import com.fireflysource.net.websocket.server.impl.AsyncWebSocketServerConnectionBuilder
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction

@@ -29,6 +29,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
@@ -176,6 +177,8 @@ class AsyncWebSocketConnection(
                 } catch (e: CancellationException) {
                     log.info { "The websocket parsing job canceled. id: ${this@AsyncWebSocketConnection.id}" }
                     break
+                } catch (e: ClosedChannelException) {
+                    log.warn("The remote endpoint closed connection. message: ${e.message} id: ${this@AsyncWebSocketConnection.id}")
                 } catch (e: Exception) {
                     log.error(e) { "Parse websocket frame error. id: ${this@AsyncWebSocketConnection.id}" }
                     ioState.onReadFailure(e)

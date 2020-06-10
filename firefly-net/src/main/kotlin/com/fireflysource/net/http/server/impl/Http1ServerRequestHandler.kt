@@ -156,6 +156,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         val message = buildString {
             append("HTTP/1.1 101 Switching Protocols\r\n")
             append("Connection: Upgrade\r\n")
+            append("Upgrade: websocket\r\n")
             append("${HttpHeader.SEC_WEBSOCKET_ACCEPT.value}: ${serverAccept}\r\n")
             if (!serverExtensions.isNullOrEmpty()) {
                 append("${HttpHeader.SEC_WEBSOCKET_EXTENSIONS.value}: ${serverExtensions.joinToString(", ")}\r\n")

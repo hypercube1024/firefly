@@ -1,6 +1,8 @@
-package com.fireflysource.net.websocket.server
+package com.fireflysource.net.websocket.server.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.net.websocket.server.WebSocketManager
+import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler
 
 /**
  * @author Pengtao Qiu

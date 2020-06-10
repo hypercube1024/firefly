@@ -1,10 +1,12 @@
-package com.fireflysource.net.websocket.server
+package com.fireflysource.net.websocket.server.impl
 
 import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection.Companion.defaultExtensionFactory
+import com.fireflysource.net.websocket.common.model.ExtensionConfig
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
+import com.fireflysource.net.websocket.server.*
 
 /**
  * @author Pengtao Qiu
@@ -14,7 +16,8 @@ class AsyncWebSocketServerConnectionBuilder(
     private val webSocketManager: WebSocketManager
 ) : WebSocketServerConnectionBuilder {
 
-    private val connectionHandler = WebSocketServerConnectionHandler()
+    private val connectionHandler =
+        WebSocketServerConnectionHandler()
 
     init {
         connectionHandler.setSubProtocolSelector { listOf() }
@@ -22,8 +25,10 @@ class AsyncWebSocketServerConnectionBuilder(
             if (clientExtensions.isNullOrEmpty()) {
                 listOf()
             } else {
-                val serverExtensionNames = defaultExtensionFactory.extensionNames
-                clientExtensions.filter { name -> serverExtensionNames.contains(name) }
+                ExtensionConfig
+                    .parseList(clientExtensions)
+                    .filter { c -> defaultExtensionFactory.isAvailable(c.name) }
+                    .map { c -> c.name }
             }
         }
         connectionHandler.policy = WebSocketPolicy(WebSocketBehavior.SERVER)
