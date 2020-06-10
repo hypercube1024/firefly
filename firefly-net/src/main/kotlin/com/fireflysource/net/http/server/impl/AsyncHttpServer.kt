@@ -16,6 +16,10 @@ import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
+import com.fireflysource.net.websocket.server.AsyncWebSocketManager
+import com.fireflysource.net.websocket.server.AsyncWebSocketServerConnectionBuilder
+import com.fireflysource.net.websocket.server.WebSocketManager
+import com.fireflysource.net.websocket.server.WebSocketServerConnectionBuilder
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
@@ -28,6 +32,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     }
 
     private val routerManager: RouterManager = AsyncRouterManager(this)
+    private val webSocketManager: WebSocketManager = AsyncWebSocketManager()
     private val tcpServer = AioTcpServer()
     private var address: SocketAddress? = null
     private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
@@ -73,6 +78,14 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     override fun router(): Router = routerManager.register()
 
     override fun router(id: Int): Router = routerManager.register(id)
+
+    override fun websocket(): WebSocketServerConnectionBuilder {
+        return AsyncWebSocketServerConnectionBuilder(this, webSocketManager)
+    }
+
+    override fun websocket(path: String): WebSocketServerConnectionBuilder {
+        return AsyncWebSocketServerConnectionBuilder(this, webSocketManager).url(path)
+    }
 
     override fun onHeaderComplete(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
         this.onHeaderComplete = function
@@ -147,7 +160,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         }
 
         val listener = AsyncHttpServerConnectionListener(
-            routerManager, onHeaderComplete, onException, onRouterNotFound, onRouterComplete
+            routerManager, onHeaderComplete, onException, onRouterNotFound, onRouterComplete, webSocketManager
         )
 
         tcpServer.onAccept { connection ->

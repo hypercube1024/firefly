@@ -13,4 +13,11 @@ public interface WebSocketManager {
      */
     WebSocketServerConnectionHandler findWebSocketHandler(String path);
 
+    /**
+     * Register the websocket handler.
+     *
+     * @param connectionHandler The websocket handler.
+     */
+    void register(WebSocketServerConnectionHandler connectionHandler);
+
 }

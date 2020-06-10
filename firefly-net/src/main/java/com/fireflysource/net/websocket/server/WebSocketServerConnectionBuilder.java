@@ -1,5 +1,6 @@
 package com.fireflysource.net.websocket.server;
 
+import com.fireflysource.net.http.server.HttpServer;
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler;
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy;
 
@@ -41,19 +42,19 @@ public interface WebSocketServerConnectionBuilder {
     WebSocketServerConnectionBuilder policy(WebSocketPolicy policy);
 
     /**
-     * Set the websocket connection listener.
-     *
-     * @param listener The websocket connection listener.
-     * @return The websocket server connection builder.
-     */
-    WebSocketServerConnectionBuilder onAccept(WebSocketServerConnectionListener listener);
-
-    /**
      * Set the websocket message handler.
      *
      * @param handler The websocket message handler.
      * @return The websocket server connection builder.
      */
     WebSocketServerConnectionBuilder onMessage(WebSocketMessageHandler handler);
+
+    /**
+     * Set the websocket connection listener.
+     *
+     * @param listener The websocket connection listener.
+     * @return The HTTP server.
+     */
+    HttpServer onAccept(WebSocketServerConnectionListener listener);
 
 }

@@ -2,6 +2,7 @@ package com.fireflysource.net.http.server;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
+import com.fireflysource.net.websocket.server.WebSocketServerConnectionBuilder;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -29,6 +30,21 @@ public interface HttpServer extends LifeCycle {
      * @return The router.
      */
     Router router(int id);
+
+    /**
+     * Create a new websocket connection builder.
+     *
+     * @return The websocket connection builder.
+     */
+    WebSocketServerConnectionBuilder websocket();
+
+    /**
+     * Create a new websocket connection builder.
+     *
+     * @param path The websocket url.
+     * @return The websocket connection builder.
+     */
+    WebSocketServerConnectionBuilder websocket(String path);
 
     /**
      * HTTP headers received callback.
