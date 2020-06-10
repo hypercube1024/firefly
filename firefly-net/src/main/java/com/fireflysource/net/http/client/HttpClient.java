@@ -3,6 +3,7 @@ package com.fireflysource.net.http.client;
 import com.fireflysource.common.lifecycle.LifeCycle;
 import com.fireflysource.net.http.common.model.HttpMethod;
 import com.fireflysource.net.http.common.model.HttpURI;
+import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder;
 
 import java.net.URL;
 
@@ -86,4 +87,19 @@ public interface HttpClient extends LifeCycle {
      * @return A new RequestBuilder that helps you to build an HTTP request.
      */
     HttpClientRequestBuilder request(String method, HttpURI httpURI);
+
+    /**
+     * Create a websocket connection builder.
+     *
+     * @return The websocket connnection builder.
+     */
+    WebSocketClientConnectionBuilder websocket();
+
+    /**
+     * Create a websocket connection builder.
+     *
+     * @param url The websockte url.
+     * @return The websocket connnection builder.
+     */
+    WebSocketClientConnectionBuilder websocket(String url);
 }

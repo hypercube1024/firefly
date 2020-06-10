@@ -63,6 +63,13 @@ object HttpProtocolNegotiator {
                 && request.httpFields.contains(HttpHeader.HTTP2_SETTINGS)
     }
 
+    fun expectUpgradeWebsocket(request: HttpClientRequest): Boolean {
+        return request.method == HttpMethod.GET.value
+                && request.httpFields.contains(HttpHeader.UPGRADE, "websocket")
+                && request.httpFields.contains(HttpHeader.SEC_WEBSOCKET_VERSION, "13")
+                && request.httpFields.contains(HttpHeader.SEC_WEBSOCKET_KEY)
+    }
+
     fun expectUpgradeWebsocket(request: HttpServerRequest): Boolean {
         return request.method == HttpMethod.GET.value
                 && request.httpFields.contains(HttpHeader.UPGRADE, "websocket")

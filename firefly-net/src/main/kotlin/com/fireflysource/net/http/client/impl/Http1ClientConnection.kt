@@ -10,6 +10,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeHttp2
+import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeWebsocket
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
@@ -60,6 +61,8 @@ class Http1ClientConnection(
     @Volatile
     private var http2ClientConnection: Http2ClientConnection? = null
 
+    private var upgradeWebSocketSuccess: Boolean = false
+
     init {
         handleRequestMessage()
     }
@@ -85,9 +88,15 @@ class Http1ClientConnection(
                 generateRequestAndFlushData(message)
                 log.debug("HTTP1 client generates request complete. id: $id")
                 val closed = parseResponse(message).complete(message)
-
-                if (closed) break@handleRequestLoop
-                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) break@handleRequestLoop
+                if (closed) {
+                    break@handleRequestLoop
+                }
+                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) {
+                    break@handleRequestLoop
+                }
+                if (message.expectUpgradeWebSocket && upgradeWebSocketSuccess) {
+                    break@handleRequestLoop
+                }
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
                 if (!message.response.isDone) {
@@ -145,6 +154,8 @@ class Http1ClientConnection(
                 httpVersion = HttpVersion.HTTP_2
                 responseFuture.await().also { log.info { "Client upgrades HTTP2 success. id: $id" } }
             } else response.also { log.info { "Client upgrades HTTP2 failure. id: $id" } }
+        } else if (message.expectUpgradeWebSocket) {
+            TODO("not implement")
         } else response
     }
 
@@ -309,7 +320,8 @@ class Http1ClientConnection(
         val contentProvider: HttpClientContentProvider? = httpClientRequest.contentProvider,
         val contentHandler: HttpClientContentHandler = httpClientRequest.contentHandler,
         val expectServerAcceptsContent: Boolean = httpClientRequest.httpFields.expectServerAcceptsContent(),
-        val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest)
+        val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest),
+        val expectUpgradeWebSocket: Boolean = expectUpgradeWebsocket(httpClientRequest)
     )
 
 }

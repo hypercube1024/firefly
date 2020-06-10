@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
 import java.net.URL
 
 class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClient, AbstractLifeCycle() {
@@ -56,6 +57,14 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
 
     override fun request(method: String, httpURI: HttpURI): HttpClientRequestBuilder {
         return AsyncHttpClientRequestBuilder(httpClientConnectionManager, method, httpURI, HttpVersion.HTTP_1_1)
+    }
+
+    override fun websocket(): WebSocketClientConnectionBuilder {
+        TODO("Not yet implemented")
+    }
+
+    override fun websocket(url: String): WebSocketClientConnectionBuilder {
+        TODO("Not yet implemented")
     }
 
     override fun init() {

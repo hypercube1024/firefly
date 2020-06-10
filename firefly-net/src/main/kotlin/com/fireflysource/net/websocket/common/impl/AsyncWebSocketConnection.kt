@@ -46,7 +46,8 @@ class AsyncWebSocketConnection(
     private val extensions: List<String> = listOf(),
     private val extensionFactory: ExtensionFactory = defaultExtensionFactory,
     private val subProtocols: List<String> = listOf(),
-    private val ioState: IOState = IOState()
+    private val ioState: IOState = IOState(),
+    private val remainingData: ByteBuffer? = null
 ) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection,
     WebSocketConnectionState by ioState, WebSocketConnection,
     IncomingFrames, OutgoingFrames {
@@ -170,6 +171,15 @@ class AsyncWebSocketConnection(
 
     private fun parseFrameJob() {
         tcpConnection.coroutineScope.launch {
+            try {
+                if (remainingData != null && remainingData.hasRemaining()) {
+                    parser.parse(remainingData)
+                }
+            } catch (e: Exception) {
+                log.error(e) { "Parse websocket frame error. id: ${this@AsyncWebSocketConnection.id}" }
+                ioState.onReadFailure(e)
+            }
+
             while (true) {
                 try {
                     val buffer = tcpConnection.read().await()
@@ -185,6 +195,7 @@ class AsyncWebSocketConnection(
                     break
                 }
             }
+
         }
     }
 
