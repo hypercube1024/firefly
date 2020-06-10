@@ -34,7 +34,7 @@ public interface WebSocketClientConnectionBuilder {
      * @param extensions The websocket extensions.
      * @return The websocket client connection builder.
      */
-    WebSocketClientConnectionBuilder putExtensions(List<String> extensions);
+    WebSocketClientConnectionBuilder extensions(List<String> extensions);
 
     /**
      * Put the websocket sub protocols.
@@ -42,7 +42,7 @@ public interface WebSocketClientConnectionBuilder {
      * @param subProtocols The websocket sub protocols.
      * @return The websocket client connection builder.
      */
-    WebSocketClientConnectionBuilder putSubProtocols(List<String> subProtocols);
+    WebSocketClientConnectionBuilder subProtocols(List<String> subProtocols);
 
     /**
      * Set the websocket message handler.

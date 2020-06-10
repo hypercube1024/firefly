@@ -9,6 +9,8 @@ import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
+import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionBuilder
+import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionManager
 import java.net.URL
 
 class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClient, AbstractLifeCycle() {
@@ -18,6 +20,10 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     }
 
     private val httpClientConnectionManager = AsyncHttpClientConnectionManager(config)
+    private val webSocketClientConnectionManager = AsyncWebSocketClientConnectionManager(
+        httpClientConnectionManager.getTcpClient(),
+        httpClientConnectionManager.getSecureTcpClient()
+    )
 
     init {
         start()
@@ -60,11 +66,11 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     }
 
     override fun websocket(): WebSocketClientConnectionBuilder {
-        TODO("Not yet implemented")
+        return AsyncWebSocketClientConnectionBuilder(webSocketClientConnectionManager)
     }
 
     override fun websocket(url: String): WebSocketClientConnectionBuilder {
-        TODO("Not yet implemented")
+        return AsyncWebSocketClientConnectionBuilder(webSocketClientConnectionManager).url(url)
     }
 
     override fun init() {

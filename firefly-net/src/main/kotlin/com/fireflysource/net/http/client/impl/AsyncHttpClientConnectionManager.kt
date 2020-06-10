@@ -42,6 +42,10 @@ class AsyncHttpClientConnectionManager(
         start()
     }
 
+    fun getTcpClient() = tcpClient
+
+    fun getSecureTcpClient() = secureTcpClient
+
     private fun createTcpChannelGroup() =
         if (config.tcpChannelGroup != null) config.tcpChannelGroup
         else AioTcpChannelGroup("async-http-client")

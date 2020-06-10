@@ -16,23 +16,7 @@ class AsyncWebSocketServerConnectionBuilder(
     private val webSocketManager: WebSocketManager
 ) : WebSocketServerConnectionBuilder {
 
-    private val connectionHandler =
-        WebSocketServerConnectionHandler()
-
-    init {
-        connectionHandler.setSubProtocolSelector { listOf() }
-        connectionHandler.setExtensionSelector { clientExtensions ->
-            if (clientExtensions.isNullOrEmpty()) {
-                listOf()
-            } else {
-                ExtensionConfig
-                    .parseList(clientExtensions)
-                    .filter { c -> defaultExtensionFactory.isAvailable(c.name) }
-                    .map { c -> c.name }
-            }
-        }
-        connectionHandler.policy = WebSocketPolicy(WebSocketBehavior.SERVER)
-    }
+    private val connectionHandler = WebSocketServerConnectionHandler()
 
     override fun url(url: String): WebSocketServerConnectionBuilder {
         connectionHandler.url = url
@@ -61,6 +45,24 @@ class AsyncWebSocketServerConnectionBuilder(
 
     override fun onAccept(listener: WebSocketServerConnectionListener): HttpServer {
         connectionHandler.connectionListener = listener
+        if (connectionHandler.policy == null) {
+            connectionHandler.policy = WebSocketPolicy(WebSocketBehavior.SERVER)
+        }
+        if (connectionHandler.subProtocolSelector == null) {
+            connectionHandler.setSubProtocolSelector { listOf() }
+        }
+        if (connectionHandler.extensionSelector == null) {
+            connectionHandler.setExtensionSelector { clientExtensions ->
+                if (clientExtensions.isNullOrEmpty()) {
+                    listOf()
+                } else {
+                    ExtensionConfig
+                        .parseList(clientExtensions)
+                        .filter { c -> defaultExtensionFactory.isAvailable(c.name) }
+                        .map { c -> c.name }
+                }
+            }
+        }
         webSocketManager.register(connectionHandler)
         return httpServer
     }
