@@ -1,10 +1,12 @@
 package com.fireflysource.net.websocket.server
 
 import com.fireflysource.common.sys.Result
+import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.frame.TextFrame
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
@@ -67,11 +69,29 @@ fun main() = runBlocking {
         .onAccept { connection ->
             connection.coroutineScope.launch {
                 while (true) {
-                    connection.sendText("Time: ${Date()}")
+                    connection.sendText("Server time: ${Date()}")
                     delay(1000)
                 }
             }
             Result.DONE
         }
         .listen("localhost", 8999)
+
+    val client = HttpClientFactory.create()
+    val webSocketConnection = client.websocket("ws://localhost:8999/helloWebSocket")
+        .onMessage { frame, _ ->
+            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+                println(frame.payloadAsUTF8)
+            }
+            Result.DONE
+        }
+        .connect()
+        .await()
+    launch {
+        while (true) {
+            delay(2000)
+            webSocketConnection.sendText("Client time: ${Date()}")
+        }
+    }
+    Unit
 }

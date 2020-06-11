@@ -5,11 +5,13 @@ import com.fireflysource.net.http.client.impl.Http1ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.tcp.TcpClient
+import com.fireflysource.net.tcp.aio.ApplicationProtocol
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionManager
 import com.fireflysource.net.websocket.client.WebSocketClientRequest
 import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.exception.WebSocketException
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -30,14 +32,17 @@ class AsyncWebSocketClientConnectionManager(
         val uri = HttpURI(request.url)
         val tcpConnection = when (uri.scheme) {
             "ws" -> tcpClient.connect(uri.host, uri.port)
-            "wss" -> secureTcpClient.connect(uri.host, uri.port)
+            "wss" -> secureTcpClient.connect(
+                InetSocketAddress(uri.host, uri.port),
+                listOf(ApplicationProtocol.HTTP1.value)
+            )
             else -> throw WebSocketException("The websocket scheme error. scheme: ${uri.scheme}")
         }
 
-        return tcpConnection.thenCompose { connection ->
-            val httpConnection = Http1ClientConnection(config, connection)
-            httpConnection.upgradeWebSocket(request)
-        }
+        return tcpConnection
+            .thenCompose { connection -> connection.beginHandshake().thenApply { connection } }
+            .thenApply { Http1ClientConnection(config, it) }
+            .thenCompose { it.upgradeWebSocket(request) }
     }
 
 }
