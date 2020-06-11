@@ -21,6 +21,7 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
 
     private val httpClientConnectionManager = AsyncHttpClientConnectionManager(config)
     private val webSocketClientConnectionManager = AsyncWebSocketClientConnectionManager(
+        config,
         httpClientConnectionManager.getTcpClient(),
         httpClientConnectionManager.getSecureTcpClient()
     )

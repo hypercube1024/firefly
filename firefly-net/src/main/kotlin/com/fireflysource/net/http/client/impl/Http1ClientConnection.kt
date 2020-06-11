@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.codec.base64.Base64Utils
 import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.io.BufferUtils
@@ -26,11 +27,18 @@ import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.State.*
 import com.fireflysource.net.http.common.v1.encoder.assert
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import com.fireflysource.net.websocket.client.WebSocketClientRequest
+import com.fireflysource.net.websocket.common.WebSocketConnection
+import com.fireflysource.net.websocket.common.exception.UpgradeWebSocketConnectionException
+import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection
+import com.fireflysource.net.websocket.common.model.AcceptHash
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ThreadLocalRandom
+
 
 class Http1ClientConnection(
     private val config: HttpConfig,
@@ -143,21 +151,92 @@ class Http1ClientConnection(
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
         val remainingData = parser.parseAll(tcpConnection)
         val response = handler.complete()
-        return if (message.expectUpgradeHttp2) {
-            if (isUpgradeSuccess(response)) {
-                log.info { "Client received 101 Switching Protocols. id: $id" }
-
-                val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
-                val responseFuture =
-                    http2Connection.upgradeHttp2(message.httpClientRequest, remainingData)
-                http2ClientConnection = http2Connection
-                httpVersion = HttpVersion.HTTP_2
-                responseFuture.await().also { log.info { "Client upgrades HTTP2 success. id: $id" } }
-            } else response.also { log.info { "Client upgrades HTTP2 failure. id: $id" } }
-        } else if (message.expectUpgradeWebSocket) {
-            TODO("not implement")
-        } else response
+        return when {
+            message.expectUpgradeHttp2 -> upgradeHttp2Connection(response, message, remainingData)
+            message.expectUpgradeWebSocket -> upgradeWebSocketConnection(response, message, remainingData)
+            else -> response
+        }
     }
+
+    private fun upgradeWebSocketConnection(
+        response: HttpClientResponse,
+        message: RequestMessage,
+        remainingData: ByteBuffer?
+    ): HttpClientResponse {
+        if (response.status != HttpStatus.SWITCHING_PROTOCOLS_101) {
+            val e =
+                UpgradeWebSocketConnectionException("The upgrade response status is not 101. status: ${response.status}")
+            message.webSocketClientConnection?.completeExceptionally(e)
+            return response
+        }
+
+        if (!response.httpFields.contains(HttpHeader.CONNECTION, "Upgrade")) {
+            val e =
+                UpgradeWebSocketConnectionException("The upgrade response does not contain the Connection Upgrade field.")
+            message.webSocketClientConnection?.completeExceptionally(e)
+            return response
+        }
+
+        if (!response.httpFields.contains(HttpHeader.UPGRADE, "websocket")) {
+            val e =
+                UpgradeWebSocketConnectionException("The upgrade response does not contain the UPGRADE websocket field.")
+            message.webSocketClientConnection?.completeExceptionally(e)
+            return response
+        }
+
+        if (!response.httpFields.contains(HttpHeader.SEC_WEBSOCKET_ACCEPT)) {
+            val e =
+                UpgradeWebSocketConnectionException("The upgrade response does not contain the Sec-WebSocket-Accept.")
+            message.webSocketClientConnection?.completeExceptionally(e)
+            return response
+        }
+
+        val clientKey = message.httpClientRequest.httpFields[HttpHeader.SEC_WEBSOCKET_KEY]
+        val serverKey = AcceptHash.hashKey(clientKey)
+        if (response.httpFields[HttpHeader.SEC_WEBSOCKET_ACCEPT] != serverKey) {
+            val e = UpgradeWebSocketConnectionException("The upgrade response SEC_WEBSOCKET_ACCEPT is illegal.")
+            message.webSocketClientConnection?.completeExceptionally(e)
+            return response
+        }
+
+        log.info { "Upgrade websocket. Client received 101 Switching Protocols. id: $id" }
+        val webSocketClientRequest = message.webSocketClientRequest
+        requireNotNull(webSocketClientRequest)
+        val serverExtensions = response.httpFields.getValuesList(HttpHeader.SEC_WEBSOCKET_EXTENSIONS)
+        val serverSubProtocols = response.httpFields.getValuesList(HttpHeader.SEC_WEBSOCKET_SUBPROTOCOL)
+        val webSocketConnection = AsyncWebSocketConnection(
+            tcpConnection,
+            webSocketClientRequest.policy,
+            webSocketClientRequest.url,
+            serverExtensions ?: listOf(),
+            AsyncWebSocketConnection.defaultExtensionFactory,
+            serverSubProtocols ?: listOf(),
+            remainingData = remainingData
+        )
+        webSocketConnection.setWebSocketMessageHandler(webSocketClientRequest.handler)
+        webSocketConnection.begin()
+        upgradeWebSocketSuccess = true
+        message.webSocketClientConnection?.complete(webSocketConnection)
+        return response
+    }
+
+    private suspend fun upgradeHttp2Connection(
+        response: HttpClientResponse,
+        message: RequestMessage,
+        remainingData: ByteBuffer?
+    ): HttpClientResponse {
+        return if (isUpgradeSuccess(response)) {
+            log.info { "Upgrade HTTP2. Client received 101 Switching Protocols. id: $id" }
+
+            val http2Connection = Http2ClientConnection(config, tcpConnection, priorKnowledge = false)
+            val responseFuture =
+                http2Connection.upgradeHttp2(message.httpClientRequest, remainingData)
+            http2ClientConnection = http2Connection
+            httpVersion = HttpVersion.HTTP_2
+            responseFuture.await().also { log.info { "Client upgrades HTTP2 success. id: $id" } }
+        } else response.also { log.info { "Client upgrades HTTP2 failure. id: $id" } }
+    }
+
 
     private fun isUpgradeToHttp2Success(): Boolean {
         return httpVersion == HttpVersion.HTTP_2 && http2ClientConnection != null
@@ -313,6 +392,47 @@ class Http1ClientConnection(
         return http2Connection.send(request)
     }
 
+    fun upgradeWebSocket(webSocketClientRequest: WebSocketClientRequest): CompletableFuture<WebSocketConnection> {
+        val request = AsyncHttpClientRequest()
+        request.method = HttpMethod.GET.value
+        request.uri = HttpURI(webSocketClientRequest.url)
+        request.httpFields = HttpFields()
+        request.httpFields.put(HttpHeader.HOST, request.uri.host)
+        request.httpFields.put(HttpHeader.CONNECTION, "Upgrade")
+        request.httpFields.put(HttpHeader.UPGRADE, "websocket")
+        request.httpFields.put(HttpHeader.SEC_WEBSOCKET_VERSION, "13")
+        request.httpFields.put(HttpHeader.SEC_WEBSOCKET_KEY, genRandomWebSocketKey())
+        if (!webSocketClientRequest.extensions.isNullOrEmpty()) {
+            request.httpFields.put(
+                HttpHeader.SEC_WEBSOCKET_EXTENSIONS,
+                webSocketClientRequest.extensions.joinToString(", ")
+            )
+        }
+        if (!webSocketClientRequest.subProtocols.isNullOrEmpty()) {
+            request.httpFields.put(
+                HttpHeader.SEC_WEBSOCKET_SUBPROTOCOL,
+                webSocketClientRequest.subProtocols.joinToString(", ")
+            )
+        }
+
+        val websocketFuture = CompletableFuture<WebSocketConnection>()
+        val responseFuture = CompletableFuture<HttpClientResponse>()
+        val message = RequestMessage(
+            httpClientRequest = request,
+            response = responseFuture,
+            webSocketClientConnection = websocketFuture,
+            webSocketClientRequest = webSocketClientRequest
+        )
+        requestChannel.offer(message)
+        return websocketFuture
+    }
+
+    private fun genRandomWebSocketKey(): String {
+        val bytes = ByteArray(16)
+        ThreadLocalRandom.current().nextBytes(bytes)
+        return String(Base64Utils.encode(bytes))
+    }
+
     private data class RequestMessage(
         val httpClientRequest: HttpClientRequest,
         val response: CompletableFuture<HttpClientResponse>,
@@ -321,7 +441,9 @@ class Http1ClientConnection(
         val contentHandler: HttpClientContentHandler = httpClientRequest.contentHandler,
         val expectServerAcceptsContent: Boolean = httpClientRequest.httpFields.expectServerAcceptsContent(),
         val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest),
-        val expectUpgradeWebSocket: Boolean = expectUpgradeWebsocket(httpClientRequest)
+        val expectUpgradeWebSocket: Boolean = expectUpgradeWebsocket(httpClientRequest),
+        val webSocketClientConnection: CompletableFuture<WebSocketConnection>? = null,
+        val webSocketClientRequest: WebSocketClientRequest? = null
     )
 
 }

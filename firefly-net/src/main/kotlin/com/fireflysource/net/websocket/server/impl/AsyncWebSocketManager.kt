@@ -1,6 +1,7 @@
 package com.fireflysource.net.websocket.server.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.server.WebSocketManager
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler
 
@@ -18,6 +19,10 @@ class AsyncWebSocketManager : WebSocketManager {
         Assert.notNull(connectionHandler.policy, "The websocket policy must be not null")
         Assert.notNull(connectionHandler.connectionListener, "The websocket connection listener must be not null")
         Assert.notNull(connectionHandler.messageHandler, "The websocket message handler must be not null")
+        Assert.isTrue(
+            connectionHandler.policy.behavior == WebSocketBehavior.SERVER,
+            "The websocket behavior must be server"
+        )
 
         webSocketHandlers[connectionHandler.url] = connectionHandler
     }
