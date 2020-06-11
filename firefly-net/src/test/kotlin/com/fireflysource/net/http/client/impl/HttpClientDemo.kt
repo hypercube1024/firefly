@@ -2,18 +2,18 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.`$`
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 
 fun main(): Unit = runBlocking {
     // http://localhost:8080/hello-world
     // http://nghttp2.org
-    val httpClient = HttpClientFactory.create()
 
     val count = 1
     (1..count).forEach {
-        val response = httpClient.get("http://nghttp2.org")
+        val response = `$`.httpClient()
+            .get("http://nghttp2.org")
             .putQueryString("name", "PT_$it")
             .upgradeHttp2()
             .submit().await()
@@ -22,8 +22,6 @@ fun main(): Unit = runBlocking {
         println(response.stringBody)
         println()
     }
-
-    httpClient.stop()
 
     AbstractLifeCycle.stopAll()
     CoroutineDispatchers.stopAll()
