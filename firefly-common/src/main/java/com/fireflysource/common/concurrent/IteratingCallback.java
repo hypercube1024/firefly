@@ -105,16 +105,16 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
         SUCCEEDED
     }
 
-    private Locker _locker = new Locker();
-    private State _state;
-    private boolean _iterate;
+    private Locker locker = new Locker();
+    private State state;
+    private boolean iterate;
 
     protected IteratingCallback() {
-        _state = State.IDLE;
+        state = State.IDLE;
     }
 
     protected IteratingCallback(boolean needReset) {
-        _state = needReset ? State.SUCCEEDED : State.IDLE;
+        state = needReset ? State.SUCCEEDED : State.IDLE;
     }
 
     /**
@@ -165,20 +165,20 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
 
         loop:
         while (true) {
-            try (Locker.Lock lock = _locker.lock()) {
-                switch (_state) {
+            try (Locker.Lock lock = locker.lock()) {
+                switch (state) {
                     case PENDING:
                     case CALLED:
                         // process will be called when callback is handled
                         break loop;
 
                     case IDLE:
-                        _state = State.PROCESSING;
+                        state = State.PROCESSING;
                         process = true;
                         break loop;
 
                     case PROCESSING:
-                        _iterate = true;
+                        iterate = true;
                         break loop;
 
                     case FAILED:
@@ -214,34 +214,34 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
             }
 
             // acted on the action we have just received
-            try (Locker.Lock lock = _locker.lock()) {
-                switch (_state) {
+            try (Locker.Lock lock = locker.lock()) {
+                switch (state) {
                     case PROCESSING: {
                         switch (action) {
                             case IDLE: {
                                 // Has iterate been called while we were processing?
-                                if (_iterate) {
+                                if (iterate) {
                                     // yes, so skip idle and keep processing
-                                    _iterate = false;
-                                    _state = State.PROCESSING;
+                                    iterate = false;
+                                    state = State.PROCESSING;
                                     continue processing;
                                 }
 
                                 // No, so we can go idle
-                                _state = State.IDLE;
+                                state = State.IDLE;
                                 break processing;
                             }
 
                             case SCHEDULED: {
                                 // we won the race against the callback, so the callback has to process and we can break processing
-                                _state = State.PENDING;
+                                state = State.PENDING;
                                 break processing;
                             }
 
                             case SUCCEEDED: {
                                 // we lost the race against the callback,
-                                _iterate = false;
-                                _state = State.SUCCEEDED;
+                                iterate = false;
+                                state = State.SUCCEEDED;
                                 onCompleteSuccess = true;
                                 break processing;
                             }
@@ -256,7 +256,7 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
                         switch (action) {
                             case SCHEDULED: {
                                 // we lost the race, so we have to keep processing
-                                _state = State.PROCESSING;
+                                state = State.PROCESSING;
                                 continue processing;
                             }
 
@@ -296,14 +296,14 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      */
     private void success() {
         boolean process = false;
-        try (Locker.Lock lock = _locker.lock()) {
-            switch (_state) {
+        try (Locker.Lock lock = locker.lock()) {
+            switch (state) {
                 case PROCESSING: {
-                    _state = State.CALLED;
+                    state = State.CALLED;
                     break;
                 }
                 case PENDING: {
-                    _state = State.PROCESSING;
+                    state = State.PROCESSING;
                     process = true;
                     break;
                 }
@@ -327,8 +327,8 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      */
     private void failure(Throwable x) {
         boolean failure = false;
-        try (Locker.Lock lock = _locker.lock()) {
-            switch (_state) {
+        try (Locker.Lock lock = locker.lock()) {
+            switch (state) {
                 case SUCCEEDED:
                 case FAILED:
                 case IDLE:
@@ -339,7 +339,7 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
 
                 case PENDING:
                 case PROCESSING: {
-                    _state = State.FAILED;
+                    state = State.FAILED;
                     failure = true;
                     break;
                 }
@@ -353,20 +353,20 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
 
     public void close() {
         String failure = null;
-        try (Locker.Lock lock = _locker.lock()) {
-            switch (_state) {
+        try (Locker.Lock lock = locker.lock()) {
+            switch (state) {
                 case IDLE:
                 case SUCCEEDED:
                 case FAILED:
-                    _state = State.CLOSED;
+                    state = State.CLOSED;
                     break;
 
                 case CLOSED:
                     break;
 
                 default:
-                    failure = String.format("Close %s in state %s", this, _state);
-                    _state = State.CLOSED;
+                    failure = String.format("Close %s in state %s", this, state);
+                    state = State.CLOSED;
             }
         }
 
@@ -379,14 +379,14 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      * @return whether this callback is idle and {@link #iterate()} needs to be called
      */
     boolean isIdle() {
-        try (Locker.Lock lock = _locker.lock()) {
-            return _state == State.IDLE;
+        try (Locker.Lock lock = locker.lock()) {
+            return state == State.IDLE;
         }
     }
 
     public boolean isClosed() {
-        try (Locker.Lock lock = _locker.lock()) {
-            return _state == State.CLOSED;
+        try (Locker.Lock lock = locker.lock()) {
+            return state == State.CLOSED;
         }
     }
 
@@ -394,8 +394,8 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      * @return whether this callback has failed
      */
     public boolean isFailed() {
-        try (Locker.Lock lock = _locker.lock()) {
-            return _state == State.FAILED;
+        try (Locker.Lock lock = locker.lock()) {
+            return state == State.FAILED;
         }
     }
 
@@ -403,8 +403,8 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      * @return whether this callback has succeeded
      */
     public boolean isSucceeded() {
-        try (Locker.Lock lock = _locker.lock()) {
-            return _state == State.SUCCEEDED;
+        try (Locker.Lock lock = locker.lock()) {
+            return state == State.SUCCEEDED;
         }
     }
 
@@ -418,15 +418,15 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
      * @return true if the reset was successful
      */
     public boolean reset() {
-        try (Locker.Lock lock = _locker.lock()) {
-            switch (_state) {
+        try (Locker.Lock lock = locker.lock()) {
+            switch (state) {
                 case IDLE:
                     return true;
 
                 case SUCCEEDED:
                 case FAILED:
-                    _iterate = false;
-                    _state = State.IDLE;
+                    iterate = false;
+                    state = State.IDLE;
                     return true;
 
                 default:
@@ -437,6 +437,6 @@ public abstract class IteratingCallback implements Consumer<Result<Void>> {
 
     @Override
     public String toString() {
-        return String.format("%s[%s]", super.toString(), _state);
+        return String.format("%s[%s]", super.toString(), state);
     }
 }
