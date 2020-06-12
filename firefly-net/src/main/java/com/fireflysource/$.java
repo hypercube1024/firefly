@@ -1,5 +1,9 @@
-package com.fireflysource.net;
+package com.fireflysource;
 
+import com.fireflysource.common.concurrent.CompletableFutures;
+import com.fireflysource.common.slf4j.LazyLogger;
+import com.fireflysource.common.sys.Result;
+import com.fireflysource.net.SharedTcpChannelGroup;
 import com.fireflysource.net.http.client.HttpClient;
 import com.fireflysource.net.http.client.HttpClientFactory;
 import com.fireflysource.net.http.common.HttpConfig;
@@ -11,7 +15,12 @@ import com.fireflysource.net.tcp.TcpServer;
 import com.fireflysource.net.tcp.TcpServerFactory;
 import com.fireflysource.net.tcp.aio.TcpConfig;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 /**
+ * The Firefly functions start from here.
+ *
  * @author Pengtao Qiu
  */
 public interface $ {
@@ -166,5 +175,122 @@ public interface $ {
      */
     static TcpServer createTcpServer(TcpConfig tcpConfig) {
         return TcpServerFactory.create(tcpConfig);
+    }
+
+    /**
+     * The logger functions.
+     */
+    interface log {
+        /**
+         * Create a lazy logger.
+         *
+         * @param name The logger name.
+         * @return The lazy logger.
+         */
+        static LazyLogger create(String name) {
+            return LazyLogger.create(name);
+        }
+
+        /**
+         * Create a lazy logger.
+         *
+         * @param clazz The class name as the logger name.
+         * @return The lazy logger.
+         */
+        static LazyLogger create(Class<?> clazz) {
+            return LazyLogger.create(clazz);
+        }
+    }
+
+    /**
+     * The future functions.
+     */
+    interface future {
+
+        /**
+         * Done future.
+         *
+         * @return The done future.
+         */
+        static CompletableFuture<Void> done() {
+            return Result.DONE;
+        }
+
+        /**
+         * Done future.
+         *
+         * @param future The future.
+         */
+        static void done(CompletableFuture<Void> future) {
+            Result.done(future);
+        }
+
+        /**
+         * Complete the future exceptionally.
+         *
+         * @param t   The exception.
+         * @param <T> The future item type.
+         * @return The future.
+         */
+        static <T> CompletableFuture<T> completeExceptionally(Throwable t) {
+            return CompletableFutures.completeExceptionally(t);
+        }
+
+    }
+
+    /**
+     * The consumer functions.
+     */
+    interface consumer {
+
+        /**
+         * Discard the result.
+         *
+         * @param <T> The result type.
+         * @return The consumer that discards the result.
+         */
+        static <T> Consumer<Result<T>> discard() {
+            return Result.discard();
+        }
+
+        /**
+         * Convert future to the result consumer.
+         *
+         * @param future The future.
+         * @param <T>    The result type.
+         * @return The result consumer.
+         */
+        static <T> Consumer<Result<T>> futureToConsumer(CompletableFuture<T> future) {
+            return Result.futureToConsumer(future);
+        }
+
+        /**
+         * The empty consumer.
+         *
+         * @param <T> The consumer item type.
+         * @return The empty consumer.
+         */
+        static <T> Consumer<T> emptyConsumer() {
+            return Result.emptyConsumer();
+        }
+
+        /**
+         * Create the failed result.
+         *
+         * @param t The exception.
+         * @return The failed result.
+         */
+        static Result<Void> createFailedResult(Throwable t) {
+            return Result.createFailedResult(t);
+        }
+
+        /**
+         * The success result.
+         *
+         * @return The success result.
+         */
+        static Result<Void> success() {
+            return Result.SUCCESS;
+        }
     }
 }
