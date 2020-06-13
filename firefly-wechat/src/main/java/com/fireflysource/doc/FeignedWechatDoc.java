@@ -5,5 +5,5 @@ package com.fireflysource.doc;
  *
  * @author Pengtao Qiu
  */
-public class FeignedDoc {
+public class FeignedWechatDoc {
 }

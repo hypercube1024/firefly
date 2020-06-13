@@ -16,9 +16,9 @@ import com.fireflysource.net.tcp.aio.TcpConfig
 /**
  * @author Pengtao Qiu
  */
-object SharedTcpChannelGroup : AbstractLifeCycle() {
+object CommonTcpChannelGroup : AbstractLifeCycle() {
 
-    val group = AioTcpChannelGroup("shared-tcp-group")
+    val group = AioTcpChannelGroup("common-tcp-channel-group")
     val httpClient: HttpClient by lazy { createHttpClient() }
 
     init {

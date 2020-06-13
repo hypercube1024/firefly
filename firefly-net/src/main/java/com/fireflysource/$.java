@@ -3,7 +3,7 @@ package com.fireflysource;
 import com.fireflysource.common.concurrent.CompletableFutures;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.Result;
-import com.fireflysource.net.SharedTcpChannelGroup;
+import com.fireflysource.net.CommonTcpChannelGroup;
 import com.fireflysource.net.http.client.HttpClient;
 import com.fireflysource.net.http.client.HttpClientFactory;
 import com.fireflysource.net.http.common.HttpConfig;
@@ -14,6 +14,7 @@ import com.fireflysource.net.tcp.TcpClientFactory;
 import com.fireflysource.net.tcp.TcpServer;
 import com.fireflysource.net.tcp.TcpServerFactory;
 import com.fireflysource.net.tcp.aio.TcpConfig;
+import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -26,22 +27,41 @@ import java.util.function.Consumer;
 public interface $ {
 
     /**
-     * Get the HTTP client. It is singleton. The client shares global tcp channel group.
+     * Get the HTTP client. It is singleton. The client uses the common tcp channel group.
      *
      * @return The HTTP client.
      */
     static HttpClient httpClient() {
-        return SharedTcpChannelGroup.INSTANCE.getHttpClient();
+        return CommonTcpChannelGroup.INSTANCE.getHttpClient();
     }
 
     /**
-     * Create the HTTP client. The client shares global tcp channel group.
+     * Create a websocket client connection builder.
+     *
+     * @param url The websocket url.
+     * @return The websocket client connection builder.
+     */
+    static WebSocketClientConnectionBuilder websocket(String url) {
+        return httpClient().websocket(url);
+    }
+
+    /**
+     * Create a websocket client connection builder.
+     *
+     * @return The websocket client connection builder.
+     */
+    static WebSocketClientConnectionBuilder websocket() {
+        return httpClient().websocket();
+    }
+
+    /**
+     * Create the HTTP client. The client uses the common tcp channel group.
      *
      * @param httpConfig The HTTP config.
      * @return The HTTP client.
      */
     static HttpClient httpClient(HttpConfig httpConfig) {
-        return SharedTcpChannelGroup.INSTANCE.createHttpClient(httpConfig);
+        return CommonTcpChannelGroup.INSTANCE.createHttpClient(httpConfig);
     }
 
     /**
@@ -64,22 +84,22 @@ public interface $ {
     }
 
     /**
-     * Create the HTTP server. It shares global tcp channel group.
+     * Create the HTTP server. It uses the common tcp channel group.
      *
      * @return The HTTP server.
      */
     static HttpServer httpServer() {
-        return SharedTcpChannelGroup.INSTANCE.createHttpServer();
+        return CommonTcpChannelGroup.INSTANCE.createHttpServer();
     }
 
     /**
-     * Create the HTTP server. It shares global tcp channel group.
+     * Create the HTTP server. It uses the common tcp channel group.
      *
      * @param httpConfig The HTTP config.
      * @return The HTTP server.
      */
     static HttpServer httpServer(HttpConfig httpConfig) {
-        return SharedTcpChannelGroup.INSTANCE.createHttpServer(httpConfig);
+        return CommonTcpChannelGroup.INSTANCE.createHttpServer(httpConfig);
     }
 
     /**
@@ -102,22 +122,22 @@ public interface $ {
     }
 
     /**
-     * Create the TCP client. It shares global tcp channel group.
+     * Create the TCP client. It uses the common tcp channel group.
      *
      * @return The TCP client.
      */
     static TcpClient tcpClient() {
-        return SharedTcpChannelGroup.INSTANCE.createTcpClient();
+        return CommonTcpChannelGroup.INSTANCE.createTcpClient();
     }
 
     /**
-     * Create the TCP client. It shares global tcp channel group.
+     * Create the TCP client. It uses the common tcp channel group.
      *
      * @param tcpConfig The TCP config.
      * @return The TCP client.
      */
     static TcpClient tcpClient(TcpConfig tcpConfig) {
-        return SharedTcpChannelGroup.INSTANCE.createTcpClient(tcpConfig);
+        return CommonTcpChannelGroup.INSTANCE.createTcpClient(tcpConfig);
     }
 
     /**
@@ -140,22 +160,22 @@ public interface $ {
     }
 
     /**
-     * Create the TCP server. It shares global tcp channel group.
+     * Create the TCP server. It uses the common tcp channel group.
      *
      * @return The TCP server.
      */
     static TcpServer tcpServer() {
-        return SharedTcpChannelGroup.INSTANCE.createTcpServer();
+        return CommonTcpChannelGroup.INSTANCE.createTcpServer();
     }
 
     /**
-     * Create the TCP server. It shares global tcp channel group.
+     * Create the TCP server. It uses the common tcp channel group.
      *
      * @param tcpConfig The TCP config.
      * @return The TCP server.
      */
     static TcpServer tcpServer(TcpConfig tcpConfig) {
-        return SharedTcpChannelGroup.INSTANCE.createTcpServer(tcpConfig);
+        return CommonTcpChannelGroup.INSTANCE.createTcpServer(tcpConfig);
     }
 
     /**

@@ -42,6 +42,7 @@
         <module>firefly-common</module>
         <module>firefly-slf4j</module>
         <module>firefly-net</module>
+        <module>firefly-wechat</module>
     </modules>
 
     <properties>
@@ -70,7 +71,7 @@
 
         <!-- The third party lib -->
         <metrics.version>4.1.5</metrics.version>
-        <jackson.version>2.10.3</jackson.version>
+        <jackson.version>2.11.0</jackson.version>
         <msgpack.version>0.8.20</msgpack.version>
         <redisson.version>3.12.3</redisson.version>
         <conscrypt.version>2.4.0</conscrypt.version>
@@ -101,6 +102,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-slf4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-wechat</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
