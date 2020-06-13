@@ -2,6 +2,7 @@ package com.fireflysource.wechat.enterprise.group.bot.service.impl
 
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.MimeTypes
 import com.fireflysource.wechat.enterprise.group.bot.model.GroupBotMessageResult
 import com.fireflysource.wechat.enterprise.group.bot.model.Message
@@ -23,6 +24,15 @@ class AsyncGroupBotMessageService(
             .put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
             .body(json)
             .submit()
-            .thenApply { JsonUtils.read<GroupBotMessageResult>(it.stringBody) }
+            .thenApply { response ->
+                if (response.status == HttpStatus.OK_200) {
+                    JsonUtils.read<GroupBotMessageResult>(response.stringBody)
+                } else {
+                    GroupBotMessageResult(
+                        -99999,
+                        "The http request failure. status: ${response.status}, content: ${response.stringBody}"
+                    )
+                }
+            }
     }
 }

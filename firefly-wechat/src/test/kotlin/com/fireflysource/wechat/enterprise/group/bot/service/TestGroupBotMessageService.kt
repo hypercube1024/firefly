@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 import kotlin.random.Random
@@ -23,21 +24,28 @@ import kotlin.random.Random
 class TestGroupBotMessageService {
 
     companion object {
+
         @JvmStatic
         fun testParametersProvider(): Stream<Arguments> {
             return Stream.of(
-                Arguments.arguments(
+                arguments(
                     "/cgi-bin/webhook/send",
                     GroupBotMessageResult(
                         93000,
                         "invalid webhook url, hint: [1592021214_50_551fc8807c11f27ed0e6714d0c267ba4], from ip: 171.43.164.231, more info at https://open.work.weixin.qq.com/devtool/query?e=93000"
                     )
                 ),
-                Arguments.arguments("/cgi-bin/webhook/send?key=testKey", GroupBotMessageResult(0, "ok")),
-                Arguments.arguments(
+                arguments("/cgi-bin/webhook/send?key=testKey", GroupBotMessageResult(0, "ok")),
+                arguments(
                     "/cgi-bin/webhook/send?key=xxx", GroupBotMessageResult(
                         93000,
                         "invalid webhook url, hint: [1592021214_50_551fc8807c11f27ed0e6714d0c267ba4], from ip: 171.43.164.231, more info at https://open.work.weixin.qq.com/devtool/query?e=93000"
+                    )
+                ),
+                arguments(
+                    "/cgi-bin/webhook/sendFFFFF", GroupBotMessageResult(
+                        -99999,
+                        "The http request failure."
                     )
                 )
             )
