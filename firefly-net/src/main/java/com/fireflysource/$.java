@@ -200,7 +200,7 @@ public interface $ {
     /**
      * The logger functions.
      */
-    interface log {
+    interface logger {
         /**
          * Create a lazy logger.
          *
