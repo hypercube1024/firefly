@@ -15,12 +15,7 @@ suspend inline fun HttpParser.parse(
 ): ByteBuffer? {
     var remainingBuffer: ByteBuffer? = null
     recvLoop@ while (!(terminal(this.state) || this.isState(HttpParser.State.END))) {
-        val buffer = try {
-            tcpConnection.read().await().also { remainingBuffer = it }
-        } catch (e: Exception) {
-            break@recvLoop
-        }
-
+        val buffer = tcpConnection.read().await().also { remainingBuffer = it }
         var remaining = buffer.remaining()
         while ((!(terminal(this.state) || this.isState(HttpParser.State.END))) && remaining > 0) {
             val wasRemaining = remaining

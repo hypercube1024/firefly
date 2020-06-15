@@ -3,12 +3,14 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
+import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.ContentEncoding
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.HttpServerFactory
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -64,7 +66,6 @@ class TestHttpClient {
             }
             .timeout(120 * 1000)
             .listen(address)
-
     }
 
     @AfterEach
@@ -156,6 +157,36 @@ class TestHttpClient {
         println(response)
 
         httpClient.stop()
+    }
+
+    @Test
+    fun testConnectionTimeout() = runBlocking {
+        val server2 = HttpServerFactory.create()
+        val addr = InetSocketAddress("localhost", Random.nextInt(12000, 15000))
+        server2.router().get("/timeout/echo")
+            .handler { it.end("test timeout") }
+            .timeout(1)
+            .listen(addr)
+
+        val config = HttpConfig()
+        config.connectionPoolSize = 1
+        val httpClient = HttpClientFactory.create(config)
+
+        suspend fun echo() {
+            val url = "http://${addr.hostName}:${addr.port}/timeout/echo"
+            val response = httpClient.get(url).submit().await()
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("test timeout", response.stringBody)
+            println(response)
+        }
+
+        echo()
+        delay(2000)
+        echo()
+
+        httpClient.stop()
+        server2.stop()
+        Unit
     }
 
     class MockChunkByteBufferContentProvider(content: ByteBuffer) : ByteBufferContentProvider(content) {

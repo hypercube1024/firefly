@@ -1,8 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.annotation.NoArg
-import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.concurrent.exceptionallyCompose
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -23,6 +22,7 @@ import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 @NoArg
 class AsyncHttpClientConnectionManager(
@@ -79,13 +79,28 @@ class AsyncHttpClientConnectionManager(
                 .thenCompose { connection -> connection.beginHandshake().thenApply { connection } }
                 .thenApply { createHttp1ClientConnection(it) }
                 .thenCompose { sendAndCloseConnection(it, request) }
-                .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
         } else {
-            connectionPoolMap
-                .computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-                .poll()
-                .thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } }
-                .exceptionallyCompose { CompletableFutures.completeExceptionally(it) }
+            val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+            val future = CompletableFuture<HttpClientResponse>()
+            val retryCount = AtomicInteger(pool.size())
+
+            fun sendFromPool() {
+                pool.poll()
+                    .thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } }
+                    .thenAccept { future.complete(it) }
+                    .exceptionallyAccept {
+                        val count = retryCount.getAndDecrement()
+                        if (count > 0) {
+                            log.warn { "retry to send http request. message: ${it.message}, retry count: $count" }
+                            sendFromPool()
+                        } else {
+                            future.completeExceptionally(it)
+                        }
+                    }
+            }
+
+            sendFromPool()
+            future
         }
     }
 
