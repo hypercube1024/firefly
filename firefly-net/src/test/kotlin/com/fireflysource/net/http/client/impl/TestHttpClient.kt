@@ -164,7 +164,10 @@ class TestHttpClient {
         val server2 = HttpServerFactory.create()
         val addr = InetSocketAddress("localhost", Random.nextInt(12000, 15000))
         server2.router().get("/timeout/echo")
-            .handler { it.end("test timeout") }
+            .handler {
+                val cmd = it.getQueryString("cmd")
+                it.end("test timeout $cmd")
+            }
             .timeout(1)
             .listen(addr)
 
@@ -174,9 +177,9 @@ class TestHttpClient {
 
         suspend fun echo() {
             val url = "http://${addr.hostName}:${addr.port}/timeout/echo"
-            val response = httpClient.get(url).submit().await()
+            val response = httpClient.get(url).addQueryString("cmd", "xx").submit().await()
             assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("test timeout", response.stringBody)
+            assertEquals("test timeout xx", response.stringBody)
             println(response)
         }
 

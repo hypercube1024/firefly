@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.string.StringUtils
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
@@ -144,13 +143,15 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
         }
     }
 
-    if (request.queryStrings.size > 0) {
-        if (StringUtils.hasText(request.uri.query)) {
-            request.uri.query = request.uri.query + "&" + request.queryStrings.encode(StandardCharsets.UTF_8, true)
+    val uri = if (request.queryStrings.size > 0) {
+        val uri = HttpURI(request.uri)
+        if (request.uri.hasQuery()) {
+            uri.query = request.uri.query + "&" + request.queryStrings.encode(StandardCharsets.UTF_8, true)
         } else {
-            request.uri.query = request.queryStrings.encode(StandardCharsets.UTF_8, true)
+            uri.query = request.queryStrings.encode(StandardCharsets.UTF_8, true)
         }
-    }
+        uri
+    } else request.uri
 
     if (request.cookies != null) {
         request.httpFields.put(HttpHeader.COOKIE, CookieGenerator.generateCookies(request.cookies))
@@ -161,7 +162,7 @@ fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {
     }
 
     val len = request.contentProvider?.length() ?: -1
-    val metaDataReq = MetaData.Request(request.method, request.uri, request.httpVersion, request.httpFields, len)
+    val metaDataReq = MetaData.Request(request.method, uri, request.httpVersion, request.httpFields, len)
     metaDataReq.trailerSupplier = request.trailerSupplier
     return metaDataReq
 }
