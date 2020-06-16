@@ -35,6 +35,7 @@ import com.fireflysource.net.websocket.common.model.AcceptHash
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
@@ -105,12 +106,13 @@ class Http1ClientConnection(
                 if (message.expectUpgradeWebSocket && upgradeWebSocketSuccess) {
                     break@handleRequestLoop
                 }
+            } catch (e: IOException) {
+                log.info { "The TCP connection IO exception. message: ${e.message}. id: $id" }
+                completeResponseExceptionally(message, e)
+                break@handleRequestLoop
             } catch (e: Exception) {
                 log.error(e) { "HTTP1 client handler exception. id: $id" }
-                if (!message.response.isDone) {
-                    message.response.completeExceptionally(e)
-                }
-                closeFuture()
+                completeResponseExceptionally(message, e)
                 break@handleRequestLoop
             } finally {
                 handler.reset()
@@ -134,6 +136,13 @@ class Http1ClientConnection(
                 unhandledRequestMessage(message.httpClientRequest, message.response)
             }
         }
+    }
+
+    private fun completeResponseExceptionally(message: RequestMessage, e: Exception) {
+        if (!message.response.isDone) {
+            message.response.completeExceptionally(e)
+        }
+        closeFuture()
     }
 
     private suspend fun HttpClientResponse.complete(message: RequestMessage): Boolean {

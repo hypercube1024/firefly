@@ -160,7 +160,8 @@ class TestHttpClient {
     }
 
     @Test
-    fun testConnectionTimeout() = runBlocking {
+    @DisplayName("should retry to send request successfully")
+    fun testConnectionTimeoutRetry() = runBlocking {
         val server2 = HttpServerFactory.create()
         val addr = InetSocketAddress("localhost", Random.nextInt(12000, 15000))
         server2.router().get("/timeout/echo")

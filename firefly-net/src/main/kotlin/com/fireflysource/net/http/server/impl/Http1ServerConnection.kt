@@ -14,6 +14,7 @@ import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.launch
+import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -41,6 +42,8 @@ class Http1ServerConnection(
                     log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
                     break@parseLoop
                 }
+            } catch (e: InterruptedByTimeoutException) {
+                log.info { "The TCP connection is timeout. Exit HTTP1 parsing job. id: $id" }
             } catch (e: CancellationException) {
                 log.info { "Cancel HTTP1 parsing. id: $id" }
             } catch (e: Exception) {
