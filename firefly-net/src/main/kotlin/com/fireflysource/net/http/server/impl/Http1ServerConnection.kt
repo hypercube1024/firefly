@@ -14,6 +14,7 @@ import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.launch
+import java.nio.channels.ClosedChannelException
 import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -34,7 +35,7 @@ class Http1ServerConnection(
     private val upgradeProtocolSignal: Signal<Boolean> = Signal()
 
     private fun parseRequestJob() = coroutineScope.launch {
-        parseLoop@ while (!tcpConnection.isClosed) {
+        parseLoop@ while (true) {
             try {
                 parser.parseAll(tcpConnection)
                 if (waitToUpgradeProtocol()) {
@@ -43,9 +44,14 @@ class Http1ServerConnection(
                     break@parseLoop
                 }
             } catch (e: InterruptedByTimeoutException) {
-                log.info { "The TCP connection is timeout. Exit HTTP1 parsing job. id: $id" }
+                log.info { "The TCP connection is timeout. message: ${e.message} id: $id" }
+                break@parseLoop
+            } catch (e: ClosedChannelException) {
+                log.info { "The TCP connection is closed. message: ${e.message} id: $id" }
+                break@parseLoop
             } catch (e: CancellationException) {
-                log.info { "Cancel HTTP1 parsing. id: $id" }
+                log.info { "Cancel HTTP1 parsing. message: ${e.message} id: $id" }
+                break@parseLoop
             } catch (e: Exception) {
                 log.error(e) { "Parse HTTP1 request exception. id: $id" }
             } finally {

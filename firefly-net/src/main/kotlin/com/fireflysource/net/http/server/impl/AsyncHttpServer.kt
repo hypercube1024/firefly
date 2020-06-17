@@ -39,7 +39,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
     }
     private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> = BiFunction { ctx, e ->
-        log.error(e) { "The internal server error" }
+        log.error(e) { "The server internal error" }
         if (ctx != null && !ctx.response.isCommitted) {
             if (e is BadMessageException) {
                 ctx.setStatus(e.code)
