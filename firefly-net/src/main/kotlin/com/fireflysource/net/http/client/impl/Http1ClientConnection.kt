@@ -107,7 +107,7 @@ class Http1ClientConnection(
                     break@handleRequestLoop
                 }
             } catch (e: IOException) {
-                log.info { "The TCP connection IO exception. message: ${e.message}. id: $id" }
+                log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
                 completeResponseExceptionally(message, e)
                 break@handleRequestLoop
             } catch (e: Exception) {

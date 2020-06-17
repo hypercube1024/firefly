@@ -43,7 +43,7 @@ class Http1ServerConnection(
                     break@parseLoop
                 }
             } catch (e: IOException) {
-                log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name} id: $id" }
+                log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
                 break@parseLoop
             } catch (e: CancellationException) {
                 log.info { "Cancel HTTP1 parsing. message: ${e.message} id: $id" }
