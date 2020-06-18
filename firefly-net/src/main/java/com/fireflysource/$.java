@@ -246,14 +246,14 @@ public interface $ {
         }
 
         /**
-         * Complete the future exceptionally.
+         * Create a failed future.
          *
          * @param t   The exception.
          * @param <T> The future item type.
          * @return The future.
          */
-        static <T> CompletableFuture<T> completeExceptionally(Throwable t) {
-            return CompletableFutures.completeExceptionally(t);
+        static <T> CompletableFuture<T> failedFuture(Throwable t) {
+            return CompletableFutures.failedFuture(t);
         }
 
     }

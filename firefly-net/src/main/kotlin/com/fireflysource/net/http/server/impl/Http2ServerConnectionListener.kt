@@ -164,6 +164,6 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
         connectionListener.onException(context, e)
     } catch (t: Throwable) {
         log.error(t) { "HTTP2 server handler exception. id: ${context?.connection?.id}" }
-        CompletableFutures.completeExceptionally(t)
+        CompletableFutures.failedFuture(t)
     }
 }

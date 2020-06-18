@@ -274,7 +274,7 @@ class MultiPartContentHandler(
 
     private fun complete(): CompletableFuture<Void> {
         val e = parsingException
-        return if (e != null) CompletableFutures.completeExceptionally(e) else Result.DONE
+        return if (e != null) CompletableFutures.failedFuture(e) else Result.DONE
     }
 
     private suspend fun closeAwait() {

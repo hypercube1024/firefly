@@ -2,7 +2,9 @@ package com.fireflysource.common.concurrent;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 abstract public class CompletableFutures {
     /**
@@ -36,9 +38,37 @@ abstract public class CompletableFutures {
         return future.thenApply(CompletableFuture::completedFuture);
     }
 
-    public static <T> CompletableFuture<T> completeExceptionally(Throwable t) {
+    /**
+     * Create a failed future.
+     *
+     * @param t   The exception.
+     * @param <T> The future result type.
+     * @return The failed future.
+     */
+    public static <T> CompletableFuture<T> failedFuture(Throwable t) {
         CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(t);
         return future;
     }
+
+    /**
+     * Retry the async operation.
+     *
+     * @param retryCount   The max retry times.
+     * @param supplier     The async operation function.
+     * @param prepareRetry The callback before retries async operation.
+     * @param <T>          The future result type.
+     * @return The operation result future.
+     */
+    public static <T> CompletableFuture<T> retry(int retryCount, Supplier<CompletableFuture<T>> supplier, BiConsumer<Throwable, Integer> prepareRetry) {
+        return exceptionallyCompose(supplier.get(), e -> {
+            if (retryCount > 0) {
+                prepareRetry.accept(e, retryCount);
+                return retry(retryCount - 1, supplier, prepareRetry);
+            } else {
+                return failedFuture(e);
+            }
+        }).toCompletableFuture();
+    }
+
 }
