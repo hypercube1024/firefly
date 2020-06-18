@@ -17,7 +17,9 @@ import com.fireflysource.net.tcp.aio.TcpConfig;
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * The Firefly functions start from here.
@@ -254,6 +256,19 @@ public interface $ {
          */
         static <T> CompletableFuture<T> failedFuture(Throwable t) {
             return CompletableFutures.failedFuture(t);
+        }
+
+        /**
+         * Retry the async operation.
+         *
+         * @param retryCount   The max retry times.
+         * @param supplier     The async operation function.
+         * @param prepareRetry The callback before retries async operation.
+         * @param <T>          The future result type.
+         * @return The operation result future.
+         */
+        static <T> CompletableFuture<T> retry(int retryCount, Supplier<CompletableFuture<T>> supplier, BiConsumer<Throwable, Integer> prepareRetry) {
+            return CompletableFutures.retry(retryCount, supplier, prepareRetry);
         }
 
     }
