@@ -26,6 +26,10 @@ import java.util.function.Supplier
 
 abstract class AbstractHttpServerResponse(private val httpServerConnection: HttpServerConnection) : HttpServerResponse {
 
+    companion object {
+        const val contentProviderBufferSize = 8 * 1024
+    }
+
     val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, HttpStatus.OK_200, HttpFields())
     private var contentProvider: HttpServerContentProvider? = null
     private var cookieList: List<Cookie>? = null
@@ -140,8 +144,8 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
     abstract fun createHttpServerOutputChannel(response: MetaData.Response): HttpServerOutputChannel
 
     private suspend fun writeContent(provider: HttpServerContentProvider, outputChannel: HttpServerOutputChannel) {
+        val size = provider.getContentProviderBufferSize()
         writeLoop@ while (true) {
-            val size = if (provider.length() > 0) provider.length().coerceAtMost(8192L).toInt() else 8192
             val buffer = BufferUtils.allocate(size)
             val position = buffer.flipToFill()
             val length = provider.read(buffer).await()
@@ -152,6 +156,11 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
             }
         }
         provider.closeFuture().await()
+    }
+
+    private fun HttpServerContentProvider.getContentProviderBufferSize(): Int {
+        return if (this.length() > 0) this.length().coerceAtMost(contentProviderBufferSize.toLong()).toInt()
+        else contentProviderBufferSize
     }
 
     override fun getOutputChannel(): HttpServerOutputChannel {
