@@ -5,8 +5,8 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpChannelGroup
 import com.fireflysource.net.tcp.TcpClient
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.secure.DefaultSecureEngineFactorySelector
 import com.fireflysource.net.tcp.secure.SecureEngineFactory
-import com.fireflysource.net.tcp.secure.jdk.NoCheckOpenJdkSSLContextFactory
 import kotlinx.coroutines.CoroutineScope
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
@@ -24,7 +24,8 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
         private val log = SystemLogger.create(AioTcpClient::class.java)
     }
 
-    private var secureEngineFactory: SecureEngineFactory = NoCheckOpenJdkSSLContextFactory()
+    private var secureEngineFactory: SecureEngineFactory =
+        DefaultSecureEngineFactorySelector.createSecureEngineFactory(true)
     private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-client")
     private var stopGroup = true
 
