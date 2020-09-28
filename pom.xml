@@ -82,8 +82,8 @@
         <spring.reactor.version>Dysprosium-SR8</spring.reactor.version>
 
         <!-- test lib -->
-        <junit.version>5.6.0</junit.version>
-        <mockito.version>3.3.0</mockito.version>
+        <junit.version>5.7.0</junit.version>
+        <mockito.version>3.5.13</mockito.version>
     </properties>
 
     <dependencyManagement>
@@ -390,7 +390,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.5</version>
+                    <version>0.8.6</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>
@@ -591,7 +591,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <compilerArgument>-parameters</compilerArgument>
+                            <compilerArgs>
+                                <arg>-parameters</arg>
+                            </compilerArgs>
                             <source>${java.release.version}</source>
                             <target>${java.release.version}</target>
                             <encoding>UTF-8</encoding>
@@ -747,7 +749,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <compilerArgument>-parameters</compilerArgument>
+                            <compilerArgs>
+                                <arg>-parameters</arg>
+                            </compilerArgs>
                             <release>${java.release.version}</release>
                             <source>${java.release.version}</source>
                             <target>${java.release.version}</target>

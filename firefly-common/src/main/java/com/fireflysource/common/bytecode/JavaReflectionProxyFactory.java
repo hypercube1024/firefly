@@ -155,7 +155,7 @@ public class JavaReflectionProxyFactory extends AbstractProxyFactory {
             if (arrayProxyClazz == null)
                 return null;
 
-            return (ArrayProxy) arrayProxyClazz.newInstance();
+            return (ArrayProxy) arrayProxyClazz.getConstructor().newInstance();
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }
