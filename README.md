@@ -49,13 +49,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>5.0.0</version>
+    <version>4.9.5</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>5.0.0</version>
+    <version>4.9.5</version>
 </dependency>
 ```
 
@@ -119,7 +119,7 @@ Add maven dependency in your pom.xml
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-kotlin-ext</artifactId>
-    <version>5.0.0</version>
+    <version>4.9.5</version>
 </dependency>
 ```
 
@@ -176,11 +176,5 @@ More detailed information, please refer to the
 
 # Contact information
 E-mail: qptkk@163.com  
-QQ Group: 126079579  
-
-Treat author to a cup of coffee:  
-<img src="http://www.fireflysource.com/images/author-ali-pay.jpg" width="260" />
-<img src="http://www.fireflysource.com/images/author-wechat-pay.jpg" width="260" />
-
-Get the red envelope:  
-<img src="http://www.fireflysource.com/images/author-red-envelope.png" width="260" />
+QQ Group: 126079579 
+Wechat: AlvinQiu
