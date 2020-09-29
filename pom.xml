@@ -639,7 +639,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
+                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>
                             <failOnError>true</failOnError>
                             <charset>UTF-8</charset>
                             <encoding>UTF-8</encoding>
@@ -800,7 +800,7 @@
                         <configuration>
                             <source>${java.release.version}</source>
                             <release>${java.release.version}</release>
-                            <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
+                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>
                             <failOnError>true</failOnError>
                             <charset>UTF-8</charset>
                             <encoding>UTF-8</encoding>
