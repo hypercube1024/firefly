@@ -1,7 +1,7 @@
 # What is Firefly? 
 
 [![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly) 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.fireflysource/firefly/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.fireflysource/firefly)
+[![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
@@ -49,13 +49,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>4.9.5</version>
+    <version>5.0.0-alpha1</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>4.9.5</version>
+    <version>5.0.0-alpha1</version>
 </dependency>
 ```
 
@@ -79,102 +79,70 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create the HTTP server and client (Java version)
-```java
-public class HelloHTTPServerAndClient {
-    public static void main(String[] args) {
-        $.httpServer()
-         .router().get("/").handler(ctx -> ctx.end("hello world!"))
-         .listen("localhost", 8080);
 
-        $.httpClient().get("http://localhost:8080/").submit()
-         .thenAccept(res -> System.out.println(res.getStringBody()));
-    }
-}
-```
 
-Create the WebSocket server and client (Java version)
-```java
-public class HelloWebSocket {
-    public static void main(String[] args) {
-        SimpleWebSocketServer server = $.createWebSocketServer();
-        server.webSocket("/helloWebSocket")
-              .onConnect(conn -> conn.sendText("OK."))
-              .onText((text, conn) -> System.out.println("The server received: " + text))
-              .listen("localhost", 8080);
-    
-        SimpleWebSocketClient client = $.createWebSocketClient();
-        client.webSocket("ws://localhost:8080/helloWebSocket")
-              .onText((text, conn) -> System.out.println("The client received: " + text))
-              .connect()
-              .thenAccept(conn -> conn.sendText("Hello server."));
-    }
-}
-```
-
-Firefly also supports to create HTTP server/client using Kotlin DSL.  
-
-Add maven dependency in your pom.xml
-```xml
-<dependency>
-    <groupId>com.fireflysource</groupId>
-    <artifactId>firefly-kotlin-ext</artifactId>
-    <version>4.9.5</version>
-</dependency>
-```
-
-Create the HTTP server and client (Kotlin DSL version)
+Create the HTTP server and client
 ```kotlin
-fun main(args: Array<String>) = runBlocking {
-    HttpServer {
-        router {
-            httpMethod = HttpMethod.GET
-            path = "/"
-
-            asyncHandler {
-                end("hello world!")
-            }
+fun main() = runBlocking {
+    val httpServer = HttpServerFactory.create()
+    httpServer
+        .router().get("/test").handler {
+            it.end("Welcome")
         }
-    }.listen("localhost", 8080)
+        .listen("localhost", 9999)
 
-    val msg = firefly.httpClient().get("http://localhost:8080").asyncSubmit().stringBody
-    println(msg)
+    val client = HttpClientFactory.create()
+    val response = client.get("http://localhost:9999/test").submit().await()
+    println(response.status)
+    println(response.stringBody)
 }
 ```
 
-Create WebSocket server and client (Kotlin version)
+Create WebSocket server and client
 ```kotlin
-fun main(args: Array<String>) {
-    val server = firefly.createWebSocketServer()
-    server.webSocket("/helloWebSocket")
-          .onConnect { conn -> conn.sendText("OK.") }
-          .onText { text, conn -> println("The server received: " + text) }
-          .listen("localhost", 8080)
+fun main() = runBlocking {
+    val server = HttpServerFactory.create()
+    server
+        .websocket("/helloWebSocket")
+        .onMessage { frame, _ ->
+            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+                println(frame.payloadAsUTF8)
+            }
+            Result.DONE
+        }
+        .onAccept { connection ->
+            connection.coroutineScope.launch {
+                while (true) {
+                    connection.sendText("Server time: ${Date()}")
+                    delay(1000)
+                }
+            }
+            Result.DONE
+        }
+        .listen("localhost", 8999)
 
-    val client = firefly.createWebSocketClient()
-    client.webSocket("ws://localhost:8080/helloWebSocket")
-          .onText { text, conn -> println("The client received: " + text) }
-          .connect()
-          .thenAccept { conn -> conn.sendText("Hello server.") }
+    val client = HttpClientFactory.create()
+    val webSocketConnection = client
+        .websocket("ws://localhost:8999/helloWebSocket")
+        .onMessage { frame, _ ->
+            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+                println(frame.payloadAsUTF8)
+            }
+            Result.DONE
+        }
+        .connect()
+        .await()
+    launch {
+        while (true) {
+            delay(2000)
+            webSocketConnection.sendText("Client time: ${Date()}")
+        }
+    }
+    Unit
 }
 ```
-
-More detailed information, please refer to the 
-* [HTTP server/client document](http://www.fireflysource.com/docs/http-server-and-client.html)
-* [WebSocket server/client document](http://www.fireflysource.com/docs/websocket-server-and-client.html)
-* [TCP server/client document](http://www.fireflysource.com/docs/tcp-server-and-client.html)
-* [SSL/TLS configuration document](http://www.fireflysource.com/docs/ssl-tls-configuration.html)
-* [Inversion of control document](http://www.fireflysource.com/docs/ioc-framework.html)
-* [Database access document](http://www.fireflysource.com/docs/database-access.html)
-* [Log document](http://www.fireflysource.com/docs/log.html)
-* [OAuth2 server/client document](http://www.fireflysource.com/docs/oauth2-server-and-client.html)
-* [CLI generator document](http://www.fireflysource.com/docs/cli-generator.html)
-* [HTTP server/client document (Kotlin version)](http://www.fireflysource.com/docs/http-server-and-client-kotlin-ext.html)
-* [Database access document (Kotlin version)](http://www.fireflysource.com/docs/database-access-kotlin.html)
-* [Example (Java version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example/src/main/java/com/firefly/example)
-* [Example (Kotlin version)](https://github.com/hypercube1024/firefly/tree/master/firefly-example/src/main/kotlin/com/firefly/example/kotlin)
 
 # Contact information
-E-mail: qptkk@163.com  
-QQ Group: 126079579 
-Wechat: AlvinQiu
+- E-mail: qptkk@163.com  
+- QQ Group: 126079579  
+- Wechat: AlvinQiu
