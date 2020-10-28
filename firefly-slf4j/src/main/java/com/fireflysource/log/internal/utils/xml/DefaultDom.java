@@ -13,11 +13,11 @@ import java.util.List;
 
 public class DefaultDom implements Dom {
 
-    private DocumentBuilder db;
+    private DocumentBuilder documentBuilder;
 
     public DefaultDom() {
         try {
-            db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new XmlParsingException(e);
         }
@@ -29,7 +29,7 @@ public class DefaultDom implements Dom {
             if (is == null) {
                 throw new XmlParsingException("the configuration file: " + file + " is not found");
             }
-            Document doc = db.parse(is);
+            Document doc = documentBuilder.parse(is);
             return doc;
         } catch (Exception e) {
             throw new XmlParsingException(e);
