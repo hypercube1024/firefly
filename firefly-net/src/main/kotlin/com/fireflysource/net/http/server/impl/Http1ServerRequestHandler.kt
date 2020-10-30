@@ -48,8 +48,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                     is Content -> acceptContent(context, message)
                     is ContentComplete -> closeContentHandler(context)
                     is MessageComplete -> notifyHttpRequestComplete(context)
-                    is BadMessage -> notifyException(context, message.exception)
-                    is EarlyEOF -> notifyException(context, IllegalStateException("Parser early EOF"))
+                    is BadMessage -> notifyException(request, context, message.exception)
+                    is EarlyEOF -> notifyException(request, context, IllegalStateException("Parser early EOF"))
                     is EndRequestHandler -> {
                         log.info { "Exit the server request handler. id: ${connection.id}" }
                         break@parserLoop
@@ -57,7 +57,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 }
             } catch (e: Exception) {
                 log.error(e) { "Handle HTTP1 server parser message exception." }
-                notifyException(context, e)
+                notifyException(request, context, e)
             }
         }
     }
@@ -71,7 +71,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         request.fields.add(message.field)
     }
 
-    private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext? {
+    private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext {
         requireNotNull(request)
         val httpServerRequest = AsyncHttpServerRequest(request, connection.config)
 
@@ -84,15 +84,27 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         }
         this.expectUpgradeWebsocket = HttpProtocolNegotiator.expectUpgradeWebsocket(httpServerRequest)
 
-        val expect100 = request.fields.expectServerAcceptsContent()
-        val closeConnection = request.fields.isCloseConnection(request.httpVersion)
-        val ctx = AsyncRoutingContext(
-            httpServerRequest,
+
+        val ctx = newContext(httpServerRequest)
+        notifyHeaderComplete(ctx)
+        return ctx
+    }
+
+    private fun newContext(request: MetaData.Request?): AsyncRoutingContext? {
+        return if (request != null) {
+            val httpServerRequest = AsyncHttpServerRequest(request, connection.config)
+            newContext(httpServerRequest)
+        } else null
+    }
+
+    private fun newContext(request: AsyncHttpServerRequest): AsyncRoutingContext {
+        val expect100 = request.httpFields.expectServerAcceptsContent()
+        val closeConnection = request.httpFields.isCloseConnection(request.httpVersion)
+        return AsyncRoutingContext(
+            request,
             Http1ServerResponse(connection, expect100, closeConnection),
             connection
         )
-        notifyHeaderComplete(ctx)
-        return ctx
     }
 
     private suspend fun notifyHeaderComplete(context: RoutingContext) {
@@ -201,13 +213,17 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         parserChannel.offer(EndRequestHandler)
     }
 
-    private suspend fun notifyException(context: RoutingContext?, exception: Throwable) {
+    private suspend fun notifyException(request: MetaData.Request?, context: RoutingContext?, exception: Throwable) {
+        val ctx = context ?: newContext(request)
         try {
             connection.notifyUpgradeProtocol(false)
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
-            connectionListener.onException(context, exception).await()
+            connectionListener.onException(ctx, exception).await()
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server on exception. id: ${connection.id}" }
+        }
+        if (ctx == null) {
+            connection.closeFuture()
         }
     }
 
