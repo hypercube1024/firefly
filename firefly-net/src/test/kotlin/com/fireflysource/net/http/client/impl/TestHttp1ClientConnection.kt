@@ -17,11 +17,22 @@ class TestHttp1ClientConnection {
         val request = AsyncHttpClientRequest()
         request.method = HttpMethod.GET.value
         request.uri = HttpURI("https://www.fireflysource.com/")
-        prepareHttp1Headers(request)
+        prepareHttp1Headers(request) { "defaultHost" }
 
         assertTrue(request.httpFields.getValuesList(HttpHeader.HOST.value).isNotEmpty())
         assertEquals("www.fireflysource.com", request.httpFields[HttpHeader.HOST.value])
         assertEquals(HttpHeaderValue.KEEP_ALIVE.value, request.httpFields[HttpHeader.CONNECTION.value])
+    }
+
+    @Test
+    @DisplayName("should set default host header")
+    fun testDefaultHost() {
+        val request = AsyncHttpClientRequest()
+        request.method = HttpMethod.GET.value
+        request.uri = HttpURI("/echo0")
+        prepareHttp1Headers(request) { "defaultHost" }
+        assertTrue(request.httpFields.getValuesList(HttpHeader.HOST.value).isNotEmpty())
+        assertEquals("defaultHost", request.httpFields[HttpHeader.HOST.value])
     }
 
     @Test
@@ -31,7 +42,7 @@ class TestHttp1ClientConnection {
         request.method = HttpMethod.GET.value
         request.uri = HttpURI("https://www.fireflysource.com/")
         request.httpFields.addCSV(HttpHeader.CONNECTION, HttpHeaderValue.UPGRADE.value, "HTTP2-Settings")
-        prepareHttp1Headers(request)
+        prepareHttp1Headers(request) { "" }
 
         assertEquals(
             "${HttpHeaderValue.UPGRADE.value}, HTTP2-Settings, ${HttpHeaderValue.KEEP_ALIVE.value}",

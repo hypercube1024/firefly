@@ -388,7 +388,7 @@ class Http1ClientConnection(
 
     private fun sendRequestViaHttp1(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         log.debug { "Send request via HTTP1 protocol. id: $id" }
-        prepareHttp1Headers(request)
+        prepareHttp1Headers(request) { this.remoteAddress.hostName }
         val future = CompletableFuture<HttpClientResponse>()
         requestChannel.offer(RequestMessage(request, future))
         return future
@@ -457,9 +457,10 @@ class Http1ClientConnection(
 
 }
 
-fun prepareHttp1Headers(request: HttpClientRequest) {
+fun prepareHttp1Headers(request: HttpClientRequest, defaultHost: () -> String) {
     if (request.httpFields.getValuesList(HttpHeader.HOST.value).isEmpty()) {
-        request.httpFields.put(HttpHeader.HOST, request.uri.host)
+        val host = if (request.uri.host.isNullOrBlank()) defaultHost.invoke() else request.uri.host
+        request.httpFields.put(HttpHeader.HOST, host)
     }
 
     val connectionValues = request.httpFields.getCSV(HttpHeader.CONNECTION, false)

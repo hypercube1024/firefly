@@ -3,6 +3,7 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClient
+import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequestBuilder
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
@@ -12,6 +13,7 @@ import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionManager
 import java.net.URL
+import java.util.concurrent.CompletableFuture
 
 class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClient, AbstractLifeCycle() {
 
@@ -64,6 +66,14 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
 
     override fun request(method: String, httpURI: HttpURI): HttpClientRequestBuilder {
         return AsyncHttpClientRequestBuilder(httpClientConnectionManager, method, httpURI, HttpVersion.HTTP_1_1)
+    }
+
+    override fun createHttpClientConnection(httpURI: HttpURI): CompletableFuture<HttpClientConnection> {
+        return httpClientConnectionManager.createHttpClientConnection(httpURI)
+    }
+
+    override fun createHttpClientConnection(httpURI: String): CompletableFuture<HttpClientConnection> {
+        return createHttpClientConnection(HttpURI(httpURI))
     }
 
     override fun websocket(): WebSocketClientConnectionBuilder {

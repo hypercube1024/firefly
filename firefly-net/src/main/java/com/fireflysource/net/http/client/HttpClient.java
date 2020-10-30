@@ -6,6 +6,7 @@ import com.fireflysource.net.http.common.model.HttpURI;
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder;
 
 import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Pengtao Qiu
@@ -87,6 +88,22 @@ public interface HttpClient extends LifeCycle {
      * @return A new RequestBuilder that helps you to build an HTTP request.
      */
     HttpClientRequestBuilder request(String method, HttpURI httpURI);
+
+    /**
+     * Create a new HTTP client connection.
+     *
+     * @param httpURI The HTTP URI.
+     * @return The new HTTP client connection.
+     */
+    CompletableFuture<HttpClientConnection> createHttpClientConnection(HttpURI httpURI);
+
+    /**
+     * Create a new HTTP client connection.
+     *
+     * @param httpURI The HTTP URI.
+     * @return The new HTTP client connection.
+     */
+    CompletableFuture<HttpClientConnection> createHttpClientConnection(String httpURI);
 
     /**
      * Create a websocket connection builder.

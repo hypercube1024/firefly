@@ -1,9 +1,11 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.model.ContentEncoding
 import com.fireflysource.net.http.common.model.Cookie
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -14,8 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -64,6 +65,7 @@ class TestHttpClient {
                     )
                     .end()
             }
+            .router().get("/echo0").handler { it.end("ok") }
             .timeout(120 * 1000)
             .listen(address)
     }
@@ -191,6 +193,39 @@ class TestHttpClient {
         httpClient.stop()
         server2.stop()
         Unit
+    }
+
+    @Test
+    @DisplayName("should create HTTP client connection and send request successfully")
+    fun testCreateHttpClientConnection() = runBlocking {
+        val httpClient = HttpClientFactory.create()
+        val uri = "http://${address.hostName}:${address.port}"
+        val connection = httpClient.createHttpClientConnection(uri).await()
+
+        connection.useAwait {
+            val builder = httpClient.get("/echo0")
+            val response = connection.send(builder.httpClientRequest).await()
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals("ok", response.stringBody)
+            println(response)
+
+            val builder1 = httpClient.get("/echo0")
+            val response1 = connection.send(builder1.httpClientRequest).await()
+            assertEquals(HttpStatus.OK_200, response1.status)
+            assertEquals("ok", response1.stringBody)
+            println(response1)
+        }
+
+        httpClient.stop()
+    }
+
+    @Test
+    @DisplayName("should send request failure when the host does not set")
+    fun testNoHostException() {
+        val httpClient = HttpClientFactory.create()
+        assertThrows(MissingRemoteHostException::class.java) {
+            httpClient.get("/echo0").submit()
+        }
     }
 
     class MockChunkByteBufferContentProvider(content: ByteBuffer) : ByteBufferContentProvider(content) {

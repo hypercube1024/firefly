@@ -270,10 +270,17 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder upgradeHttp2();
 
     /**
-     * Submit the HTTP request using the connection pool. The HTTP client manages HTTP connection automatically.
+     * Submit the HTTP request to the server using the connection pool.
+     * The HTTP client manages HTTP connection automatically.
      *
      * @return The HTTP response.
      */
     CompletableFuture<HttpClientResponse> submit();
 
+    /**
+     * Get the current HTTP client request.
+     *
+     * @return The current HTTP client request.
+     */
+    HttpClientRequest getHttpClientRequest();
 }

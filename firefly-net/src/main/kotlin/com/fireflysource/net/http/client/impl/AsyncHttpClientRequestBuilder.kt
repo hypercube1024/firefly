@@ -180,4 +180,7 @@ class AsyncHttpClientRequestBuilder(
     override fun submit(): CompletableFuture<HttpClientResponse> {
         return connectionManager.send(httpRequest)
     }
+
+    override fun getHttpClientRequest(): HttpClientRequest = httpRequest
+
 }

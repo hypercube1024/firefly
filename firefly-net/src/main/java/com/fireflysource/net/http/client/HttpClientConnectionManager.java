@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
+import com.fireflysource.net.http.common.model.HttpURI;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -14,11 +15,19 @@ import java.util.concurrent.CompletableFuture;
 public interface HttpClientConnectionManager extends LifeCycle {
 
     /**
-     * Send HTTP request to the remote endpoint.
+     * Send HTTP request to the server using the connection pool.
      *
      * @param request The HTTP request.
      * @return The HTTP response.
      */
     CompletableFuture<HttpClientResponse> send(HttpClientRequest request);
+
+    /**
+     * Create a new HTTP client connection.
+     *
+     * @param httpURI The server URI.
+     * @return The new HTTP client connection.
+     */
+    CompletableFuture<HttpClientConnection> createHttpClientConnection(HttpURI httpURI);
 
 }
