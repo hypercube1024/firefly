@@ -270,7 +270,7 @@ public interface HttpClientRequestBuilder {
     HttpClientRequestBuilder upgradeHttp2();
 
     /**
-     * Submit the HTTP request.
+     * Submit the HTTP request using the connection pool. The HTTP client manages HTTP connection automatically.
      *
      * @return The HTTP response.
      */

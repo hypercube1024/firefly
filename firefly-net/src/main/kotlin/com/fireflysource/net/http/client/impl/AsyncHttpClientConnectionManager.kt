@@ -115,16 +115,7 @@ class AsyncHttpClientConnectionManager(
         releaseTimeout = config.releaseTimeout
 
         objectFactory { pool ->
-            val connection = createTcpConnection(address).await()
-            val httpConnection = if (connection.isSecureConnection) {
-                when (connection.beginHandshake().await()) {
-                    ApplicationProtocol.HTTP2.value -> createHttp2ClientConnection(connection)
-                    else -> createHttp1ClientConnection(connection)
-                }
-            } else {
-                createHttp1ClientConnection(connection)
-            }
-
+            val httpConnection = createHttpClientConnection(address).await()
             PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
         }
 
@@ -138,6 +129,22 @@ class AsyncHttpClientConnectionManager(
 
         noLeakCallback {
             log.info("no leak TCP connection pool.")
+        }
+    }
+
+    private fun createHttpClientConnection(address: Address): CompletableFuture<HttpClientConnection> {
+        return createTcpConnection(address).thenCompose { connection ->
+            val httpConnection = if (connection.isSecureConnection) {
+                connection.beginHandshake().thenApply { applicationProtocol ->
+                    when (applicationProtocol) {
+                        ApplicationProtocol.HTTP2.value -> createHttp2ClientConnection(connection)
+                        else -> createHttp1ClientConnection(connection)
+                    }
+                }
+            } else {
+                CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
+            }
+            httpConnection
         }
     }
 
