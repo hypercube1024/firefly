@@ -26,7 +26,7 @@ class AsyncGroupBotMessageService(
             .submit()
             .thenApply { response ->
                 if (response.status == HttpStatus.OK_200) {
-                    JsonUtils.read<GroupBotMessageResult>(response.stringBody)
+                    JsonUtils.read(response.stringBody)
                 } else {
                     GroupBotMessageResult(
                         -99999,
