@@ -70,16 +70,16 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <metrics.version>4.1.5</metrics.version>
-        <jackson.version>2.11.2</jackson.version>
+        <metrics.version>4.1.14</metrics.version>
+        <jackson.version>2.11.3</jackson.version>
         <msgpack.version>0.8.21</msgpack.version>
-        <redisson.version>3.13.4</redisson.version>
+        <redisson.version>3.13.6</redisson.version>
         <conscrypt.version>2.5.1</conscrypt.version>
         <bouncycastle.version>1.64</bouncycastle.version>
-        <openjsse.version>1.1.4</openjsse.version>
+        <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>Dysprosium-SR8</spring.reactor.version>
+        <spring.reactor.version>2020.0.0</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.7.0</junit.version>
