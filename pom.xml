@@ -71,7 +71,10 @@
 
         <!-- The third party lib -->
         <metrics.version>4.1.14</metrics.version>
+        <rolling-metrics.version>2.0.5</rolling-metrics.version>
+        <hdr-histogram.version>2.1.12</hdr-histogram.version>
         <jackson.version>2.11.3</jackson.version>
+        <woodstox-core-asl.version>4.4.1</woodstox-core-asl.version>
         <msgpack.version>0.8.21</msgpack.version>
         <redisson.version>3.13.6</redisson.version>
         <conscrypt.version>2.5.1</conscrypt.version>
@@ -80,10 +83,12 @@
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>2020.0.0</spring.reactor.version>
+        <jcommander.version>1.78</jcommander.version>
 
         <!-- test lib -->
         <junit.version>5.7.0</junit.version>
-        <mockito.version>3.5.13</mockito.version>
+        <mockito.version>3.5.15</mockito.version>
+        <h2.version>1.4.200</h2.version>
     </properties>
 
     <dependencyManagement>
@@ -145,25 +150,19 @@
             <dependency>
                 <groupId>com.github.vladimir-bukhtoyarov</groupId>
                 <artifactId>rolling-metrics</artifactId>
-                <version>2.0.3</version>
+                <version>${rolling-metrics.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
-                <version>2.1.11</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.github.spullara.mustache.java</groupId>
-                <artifactId>compiler</artifactId>
-                <version>0.9.6</version>
+                <version>${hdr-histogram.version}</version>
             </dependency>
 
             <!-- db -->
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>1.4.196</version>
+                <version>${h2.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -279,7 +278,7 @@
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-asl</artifactId>
-                <version>4.4.1</version>
+                <version>${woodstox-core-asl.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.msgpack</groupId>
@@ -290,7 +289,7 @@
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>1.72</version>
+                <version>${jcommander.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
