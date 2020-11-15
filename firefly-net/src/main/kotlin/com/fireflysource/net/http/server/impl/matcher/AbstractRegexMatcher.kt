@@ -15,7 +15,7 @@ abstract class AbstractRegexMatcher : Matcher {
     protected val regexMap: MutableMap<RegexRule, SortedSet<Router>> = HashMap<RegexRule, SortedSet<Router>>()
 
     class RegexRule(val rule: String) {
-        val pattern = Pattern.compile(rule)
+        val pattern: Pattern = Pattern.compile(rule)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

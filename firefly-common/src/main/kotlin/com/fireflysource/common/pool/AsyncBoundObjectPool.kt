@@ -13,7 +13,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.util.*
 import java.util.concurrent.*
-import java.util.function.Consumer
 
 /**
  * @author Pengtao Qiu
@@ -113,7 +112,7 @@ class AsyncBoundObjectPool<T>(
 
     private fun initPooledObject(pooledObject: PooledObject<T>) {
         pooledObject.released.set(false)
-        leakDetector.register(pooledObject, Consumer {
+        leakDetector.register(pooledObject) {
             try {
                 pooledObject.leakCallback.accept(it)
             } catch (e: Exception) {
@@ -121,7 +120,7 @@ class AsyncBoundObjectPool<T>(
             } finally {
                 destroyPooledObject(it)
             }
-        })
+        }
     }
 
     private suspend fun createNew(): PooledObject<T>? = if (createdCount < maxSize) {

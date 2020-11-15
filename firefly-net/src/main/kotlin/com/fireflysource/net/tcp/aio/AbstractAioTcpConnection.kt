@@ -337,10 +337,10 @@ abstract class AbstractAioTcpConnection(
             if (isClosed) {
                 result.accept(Result.SUCCESS)
             } else {
-                outputMessageHandler.sendOutputMessage(ShutdownOutput(Consumer {
+                outputMessageHandler.sendOutputMessage(ShutdownOutput {
                     inputMessageHandler.shutdownInput()
-                    inputMessageHandler.sendInputMessage(ShutdownInput(Consumer { r -> result.accept(r) }))
-                }))
+                    inputMessageHandler.sendInputMessage(ShutdownInput { r -> result.accept(r) })
+                })
             }
         } else {
             result.accept(Result.SUCCESS)

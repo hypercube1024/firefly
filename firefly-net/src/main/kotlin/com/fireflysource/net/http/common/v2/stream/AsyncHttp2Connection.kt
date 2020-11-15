@@ -864,11 +864,11 @@ abstract class AsyncHttp2Connection(
                     if (closeState.compareAndSet(current, CloseState.REMOTELY_CLOSED)) {
                         // We received a GO_AWAY, so try to write what's in the queue and then disconnect.
                         closeFrame = frame
-                        notifyClose(this, frame, Consumer {
+                        notifyClose(this, frame) {
                             val goAwayFrame = newGoAwayFrame(CloseState.CLOSED, ErrorCode.NO_ERROR.code, null)
                             val disconnectFrame = DisconnectFrame()
                             sendControlFrame(null, goAwayFrame, disconnectFrame)
-                        })
+                        }
                         break@closeLoop
                     }
                 }
@@ -901,9 +901,7 @@ abstract class AsyncHttp2Connection(
     }
 
     protected fun onConnectionFailure(error: Int, reason: String, result: Consumer<Result<Void>>) {
-        notifyFailure(this,
-            IOException(String.format("%d/%s", error, reason)),
-            Consumer { close(error, reason, result) })
+        notifyFailure(this, IOException(String.format("%d/%s", error, reason))) { close(error, reason, result) }
     }
 
     private fun notifyFailure(connection: Http2Connection, throwable: Throwable, consumer: Consumer<Result<Void>>) {

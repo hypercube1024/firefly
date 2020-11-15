@@ -2,8 +2,8 @@ package com.fireflysource.net.http.server.impl.router.handler
 
 import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.coroutine.asVoidFuture
-import com.fireflysource.common.io.exists
-import com.fireflysource.common.io.readAttributes
+import com.fireflysource.common.io.existsAsync
+import com.fireflysource.common.io.readAttributesAsync
 import com.fireflysource.net.http.common.codec.InclusiveByteRange
 import com.fireflysource.net.http.common.codec.URIUtils
 import com.fireflysource.net.http.common.model.HttpHeader
@@ -28,12 +28,12 @@ class FileHandler(val config: FileConfig) : Router.Handler {
     private suspend fun handleFile(ctx: RoutingContext) {
         val path = URIUtils.canonicalPath(ctx.uri.decodedPath)
         val filePath = Paths.get(config.rootPath, path)
-        if (!exists(filePath).await()) {
+        if (!existsAsync(filePath).await()) {
             responseFileNotFound(ctx)
             return
         }
 
-        val fileAttributes = readAttributes(filePath).await()
+        val fileAttributes = readAttributesAsync(filePath).await()
         if (fileAttributes.isDirectory) {
             responseFileNotFound(ctx)
             return

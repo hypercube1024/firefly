@@ -95,11 +95,11 @@ fun deleteIfExistsAsync(file: Path) = blockingAsync {
     Files.deleteIfExists(file)
 }
 
-fun exists(file: Path, vararg options: LinkOption) = blockingAsync {
+fun existsAsync(file: Path, vararg options: LinkOption) = blockingAsync {
     Files.exists(file, *options)
 }
 
-fun readAttributes(file: Path, vararg options: LinkOption) = blockingAsync {
+fun readAttributesAsync(file: Path, vararg options: LinkOption) = blockingAsync {
     @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAttributes(file, BasicFileAttributes::class.java, *options)
 }
