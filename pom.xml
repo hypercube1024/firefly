@@ -78,7 +78,7 @@
         <msgpack.version>0.8.21</msgpack.version>
         <redisson.version>3.13.6</redisson.version>
         <conscrypt.version>2.5.1</conscrypt.version>
-        <bouncycastle.version>1.64</bouncycastle.version>
+        <bouncycastle.version>1.67</bouncycastle.version>
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>

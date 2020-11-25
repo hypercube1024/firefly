@@ -17,26 +17,26 @@ import java.util.List;
 abstract public class AbstractOpenJdkSecureEngineFactory extends AbstractSecureEngineFactory {
 
     protected static final LazyLogger LOG = SystemLogger.create(AbstractOpenJdkSecureEngineFactory.class);
-    public static final String SECURE_PROTOCOL = "TLSv1.3";
 
-    private static String providerName;
+    private static final String SECURE_PROTOCOL = "TLSv1.3";
+    private static final String PROVIDER_NAME;
 
     static {
         if (JavaVersion.VERSION.getPlatform() < 9) {
             Provider provider = new OpenJSSE();
-            providerName = provider.getName();
+            PROVIDER_NAME = provider.getName();
             Security.addProvider(provider);
             LOG.info("Add Openjsse security provider. info: {}", provider.getInfo());
         } else {
-            providerName = "SunJSSE";
-            Provider provider = Security.getProvider(providerName);
-            LOG.info("Select {} security provider. info: {}", providerName, provider.getInfo());
+            PROVIDER_NAME = "SunJSSE";
+            Provider provider = Security.getProvider(PROVIDER_NAME);
+            LOG.info("Select {} security provider. info: {}", PROVIDER_NAME, provider.getInfo());
         }
     }
 
     @Override
     public String getProviderName() {
-        return providerName;
+        return PROVIDER_NAME;
     }
 
     @Override
