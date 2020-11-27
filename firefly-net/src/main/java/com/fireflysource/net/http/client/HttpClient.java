@@ -108,15 +108,15 @@ public interface HttpClient extends LifeCycle {
     /**
      * Create a websocket connection builder.
      *
-     * @return The websocket connnection builder.
+     * @return The websocket connection builder.
      */
     WebSocketClientConnectionBuilder websocket();
 
     /**
      * Create a websocket connection builder.
      *
-     * @param url The websockte url.
-     * @return The websocket connnection builder.
+     * @param url The websocket url.
+     * @return The websocket connection builder.
      */
     WebSocketClientConnectionBuilder websocket(String url);
 }
