@@ -29,7 +29,7 @@ public class LogFactory implements Closeable {
     }
 
     public static LogFactory getInstance() {
-        return Holder.instance;
+        return Holder.INSTANCE;
     }
 
     public Log getLog(Class<?> clazz) {
@@ -80,7 +80,7 @@ public class LogFactory implements Closeable {
     }
 
     private static class Holder {
-        private static LogFactory instance = new LogFactory();
+        private static final LogFactory INSTANCE = new LogFactory();
     }
 
 }

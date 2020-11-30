@@ -64,8 +64,8 @@ class TestLog {
     private static void deleteLog(Log log) {
         File file = getFile(log);
         if (file != null && file.exists()) {
-            System.out.println("delete file " + file.getAbsolutePath());
-            file.delete();
+            boolean success = file.delete();
+            System.out.println("delete file " + file.getAbsolutePath() + " | " + success);
         }
     }
 

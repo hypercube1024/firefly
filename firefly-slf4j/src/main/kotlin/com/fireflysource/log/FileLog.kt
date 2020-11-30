@@ -28,8 +28,7 @@ class FileLog : Log {
         private val stackTrace =
             java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
 
-        val executor = newSingleThreadExecutor("firefly-log-thread")
-
+        val executor = newSingleThreadExecutor()
         private val logThread: CoroutineDispatcher = executor.asCoroutineDispatcher()
 
         class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
@@ -38,12 +37,10 @@ class FileLog : Log {
             }
         }
 
-        private fun newSingleThreadExecutor(name: String): ExecutorService {
+        private fun newSingleThreadExecutor(): ExecutorService {
             val executor = ThreadPoolExecutor(
-                1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue<Runnable>()
-            ) { r ->
-                Thread(r, name)
-            }
+                1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue()
+            ) { runnable -> Thread(runnable, "firefly-log-thread") }
             return FinalizableExecutorService(executor)
         }
 
@@ -69,7 +66,7 @@ class FileLog : Log {
     private val consumerJob = GlobalScope.launch(logThread) {
         recvLogItemLoop@ while (true) {
             val logItem = channel.receive()
-            if (logItem == stopLogMessage) {
+            if (logItem === stopLogMessage) {
                 break@recvLogItemLoop
             }
 
