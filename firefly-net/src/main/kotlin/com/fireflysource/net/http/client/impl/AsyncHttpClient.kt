@@ -9,6 +9,8 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion
+import com.fireflysource.net.tcp.TcpClientConnectionFactory
+import com.fireflysource.net.tcp.aio.AioTcpChannelGroup
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionManager
@@ -21,16 +23,22 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
         private val log = SystemLogger.create(AsyncHttpClient::class.java)
     }
 
-    private val httpClientConnectionManager = AsyncHttpClientConnectionManager(config)
-    private val webSocketClientConnectionManager = AsyncWebSocketClientConnectionManager(
-        config,
-        httpClientConnectionManager.getTcpClient(),
-        httpClientConnectionManager.getSecureTcpClient()
+    private val connectionFactory = TcpClientConnectionFactory(
+        createTcpChannelGroup(),
+        config.isStopTcpChannelGroup,
+        config.timeout,
+        config.secureEngineFactory
     )
+    private val httpClientConnectionManager = AsyncHttpClientConnectionManager(config, connectionFactory)
+    private val webSocketClientConnectionManager = AsyncWebSocketClientConnectionManager(config, connectionFactory)
 
     init {
         start()
     }
+
+    private fun createTcpChannelGroup() =
+        if (config.tcpChannelGroup != null) config.tcpChannelGroup
+        else AioTcpChannelGroup("async-http-client")
 
     override fun get(url: String): HttpClientRequestBuilder {
         return request(HttpMethod.GET, url)
@@ -85,10 +93,12 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     }
 
     override fun init() {
+        connectionFactory.start()
         log.info { "AsyncHttpClient startup. $config" }
     }
 
     override fun destroy() {
         httpClientConnectionManager.stop()
+        connectionFactory.stop()
     }
 }

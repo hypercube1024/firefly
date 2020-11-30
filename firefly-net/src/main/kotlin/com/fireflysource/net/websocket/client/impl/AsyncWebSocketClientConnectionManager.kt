@@ -4,7 +4,7 @@ import com.fireflysource.common.`object`.Assert
 import com.fireflysource.net.http.client.impl.Http1ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpURI
-import com.fireflysource.net.tcp.TcpClient
+import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.aio.ApplicationProtocol
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionManager
 import com.fireflysource.net.websocket.client.WebSocketClientRequest
@@ -19,8 +19,7 @@ import java.util.concurrent.CompletableFuture
  */
 class AsyncWebSocketClientConnectionManager(
     private val config: HttpConfig,
-    private val tcpClient: TcpClient,
-    private val secureTcpClient: TcpClient
+    private val connectionFactory: TcpClientConnectionFactory
 ) : WebSocketClientConnectionManager {
 
     override fun connect(request: WebSocketClientRequest): CompletableFuture<WebSocketConnection> {
@@ -30,10 +29,11 @@ class AsyncWebSocketClientConnectionManager(
         Assert.isTrue(request.policy.behavior == WebSocketBehavior.CLIENT, "The websocket behavior must be client")
 
         val uri = HttpURI(request.url)
+        val inetSocketAddress = InetSocketAddress(uri.host, uri.port)
         val tcpConnection = when (uri.scheme) {
-            "ws" -> tcpClient.connect(uri.host, uri.port)
-            "wss" -> secureTcpClient.connect(
-                InetSocketAddress(uri.host, uri.port),
+            "ws" -> connectionFactory.connect(inetSocketAddress, false)
+            "wss" -> connectionFactory.connectWithSecure(
+                inetSocketAddress,
                 listOf(ApplicationProtocol.HTTP1.value)
             )
             else -> throw WebSocketException("The websocket scheme error. scheme: ${uri.scheme}")

@@ -9,8 +9,10 @@ import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.Http1ServerConnection
+import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.TcpServerFactory
+import com.fireflysource.net.tcp.aio.AioTcpChannelGroup
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -57,7 +59,14 @@ class TestAsyncHttpClientConnectionManager {
 
     @Test
     fun test() = runBlocking {
-        val manager = AsyncHttpClientConnectionManager()
+        val config = HttpConfig()
+        val connectionFactory = TcpClientConnectionFactory(
+            AioTcpChannelGroup("async-http-client"),
+            config.isStopTcpChannelGroup,
+            config.timeout,
+            config.secureEngineFactory
+        )
+        val manager = AsyncHttpClientConnectionManager(config, connectionFactory)
 
         repeat(5) {
             val request = AsyncHttpClientRequest()

@@ -1,6 +1,5 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.annotation.NoArg
 import com.fireflysource.common.concurrent.CompletableFutures
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
@@ -16,61 +15,30 @@ import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.exception.MissingRemotePortException
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.isCloseConnection
-import com.fireflysource.net.tcp.TcpChannelGroup
-import com.fireflysource.net.tcp.TcpClient
+import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.*
+import com.fireflysource.net.tcp.aio.ApplicationProtocol
+import com.fireflysource.net.tcp.aio.isSecureProtocol
+import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
-@NoArg
 class AsyncHttpClientConnectionManager(
-    private val config: HttpConfig = HttpConfig()
+    private val config: HttpConfig,
+    private val connectionFactory: TcpClientConnectionFactory
 ) : HttpClientConnectionManager, AbstractLifeCycle() {
 
     companion object {
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
     }
 
-    private val group: TcpChannelGroup = createTcpChannelGroup()
-    private val tcpClient: TcpClient = createTcpClient()
-    private val secureTcpClient: TcpClient = createSecureTcpClient()
     private val connectionPoolMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
 
     init {
         start()
     }
-
-    fun getTcpClient() = tcpClient
-
-    fun getSecureTcpClient() = secureTcpClient
-
-    private fun createTcpChannelGroup() =
-        if (config.tcpChannelGroup != null) config.tcpChannelGroup
-        else AioTcpChannelGroup("async-http-client")
-
-    private fun createTcpClient() =
-        AioTcpClient()
-            .tcpChannelGroup(group)
-            .stopTcpChannelGroup(config.isStopTcpChannelGroup)
-            .timeout(config.timeout)
-
-    private fun createSecureTcpClient(): TcpClient =
-        if (config.secureEngineFactory != null)
-            AioTcpClient()
-                .timeout(config.timeout)
-                .tcpChannelGroup(group)
-                .stopTcpChannelGroup(config.isStopTcpChannelGroup)
-                .secureEngineFactory(config.secureEngineFactory)
-                .enableSecureConnection()
-        else
-            AioTcpClient()
-                .timeout(config.timeout)
-                .tcpChannelGroup(group)
-                .stopTcpChannelGroup(config.isStopTcpChannelGroup)
-                .enableSecureConnection()
 
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request.uri)
@@ -157,13 +125,8 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private fun createTcpConnection(address: Address): CompletableFuture<TcpConnection> {
-        return if (address.secure) {
-            secureTcpClient.connect(address.socketAddress)
-        } else {
-            tcpClient.connect(address.socketAddress)
-        }
-    }
+    private fun createTcpConnection(address: Address): CompletableFuture<TcpConnection> =
+        connectionFactory.connect(address.socketAddress, address.secure)
 
     private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
         return Http1ClientConnection(config, connection)
@@ -174,13 +137,13 @@ class AsyncHttpClientConnectionManager(
     }
 
     override fun init() {
+        connectionFactory.start()
     }
 
     override fun destroy() {
         connectionPoolMap.values.forEach { it.stop() }
         connectionPoolMap.clear()
-        tcpClient.stop()
-        secureTcpClient.stop()
+        connectionFactory.stop()
     }
 
     private data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)
