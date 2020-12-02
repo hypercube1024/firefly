@@ -64,10 +64,7 @@ class AsyncHttpClientConnectionManager(
         return createHttpClientConnection(address)
     }
 
-    private fun sendAndCloseConnection(
-        connection: HttpClientConnection,
-        request: HttpClientRequest
-    ) =
+    private fun sendAndCloseConnection(connection: HttpClientConnection, request: HttpClientRequest) =
         connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
 
 
