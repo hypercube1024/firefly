@@ -47,6 +47,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
     override fun init() {
         group.start()
+        log.info("The Firefly HTTP server supported application protocols {}", supportedProtocols)
     }
 
     override fun destroy() {

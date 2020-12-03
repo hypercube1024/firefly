@@ -52,6 +52,7 @@
         <log.path>../logs</log.path>
 
         <firefly.version>${project.version}</firefly.version>
+        <github.url>https://github.com/hypercube1024/firefly</github.url>
 
         <java.release.version>8</java.release.version>
 

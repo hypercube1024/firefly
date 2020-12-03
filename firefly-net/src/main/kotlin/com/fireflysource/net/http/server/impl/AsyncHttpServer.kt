@@ -2,6 +2,7 @@ package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.sys.ProjectVersion
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
@@ -24,6 +25,7 @@ import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
 import java.util.function.Function
+import kotlin.system.measureTimeMillis
 
 class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, AbstractLifeCycle() {
 
@@ -143,6 +145,12 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     }
 
     override fun init() {
+        val time = measureTimeMillis { startupHttpServer() }
+        log.info(ProjectVersion.logo())
+        log.info("Started Firefly HTTP server in {}ms. Address: {}", time, this.address)
+    }
+
+    private fun startupHttpServer() {
         require(config.maxRequestBodySize >= config.maxUploadFileSize) { "The max request size must be greater than the max file size." }
         require(config.maxUploadFileSize >= config.uploadFileSizeThreshold) { "The max file size must be greater than the file size threshold." }
 

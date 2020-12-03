@@ -32,8 +32,13 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
 
         long end = System.currentTimeMillis();
         String protocol = sslContext.getProtocol();
-        LOG.info(() -> "Creating SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
+        long time = end - start;
+        logCreatingSSLContent(time, protocol);
         return sslContext;
+    }
+
+    private void logCreatingSSLContent(long time, String protocol) {
+        LOG.info("Created SSL context in time {}ms. TLS protocol: {}", time, protocol);
     }
 
     public SSLContext getSSLContext(InputStream in, String keystorePassword, String keyPassword, String keyStoreType)
@@ -64,7 +69,8 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
 
         long end = System.currentTimeMillis();
         String protocol = sslContext.getProtocol();
-        LOG.info(() -> "Creating SSL context. time: " + (end - start) + "ms, protocol: " + protocol);
+        long time = end - start;
+        logCreatingSSLContent(time, protocol);
         return sslContext;
     }
 
