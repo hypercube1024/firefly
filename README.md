@@ -1,5 +1,4 @@
 # What is Firefly?
-
 [![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -11,7 +10,6 @@ in short, it's containerless. Using Kotlin coroutines, Firefly is truly asynchro
 the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
 
 Firefly core provides functionality for things like:
-
 - TCP client and server
 - HTTP client and server
 - WebSocket client and server
@@ -19,12 +17,10 @@ Firefly core provides functionality for things like:
 - HTTP Gateway
 
 # Event driven
-
 The Firefly APIs are largely event-driven. It means that when things happen in Firefly that you are interested in,
 Firefly will call you by sending you events.
 
 Some example events are:
-
 - some data has arrived on a socket
 - an HTTP server has received a request
 
@@ -32,7 +28,6 @@ Firefly handles a lot of concurrencies using just a small number of threads, so 
 must manage blocking call in the standalone thread pool.
 
 With a conventional blocking API the calling thread might block when:
-
 - Thread.sleep()
 - Waiting on a Lock
 - Waiting on a mutex or monitor
@@ -49,26 +44,24 @@ Threads have overhead regarding the memory they require (e.g. for their stack) a
 For the levels of concurrency required in many modern applications, a blocking approach just doesn’t scale.
 
 # Quick start
-
 Add maven dependency in your pom.xml.
-
 ```xml
+<dependencics>
+    <dependency>
+        <groupId>com.fireflysource</groupId>
+        <artifactId>firefly</artifactId>
+        <version>5.0.0-alpha4</version>
+    </dependency>
 
-<dependency>
-    <groupId>com.fireflysource</groupId>
-    <artifactId>firefly</artifactId>
-    <version>5.0.0-alpha4</version>
-</dependency>
-
-<dependency>
-<groupId>com.fireflysource</groupId>
-<artifactId>firefly-slf4j</artifactId>
-<version>5.0.0-alpha4</version>
-</dependency>
+    <dependency>
+        <groupId>com.fireflysource</groupId>
+        <artifactId>firefly-slf4j</artifactId>
+        <version>5.0.0-alpha4</version>
+    </dependency>
+</dependencics>
 ```
 
 Add log configuration file "firefly-log.xml" to the classpath.
-
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <loggers xmlns="http://www.fireflysource.com/loggers"
@@ -89,7 +82,6 @@ Add log configuration file "firefly-log.xml" to the classpath.
 ```
 
 Create the HTTP server and client
-
 ```kotlin
 fun main() = runBlocking {
     val httpServer = HttpServerFactory.create()
@@ -107,7 +99,6 @@ fun main() = runBlocking {
 ```
 
 Create WebSocket server and client
-
 ```kotlin
 fun main() = runBlocking {
     val server = HttpServerFactory.create()
@@ -152,7 +143,6 @@ fun main() = runBlocking {
 ```
 
 # Contact information
-
 - E-mail: qptkk@163.com
 - QQ Group: 126079579
 - Wechat: AlvinQiu
