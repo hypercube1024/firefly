@@ -1,6 +1,7 @@
 package com.fireflysource.net.websocket.client.impl
 
 import com.fireflysource.common.`object`.Assert
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.net.http.client.impl.Http1ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpURI
@@ -20,7 +21,11 @@ import java.util.concurrent.CompletableFuture
 class AsyncWebSocketClientConnectionManager(
     private val config: HttpConfig,
     private val connectionFactory: TcpClientConnectionFactory
-) : WebSocketClientConnectionManager {
+) : WebSocketClientConnectionManager, AbstractLifeCycle() {
+
+    init {
+        start()
+    }
 
     override fun connect(request: WebSocketClientRequest): CompletableFuture<WebSocketConnection> {
         Assert.hasText(request.url, "The websocket url must be not blank")
@@ -43,6 +48,14 @@ class AsyncWebSocketClientConnectionManager(
             .thenCompose { connection -> connection.beginHandshake().thenApply { connection } }
             .thenApply { Http1ClientConnection(config, it) }
             .thenCompose { it.upgradeWebSocket(request) }
+    }
+
+    override fun init() {
+        connectionFactory.start()
+    }
+
+    override fun destroy() {
+        connectionFactory.stop()
     }
 
 }

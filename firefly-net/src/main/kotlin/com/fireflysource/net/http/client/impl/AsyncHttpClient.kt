@@ -93,12 +93,11 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     }
 
     override fun init() {
-        connectionFactory.start()
-        log.info { "AsyncHttpClient startup. $config" }
+        log.info { "AsyncHttpClient startup. Config: $config" }
     }
 
     override fun destroy() {
         httpClientConnectionManager.stop()
-        connectionFactory.stop()
+        webSocketClientConnectionManager.stop()
     }
 }

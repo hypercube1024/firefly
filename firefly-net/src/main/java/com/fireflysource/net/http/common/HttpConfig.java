@@ -192,20 +192,11 @@ public class HttpConfig {
 
     @Override
     public String toString() {
-        return "HttpConfig{" +
+        return "{" +
                 "timeout=" + timeout +
                 ", connectionPoolSize=" + connectionPoolSize +
                 ", leakDetectorInterval=" + leakDetectorInterval +
                 ", releaseTimeout=" + releaseTimeout +
-                ", headerBufferSize=" + headerBufferSize +
-                ", contentBufferSize=" + contentBufferSize +
-                ", maxDynamicTableSize=" + maxDynamicTableSize +
-                ", maxHeaderSize=" + maxHeaderSize +
-                ", maxHeaderBlockFragment=" + maxHeaderBlockFragment +
-                ", initialStreamRecvWindow=" + initialStreamRecvWindow +
-                ", maxConcurrentStreams=" + maxConcurrentStreams +
-                ", initialSessionRecvWindow=" + initialSessionRecvWindow +
-                ", streamIdleTimeout=" + streamIdleTimeout +
                 ", maxUploadFileSize=" + maxUploadFileSize +
                 ", maxRequestBodySize=" + maxRequestBodySize +
                 ", uploadFileSizeThreshold=" + uploadFileSizeThreshold +

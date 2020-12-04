@@ -1,20 +1,22 @@
 # What is Firefly? 
 
-[![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly) 
+[![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
-It provides MVC framework, asynchronous HTTP Server/Client, asynchronous TCP Server/Client and many other useful components for developing web applications, protocol servers, etc. 
-That means you can easy deploy your web without any other java web containers, in short, it's containerless. 
-It taps into the fullest potential of hardware using ***SEDA*** architecture, a highly customizable thread model.
+Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***
+Quickly***. It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing
+web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers,
+in short, it's containerless. Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. It taps into
+the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
 
 Firefly core provides functionality for things like:
-- Writing TCP clients and servers
-- Writing HTTP clients and servers
-- Writing WebSocket clients and servers
-- Writing web application with MVC framework and template engine
-- Database access
+
+- TCP client and server
+- HTTP client and server
+- WebSocket client and server
+- HTTP, Socks proxy
+- HTTP Gateway
 
 # Event driven
 
@@ -49,13 +51,13 @@ Add maven dependency in your pom.xml.
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
-    <version>5.0.0-alpha1</version>
+    <version>5.0.0-alpha4</version>
 </dependency>
 
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-slf4j</artifactId>
-    <version>5.0.0-alpha1</version>
+    <version>5.0.0-alpha4</version>
 </dependency>
 ```
 
