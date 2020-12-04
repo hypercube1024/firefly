@@ -1,4 +1,4 @@
-# What is Firefly? 
+# What is Firefly?
 
 [![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
@@ -20,16 +20,19 @@ Firefly core provides functionality for things like:
 
 # Event driven
 
-The Firefly APIs are largely event-driven. It means that when things happen in Firefly that you are interested in, Firefly will call you by sending you events.
+The Firefly APIs are largely event-driven. It means that when things happen in Firefly that you are interested in,
+Firefly will call you by sending you events.
 
 Some example events are:
+
 - some data has arrived on a socket
 - an HTTP server has received a request
 
-Firefly handles a lot of concurrencies using just a small number of threads, 
-so ***don't block Firefly thread***, you must manage blocking call in the standalone thread pool.
+Firefly handles a lot of concurrencies using just a small number of threads, so ***don't block Firefly thread***, you
+must manage blocking call in the standalone thread pool.
 
 With a conventional blocking API the calling thread might block when:
+
 - Thread.sleep()
 - Waiting on a Lock
 - Waiting on a mutex or monitor
@@ -38,7 +41,8 @@ With a conventional blocking API the calling thread might block when:
 
 In all the above cases, when your thread is waiting for a result it can’t do anything else - it’s effectively useless.
 
-It means that if you want a lot of concurrencies using blocking APIs, then you need a lot of threads to prevent your application grinding to a halt.
+It means that if you want a lot of concurrencies using blocking APIs, then you need a lot of threads to prevent your
+application grinding to a halt.
 
 Threads have overhead regarding the memory they require (e.g. for their stack) and in context switching.
 
@@ -47,7 +51,9 @@ For the levels of concurrency required in many modern applications, a blocking a
 # Quick start
 
 Add maven dependency in your pom.xml.
+
 ```xml
+
 <dependency>
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly</artifactId>
@@ -55,13 +61,14 @@ Add maven dependency in your pom.xml.
 </dependency>
 
 <dependency>
-    <groupId>com.fireflysource</groupId>
-    <artifactId>firefly-slf4j</artifactId>
-    <version>5.0.0-alpha4</version>
+<groupId>com.fireflysource</groupId>
+<artifactId>firefly-slf4j</artifactId>
+<version>5.0.0-alpha4</version>
 </dependency>
 ```
 
 Add log configuration file "firefly-log.xml" to the classpath.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <loggers xmlns="http://www.fireflysource.com/loggers"
@@ -81,9 +88,8 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-
-
 Create the HTTP server and client
+
 ```kotlin
 fun main() = runBlocking {
     val httpServer = HttpServerFactory.create()
@@ -101,6 +107,7 @@ fun main() = runBlocking {
 ```
 
 Create WebSocket server and client
+
 ```kotlin
 fun main() = runBlocking {
     val server = HttpServerFactory.create()
@@ -145,6 +152,7 @@ fun main() = runBlocking {
 ```
 
 # Contact information
-- E-mail: qptkk@163.com  
-- QQ Group: 126079579  
+
+- E-mail: qptkk@163.com
+- QQ Group: 126079579
 - Wechat: AlvinQiu
