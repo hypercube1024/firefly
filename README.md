@@ -3,11 +3,11 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***
-Quickly***. It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing
-web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers,
-in short, it's containerless. Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. It taps into
-the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
+Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
+It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing web applications, protocol servers, etc. 
+That means you can easy deploy your web without any other java web containers, in short, it's containerless. 
+Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. 
+It taps into the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
 
 Firefly core provides functionality for things like:
 - TCP client and server
