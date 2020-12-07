@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
@@ -107,58 +108,68 @@ class FileLog : Log {
         }
 
         private fun isNotOverTimeLimit(newLocalDateTime: LocalDateTime): Boolean {
+            val lastTime = lastWriteTime
+            requireNotNull(lastTime)
             when (maxSplitTime) {
                 MaxSplitTimeEnum.DAY -> {
-                    return (lastWriteTime!!.year == newLocalDateTime.year
-                            && lastWriteTime!!.month == newLocalDateTime.month
-                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth)
+                    return (lastTime.year == newLocalDateTime.year
+                            && lastTime.month == newLocalDateTime.month
+                            && lastTime.dayOfMonth == newLocalDateTime.dayOfMonth)
                 }
                 MaxSplitTimeEnum.HOUR -> {
-                    return (lastWriteTime!!.year == newLocalDateTime.year
-                            && lastWriteTime!!.month == newLocalDateTime.month
-                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth
-                            && lastWriteTime!!.hour == newLocalDateTime.hour)
+                    return (lastTime.year == newLocalDateTime.year
+                            && lastTime.month == newLocalDateTime.month
+                            && lastTime.dayOfMonth == newLocalDateTime.dayOfMonth
+                            && lastTime.hour == newLocalDateTime.hour)
                 }
                 MaxSplitTimeEnum.MINUTE -> {
-                    return (lastWriteTime!!.year == newLocalDateTime.year
-                            && lastWriteTime!!.month == newLocalDateTime.month
-                            && lastWriteTime!!.dayOfMonth == newLocalDateTime.dayOfMonth
-                            && lastWriteTime!!.hour == newLocalDateTime.hour
-                            && lastWriteTime!!.minute == newLocalDateTime.minute)
+                    return (lastTime.year == newLocalDateTime.year
+                            && lastTime.month == newLocalDateTime.month
+                            && lastTime.dayOfMonth == newLocalDateTime.dayOfMonth
+                            && lastTime.hour == newLocalDateTime.hour
+                            && lastTime.minute == newLocalDateTime.minute)
                 }
             }
         }
 
-        private fun initializeBufferedWriter(newDate: Date, currentWriteSize: Long) {
+        private fun getFileLastModifiedTime(logPath: Path): LocalDateTime {
+            val lastTime = lastWriteTime
+            return if (lastTime == null) {
+                val fileTime = Files.getLastModifiedTime(logPath)
+                val time = LocalDateTime.from(fileTime.toInstant().atZone(ZoneId.systemDefault()))
+                lastWriteTime = time
+                time
+            } else lastTime
+        }
+
+        private fun getOutput(newDate: Date, currentWriteSize: Long): OutputStream {
+            initializeOutputStream(newDate, currentWriteSize)
+            val output = fileOutputStream
+            requireNotNull(output)
+            return output
+        }
+
+        private fun initializeOutputStream(newDate: Date, currentWriteSize: Long) {
             val newLocalDateTime = TimeUtils.toLocalDateTime(newDate)
             val logName = getLogName(newLocalDateTime)
             val logPath = Paths.get(path, logName)
 
             if (Files.exists(logPath)) {
-                if (lastWriteTime == null) {
-                    val fileTime = Files.getLastModifiedTime(logPath)
-                    lastWriteTime = LocalDateTime.from(fileTime.toInstant().atZone(ZoneId.systemDefault()))
-                }
+                val lastModifiedTime = getFileLastModifiedTime(logPath)
 
                 if (!isNotOverTimeLimit(newLocalDateTime)) {
-                    initOutputStreamAndNewFile(logName, logPath, lastWriteTime!!)
+                    initOutputStreamAndNewFile(logName, logPath, lastModifiedTime)
                 } else {
                     if (maxFileSize > 0) {
                         if (writeSize == 0L) {
                             writeSize = Files.size(logPath)
                         }
                         if (currentWriteSize + writeSize > maxFileSize) {
-                            initOutputStreamAndNewFile(logName, logPath, lastWriteTime!!)
-                        } else {
-                            initOutputStream(logName)
-                        }
-                    } else {
-                        initOutputStream(logName)
-                    }
+                            initOutputStreamAndNewFile(logName, logPath, lastModifiedTime)
+                        } else initOutputStream(logName)
+                    } else initOutputStream(logName)
                 }
-            } else {
-                initOutputStream(logName)
-            }
+            } else initOutputStream(logName)
         }
 
         private fun initOutputStreamAndNewFile(
@@ -180,20 +191,20 @@ class FileLog : Log {
         fun write(str: String, date: Date) {
             val text = (str + Log.CL).toByteArray(charset)
             try {
-                initializeBufferedWriter(date, text.size.toLong())
-                fileOutputStream!!.write(text)
+                val output = getOutput(date, text.size.toLong())
+                output.write(text)
                 writeSize += text.size
                 lastWriteTime = TimeUtils.toLocalDateTime(date)
             } catch (e: IOException) {
                 System.err.println("write log exception, " + e.message)
             }
-
         }
 
         fun close() {
-            if (fileOutputStream != null) {
+            val output = fileOutputStream
+            if (output != null) {
                 try {
-                    fileOutputStream!!.close()
+                    output.close()
                     writeSize = 0
                 } catch (e: IOException) {
                     System.err.println("close log writer exception, " + e.message)
@@ -334,16 +345,12 @@ class FileLog : Log {
 
     private fun getStackTraceElement(): StackTraceElement? {
         val arr = Thread.currentThread().stackTrace
-        val s = arr[4]
-        return if (s != null) {
-            if (s.className == "com.fireflysource.log.ClassNameLogWrap") {
+        val stackTraceElement = arr[4]
+        return if (stackTraceElement != null) {
+            if (stackTraceElement.className == "com.fireflysource.log.ClassNameLogWrap")
                 arr[6]
-            } else {
-                s
-            }
-        } else {
-            s
-        }
+            else stackTraceElement
+        } else stackTraceElement
     }
 
     private fun write(logItem: LogItem) {
