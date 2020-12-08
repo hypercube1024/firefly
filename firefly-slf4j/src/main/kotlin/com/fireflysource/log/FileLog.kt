@@ -86,8 +86,8 @@ class FileLog : Log {
 
     private inner class LogOutputStream {
         private var fileOutputStream: FileOutputStream? = null
-        private var writeSize: Long = 0
-        private var lastWriteTime: LocalDateTime? = null
+        private var writtenSize: Long = 0
+        private var lastWrittenTime: LocalDateTime? = null
 
         private fun getLogName(localDateTime: LocalDateTime): String {
             return logNameFormatter.format(name, localDateTime)
@@ -107,8 +107,8 @@ class FileLog : Log {
             return bakName
         }
 
-        private fun isNotOverTimeLimit(newLocalDateTime: LocalDateTime): Boolean {
-            val lastTime = lastWriteTime
+        private fun isNotSplitByTime(newLocalDateTime: LocalDateTime): Boolean {
+            val lastTime = lastWrittenTime
             requireNotNull(lastTime)
             when (maxSplitTime) {
                 MaxSplitTimeEnum.DAY -> {
@@ -133,23 +133,23 @@ class FileLog : Log {
         }
 
         private fun getFileLastModifiedTime(logPath: Path): LocalDateTime {
-            val lastTime = lastWriteTime
+            val lastTime = lastWrittenTime
             return if (lastTime == null) {
                 val fileTime = Files.getLastModifiedTime(logPath)
                 val time = LocalDateTime.from(fileTime.toInstant().atZone(ZoneId.systemDefault()))
-                lastWriteTime = time
+                lastWrittenTime = time
                 time
             } else lastTime
         }
 
-        private fun getOutput(newDate: Date, currentWriteSize: Long): OutputStream {
-            initializeOutputStream(newDate, currentWriteSize)
+        private fun getOutput(newDate: Date, currentLogSize: Long): OutputStream {
+            initializeOutputStream(newDate, currentLogSize)
             val output = fileOutputStream
             requireNotNull(output)
             return output
         }
 
-        private fun initializeOutputStream(newDate: Date, currentWriteSize: Long) {
+        private fun initializeOutputStream(newDate: Date, currentLogSize: Long) {
             val newLocalDateTime = TimeUtils.toLocalDateTime(newDate)
             val logName = getLogName(newLocalDateTime)
             val logPath = Paths.get(path, logName)
@@ -157,22 +157,20 @@ class FileLog : Log {
             if (Files.exists(logPath)) {
                 val lastModifiedTime = getFileLastModifiedTime(logPath)
 
-                if (!isNotOverTimeLimit(newLocalDateTime)) {
-                    initOutputStreamAndNewFile(logName, logPath, lastModifiedTime)
-                } else {
+                if (isNotSplitByTime(newLocalDateTime)) {
                     if (maxFileSize > 0) {
-                        if (writeSize == 0L) {
-                            writeSize = Files.size(logPath)
+                        if (writtenSize == 0L) {
+                            writtenSize = Files.size(logPath)
                         }
-                        if (currentWriteSize + writeSize > maxFileSize) {
-                            initOutputStreamAndNewFile(logName, logPath, lastModifiedTime)
-                        } else initOutputStream(logName)
-                    } else initOutputStream(logName)
-                }
-            } else initOutputStream(logName)
+                        if (currentLogSize + writtenSize > maxFileSize) {
+                            createLogOutputAndBackupOldLog(logName, logPath, lastModifiedTime)
+                        } else createLogOutputIfNull(logName)
+                    } else createLogOutputIfNull(logName)
+                } else createLogOutputAndBackupOldLog(logName, logPath, lastModifiedTime)
+            } else createLogOutputIfNull(logName)
         }
 
-        private fun initOutputStreamAndNewFile(
+        private fun createLogOutputAndBackupOldLog(
             logName: String,
             logPath: Path,
             fileLastModifiedDateTime: LocalDateTime
@@ -182,7 +180,7 @@ class FileLog : Log {
             fileOutputStream = FileOutputStream(File(path, logName), true)
         }
 
-        private fun initOutputStream(logName: String) {
+        private fun createLogOutputIfNull(logName: String) {
             if (fileOutputStream == null) {
                 fileOutputStream = FileOutputStream(File(path, logName), true)
             }
@@ -193,8 +191,8 @@ class FileLog : Log {
             try {
                 val output = getOutput(date, text.size.toLong())
                 output.write(text)
-                writeSize += text.size
-                lastWriteTime = TimeUtils.toLocalDateTime(date)
+                writtenSize += text.size
+                lastWrittenTime = TimeUtils.toLocalDateTime(date)
             } catch (e: IOException) {
                 System.err.println("write log exception, " + e.message)
             }
@@ -205,7 +203,7 @@ class FileLog : Log {
             if (output != null) {
                 try {
                     output.close()
-                    writeSize = 0
+                    writtenSize = 0
                 } catch (e: IOException) {
                     System.err.println("close log writer exception, " + e.message)
                 }
