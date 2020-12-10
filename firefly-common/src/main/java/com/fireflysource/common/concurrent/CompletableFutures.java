@@ -54,17 +54,17 @@ abstract public class CompletableFutures {
     /**
      * Retry the async operation.
      *
-     * @param retryCount   The max retry times.
-     * @param supplier     The async operation function.
-     * @param prepareRetry The callback before retries async operation.
-     * @param <T>          The future result type.
+     * @param retryCount  The max retry times.
+     * @param supplier    The async operation function.
+     * @param beforeRetry The callback before retries async operation.
+     * @param <T>         The future result type.
      * @return The operation result future.
      */
-    public static <T> CompletableFuture<T> retry(int retryCount, Supplier<CompletableFuture<T>> supplier, BiConsumer<Throwable, Integer> prepareRetry) {
+    public static <T> CompletableFuture<T> retry(int retryCount, Supplier<CompletableFuture<T>> supplier, BiConsumer<Throwable, Integer> beforeRetry) {
         return exceptionallyCompose(supplier.get(), e -> {
             if (retryCount > 0) {
-                prepareRetry.accept(e, retryCount);
-                return retry(retryCount - 1, supplier, prepareRetry);
+                beforeRetry.accept(e, retryCount);
+                return retry(retryCount - 1, supplier, beforeRetry);
             } else {
                 return failedFuture(e);
             }

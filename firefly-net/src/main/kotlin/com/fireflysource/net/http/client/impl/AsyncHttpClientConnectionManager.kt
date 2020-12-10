@@ -43,26 +43,37 @@ class AsyncHttpClientConnectionManager(
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request.uri)
         val nonPersistence = request.httpFields.isCloseConnection(request.httpVersion)
-        return if (nonPersistence) {
-            createTcpConnection(address)
-                .thenCompose { connection -> connection.beginHandshake().thenApply { connection } }
-                .thenApply { createHttp1ClientConnection(it) }
-                .thenCompose { sendAndCloseConnection(it, request) }
-        } else {
-            val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-            val retryCount = pool.size()
-            CompletableFutures.retry(
-                retryCount,
-                { pool.poll().thenCompose { pooledObject -> pooledObject.use { it.`object`.send(request) } } },
-                { e, count -> log.warn { "retry to send http request. message: ${e.message}, retry count: $count" } }
-            )
-        }
+        return if (nonPersistence) sendByNonPersistenceConnection(address, request) else sendByPool(address, request)
     }
 
     override fun createHttpClientConnection(httpURI: HttpURI): CompletableFuture<HttpClientConnection> {
         val address = buildAddress(httpURI)
         return createHttpClientConnection(address)
     }
+
+    private fun sendByPool(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
+        val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
+        val retryCount = config.clientRetryCount
+        return if (retryCount > 0) {
+            CompletableFutures.retry(
+                retryCount,
+                { sendByPool(request, pool) },
+                { e, count -> log.warn { "retry to send http request. message: ${e.message}, retry count: $count" } }
+            )
+        } else sendByPool(request, pool)
+    }
+
+    private fun sendByPool(request: HttpClientRequest, pool: AsyncPool<HttpClientConnection>) =
+        pool.poll().thenCompose { pooledObject -> pooledObject.use { it.getObject().send(request) } }
+
+    private fun sendByNonPersistenceConnection(address: Address, request: HttpClientRequest) =
+        connectionFactory.connect(
+            address.socketAddress,
+            address.secure,
+            listOf(ApplicationProtocol.HTTP1.value)
+        ).thenCompose { connection ->
+            connection.beginHandshake().thenApply { createHttp1ClientConnection(connection) }
+        }.thenCompose { sendAndCloseConnection(it, request) }
 
     private fun sendAndCloseConnection(connection: HttpClientConnection, request: HttpClientRequest) =
         connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
@@ -115,9 +126,7 @@ class AsyncHttpClientConnectionManager(
                         else -> createHttp1ClientConnection(connection)
                     }
                 }
-            } else {
-                CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
-            }
+            } else CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
             httpConnection
         }
     }

@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp;
 
+import com.fireflysource.common.collection.CollectionUtils;
 import com.fireflysource.common.lifecycle.AbstractLifeCycle;
 import com.fireflysource.common.object.Assert;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
@@ -81,6 +82,20 @@ public class TcpClientConnectionFactory extends AbstractLifeCycle {
 
     public CompletableFuture<TcpConnection> connect(InetSocketAddress inetSocketAddress, boolean secure) {
         return secure ? secureTcpClient.connect(inetSocketAddress) : tcpClient.connect(inetSocketAddress);
+    }
+
+    public CompletableFuture<TcpConnection> connect(InetSocketAddress inetSocketAddress, boolean secure, List<String> supportedProtocols) {
+        CompletableFuture<TcpConnection> future;
+        if (secure) {
+            if (CollectionUtils.isEmpty(supportedProtocols)) {
+                future = secureTcpClient.connect(inetSocketAddress);
+            } else {
+                future = secureTcpClient.connect(inetSocketAddress, supportedProtocols);
+            }
+        } else {
+            future = tcpClient.connect(inetSocketAddress);
+        }
+        return future;
     }
 
     public CompletableFuture<TcpConnection> connectWithSecure(InetSocketAddress inetSocketAddress, List<String> supportedProtocols) {
