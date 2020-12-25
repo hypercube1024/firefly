@@ -66,7 +66,7 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.4.0</dokka.version>
+        <dokka.version>1.4.10.2</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
@@ -74,7 +74,7 @@
         <metrics.version>4.1.14</metrics.version>
         <rolling-metrics.version>2.0.5</rolling-metrics.version>
         <hdr-histogram.version>2.1.12</hdr-histogram.version>
-        <jackson.version>2.11.3</jackson.version>
+        <jackson.version>2.11.4</jackson.version>
         <woodstox-core-asl.version>4.4.1</woodstox-core-asl.version>
         <msgpack.version>0.8.21</msgpack.version>
         <redisson.version>3.13.6</redisson.version>
@@ -83,7 +83,7 @@
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.0</spring.reactor.version>
+        <spring.reactor.version>2020.0.2</spring.reactor.version>
         <jcommander.version>1.78</jcommander.version>
 
         <!-- test lib -->
