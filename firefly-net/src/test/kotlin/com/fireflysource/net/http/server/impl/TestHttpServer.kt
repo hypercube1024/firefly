@@ -18,7 +18,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 import kotlin.system.measureTimeMillis
 
@@ -310,20 +312,21 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         val tcpClient = TcpClientFactory.create()
         val connection = tcpClient.connect(address).await()
         connection.write(BufferUtils.toBuffer(message)).await()
-        val receivedMessages = mutableListOf<String>()
+        val receivedData = mutableListOf<ByteBuffer>()
         while (true) {
             try {
                 val data = connection.read().await()
-                val receivedMsg = BufferUtils.toString(data)
-                receivedMessages.add(receivedMsg)
+                receivedData.add(data)
+
             } catch (e: ClosedChannelException) {
                 break
             }
         }
+        val receivedMessages = BufferUtils.toString(receivedData, StandardCharsets.UTF_8)
         println(receivedMessages)
-        assertEquals(2, receivedMessages.size)
-        assertEquals("HTTP/1.1 200 Connection Established\r\n\r\n", receivedMessages[0])
-        assertEquals("1234", receivedMessages[1])
+        assertTrue(receivedMessages.isNotBlank())
+        assertTrue(receivedMessages.contains("HTTP/1.1 200 Connection Established\r\n\r\n"))
+        assertTrue(receivedMessages.contains("1234"))
 
         tcpClient.stop()
         httpServer.stop()
