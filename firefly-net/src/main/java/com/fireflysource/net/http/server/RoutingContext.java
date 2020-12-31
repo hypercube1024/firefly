@@ -452,6 +452,15 @@ public interface RoutingContext {
     }
 
     /**
+     * Response 200 Connection Established.
+     *
+     * @return The future result.
+     */
+    default CompletableFuture<Void> response200ConnectionEstablished() {
+        return getResponse().response200ConnectionEstablished();
+    }
+
+    /**
      * Write string to the client.
      *
      * @param value The response content.

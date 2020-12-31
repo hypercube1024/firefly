@@ -144,4 +144,11 @@ public interface HttpServerResponse extends AsyncCloseable {
      * @return The future result.
      */
     CompletableFuture<Void> response100Continue();
+
+    /**
+     * Response 200 connection established.
+     *
+     * @return The future result.
+     */
+    CompletableFuture<Void> response200ConnectionEstablished();
 }

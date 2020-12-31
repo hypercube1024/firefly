@@ -82,11 +82,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         it.closeFuture()
     }
     private var onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
-        Function { ctx ->
-            ctx.setStatus(HttpStatus.OK_200)
-                .setReason("Connection Established")
-                .end()
-        }
+        Function { ctx -> ctx.response200ConnectionEstablished() }
     private var onRefuseHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
         Function { ctx ->
             ctx.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407)

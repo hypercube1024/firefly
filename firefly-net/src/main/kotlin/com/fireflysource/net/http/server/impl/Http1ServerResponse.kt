@@ -15,9 +15,12 @@ class Http1ServerResponse(
 
     companion object {
         private val response100Buffer = BufferUtils.toBuffer("HTTP/1.1 100 Continue\r\n")
+        private val response200ConnectionEstablishedBuffer =
+            BufferUtils.toBuffer("HTTP/1.1 200 Connection Established\r\n\r\n")
     }
 
     private val write100Continue = AtomicBoolean(false)
+    private val write200ConnectionEstablished = AtomicBoolean(false)
 
     override fun createHttpServerOutputChannel(response: MetaData.Response): HttpServerOutputChannel {
         if (expect100Continue && !write100Continue.get()) {
@@ -29,6 +32,14 @@ class Http1ServerResponse(
     override fun response100Continue(): CompletableFuture<Void> {
         return if (write100Continue.compareAndSet(false, true)) {
             http1ServerConnection.tcpConnection.write(response100Buffer.duplicate())
+                .thenAccept { http1ServerConnection.tcpConnection.flush() }
+                .thenCompose { Result.DONE }
+        } else Result.DONE
+    }
+
+    override fun response200ConnectionEstablished(): CompletableFuture<Void> {
+        return if (write200ConnectionEstablished.compareAndSet(false, true)) {
+            http1ServerConnection.tcpConnection.write(response200ConnectionEstablishedBuffer.duplicate())
                 .thenAccept { http1ServerConnection.tcpConnection.flush() }
                 .thenCompose { Result.DONE }
         } else Result.DONE

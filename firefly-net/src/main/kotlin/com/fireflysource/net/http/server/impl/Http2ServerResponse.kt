@@ -34,4 +34,6 @@ class Http2ServerResponse(
             future
         } else Result.DONE
     }
+
+    override fun response200ConnectionEstablished(): CompletableFuture<Void> = Result.DONE
 }
