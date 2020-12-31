@@ -12,8 +12,7 @@ import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -326,6 +325,49 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         assertTrue(receivedMessages.isNotBlank())
         assertTrue(receivedMessages.contains("HTTP/1.1 200 Connection Established\r\n\r\n"))
         assertTrue(receivedMessages.contains("1234"))
+
+        tcpClient.stop()
+        httpServer.stop()
+    }
+
+    @Test
+    @DisplayName("should establish HTTP tunnel failure.")
+    fun testHttpTunnelFailure(): Unit = runBlocking {
+        val httpServer = createHttpServer("http1", "http")
+        httpServer
+            .onAcceptHttpTunnel { request ->
+                println("Accept http tunnel request. $request")
+                CompletableFuture.completedFuture(false)
+            }
+            .onHttpTunnelHandshakeComplete { connection ->
+                connection.write(BufferUtils.toBuffer("1234"))
+                    .thenCompose { connection.closeFuture() }
+            }
+            .listen(address)
+
+        val message = "CONNECT p54-caldav.icloud.com:443 HTTP/1.1\r\n" +
+                "Host: p54-caldav.icloud.com\r\n" +
+                "User-Agent: Mac+OS+X/10.15.7 (19H114) CalendarAgent/930.5.1\r\n" +
+                "Connection: keep-alive\r\n" +
+                "Proxy-Connection: keep-alive\r\n\r\n"
+        val tcpClient = TcpClientFactory.create()
+        val connection = tcpClient.connect(address).await()
+        connection.write(BufferUtils.toBuffer(message)).await()
+        val receivedData = mutableListOf<ByteBuffer>()
+        while (true) {
+            try {
+                val data = connection.read().await()
+                receivedData.add(data)
+            } catch (e: ClosedChannelException) {
+                break
+            }
+        }
+        val receivedMessages = BufferUtils.toString(receivedData, StandardCharsets.UTF_8)
+        println(receivedMessages)
+        assertTrue(receivedMessages.isNotBlank())
+        assertTrue(receivedMessages.contains("Proxy Authentication Required"))
+        assertTrue(receivedMessages.contains("The proxy authentication must be required"))
+        assertFalse(receivedMessages.contains("1234"))
 
         tcpClient.stop()
         httpServer.stop()

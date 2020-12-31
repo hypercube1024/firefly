@@ -10,6 +10,7 @@ import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
+import com.fireflysource.net.http.server.impl.exception.ProxyAuthException
 import com.fireflysource.net.http.server.impl.exception.RouterNotCommitException
 import com.fireflysource.net.http.server.impl.router.AsyncRouterManager
 import com.fireflysource.net.tcp.TcpConnection
@@ -87,7 +88,15 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         Function { ctx ->
             ctx.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407)
                 .setReason(HttpStatus.Code.PROXY_AUTHENTICATION_REQUIRED.message)
+                .contentProvider(
+                    DefaultContentProvider(
+                        HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407,
+                        ProxyAuthException("The proxy authentication must be required"),
+                        ctx
+                    )
+                )
                 .end()
+                .thenCompose { ctx.connection.closeFuture() }
         }
 
 
