@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server;
 
 import com.fireflysource.common.lifecycle.LifeCycle;
+import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionBuilder;
 
@@ -77,6 +78,38 @@ public interface HttpServer extends LifeCycle {
      * @return The HTTP server.
      */
     HttpServer onRouterComplete(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
+     * The accept HTTP tunnel callback.
+     *
+     * @param function Invoke this function when the server accepts a HTTP tunnel request.
+     * @return The HTTP server.
+     */
+    HttpServer onAcceptHttpTunnel(Function<HttpServerRequest, CompletableFuture<Boolean>> function);
+
+    /**
+     * Accept HTTP tunnel handshake response callback. The default response: HTTP/1.1 200 Connection Established.
+     *
+     * @param function Invoke this function after the server accepts a HTTP tunnel request and then the server will response the HTTP tunnel response.
+     * @return The HTTP server.
+     */
+    HttpServer onAcceptHttpTunnelHandshakeResponse(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
+     * Refuse HTTP tunnel handshake response callback. The default response: HTTP/1.1 407 Proxy Authentication Required.
+     *
+     * @param function Invoke this function after the server refuses a HTTP tunnel request and then the server will response the HTTP tunnel response.
+     * @return The HTTP server.
+     */
+    HttpServer onRefuseHttpTunnelHandshakeResponse(Function<RoutingContext, CompletableFuture<Void>> function);
+
+    /**
+     * The HTTP tunnel handshake complete callback.
+     *
+     * @param function Invoke this function when the HTTP tunnel handshake is complete.
+     * @return The HTTP server.
+     */
+    HttpServer onHttpTunnelHandshakeComplete(Function<TcpConnection, CompletableFuture<Void>> function);
 
     /**
      * Set the TLS engine factory.

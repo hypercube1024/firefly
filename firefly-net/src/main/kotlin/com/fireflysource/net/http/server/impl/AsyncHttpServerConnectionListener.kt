@@ -7,10 +7,12 @@ import com.fireflysource.net.http.common.codec.URIUtils
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerConnection
+import com.fireflysource.net.http.server.HttpServerRequest
 import com.fireflysource.net.http.server.RouterManager
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.AsyncRouter
 import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
+import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.websocket.server.WebSocketManager
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler
 import java.util.concurrent.CompletableFuture
@@ -27,7 +29,11 @@ class AsyncHttpServerConnectionListener(
     private val onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>>,
     private val onRouterNotFound: Function<RoutingContext, CompletableFuture<Void>>,
     private val onRouterComplete: Function<RoutingContext, CompletableFuture<Void>>,
-    private val webSocketManager: WebSocketManager
+    private val webSocketManager: WebSocketManager,
+    private val onAcceptHttpTunnel: Function<HttpServerRequest, CompletableFuture<Boolean>>,
+    private val onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>>,
+    private val onRefuseHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>>,
+    private val onHttpTunnelHandshakeComplete: Function<TcpConnection, CompletableFuture<Void>>
 ) : HttpServerConnection.Listener.Adapter() {
 
     override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
@@ -70,6 +76,22 @@ class AsyncHttpServerConnectionListener(
             )
         }
         return future
+    }
+
+    override fun onAcceptHttpTunnel(request: HttpServerRequest): CompletableFuture<Boolean> {
+        return onAcceptHttpTunnel.apply(request)
+    }
+
+    override fun onAcceptHttpTunnelHandshakeResponse(context: RoutingContext): CompletableFuture<Void> {
+        return onAcceptHttpTunnelHandshakeResponse.apply(context)
+    }
+
+    override fun onRefuseHttpTunnelHandshakeResponse(context: RoutingContext): CompletableFuture<Void> {
+        return onRefuseHttpTunnelHandshakeResponse.apply(context)
+    }
+
+    override fun onHttpTunnelHandshakeComplete(connection: TcpConnection): CompletableFuture<Void> {
+        return onHttpTunnelHandshakeComplete.apply(connection)
     }
 
     private fun handleRouterNotFound(ctx: RoutingContext): CompletableFuture<Void> {

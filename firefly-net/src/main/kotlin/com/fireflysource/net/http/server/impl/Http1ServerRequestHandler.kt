@@ -124,36 +124,81 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun notifyHttpRequestComplete(context: RoutingContext?) {
         requireNotNull(context)
         context.request.isRequestComplete = true
-        if (expectUpgradeHttp2 && !context.response.isCommitted) {
-            val settings = settingsFrame
-            requireNotNull(settings)
-
-            switchingHttp2Response()
-            val http2ServerConnection = createHttp2Connection()
-            val stream = http2ServerConnection.upgradeHttp2(settings)
-            val response = Http2ServerResponse(http2ServerConnection, stream)
-            val http2Context = AsyncRoutingContext(
-                context.request,
-                response,
-                http2ServerConnection
-            )
-
-            connection.notifyUpgradeProtocol(true)
-            endRequestHandler()
-            connectionListener.onHttpRequestComplete(http2Context).await()
-        } else if (expectUpgradeWebsocket && !context.response.isCommitted) {
-            switchingWebSocket(context)
-
-            connection.notifyUpgradeProtocol(true)
-            endRequestHandler()
-        } else {
-            connection.notifyUpgradeProtocol(false)
-            connectionListener.onHttpRequestComplete(context).await()
+        when {
+            isHttpTunnel(context) -> {
+                val accept = connectionListener.onAcceptHttpTunnel(context.request).await()
+                if (accept) {
+                    notifyParsingJobUpgradeProtocolSuccess()
+                    switchHttpTunnel(context)
+                    connection.endResponseHandler()
+                    log.info { "Establish HTTP tunnel success. id: ${connection.id}" }
+                } else {
+                    refuseHttpTunnelRequest(context)
+                }
+            }
+            isUpgradeHttp2(context) -> {
+                notifyParsingJobUpgradeProtocolSuccess()
+                connection.endResponseHandler()
+                switchToHttp2(context)
+                log.info { "Upgrade to HTTP2 success. id: ${connection.id}" }
+            }
+            isUpgradeWebsocket(context) -> {
+                notifyParsingJobUpgradeProtocolSuccess()
+                connection.endResponseHandler()
+                switchToWebSocket(context)
+                log.info { "Upgrade to Websocket success. id: ${connection.id}" }
+            }
+            else -> {
+                connection.notifyUpgradeProtocol(false)
+                connectionListener.onHttpRequestComplete(context).await()
+            }
         }
         log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
     }
 
-    private suspend fun switchingWebSocket(ctx: RoutingContext) {
+    private suspend fun notifyParsingJobUpgradeProtocolSuccess() {
+        endRequestHandler()
+        connection.notifyUpgradeProtocol(true)
+        connection.getParseRequestJob()?.join()
+        log.info { "Upgrade protocol success. Exit HTTP1 parser. id: ${connection.id}" }
+    }
+
+    private fun isHttpTunnel(ctx: RoutingContext): Boolean {
+        return HttpMethod.CONNECT.`is`(ctx.method) && !connection.isSecureConnection
+    }
+
+    private suspend fun switchHttpTunnel(ctx: RoutingContext) {
+        connectionListener.onAcceptHttpTunnelHandshakeResponse(ctx).await()
+        connectionListener.onHttpTunnelHandshakeComplete(connection.tcpConnection)
+    }
+
+    private suspend fun refuseHttpTunnelRequest(ctx: RoutingContext) {
+        connectionListener.onRefuseHttpTunnelHandshakeResponse(ctx).await()
+    }
+
+    private suspend fun switchToHttp2(ctx: RoutingContext) {
+        val settings = settingsFrame
+        requireNotNull(settings)
+
+        writeHttp2UpgradeResponse()
+        val http2ServerConnection = createHttp2Connection()
+        val stream = http2ServerConnection.upgradeHttp2(settings)
+        val response = Http2ServerResponse(http2ServerConnection, stream)
+        val http2Context = AsyncRoutingContext(
+            ctx.request,
+            response,
+            http2ServerConnection
+        )
+        connectionListener.onHttpRequestComplete(http2Context).await()
+    }
+
+    private fun isUpgradeWebsocket(context: RoutingContext) =
+        expectUpgradeWebsocket && !context.response.isCommitted
+
+    private fun isUpgradeHttp2(context: RoutingContext) =
+        expectUpgradeHttp2 && !context.response.isCommitted
+
+    private suspend fun switchToWebSocket(ctx: RoutingContext) {
         val handler = connectionListener.onWebSocketHandshake(ctx).await()
 
         val clientKey = ctx.httpFields[HttpHeader.SEC_WEBSOCKET_KEY]
@@ -199,7 +244,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         Http2ServerConnection(connection.config, connection.tcpConnection)
             .also { it.setListener(connectionListener).begin() }
 
-    private suspend fun switchingHttp2Response() {
+    private suspend fun writeHttp2UpgradeResponse() {
         val message = "HTTP/1.1 101 Switching Protocols\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Upgrade: h2c\r\n" +

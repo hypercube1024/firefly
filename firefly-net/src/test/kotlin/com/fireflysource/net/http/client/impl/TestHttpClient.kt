@@ -192,7 +192,6 @@ class TestHttpClient {
 
         httpClient.stop()
         server2.stop()
-        Unit
     }
 
     @Test

@@ -75,6 +75,24 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
             )
             .end()
     }
+    private var onAcceptHttpTunnel: Function<HttpServerRequest, CompletableFuture<Boolean>> = Function {
+        CompletableFuture.completedFuture(false)
+    }
+    private var onHttpTunnelHandshakeComplete: Function<TcpConnection, CompletableFuture<Void>> = Function {
+        it.closeFuture()
+    }
+    private var onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
+        Function { ctx ->
+            ctx.setStatus(HttpStatus.OK_200)
+                .setReason("Connection Established")
+                .end()
+        }
+    private var onRefuseHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
+        Function { ctx ->
+            ctx.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407)
+                .setReason(HttpStatus.Code.PROXY_AUTHENTICATION_REQUIRED.message)
+                .end()
+        }
 
 
     override fun router(): Router = routerManager.register()
@@ -106,6 +124,26 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
 
     override fun onRouterNotFound(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
         this.onRouterNotFound = function
+        return this
+    }
+
+    override fun onAcceptHttpTunnel(function: Function<HttpServerRequest, CompletableFuture<Boolean>>): HttpServer {
+        this.onAcceptHttpTunnel = function
+        return this
+    }
+
+    override fun onAcceptHttpTunnelHandshakeResponse(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
+        this.onAcceptHttpTunnelHandshakeResponse = function
+        return this
+    }
+
+    override fun onRefuseHttpTunnelHandshakeResponse(function: Function<RoutingContext, CompletableFuture<Void>>): HttpServer {
+        this.onRefuseHttpTunnelHandshakeResponse = function
+        return this
+    }
+
+    override fun onHttpTunnelHandshakeComplete(function: Function<TcpConnection, CompletableFuture<Void>>): HttpServer {
+        this.onHttpTunnelHandshakeComplete = function
         return this
     }
 
@@ -168,7 +206,16 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         }
 
         val listener = AsyncHttpServerConnectionListener(
-            routerManager, onHeaderComplete, onException, onRouterNotFound, onRouterComplete, webSocketManager
+            routerManager,
+            onHeaderComplete,
+            onException,
+            onRouterNotFound,
+            onRouterComplete,
+            webSocketManager,
+            onAcceptHttpTunnel,
+            onAcceptHttpTunnelHandshakeResponse,
+            onRefuseHttpTunnelHandshakeResponse,
+            onHttpTunnelHandshakeComplete
         )
 
         tcpServer.onAccept { connection ->

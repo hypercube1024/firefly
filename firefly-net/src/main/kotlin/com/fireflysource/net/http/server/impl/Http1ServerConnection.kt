@@ -13,6 +13,7 @@ import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.CancellationException
@@ -32,14 +33,14 @@ class Http1ServerConnection(
     private val responseHandler = Http1ServerResponseHandler(this)
     private val beginning = AtomicBoolean(false)
     private val upgradeProtocolSignal: Signal<Boolean> = Signal()
+    private var parseRequestJob: Job? = null
+    private var generateResponseJob: Job? = null
 
     private fun parseRequestJob() = coroutineScope.launch {
         parseLoop@ while (true) {
             try {
                 parser.parseAll(tcpConnection)
                 if (waitToUpgradeProtocol()) {
-                    responseHandler.endResponseHandler()
-                    log.info { "Server upgrades HTTP2 success. Exit HTTP1 parser. id: $id" }
                     break@parseLoop
                 }
             } catch (e: IOException) {
@@ -73,13 +74,20 @@ class Http1ServerConnection(
 
     fun sendResponseMessage(message: Http1ResponseMessage) = responseHandler.sendResponseMessage(message)
 
+    fun getParseRequestJob() = parseRequestJob
+
+    suspend fun endResponseHandler() {
+        responseHandler.endResponseHandler()
+        generateResponseJob?.join()
+    }
+
     override fun begin() {
         if (beginning.compareAndSet(false, true)) {
             if (requestHandler.connectionListener === HttpServerConnection.EMPTY_LISTENER) {
                 throw HttpServerConnectionListenerNotSetException("Please set connection listener before begin parsing.")
             }
-            parseRequestJob()
-            generateResponseJob()
+            parseRequestJob = parseRequestJob()
+            generateResponseJob = generateResponseJob()
         }
     }
 
