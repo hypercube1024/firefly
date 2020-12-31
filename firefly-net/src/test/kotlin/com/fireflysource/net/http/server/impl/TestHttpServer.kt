@@ -317,7 +317,6 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             try {
                 val data = connection.read().await()
                 receivedData.add(data)
-
             } catch (e: ClosedChannelException) {
                 break
             }
