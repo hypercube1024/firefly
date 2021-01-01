@@ -56,7 +56,6 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                     }
                 }
             } catch (e: Exception) {
-                log.error(e) { "Handle HTTP1 server parser message exception." }
                 notifyException(request, context, e)
             }
         }
@@ -260,8 +259,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun notifyException(request: MetaData.Request?, context: RoutingContext?, exception: Throwable) {
         val ctx = context ?: newContext(request)
         try {
-            connection.notifyUpgradeProtocol(false)
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
+            connection.notifyUpgradeProtocol(false)
             connectionListener.onException(ctx, exception).await()
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server on exception. id: ${connection.id}" }

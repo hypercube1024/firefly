@@ -7,6 +7,8 @@ import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.exception.BadMessageException
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
@@ -42,10 +44,10 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
     }
     private var onException: BiFunction<RoutingContext?, Throwable, CompletableFuture<Void>> = BiFunction { ctx, e ->
-        log.error(e) { "The server internal error" }
         if (ctx != null && !ctx.response.isCommitted) {
             if (e is BadMessageException) {
                 ctx.setStatus(e.code)
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE)
                     .contentProvider(DefaultContentProvider(e.code, e, ctx))
                     .end()
                     .thenCompose { ctx.connection.closeFuture() }
