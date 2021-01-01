@@ -4,6 +4,7 @@ import com.fireflysource.common.io.toBuffer
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.server.HttpServerOutputChannel
+import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -25,19 +26,19 @@ class Http1ServerResponse(
 
     override fun response100Continue(): CompletableFuture<Void> {
         return if (write100Continue.compareAndSet(false, true)) {
-            val message = "HTTP/1.1 100 Continue\r\n".toBuffer()
-            http1ServerConnection.tcpConnection.write(message)
-                .thenAccept { http1ServerConnection.tcpConnection.flush() }
-                .thenCompose { Result.DONE }
+            writeAndFlushHttpMessage("HTTP/1.1 100 Continue\r\n".toBuffer())
         } else Result.DONE
     }
 
     override fun response200ConnectionEstablished(): CompletableFuture<Void> {
         return if (write200ConnectionEstablished.compareAndSet(false, true)) {
-            val message = "HTTP/1.1 200 Connection Established\r\n\r\n".toBuffer()
-            http1ServerConnection.tcpConnection.write(message)
-                .thenAccept { http1ServerConnection.tcpConnection.flush() }
-                .thenCompose { Result.DONE }
+            writeAndFlushHttpMessage("HTTP/1.1 200 Connection Established\r\n\r\n".toBuffer())
         } else Result.DONE
     }
+
+    private fun writeAndFlushHttpMessage(message: ByteBuffer): CompletableFuture<Void> {
+        val connection = http1ServerConnection.tcpConnection
+        return connection.write(message).thenCompose { connection.flush() }
+    }
+
 }

@@ -280,7 +280,7 @@ class Http1ClientConnection(
                 }
                 COMPLETING -> completeContent()
                 END -> {
-                    tcpConnection.flush()
+                    tcpConnection.flush().await()
                     requestMessage.contentProvider?.closeFuture()?.await()
                     break@genLoop
                 }

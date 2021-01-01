@@ -141,8 +141,8 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         assert(HttpGenerator.State.COMPLETING)
     }
 
-    private fun end(endResponse: EndResponse) {
-        http1ServerConnection.tcpConnection.flush()
+    private suspend fun end(endResponse: EndResponse) {
+        http1ServerConnection.tcpConnection.flush().await()
         val result = generator.generateResponse(null, false, null, null, null, true)
         if (result == HttpGenerator.Result.SHUTDOWN_OUT || endResponse.closeConnection) {
             http1ServerConnection.closeFuture()
