@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
-import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.toBuffer
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.common.model.MetaData
 import com.fireflysource.net.http.server.HttpServerOutputChannel
@@ -12,12 +12,6 @@ class Http1ServerResponse(
     private val expect100Continue: Boolean,
     private val closeConnection: Boolean
 ) : AbstractHttpServerResponse(http1ServerConnection) {
-
-    companion object {
-        private val response100Buffer = BufferUtils.toBuffer("HTTP/1.1 100 Continue\r\n")
-        private val response200ConnectionEstablishedBuffer =
-            BufferUtils.toBuffer("HTTP/1.1 200 Connection Established\r\n\r\n")
-    }
 
     private val write100Continue = AtomicBoolean(false)
     private val write200ConnectionEstablished = AtomicBoolean(false)
@@ -31,7 +25,8 @@ class Http1ServerResponse(
 
     override fun response100Continue(): CompletableFuture<Void> {
         return if (write100Continue.compareAndSet(false, true)) {
-            http1ServerConnection.tcpConnection.write(response100Buffer.duplicate())
+            val message = "HTTP/1.1 100 Continue\r\n".toBuffer()
+            http1ServerConnection.tcpConnection.write(message)
                 .thenAccept { http1ServerConnection.tcpConnection.flush() }
                 .thenCompose { Result.DONE }
         } else Result.DONE
@@ -39,7 +34,8 @@ class Http1ServerResponse(
 
     override fun response200ConnectionEstablished(): CompletableFuture<Void> {
         return if (write200ConnectionEstablished.compareAndSet(false, true)) {
-            http1ServerConnection.tcpConnection.write(response200ConnectionEstablishedBuffer.duplicate())
+            val message = "HTTP/1.1 200 Connection Established\r\n\r\n".toBuffer()
+            http1ServerConnection.tcpConnection.write(message)
                 .thenAccept { http1ServerConnection.tcpConnection.flush() }
                 .thenCompose { Result.DONE }
         } else Result.DONE

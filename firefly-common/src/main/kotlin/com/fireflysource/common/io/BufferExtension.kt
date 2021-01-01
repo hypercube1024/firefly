@@ -1,6 +1,7 @@
 package com.fireflysource.common.io
 
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 
 fun ByteBuffer.append(buffer: ByteBuffer): ByteBuffer {
     BufferUtils.append(this, buffer)
@@ -21,4 +22,12 @@ fun ByteBuffer.flipToFlush(position: Int): ByteBuffer {
 fun ByteBuffer.copy(): ByteBuffer {
     return if (this.hasRemaining()) BufferUtils.allocate(this.remaining()).append(this)
     else BufferUtils.EMPTY_BUFFER
+}
+
+fun String.toBuffer(): ByteBuffer {
+    return BufferUtils.toBuffer(this)
+}
+
+fun String.toBuffer(charset: Charset): ByteBuffer {
+    return BufferUtils.toBuffer(this, charset)
 }

@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.codec.base64.Base64Utils
-import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.toBuffer
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator
 import com.fireflysource.net.http.common.exception.BadMessageException
@@ -222,8 +222,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 append("${HttpHeader.SEC_WEBSOCKET_SUBPROTOCOL.value}: ${serverSubProtocols.joinToString(", ")}\r\n")
             }
             append("\r\n")
-        }
-        connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
+        }.toBuffer()
+        connection.tcpConnection.write(message).await()
         connection.tcpConnection.flush().await()
         log.info { "Server response 101 Switching Protocols. upgrade: websocket, id: ${connection.id}" }
 
@@ -245,11 +245,10 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             .also { it.setListener(connectionListener).begin() }
 
     private suspend fun writeHttp2UpgradeResponse() {
-        val message = "HTTP/1.1 101 Switching Protocols\r\n" +
+        val message = ("HTTP/1.1 101 Switching Protocols\r\n" +
                 "Connection: Upgrade\r\n" +
-                "Upgrade: h2c\r\n" +
-                "\r\n"
-        connection.tcpConnection.write(BufferUtils.toBuffer(message)).await()
+                "Upgrade: h2c\r\n\r\n").toBuffer()
+        connection.tcpConnection.write(message).await()
         connection.tcpConnection.flush().await()
         log.info { "Server response 101 Switching Protocols. upgrade: h2c, id: ${connection.id}" }
     }
