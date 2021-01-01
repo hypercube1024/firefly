@@ -835,4 +835,27 @@ class HttpGeneratorServerTest {
         assertTrue(headers.contains(HttpHeaderValue.KEEP_ALIVE.getValue()));
         assertTrue(headers.contains(customValue));
     }
+
+    @Test
+    void testResponseLine() {
+        HttpGenerator generator = new HttpGenerator();
+        HttpFields fields = new HttpFields();
+        MetaData.Response info = new MetaData.Response(HttpVersion.HTTP_1_0, 200, "Connection Established", fields, -1);
+        ByteBuffer header = BufferUtils.allocate(4096);
+        HttpGenerator.Result result = generator.generateResponse(info, false, header, null, null, true);
+        assertEquals(HttpGenerator.Result.FLUSH, result);
+
+        String headers = BufferUtils.toString(header);
+        System.out.println(headers);
+        assertTrue(headers.contains("HTTP/1.1 200 Connection Established\r\n\r\n"));
+
+        HttpGenerator.Result endResult = generator.generateResponse(null, false, null, null, null, true);
+        System.out.println(generator.isChunking());
+        System.out.println(endResult);
+        assertEquals(HttpGenerator.Result.SHUTDOWN_OUT, endResult);
+
+        HttpGenerator.Result done = generator.generateResponse(null, false, null, null, null, true);
+        System.out.println(done);
+        assertEquals(HttpGenerator.Result.DONE, done);
+    }
 }
