@@ -399,78 +399,6 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     }
 
     @Test
-    @DisplayName("should close client connection successfully.")
-    fun testCloseClientConnection(): Unit = runBlocking {
-        val count = 30
-
-        val httpServer = createHttpServer("http1", "http")
-        httpServer.router().get("/close-*").handler { ctx ->
-            ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
-                .end()
-        }.listen(address)
-
-        val httpClient = HttpClientFactory.create()
-        val time = measureTimeMillis {
-            val futures = (1..count).map {
-                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
-                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                    .submit()
-            }
-
-            try {
-                CompletableFuture.allOf(*futures.toTypedArray()).await()
-                val allDone = futures.all { it.isDone }
-                assertTrue(allDone)
-                val response = futures[0].await()
-
-                println(response)
-                assertEquals(HttpStatus.OK_200, response.status)
-                assertEquals("Close connection success", response.stringBody)
-            } catch (e: Exception) {
-                println(e.message)
-            }
-        }
-
-        finish(count, time, httpClient, httpServer)
-    }
-
-    @Test
-    @DisplayName("should close server connection successfully.")
-    fun testCloseServerConnection(): Unit = runBlocking {
-        val count = 30
-
-        val httpServer = createHttpServer("http1", "http")
-        httpServer.router().get("/close-*").handler { ctx ->
-            ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
-                .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
-                .end()
-        }.listen(address)
-
-        val httpClient = HttpClientFactory.create()
-        val time = measureTimeMillis {
-            val futures = (1..count).map {
-                httpClient.get("http://${address.hostName}:${address.port}/close-$it").submit()
-            }
-
-            try {
-                CompletableFuture.allOf(*futures.toTypedArray()).await()
-                val allDone = futures.all { it.isDone }
-                assertTrue(allDone)
-                val response = futures[0].await()
-
-                println(response)
-                assertEquals(HttpStatus.OK_200, response.status)
-                assertEquals("Close connection success", response.stringBody)
-            } catch (e: Exception) {
-                println(e.message)
-            }
-        }
-
-        finish(count, time, httpClient, httpServer)
-    }
-
-    @Test
     @DisplayName("should upgrade http2 protocol successfully.")
     fun testUpgradeHttp2(): Unit = runBlocking {
         val count = 30
@@ -578,6 +506,78 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
             assertTrue(response.stringBody.contains("part123"))
             assertTrue(response.stringBody.contains("string content 1"))
             assertTrue(response.stringBody.contains("file content 2"))
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    //    @Test
+//    @DisplayName("should close client connection successfully.")
+    fun testCloseClientConnection(): Unit = runBlocking {
+        val count = 30
+
+        val httpServer = createHttpServer("http1", "http")
+        httpServer.router().get("/close-*").handler { ctx ->
+            ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
+                .end()
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/close-$it")
+                    .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                    .submit()
+            }
+
+            try {
+                CompletableFuture.allOf(*futures.toTypedArray()).await()
+                val allDone = futures.all { it.isDone }
+                assertTrue(allDone)
+                val response = futures[0].await()
+
+                println(response)
+                assertEquals(HttpStatus.OK_200, response.status)
+                assertEquals("Close connection success", response.stringBody)
+            } catch (e: Exception) {
+                println(e.message)
+            }
+        }
+
+        finish(count, time, httpClient, httpServer)
+    }
+
+    //    @Test
+//    @DisplayName("should close server connection successfully.")
+    fun testCloseServerConnection(): Unit = runBlocking {
+        val count = 30
+
+        val httpServer = createHttpServer("http1", "http")
+        httpServer.router().get("/close-*").handler { ctx ->
+            ctx.put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE.value)
+                .contentProvider(stringBody("Close connection success", StandardCharsets.UTF_8))
+                .end()
+        }.listen(address)
+
+        val httpClient = HttpClientFactory.create()
+        val time = measureTimeMillis {
+            val futures = (1..count).map {
+                httpClient.get("http://${address.hostName}:${address.port}/close-$it").submit()
+            }
+
+            try {
+                CompletableFuture.allOf(*futures.toTypedArray()).await()
+                val allDone = futures.all { it.isDone }
+                assertTrue(allDone)
+                val response = futures[0].await()
+
+                println(response)
+                assertEquals(HttpStatus.OK_200, response.status)
+                assertEquals("Close connection success", response.stringBody)
+            } catch (e: Exception) {
+                println(e.message)
+            }
         }
 
         finish(count, time, httpClient, httpServer)
