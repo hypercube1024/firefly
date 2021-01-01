@@ -175,6 +175,29 @@ class TestBufferUtils {
         assertEquals(8, to.limit());
     }
 
+    @Test
+    void testPutBuffer() {
+        ByteBuffer from = BufferUtils.toBuffer("hello");
+        ByteBuffer to = BufferUtils.allocate(20);
+        int pos = BufferUtils.flipToFill(to);
+        System.out.println("from: " + from.remaining());
+        System.out.println("to: " + to.remaining());
+        assertEquals(5, from.remaining());
+        assertEquals(20, to.remaining());
+
+        int len = BufferUtils.put(from, to);
+        System.out.println("len: " + len);
+        System.out.println("from: " + from.remaining());
+        System.out.println("to: " + to.remaining());
+        assertEquals(0, from.remaining());
+        assertEquals(15, to.remaining());
+        assertEquals(5, len);
+
+        BufferUtils.flipToFlush(to, pos);
+        String str = BufferUtils.toString(to);
+        assertEquals("hello", str);
+    }
+
 
     @Test
     void testAppend() {
@@ -186,9 +209,7 @@ class TestBufferUtils {
         BufferUtils.append(to, from.array(), 3, 2);
         assertEquals("12345", BufferUtils.toString(to));
 
-        assertThrows(BufferOverflowException.class, () -> {
-            BufferUtils.append(to, from.array(), 0, 5);
-        });
+        assertThrows(BufferOverflowException.class, () -> BufferUtils.append(to, from.array(), 0, 5));
     }
 
 
