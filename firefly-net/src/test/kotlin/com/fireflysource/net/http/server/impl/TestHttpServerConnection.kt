@@ -583,19 +583,19 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
-//    @ParameterizedTest
+    //    @ParameterizedTest
 //    @MethodSource("testParametersProvider")
 //    @DisplayName("should response 413 when the multi-part too large.")
-fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking {
-    val count = 1 // TODO  20 http1 client close connection exception
+    fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking {
+        val count = 20 // TODO http1 client close connection exception
 
-    val httpConfig = HttpConfig()
-    httpConfig.maxUploadFileSize = 10
-    httpConfig.maxRequestBodySize = 10
-    httpConfig.uploadFileSizeThreshold = 10
-    val httpServer = createHttpServer(protocol, schema, httpConfig)
-    httpServer.router().post("/multi-part-content-*").handler { ctx ->
-        val part1 = ctx.getPart("part1")
+        val httpConfig = HttpConfig()
+        httpConfig.maxUploadFileSize = 10
+        httpConfig.maxRequestBodySize = 10
+        httpConfig.uploadFileSizeThreshold = 10
+        val httpServer = createHttpServer(protocol, schema, httpConfig)
+        httpServer.router().post("/multi-part-content-*").handler { ctx ->
+            val part1 = ctx.getPart("part1")
             val part2 = ctx.getPart("part2")
             val content = """
                     |received part1: 
@@ -645,7 +645,7 @@ fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking 
 //    @MethodSource("testParametersProvider")
 //    @DisplayName("should response 413 when the http body too large.")
     fun testHttpBodyTooLarge(protocol: String, schema: String): Unit = runBlocking {
-        val count = 1 // TODO  20 http1 client close connection exception
+        val count = 20 // TODO http1 client close connection exception
 
         val content = (1..30_000_000).joinToString("") { "a" }
         val httpConfig = HttpConfig()
