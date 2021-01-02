@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.concurrent.exceptionallyCompose
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -14,6 +15,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.exception.MissingRemotePortException
 import com.fireflysource.net.http.common.model.HttpURI
+import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpConnection
@@ -64,7 +66,18 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun sendByPool(request: HttpClientRequest, pool: AsyncPool<HttpClientConnection>) =
-        pool.poll().thenCompose { pooledObject -> pooledObject.use { it.getObject().send(request) } }
+        pool.poll().thenCompose { pooledObject ->
+            val connection = pooledObject.getObject()
+            if (connection.httpVersion == HttpVersion.HTTP_2) {
+                pooledObject.use { it.getObject().send(request) }
+            } else {
+                connection.send(request)
+                    .thenCompose { response -> pooledObject.closeFuture().thenApply { response } }
+                    .exceptionallyCompose { ex ->
+                        pooledObject.closeFuture().thenCompose { CompletableFuture.failedFuture(ex) }
+                    }
+            }
+        }
 
     private fun sendByNonPersistenceConnection(address: Address, request: HttpClientRequest) =
         connectionFactory.connect(

@@ -375,18 +375,18 @@ abstract class AbstractAioTcpConnection(
                 log.warn { "Close socket channel exception. ${e.message} id: $id" }
             }
 
-            try {
-                coroutineScope.cancel(CancellationException("Cancel TCP coroutine exception. id: $id"))
-            } catch (e: Throwable) {
-                log.warn { "Cancel TCP coroutine exception. ${e.message} id: $id" }
-            }
-
             closeCallbacks.forEach {
                 try {
                     it.call()
                 } catch (e: Exception) {
                     log.warn { "The TCP connection close callback exception. ${e.message} id: $id" }
                 }
+            }
+
+            try {
+                coroutineScope.cancel(CancellationException("Cancel TCP coroutine exception. id: $id"))
+            } catch (e: Throwable) {
+                log.warn { "Cancel TCP coroutine exception. ${e.message} id: $id" }
             }
 
             log.info { "The TCP connection close success. id: $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }

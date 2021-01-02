@@ -511,9 +511,9 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
-    //    @Test
-//    @DisplayName("should close client connection successfully.")
-    fun testCloseClientConnection(): Unit = runBlocking {
+    @Test
+    @DisplayName("should send request by non persistence connection successfully.")
+    fun testClientShortConnection(): Unit = runBlocking {
         val count = 30
 
         val httpServer = createHttpServer("http1", "http")
@@ -548,9 +548,9 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
-    //    @Test
-//    @DisplayName("should close server connection successfully.")
-    fun testCloseServerConnection(): Unit = runBlocking {
+    @Test
+    @DisplayName("should close connection by server successfully.")
+    fun testCloseConnectionByServer(): Unit = runBlocking {
         val count = 30
 
         val httpServer = createHttpServer("http1", "http")
