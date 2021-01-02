@@ -74,7 +74,9 @@ class AsyncHttpClientConnectionManager(
                 val future = CompletableFuture<HttpClientResponse>()
                 connection.send(request)
                     .thenCompose { response -> pooledObject.closeFuture().thenAccept { future.complete(response) } }
-                    .exceptionallyAccept(future::completeExceptionally)
+                    .exceptionallyAccept { ex ->
+                        pooledObject.closeFuture().thenAccept { future.completeExceptionally(ex) }
+                    }
                 future
             }
         }
