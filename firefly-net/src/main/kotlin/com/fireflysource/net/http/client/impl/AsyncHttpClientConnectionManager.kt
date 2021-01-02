@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.concurrent.doFinally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -15,7 +14,6 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.exception.MissingRemotePortException
 import com.fireflysource.net.http.common.model.HttpURI
-import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpConnection
@@ -68,11 +66,13 @@ class AsyncHttpClientConnectionManager(
     private fun sendByPool(request: HttpClientRequest, pool: AsyncPool<HttpClientConnection>) =
         pool.poll().thenCompose { pooledObject ->
             val connection = pooledObject.getObject()
-            if (connection.httpVersion == HttpVersion.HTTP_2) {
-                pooledObject.use { connection.send(request) }
-            } else {
-                connection.send(request).doFinally { _, _ -> pooledObject.closeFuture() }
-            }
+            pooledObject.use { connection.send(request) }
+//            val connection = pooledObject.getObject()
+//            if (connection.httpVersion == HttpVersion.HTTP_2) {
+//                pooledObject.use { connection.send(request) }
+//            } else {
+//                connection.send(request).doFinally { _, _ -> pooledObject.closeFuture() }
+//            }
         }
 
     private fun sendByNonPersistenceConnection(address: Address, request: HttpClientRequest) =
