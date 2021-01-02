@@ -74,7 +74,8 @@ class AsyncHttpClientConnectionManager(
                 connection.send(request)
                     .thenCompose { response -> pooledObject.closeFuture().thenApply { response } }
                     .exceptionallyCompose { ex ->
-                        pooledObject.closeFuture().thenCompose { CompletableFuture.failedFuture(ex) }
+                        pooledObject.closeFuture()
+                            .thenCompose<HttpClientResponse> { CompletableFuture.failedFuture(ex) }
                     }
             }
         }
