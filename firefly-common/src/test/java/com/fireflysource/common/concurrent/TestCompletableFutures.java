@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +46,31 @@ public class TestCompletableFutures {
             }
         }, (e, c) -> System.out.println("start to retry: " + c));
 
-        assertThrows(ExecutionException.class, () -> future.get());
+        assertThrows(ExecutionException.class, future::get);
+    }
+
+    @Test
+    @DisplayName("should do finally always")
+    void testDoFinally() throws Exception {
+        AtomicReference<String> ref = new AtomicReference<>();
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> "OK");
+        CompletableFuture<String> result = CompletableFutures.doFinally(future, (value, ex) -> CompletableFuture.runAsync(() -> {
+            String msg = "do finally. " + value;
+            System.out.println(msg);
+            ref.set(msg);
+        }));
+        assertEquals("OK", result.get());
+        assertEquals("do finally. OK", ref.get());
+
+        CompletableFuture<String> failure = CompletableFuture.supplyAsync(() -> {
+            throw new IllegalStateException("Failure");
+        });
+        CompletableFuture<String> failureResult = CompletableFutures.doFinally(failure, (value, ex) -> CompletableFuture.runAsync(() -> {
+            String msg = "do finally. " + ex.getMessage();
+            System.out.println(msg);
+            ref.set(msg);
+        }));
+        assertThrows(ExecutionException.class, failureResult::get);
+        assertEquals("do finally. java.lang.IllegalStateException: Failure", ref.get());
     }
 }

@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.concurrent.exceptionallyAccept
+import com.fireflysource.common.concurrent.doFinally
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.pool.AsyncPool
 import com.fireflysource.common.pool.PooledObject
@@ -69,15 +69,9 @@ class AsyncHttpClientConnectionManager(
         pool.poll().thenCompose { pooledObject ->
             val connection = pooledObject.getObject()
             if (connection.httpVersion == HttpVersion.HTTP_2) {
-                pooledObject.use { it.getObject().send(request) }
+                pooledObject.use { connection.send(request) }
             } else {
-                val future = CompletableFuture<HttpClientResponse>()
-                connection.send(request)
-                    .thenCompose { response -> pooledObject.closeFuture().thenAccept { future.complete(response) } }
-                    .exceptionallyAccept { ex ->
-                        pooledObject.closeFuture().thenAccept { future.completeExceptionally(ex) }
-                    }
-                future
+                connection.send(request).doFinally { _, _ -> pooledObject.closeFuture() }
             }
         }
 

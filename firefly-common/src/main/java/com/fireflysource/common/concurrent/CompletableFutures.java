@@ -3,6 +3,7 @@ package com.fireflysource.common.concurrent;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -69,6 +70,22 @@ abstract public class CompletableFutures {
                 return failedFuture(e);
             }
         }).toCompletableFuture();
+    }
+
+    public static <T> CompletableFuture<T> doFinally(CompletionStage<T> stage, BiFunction<T, Throwable, CompletableFuture<Void>> function) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        stage.handle((value, throwable) -> {
+            function.apply(value, throwable).handle((v, t) -> {
+                if (throwable != null) {
+                    future.completeExceptionally(throwable);
+                } else {
+                    future.complete(value);
+                }
+                return v;
+            });
+            return value;
+        });
+        return future;
     }
 
 }

@@ -14,3 +14,7 @@ inline fun <T> CompletionStage<T>.exceptionallyAccept(crossinline block: (Throwa
         null
     }.thenCompose { Result.DONE }.toCompletableFuture()
 }
+
+inline fun <T> CompletionStage<T>.doFinally(crossinline block: (T?, Throwable?) -> CompletableFuture<Void>): CompletableFuture<T> {
+    return CompletableFutures.doFinally(this) { value, throwable -> block(value, throwable) }
+}
