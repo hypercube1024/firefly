@@ -27,7 +27,7 @@ public class HttpConfig {
     private long streamIdleTimeout = 0;
 
     // HTTP client config
-    private int clientRetryCount = CoroutineDispatchers.INSTANCE.getDefaultPoolSize() * 2;
+    private int clientRetryCount = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private int connectionPoolSize = CoroutineDispatchers.INSTANCE.getDefaultPoolSize();
     private long leakDetectorInterval = 60;
     private long releaseTimeout = 60;
@@ -68,7 +68,7 @@ public class HttpConfig {
     }
 
     public void setConnectionPoolSize(int connectionPoolSize) {
-        this.connectionPoolSize = connectionPoolSize;
+        this.connectionPoolSize = Math.max(connectionPoolSize, 1);
     }
 
     public long getLeakDetectorInterval() {
