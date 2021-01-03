@@ -571,8 +571,8 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                 val allDone = futures.all { it.isDone }
                 assertTrue(allDone)
                 val response = futures[0].await()
-                val count = futures.filter { it.isCompletedExceptionally }.count()
-                println("exception: $count")
+                val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                println("exception: $failureCount")
                 println(response)
                 assertEquals(HttpStatus.OK_200, response.status)
                 assertEquals("Close connection success", response.stringBody)

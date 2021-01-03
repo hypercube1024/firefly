@@ -204,9 +204,16 @@ class Http2ClientConnection(
                         newStream.data(dataFrame)
                     }
                 }
+
                 val last = metaDataRequest.trailerSupplier == null
-                val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), last)
-                newStream.data(dataFrame)
+                if (byteBuffers.isNotEmpty()) {
+                    val dataFrame = DataFrame(newStream.id, byteBuffers.poll(), last)
+                    newStream.data(dataFrame)
+                } else {
+                    val empty = ByteBuffer.allocate(0)
+                    val dataFrame = DataFrame(newStream.id, empty, last)
+                    newStream.data(dataFrame)
+                }
             }
         }
         Pair(newStream, serverAccept)
