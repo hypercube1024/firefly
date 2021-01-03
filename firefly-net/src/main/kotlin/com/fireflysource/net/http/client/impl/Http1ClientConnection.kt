@@ -13,6 +13,7 @@ import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeHttp2
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeWebsocket
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
+import com.fireflysource.net.http.client.impl.exception.UnhandledRequestException
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
 import com.fireflysource.net.http.common.exception.Http1GeneratingResultException
@@ -59,10 +60,6 @@ class Http1ClientConnection(
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
     private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
-    private val unhandledRequestMessage: (HttpClientRequest, CompletableFuture<HttpClientResponse>) -> Unit =
-        { _, future ->
-            future.completeExceptionally(IllegalStateException("The HTTP1 connection has closed."))
-        }
 
     @Volatile
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
@@ -128,7 +125,13 @@ class Http1ClientConnection(
                     .exceptionallyAccept { future.completeExceptionally(it) }
             }
             else -> requestChannel.pollAll { message ->
-                unhandledRequestMessage(message.httpClientRequest, message.response)
+                if (!message.response.isDone) {
+                    message.response.completeExceptionally(
+                        UnhandledRequestException(
+                            "The HTTP1 connection has closed. This request does not send."
+                        )
+                    )
+                }
             }
         }
     }

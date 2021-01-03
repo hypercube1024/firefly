@@ -1,15 +1,14 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.concurrent.CompletableFutures
+import com.fireflysource.common.coroutine.event
+import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import com.fireflysource.common.pool.AsyncPool
-import com.fireflysource.common.pool.PooledObject
-import com.fireflysource.common.pool.asyncPool
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientConnectionManager
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.impl.exception.UnhandledRequestException
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.exception.MissingRemotePortException
@@ -20,10 +19,13 @@ import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.ApplicationProtocol
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 class AsyncHttpClientConnectionManager(
     private val config: HttpConfig,
@@ -34,7 +36,7 @@ class AsyncHttpClientConnectionManager(
         private val log = SystemLogger.create(AsyncHttpClientConnectionManager::class.java)
     }
 
-    private val connectionPoolMap = ConcurrentHashMap<Address, AsyncPool<HttpClientConnection>>()
+    private val connectionPoolMap = ConcurrentHashMap<Address, HttpClientConnectionPool>()
 
     init {
         start()
@@ -43,7 +45,8 @@ class AsyncHttpClientConnectionManager(
     override fun send(request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
         val address = buildAddress(request.uri)
         val nonPersistence = request.httpFields.isCloseConnection(request.httpVersion)
-        return if (nonPersistence) sendByNonPersistenceConnection(address, request) else sendByPool(address, request)
+        return if (nonPersistence) sendByNonPersistenceConnection(address, request)
+        else sendByPool(address, request)
     }
 
     override fun createHttpClientConnection(httpURI: HttpURI): CompletableFuture<HttpClientConnection> {
@@ -52,28 +55,11 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun sendByPool(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
-        val pool = connectionPoolMap.computeIfAbsent(address) { buildHttpClientConnectionPool(it) }
-        val retryCount = config.clientRetryCount
-        return if (retryCount > 0) {
-            CompletableFutures.retry(
-                retryCount,
-                { sendByPool(request, pool) },
-                { e, count -> log.warn { "retry to send http request. message: ${e.message}, retry count: $count" } }
-            )
-        } else sendByPool(request, pool)
+        val pool = connectionPoolMap.computeIfAbsent(address) { HttpClientConnectionPool(it) }
+        val message = RequestMessage(request, CompletableFuture())
+        pool.sendMessage(message)
+        return message.response
     }
-
-    private fun sendByPool(request: HttpClientRequest, pool: AsyncPool<HttpClientConnection>) =
-        pool.poll().thenCompose { pooledObject ->
-            val connection = pooledObject.getObject()
-            pooledObject.use { connection.send(request) }
-//            val connection = pooledObject.getObject()
-//            if (connection.httpVersion == HttpVersion.HTTP_2) {
-//                pooledObject.use { connection.send(request) }
-//            } else {
-//                connection.send(request).doFinally { _, _ -> pooledObject.closeFuture() }
-//            }
-        }
 
     private fun sendByNonPersistenceConnection(address: Address, request: HttpClientRequest) =
         connectionFactory.connect(
@@ -102,27 +88,143 @@ class AsyncHttpClientConnectionManager(
         return Address(socketAddress, secure)
     }
 
-    private fun buildHttpClientConnectionPool(address: Address): AsyncPool<HttpClientConnection> = asyncPool {
-        maxSize = config.connectionPoolSize
-        timeout = config.timeout
-        leakDetectorInterval = config.leakDetectorInterval
-        releaseTimeout = config.releaseTimeout
-
-        objectFactory { pool ->
-            val httpConnection = createHttpClientConnection(address).await()
-            PooledObject(httpConnection, pool) { log.warn("The TCP connection leak. ${httpConnection.id}") }
+    private inner class HttpClientConnectionPool(val address: Address) : AbstractLifeCycle() {
+        private var i = 0
+        private val maxIndex = config.connectionPoolSize - 1
+        private val httpClientConnections: Array<HttpClientConnection?> = arrayOfNulls(config.connectionPoolSize)
+        private val channel: Channel<ClientRequestMessage> = Channel(Channel.UNLIMITED)
+        private val checkJob = event {
+            delay(TimeUnit.SECONDS.toMillis(config.timeout / 2))
+            sendMessage(CheckMessage)
         }
 
-        validator { pooledObject ->
-            !pooledObject.getObject().isInvalid
+        init {
+            start()
         }
 
-        dispose { pooledObject ->
-            pooledObject.getObject().close()
+        fun sendMessage(message: ClientRequestMessage) {
+            channel.offer(message)
         }
 
-        noLeakCallback {
-            log.info("no leak TCP connection pool.")
+        override fun init() {
+            event {
+                checkAndCreateConnections()
+
+                requestLoop@ while (true) {
+                    when (val message = channel.receive()) {
+                        is RequestMessage -> handleRequest(message)
+                        is UnhandledRequestMessage -> processUnhandledRequestInConnection(message)
+                        is CheckMessage -> checkAndCreateConnections()
+                        is StopMessage -> {
+                            handleStop()
+                            break@requestLoop
+                        }
+                    }
+                }
+            }.invokeOnCompletion { cause ->
+                if (cause != null) {
+                    log.info { "The HTTP client connection pool job completion. cause: ${cause.message}" }
+                }
+                processUnhandledRequestInPool()
+            }
+        }
+
+        override fun destroy() {
+            sendMessage(StopMessage)
+            checkJob.cancel()
+        }
+
+        private fun handleStop() {
+            httpClientConnections.forEach { it?.closeFuture() }
+            processUnhandledRequestInPool()
+        }
+
+        private suspend fun handleRequest(message: RequestMessage) {
+            try {
+                val index = getIndex()
+                val connection = getConnection(index)
+                sendRequest(connection, message, index)
+            } catch (ex: Throwable) {
+                handleException(message, ex)
+            }
+        }
+
+        private fun sendRequest(connection: HttpClientConnection, message: RequestMessage, index: Int) {
+            val request = message.request
+            val future = message.response
+            connection.send(request).handle { response, ex ->
+                if (ex != null) {
+                    if (ex is UnhandledRequestException || ex.cause is UnhandledRequestException) {
+                        sendMessage(UnhandledRequestMessage(request, future, connection.id, index))
+                    } else {
+                        handleException(message, ex)
+                    }
+                } else future.complete(response)
+                response
+            }
+        }
+
+        private suspend fun processUnhandledRequestInConnection(message: UnhandledRequestMessage) {
+            val index = message.index
+            val connection = getConnection(index)
+            val newConnection = if (connection.id == message.connectionId) {
+                createConnection(index)
+            } else connection
+            val newMessage = RequestMessage(message.request, message.response)
+            sendRequest(newConnection, newMessage, index)
+        }
+
+        private fun handleException(message: RequestMessage, ex: Throwable) {
+            val request = message.request
+            val future = message.response
+            if (future.isDone) return
+
+            if (message.retry <= config.clientRetryCount) {
+                sendMessage(RequestMessage(request, future, message.retry + 1))
+            } else {
+                future.completeExceptionally(ex)
+            }
+        }
+
+        private fun getIndex(): Int {
+            val index = if (i > maxIndex) {
+                i = 0
+                i
+            } else i
+            i++
+            return index
+        }
+
+        private suspend fun getConnection(index: Int): HttpClientConnection {
+            val oldConnection = httpClientConnections[index]
+            return if (oldConnection != null) {
+                if (oldConnection.isInvalid) createConnection(index)
+                else oldConnection
+            } else createConnection(index)
+        }
+
+        private suspend fun createConnection(index: Int): HttpClientConnection {
+            val newConnection = createHttpClientConnection(address).await()
+            httpClientConnections[index] = newConnection
+            return newConnection
+        }
+
+        private suspend fun checkAndCreateConnections() {
+            (0..maxIndex).forEach { index ->
+                try {
+                    getConnection(index)
+                } catch (e: Exception) {
+                    log.error(e) { "create http client connection failure. $address" }
+                }
+            }
+        }
+
+        private fun processUnhandledRequestInPool() {
+            channel.pollAll { message ->
+                if (message is RequestMessage) {
+                    message.response.completeExceptionally(UnhandledRequestException("The HTTP client connection pool is shutdown. This request does not send."))
+                }
+            }
         }
     }
 
@@ -163,3 +265,17 @@ class AsyncHttpClientConnectionManager(
 
     private data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)
 }
+
+sealed class ClientRequestMessage
+class RequestMessage(
+    val request: HttpClientRequest, val response: CompletableFuture<HttpClientResponse>,
+    val retry: Int = 0
+) : ClientRequestMessage()
+
+class UnhandledRequestMessage(
+    val request: HttpClientRequest, val response: CompletableFuture<HttpClientResponse>,
+    val connectionId: Int, val index: Int
+) : ClientRequestMessage()
+
+object CheckMessage : ClientRequestMessage()
+object StopMessage : ClientRequestMessage()
