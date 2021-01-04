@@ -222,8 +222,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             }
             append("\r\n")
         }.toBuffer()
-        connection.tcpConnection.write(message).await()
-        connection.tcpConnection.flush().await()
+        connection.tcpConnection.writeAndFlush(message).await()
         log.info { "Server response 101 Switching Protocols. upgrade: websocket, id: ${connection.id}" }
 
         val webSocketConnection = AsyncWebSocketConnection(
@@ -247,8 +246,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         val message = ("HTTP/1.1 101 Switching Protocols\r\n" +
                 "Connection: Upgrade\r\n" +
                 "Upgrade: h2c\r\n\r\n").toBuffer()
-        connection.tcpConnection.write(message).await()
-        connection.tcpConnection.flush().await()
+        connection.tcpConnection.writeAndFlush(message).await()
         log.info { "Server response 101 Switching Protocols. upgrade: h2c, id: ${connection.id}" }
     }
 

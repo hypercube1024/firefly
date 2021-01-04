@@ -237,8 +237,7 @@ class AsyncWebSocketConnection(
             val pos = buf.flipToFill()
             generator.generateWholeFrame(frame, buf)
             buf.flipToFlush(pos)
-            tcpConnection.write(buf)
-                .thenCompose { tcpConnection.flush() }
+            tcpConnection.writeAndFlush(buf)
                 .thenAccept {
                     if (frame.type == Frame.Type.CLOSE && frame is CloseFrame) {
                         val closeInfo = CloseInfo(frame.getPayload(), false)

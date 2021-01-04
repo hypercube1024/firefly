@@ -143,6 +143,16 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
     }
 
     /**
+     * Write and flush data to the remote endpoint.
+     *
+     * @param byteBuffer The byte buffer.
+     * @return The future for consuming the result.
+     */
+    default CompletableFuture<Integer> writeAndFlush(ByteBuffer byteBuffer) {
+        return write(byteBuffer).thenCompose(len -> flush().thenApply(n -> len));
+    }
+
+    /**
      * Write the data to the remote endpoint.
      *
      * @param byteBuffers The byte buffer array.
@@ -174,6 +184,21 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
         CompletableFuture<Long> future = new CompletableFuture<>();
         write(byteBufferList, offset, length, futureToConsumer(future));
         return future;
+    }
+
+    /**
+     * Write and flush data to the remote endpoint.
+     *
+     * @param byteBufferList The byte buffer list.
+     * @param offset         The offset within the buffer array of the first buffer into which
+     *                       bytes are to be transferred; must be non-negative and no larger than
+     *                       byteBufferList.length.
+     * @param length         The maximum number of buffers to be accessed; must be non-negative
+     *                       and no larger than byteBufferList.length - offset.
+     * @return The future for consuming the result.
+     */
+    default CompletableFuture<Long> writeAndFlush(List<ByteBuffer> byteBufferList, int offset, int length) {
+        return write(byteBufferList, offset, length).thenCompose(len -> flush().thenApply(n -> len));
     }
 
     /**

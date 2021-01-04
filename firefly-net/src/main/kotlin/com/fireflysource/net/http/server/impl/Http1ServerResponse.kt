@@ -38,7 +38,7 @@ class Http1ServerResponse(
 
     private fun writeAndFlushHttpMessage(message: ByteBuffer): CompletableFuture<Void> {
         val connection = http1ServerConnection.tcpConnection
-        return connection.write(message).thenCompose { connection.flush() }
+        return connection.writeAndFlush(message).thenCompose { Result.DONE }
     }
 
 }

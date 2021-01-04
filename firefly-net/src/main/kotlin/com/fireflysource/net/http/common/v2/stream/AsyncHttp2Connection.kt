@@ -293,11 +293,8 @@ abstract class AsyncHttp2Connection(
                 is DataFrame -> frame.isEndStream
                 else -> true
             }
-            return if (flush) {
-                tcpConnection.write(byteBuffers, 0, byteBuffers.size)
-                    .thenCompose { len -> tcpConnection.flush().thenApply { len } }
-                    .await()
-            } else tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
+            return if (flush) tcpConnection.writeAndFlush(byteBuffers, 0, byteBuffers.size).await()
+            else tcpConnection.write(byteBuffers, 0, byteBuffers.size).await()
         }
 
         fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> {
