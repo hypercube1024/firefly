@@ -104,6 +104,11 @@ fun readAttributesAsync(file: Path, vararg options: LinkOption) = blockingAsync 
     Files.readAttributes(file, BasicFileAttributes::class.java, *options)
 }
 
+fun writeAsync(file: Path, iterable: Iterable<CharSequence>, vararg options: OpenOption) = blockingAsync {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    Files.write(file, iterable, *options)
+}
+
 /**
  * Performs [AsynchronousFileChannel.read] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.

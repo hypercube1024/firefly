@@ -1,6 +1,7 @@
 package com.fireflysource.wechat.utils
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 
 /**
@@ -9,6 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 object JsonUtils {
 
     val mapper = ObjectMapper()
+    init {
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    }
 
     fun <T : Any> read(json: String, clazz: Class<T>): T = mapper.readValue(json, clazz)
 
