@@ -6,7 +6,7 @@ import com.fireflysource.net.http.client.impl.Http1ClientConnection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
-import com.fireflysource.net.tcp.aio.ApplicationProtocol
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionManager
 import com.fireflysource.net.websocket.client.WebSocketClientRequest
 import com.fireflysource.net.websocket.common.WebSocketConnection
@@ -37,10 +37,7 @@ class AsyncWebSocketClientConnectionManager(
         val inetSocketAddress = InetSocketAddress(uri.host, uri.port)
         val tcpConnection = when (uri.scheme) {
             "ws" -> connectionFactory.connect(inetSocketAddress, false)
-            "wss" -> connectionFactory.connectWithSecure(
-                inetSocketAddress,
-                listOf(ApplicationProtocol.HTTP1.value)
-            )
+            "wss" -> connectionFactory.connect(inetSocketAddress, true, listOf(HTTP1.value))
             else -> throw WebSocketException("The websocket scheme error. scheme: ${uri.scheme}")
         }
 

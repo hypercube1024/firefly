@@ -3,6 +3,8 @@ package com.fireflysource.net.http.client;
 import com.fireflysource.common.lifecycle.LifeCycle;
 import com.fireflysource.net.http.common.model.HttpURI;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -28,6 +30,17 @@ public interface HttpClientConnectionManager extends LifeCycle {
      * @param httpURI The server URI.
      * @return The new HTTP client connection.
      */
-    CompletableFuture<HttpClientConnection> createHttpClientConnection(HttpURI httpURI);
+    default CompletableFuture<HttpClientConnection> createHttpClientConnection(HttpURI httpURI) {
+        return createHttpClientConnection(httpURI, Collections.emptyList());
+    }
+
+    /**
+     * Create a new HTTP client connection.
+     *
+     * @param httpURI            The HTTP URI.
+     * @param supportedProtocols The supported application protocols.
+     * @return The new HTTP client connection.
+     */
+    CompletableFuture<HttpClientConnection> createHttpClientConnection(HttpURI httpURI, List<String> supportedProtocols);
 
 }

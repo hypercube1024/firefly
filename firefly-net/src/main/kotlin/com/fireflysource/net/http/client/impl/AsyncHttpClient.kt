@@ -76,12 +76,11 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
         return AsyncHttpClientRequestBuilder(httpClientConnectionManager, method, httpURI, HttpVersion.HTTP_1_1)
     }
 
-    override fun createHttpClientConnection(httpURI: HttpURI): CompletableFuture<HttpClientConnection> {
-        return httpClientConnectionManager.createHttpClientConnection(httpURI)
-    }
-
-    override fun createHttpClientConnection(httpURI: String): CompletableFuture<HttpClientConnection> {
-        return createHttpClientConnection(HttpURI(httpURI))
+    override fun createHttpClientConnection(
+        httpURI: HttpURI,
+        supportedProtocols: List<String>
+    ): CompletableFuture<HttpClientConnection> {
+        return httpClientConnectionManager.createHttpClientConnection(httpURI, supportedProtocols)
     }
 
     override fun websocket(): WebSocketClientConnectionBuilder {

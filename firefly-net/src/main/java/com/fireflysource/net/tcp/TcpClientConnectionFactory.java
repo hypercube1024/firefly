@@ -6,6 +6,7 @@ import com.fireflysource.common.object.Assert;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -81,7 +82,7 @@ public class TcpClientConnectionFactory extends AbstractLifeCycle {
     }
 
     public CompletableFuture<TcpConnection> connect(InetSocketAddress inetSocketAddress, boolean secure) {
-        return secure ? secureTcpClient.connect(inetSocketAddress) : tcpClient.connect(inetSocketAddress);
+        return connect(inetSocketAddress, secure, Collections.emptyList());
     }
 
     public CompletableFuture<TcpConnection> connect(InetSocketAddress inetSocketAddress, boolean secure, List<String> supportedProtocols) {
@@ -96,10 +97,6 @@ public class TcpClientConnectionFactory extends AbstractLifeCycle {
             future = tcpClient.connect(inetSocketAddress);
         }
         return future;
-    }
-
-    public CompletableFuture<TcpConnection> connectWithSecure(InetSocketAddress inetSocketAddress, List<String> supportedProtocols) {
-        return secureTcpClient.connect(inetSocketAddress, supportedProtocols);
     }
 
     @Override

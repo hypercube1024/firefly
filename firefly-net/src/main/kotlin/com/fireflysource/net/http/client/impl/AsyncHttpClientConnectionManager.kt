@@ -16,7 +16,7 @@ import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.ApplicationProtocol
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.*
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.channels.Channel
@@ -49,9 +49,11 @@ class AsyncHttpClientConnectionManager(
         else sendByPool(address, request)
     }
 
-    override fun createHttpClientConnection(httpURI: HttpURI): CompletableFuture<HttpClientConnection> {
-        val address = buildAddress(httpURI)
-        return createHttpClientConnection(address)
+    override fun createHttpClientConnection(
+        httpURI: HttpURI,
+        supportedProtocols: List<String>
+    ): CompletableFuture<HttpClientConnection> {
+        return createHttpClientConnection(buildAddress(httpURI), supportedProtocols)
     }
 
     private fun sendByPool(address: Address, request: HttpClientRequest): CompletableFuture<HttpClientResponse> {
@@ -62,13 +64,7 @@ class AsyncHttpClientConnectionManager(
     }
 
     private fun sendByNonPersistenceConnection(address: Address, request: HttpClientRequest) =
-        connectionFactory.connect(
-            address.socketAddress,
-            address.secure,
-            listOf(ApplicationProtocol.HTTP1.value)
-        ).thenCompose { connection ->
-            connection.beginHandshake().thenApply { createHttp1ClientConnection(connection) }
-        }.thenCompose { sendAndCloseConnection(it, request) }
+        createHttpClientConnection(address, listOf(HTTP1.value)).thenCompose { sendAndCloseConnection(it, request) }
 
     private fun sendAndCloseConnection(connection: HttpClientConnection, request: HttpClientRequest) =
         connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
@@ -228,30 +224,26 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private fun createHttpClientConnection(address: Address): CompletableFuture<HttpClientConnection> {
-        return createTcpConnection(address).thenCompose { connection ->
-            val httpConnection = if (connection.isSecureConnection) {
-                connection.beginHandshake().thenApply { applicationProtocol ->
-                    when (applicationProtocol) {
-                        ApplicationProtocol.HTTP2.value -> createHttp2ClientConnection(connection)
-                        else -> createHttp1ClientConnection(connection)
-                    }
+    private fun createHttpClientConnection(address: Address, supportedProtocols: List<String> = listOf()) =
+        createTcpConnection(address, supportedProtocols).thenCompose { createHttpClientConnection(it) }
+
+    private fun createHttpClientConnection(connection: TcpConnection): CompletableFuture<HttpClientConnection> {
+        return if (connection.isSecureConnection) {
+            connection.beginHandshake().thenApply { applicationProtocol ->
+                when (applicationProtocol) {
+                    HTTP2.value -> createHttp2ClientConnection(connection)
+                    else -> createHttp1ClientConnection(connection)
                 }
-            } else CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
-            httpConnection
-        }
+            }
+        } else CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
     }
 
-    private fun createTcpConnection(address: Address): CompletableFuture<TcpConnection> =
-        connectionFactory.connect(address.socketAddress, address.secure)
+    private fun createTcpConnection(address: Address, supportedProtocols: List<String> = listOf()) =
+        connectionFactory.connect(address.socketAddress, address.secure, supportedProtocols)
 
-    private fun createHttp1ClientConnection(connection: TcpConnection): HttpClientConnection {
-        return Http1ClientConnection(config, connection)
-    }
+    private fun createHttp1ClientConnection(connection: TcpConnection) = Http1ClientConnection(config, connection)
 
-    private fun createHttp2ClientConnection(connection: TcpConnection): HttpClientConnection {
-        return Http2ClientConnection(config, connection)
-    }
+    private fun createHttp2ClientConnection(connection: TcpConnection) = Http2ClientConnection(config, connection)
 
     override fun init() {
         connectionFactory.start()
