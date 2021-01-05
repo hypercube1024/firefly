@@ -88,6 +88,10 @@ fun openFileChannelAsync(file: Path, options: Set<OpenOption>) = blockingAsync {
     AsynchronousFileChannel.open(file, options, ioBlockingThreadPool)
 }
 
+fun listFilesAsync(dir: Path) = blockingAsync {
+    Files.list(dir)
+}
+
 fun readAllLinesAsync(file: Path, charset: Charset = StandardCharsets.UTF_8) = blockingAsync {
     Files.readAllLines(file, charset)
 }

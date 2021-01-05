@@ -3,7 +3,7 @@ package com.fireflysource
 /**
  * @author Pengtao Qiu
  */
-typealias f = `$`
+typealias fx = `$`
 typealias future = `$`.future
 typealias consumer = `$`.consumer
 typealias logger = `$`.logger

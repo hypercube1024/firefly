@@ -1,6 +1,6 @@
 package com.fireflysource.wechat.enterprise.group.bot.service
 
-import com.fireflysource.f
+import com.fireflysource.fx
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.MimeTypes
 import com.fireflysource.net.http.server.HttpServer
@@ -61,7 +61,7 @@ class TestGroupBotMessageService {
         val webHookUrl = "https://$host:$port$path"
 
         val server = createMockServer()
-        val client = f.createHttpClient()
+        val client = fx.createHttpClient()
         server.listen(host, port)
 
         val service = GroupBotMessageServiceFactory.create(webHookUrl, client)
@@ -74,7 +74,7 @@ class TestGroupBotMessageService {
     }
 
     private fun createMockServer(): HttpServer {
-        return f.createHttpServer()
+        return fx.createHttpServer()
             .router()
             .post("/cgi-bin/webhook/send")
             .handler { ctx ->

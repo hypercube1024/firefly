@@ -2,7 +2,7 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
-import com.fireflysource.f
+import com.fireflysource.fx
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 
@@ -13,7 +13,7 @@ fun main(): Unit = runBlocking {
 
     val count = 1
     (1..count).forEach {
-        val response = f.httpClient()
+        val response = fx.httpClient()
             .get("http://nghttp2.org")
             .putQueryString("name", "PT_$it")
             .upgradeHttp2()
