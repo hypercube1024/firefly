@@ -14,6 +14,8 @@ import java.io.Closeable
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.OpenOption
@@ -84,6 +86,10 @@ fun openFileChannelAsync(file: Path, vararg options: OpenOption) = blockingAsync
 
 fun openFileChannelAsync(file: Path, options: Set<OpenOption>) = blockingAsync {
     AsynchronousFileChannel.open(file, options, ioBlockingThreadPool)
+}
+
+fun readAllLinesAsync(file: Path, charset: Charset = StandardCharsets.UTF_8) = blockingAsync {
+    Files.readAllLines(file, charset)
 }
 
 fun readAllBytesAsync(file: Path) = blockingAsync {
