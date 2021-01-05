@@ -71,20 +71,13 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <metrics.version>4.1.14</metrics.version>
-        <rolling-metrics.version>2.0.5</rolling-metrics.version>
-        <hdr-histogram.version>2.1.12</hdr-histogram.version>
         <jackson.version>2.11.4</jackson.version>
-        <woodstox-core-asl.version>4.4.1</woodstox-core-asl.version>
-        <msgpack.version>0.8.21</msgpack.version>
-        <redisson.version>3.13.6</redisson.version>
         <conscrypt.version>2.5.1</conscrypt.version>
-        <bouncycastle.version>1.67</bouncycastle.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>2020.0.2</spring.reactor.version>
-        <jcommander.version>1.78</jcommander.version>
 
         <!-- test lib -->
         <junit.version>5.7.0</junit.version>
@@ -137,39 +130,12 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- metrics -->
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-core</artifactId>
-                <version>${metrics.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-healthchecks</artifactId>
-                <version>${metrics.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.vladimir-bukhtoyarov</groupId>
-                <artifactId>rolling-metrics</artifactId>
-                <version>${rolling-metrics.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hdrhistogram</groupId>
-                <artifactId>HdrHistogram</artifactId>
-                <version>${hdr-histogram.version}</version>
-            </dependency>
-
             <!-- db -->
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.redisson</groupId>
-                <artifactId>redisson</artifactId>
-                <version>${redisson.version}</version>
             </dependency>
 
             <!-- kotlin lib -->
@@ -198,12 +164,6 @@
                 <artifactId>kotlinx-coroutines-reactor</artifactId>
                 <version>${kotlin.coroutine.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-test-junit</artifactId>
-                <version>${kotlin.version}</version>
-                <scope>test</scope>
-            </dependency>
 
             <!-- junit -->
             <dependency>
@@ -227,13 +187,11 @@
                 <artifactId>conscrypt-openjdk-uber</artifactId>
                 <version>${conscrypt.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.openjsse</groupId>
                 <artifactId>openjsse</artifactId>
@@ -255,42 +213,6 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-ion</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-protobuf</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>woodstox-core-asl</artifactId>
-                <version>${woodstox-core-asl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.msgpack</groupId>
-                <artifactId>jackson-dataformat-msgpack</artifactId>
-                <version>${msgpack.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-                <version>${jcommander.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
