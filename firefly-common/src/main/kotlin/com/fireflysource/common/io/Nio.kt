@@ -1,15 +1,19 @@
+@file:Suppress("BlockingMethodInNonBlockingContext", "KDocUnresolvedReference")
+
 package com.fireflysource.common.io
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.ioBlockingThreadPool
 import com.fireflysource.common.coroutine.blocking
 import com.fireflysource.common.coroutine.blockingAsync
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.Closeable
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
-import java.nio.channels.CompletionHandler
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.OpenOption
@@ -71,27 +75,22 @@ suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
  * Close in the I/O blocking coroutine dispatcher
  */
 fun Closeable.closeJob() = blocking {
-    @Suppress("BlockingMethodInNonBlockingContext")
     close()
 }
 
 fun openFileChannelAsync(file: Path, vararg options: OpenOption) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     AsynchronousFileChannel.open(file, setOf(*options), ioBlockingThreadPool)
 }
 
 fun openFileChannelAsync(file: Path, options: Set<OpenOption>) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     AsynchronousFileChannel.open(file, options, ioBlockingThreadPool)
 }
 
 fun readAllBytesAsync(file: Path) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAllBytes(file)
 }
 
 fun deleteIfExistsAsync(file: Path) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     Files.deleteIfExists(file)
 }
 
@@ -100,12 +99,10 @@ fun existsAsync(file: Path, vararg options: LinkOption) = blockingAsync {
 }
 
 fun readAttributesAsync(file: Path, vararg options: LinkOption) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     Files.readAttributes(file, BasicFileAttributes::class.java, *options)
 }
 
 fun writeAsync(file: Path, iterable: Iterable<CharSequence>, vararg options: OpenOption) = blockingAsync {
-    @Suppress("BlockingMethodInNonBlockingContext")
     Files.write(file, iterable, *options)
 }
 
