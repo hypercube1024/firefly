@@ -176,8 +176,20 @@ class AsyncHttpClientConnectionManager(
             if (future.isDone) return
 
             if (message.retry <= config.clientRetryCount) {
-                sendMessage(RequestMessage(request, future, message.retry + 1))
+                val retryCount = message.retry + 1
+                log.warn {
+                    "HTTP client request failure. The client will retry request. " +
+                            "retryCount: $retryCount, " +
+                            "url: ${request.uri}, " +
+                            "info:  ${ex.javaClass.name}  ${ex.message}"
+                }
+                sendMessage(RequestMessage(request, future, retryCount))
             } else {
+                log.warn {
+                    "HTTP client request failure. " +
+                            "url: ${request.uri}, " +
+                            "info:  ${ex.javaClass.name}  ${ex.message}"
+                }
                 future.completeExceptionally(ex)
             }
         }
