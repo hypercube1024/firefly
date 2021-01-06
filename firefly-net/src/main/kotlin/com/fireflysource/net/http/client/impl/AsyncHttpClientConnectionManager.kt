@@ -90,8 +90,8 @@ class AsyncHttpClientConnectionManager(
         private val httpClientConnections: Array<HttpClientConnection?> = arrayOfNulls(config.connectionPoolSize)
         private val channel: Channel<ClientRequestMessage> = Channel(Channel.UNLIMITED)
         private val checkJob = event {
-            delay(TimeUnit.SECONDS.toMillis(config.timeout / 2))
-            sendMessage(CheckMessage)
+            delay(TimeUnit.SECONDS.toMillis(config.checkConnectionLiveInterval))
+            sendMessage(CheckConnectionLiveMessage)
         }
 
         init {
@@ -104,15 +104,13 @@ class AsyncHttpClientConnectionManager(
 
         override fun init() {
             event {
-                checkAndCreateConnections()
-
                 requestLoop@ while (true) {
                     when (val message = channel.receive()) {
                         is RequestMessage -> handleRequest(message)
                         is UnhandledRequestMessage -> processUnhandledRequestInConnection(message)
-                        is CheckMessage -> checkAndCreateConnections()
+                        is CheckConnectionLiveMessage -> checkConnectionLive()
                         is StopMessage -> {
-                            handleStop()
+                            onStop()
                             break@requestLoop
                         }
                     }
@@ -130,7 +128,7 @@ class AsyncHttpClientConnectionManager(
             checkJob.cancel()
         }
 
-        private fun handleStop() {
+        private fun onStop() {
             httpClientConnections.forEach { it?.closeFuture() }
             processUnhandledRequestInPool()
         }
@@ -217,7 +215,7 @@ class AsyncHttpClientConnectionManager(
             return newConnection
         }
 
-        private suspend fun checkAndCreateConnections() {
+        private suspend fun checkConnectionLive() {
             (0..maxIndex).forEach { index ->
                 try {
                     getConnection(index)
@@ -281,5 +279,5 @@ class UnhandledRequestMessage(
     val connectionId: Int, val index: Int
 ) : ClientRequestMessage()
 
-object CheckMessage : ClientRequestMessage()
+object CheckConnectionLiveMessage : ClientRequestMessage()
 object StopMessage : ClientRequestMessage()
