@@ -148,7 +148,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 log.info { "Upgrade to Websocket success. id: ${connection.id}" }
             }
             else -> {
-                connection.notifyUpgradeProtocol(false)
+                connection.parseNextRequest()
                 connectionListener.onHttpRequestComplete(context).await()
             }
         }
@@ -157,8 +157,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun notifyParsingJobUpgradeProtocolSuccess() {
         endRequestHandler()
-        connection.notifyUpgradeProtocol(true)
-        connection.getParseRequestJob()?.join()
+        connection.endParsingJob()
         log.info { "Upgrade protocol success. Exit HTTP1 parser. id: ${connection.id}" }
     }
 
@@ -258,7 +257,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         val ctx = context ?: newContext(request)
         try {
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
-            connection.notifyUpgradeProtocol(false)
+            connection.parseNextRequest()
             connectionListener.onException(ctx, exception).await()
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server on exception. id: ${connection.id}" }

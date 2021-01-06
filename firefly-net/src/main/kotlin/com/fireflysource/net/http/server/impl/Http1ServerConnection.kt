@@ -40,9 +40,7 @@ class Http1ServerConnection(
         parseLoop@ while (true) {
             try {
                 parser.parseAll(tcpConnection)
-                if (waitToUpgradeProtocol()) {
-                    break@parseLoop
-                }
+                if (isEndParsingJob()) break@parseLoop
             } catch (e: IOException) {
                 log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
                 break@parseLoop
@@ -57,10 +55,15 @@ class Http1ServerConnection(
         }
     }
 
-    private suspend fun waitToUpgradeProtocol() = upgradeProtocolSignal.wait()
+    private suspend fun isEndParsingJob() = upgradeProtocolSignal.wait()
 
-    fun notifyUpgradeProtocol(success: Boolean) {
-        upgradeProtocolSignal.notify(success)
+    fun parseNextRequest() {
+        upgradeProtocolSignal.notify(false)
+    }
+
+    suspend fun endParsingJob() {
+        upgradeProtocolSignal.notify(true)
+        parseRequestJob?.join()
     }
 
     fun resetParser() {
@@ -73,8 +76,6 @@ class Http1ServerConnection(
     fun getHeaderBufferSize() = config.headerBufferSize
 
     fun sendResponseMessage(message: Http1ResponseMessage) = responseHandler.sendResponseMessage(message)
-
-    fun getParseRequestJob() = parseRequestJob
 
     suspend fun endResponseHandler() {
         responseHandler.endResponseHandler()
