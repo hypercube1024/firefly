@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.`object`.Assert
-import com.fireflysource.common.coroutine.Signal
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
@@ -14,6 +13,7 @@ import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.TcpCoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.CancellationException
@@ -32,43 +32,49 @@ class Http1ServerConnection(
     private val parser = HttpParser(requestHandler)
     private val responseHandler = Http1ServerResponseHandler(this)
     private val beginning = AtomicBoolean(false)
-    private val upgradeProtocolSignal: Signal<Boolean> = Signal()
+    private val channel: Channel<ParseHttpPacketMessage> = Channel(Channel.UNLIMITED)
     private var parseRequestJob: Job? = null
     private var generateResponseJob: Job? = null
 
     private fun parseRequestJob() = coroutineScope.launch {
         parseLoop@ while (true) {
-            try {
-                parser.parseAll(tcpConnection)
-                if (isEndParsingJob()) break@parseLoop
-            } catch (e: IOException) {
-                log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
-                break@parseLoop
-            } catch (e: CancellationException) {
-                log.info { "Cancel HTTP1 parsing. message: ${e.message} id: $id" }
-                break@parseLoop
-            } catch (e: Exception) {
-                log.error(e) { "Parse HTTP1 request exception. id: $id" }
-            } finally {
-                resetParser()
+            when (channel.receive()) {
+                is ParseNextHttpPacket -> parseNextHttpPacket()
+                is ExitHttpParser -> {
+                    log.info { "Exit the HTTP server parser. id: $id" }
+                    break@parseLoop
+                }
             }
         }
     }
 
-    private suspend fun isEndParsingJob() = upgradeProtocolSignal.wait()
-
-    fun parseNextRequest() {
-        upgradeProtocolSignal.notify(false)
+    private suspend fun parseNextHttpPacket() {
+        try {
+            parser.parseAll(tcpConnection)
+        } catch (e: IOException) {
+            log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
+            channel.offer(ExitHttpParser)
+        } catch (e: CancellationException) {
+            log.info { "Cancel HTTP1 parsing. message: ${e.message} id: $id" }
+            channel.offer(ExitHttpParser)
+        } catch (e: Exception) {
+            log.error(e) { "Parse HTTP1 request exception. id: $id" }
+        } finally {
+            resetParser()
+        }
     }
 
-    suspend fun endParsingJob() {
-        upgradeProtocolSignal.notify(true)
+    fun parseNextRequest() {
+        channel.offer(ParseNextHttpPacket)
+    }
+
+    suspend fun endHttpParser() {
+        channel.offer(ExitHttpParser)
         parseRequestJob?.join()
     }
 
     fun resetParser() {
         parser.reset()
-        upgradeProtocolSignal.reset()
     }
 
     private fun generateResponseJob() = responseHandler.generateResponseJob()
@@ -89,6 +95,7 @@ class Http1ServerConnection(
             }
             parseRequestJob = parseRequestJob()
             generateResponseJob = generateResponseJob()
+            parseNextRequest()
         }
     }
 
@@ -107,3 +114,7 @@ class Http1ServerConnection(
 
     override fun getTcpConnection(): TcpConnection = tcpConnection
 }
+
+sealed class ParseHttpPacketMessage
+object ParseNextHttpPacket : ParseHttpPacketMessage()
+object ExitHttpParser : ParseHttpPacketMessage()

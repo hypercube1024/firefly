@@ -127,23 +127,23 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
             isHttpTunnel(context) -> {
                 val accept = connectionListener.onAcceptHttpTunnel(context.request).await()
                 if (accept) {
-                    notifyParsingJobUpgradeProtocolSuccess()
+                    endHttpParser()
                     switchHttpTunnel(context)
-                    connection.endResponseHandler()
+                    endResponseHandler()
                     log.info { "Establish HTTP tunnel success. id: ${connection.id}" }
                 } else {
                     refuseHttpTunnelRequest(context)
                 }
             }
             isUpgradeHttp2(context) -> {
-                notifyParsingJobUpgradeProtocolSuccess()
-                connection.endResponseHandler()
+                endHttpParser()
+                endResponseHandler()
                 switchToHttp2(context)
                 log.info { "Upgrade to HTTP2 success. id: ${connection.id}" }
             }
             isUpgradeWebsocket(context) -> {
-                notifyParsingJobUpgradeProtocolSuccess()
-                connection.endResponseHandler()
+                endHttpParser()
+                endResponseHandler()
                 switchToWebSocket(context)
                 log.info { "Upgrade to Websocket success. id: ${connection.id}" }
             }
@@ -155,10 +155,14 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         log.debug { "HTTP1 server handles request success. id: ${connection.id}" }
     }
 
-    private suspend fun notifyParsingJobUpgradeProtocolSuccess() {
-        endRequestHandler()
-        connection.endParsingJob()
+    private suspend fun endHttpParser() {
+        parserChannel.offer(EndRequestHandler)
+        connection.endHttpParser()
         log.info { "Upgrade protocol success. Exit HTTP1 parser. id: ${connection.id}" }
+    }
+
+    private suspend fun endResponseHandler() {
+        connection.endResponseHandler()
     }
 
     private fun isHttpTunnel(ctx: RoutingContext): Boolean {
@@ -247,10 +251,6 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
                 "Upgrade: h2c\r\n\r\n").toBuffer()
         connection.tcpConnection.writeAndFlush(message).await()
         log.info { "Server response 101 Switching Protocols. upgrade: h2c, id: ${connection.id}" }
-    }
-
-    private fun endRequestHandler() {
-        parserChannel.offer(EndRequestHandler)
     }
 
     private suspend fun notifyException(request: MetaData.Request?, context: RoutingContext?, exception: Throwable) {
