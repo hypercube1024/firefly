@@ -257,13 +257,18 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         val ctx = context ?: newContext(request)
         try {
             log.error(exception) { "HTTP1 server parser exception. id: ${connection.id}" }
-            connection.parseNextRequest()
             connectionListener.onException(ctx, exception).await()
         } catch (e: Exception) {
-            log.error(e) { "HTTP1 server on exception. id: ${connection.id}" }
+            log.error(e) { "HTTP1 server handles exception failure. id: ${connection.id}" }
         }
         if (ctx == null) {
+            endHttpParser()
+            endResponseHandler()
             connection.closeFuture()
+        } else {
+            if (!ctx.request.isRequestComplete) {
+                connection.parseNextRequest()
+            }
         }
     }
 

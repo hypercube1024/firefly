@@ -6,12 +6,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 inline fun <T> Channel<T>.pollAll(crossinline block: (T) -> Unit) {
     while (true) {
         val message = this.poll()
-        if (message != null) block(message) else break
+        if (message != null) block(message)
+        else break
     }
 }
 
+fun <T> Channel<T>.clear() {
+    this.pollAll { }
+}
+
 class Signal<T> {
-    private val channel: Channel<T> = Channel(Channel.UNLIMITED)
+    private val channel: Channel<T> = Channel(1)
     private val notified = AtomicBoolean(false)
 
     suspend fun wait(): T = channel.receive()
@@ -24,6 +29,5 @@ class Signal<T> {
 
     fun reset() {
         notified.set(false)
-        channel.pollAll { }
     }
 }
