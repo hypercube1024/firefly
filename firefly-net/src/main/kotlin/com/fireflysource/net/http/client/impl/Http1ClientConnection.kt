@@ -33,6 +33,7 @@ import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.exception.UpgradeWebSocketConnectionException
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection
 import com.fireflysource.net.websocket.common.model.AcceptHash
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -86,10 +87,17 @@ class Http1ClientConnection(
                 }
 
                 handler.init(message.contentHandler, message.expectServerAcceptsContent)
-                generateRequestAndFlushData(message)
-                log.debug("HTTP1 client generates request complete. id: $id")
-                val closed = parseResponse(message).complete(message)
-                if (closed) {
+                val exit = if (message.expectServerAcceptsContent) {
+                    generateRequestAndFlushData(message)
+                    log.debug("HTTP1 client generates request complete. id: $id")
+                    parseAndAwaitResponse(message)
+                } else {
+                    val f = async { parseAndAwaitResponse(message) }
+                    generateRequestAndFlushData(message)
+                    f.await()
+                }
+
+                if (exit) {
                     break@handleRequestLoop
                 }
                 if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) {
@@ -99,11 +107,11 @@ class Http1ClientConnection(
                     break@handleRequestLoop
                 }
             } catch (e: IOException) {
-                log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
+                log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
                 completeResponseExceptionally(message, e)
                 break@handleRequestLoop
             } catch (e: Exception) {
-                log.error(e) { "HTTP1 client handler exception. id: $id" }
+                log.error { "HTTP1 client handler exception. id: $id info: ${e.javaClass.name} ${e.message}" }
                 completeResponseExceptionally(message, e)
                 break@handleRequestLoop
             } finally {
@@ -112,17 +120,23 @@ class Http1ClientConnection(
                 generator.reset()
             }
         }
-    }.invokeOnCompletion { cause ->
-        if (cause != null) {
-            log.info { "The HTTP1 request message job completion. cause: ${cause.message}" }
+    }.invokeOnCompletion { e ->
+        if (e != null) {
+            log.info { "The HTTP1 request message job completion. info: ${e.javaClass.name} ${e.message}" }
         }
+        processUnhandledRequest()
+    }
+
+    private fun processUnhandledRequest() {
         when {
             isUpgradeToHttp2Success() -> requestChannel.pollAll { message ->
-                log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
-                val future = message.response
-                sendRequestViaHttp2(message.httpClientRequest)
-                    .thenAccept { future.complete(it) }
-                    .exceptionallyAccept { future.completeExceptionally(it) }
+                if (!message.response.isDone) {
+                    log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
+                    val future = message.response
+                    sendRequestViaHttp2(message.httpClientRequest)
+                        .thenAccept { future.complete(it) }
+                        .exceptionallyAccept { future.completeExceptionally(it) }
+                }
             }
             else -> requestChannel.pollAll { message ->
                 if (!message.response.isDone) {
@@ -143,16 +157,22 @@ class Http1ClientConnection(
         closeFuture()
     }
 
-    private suspend fun HttpClientResponse.complete(message: RequestMessage): Boolean {
+    private suspend fun parseAndAwaitResponse(message: RequestMessage): Boolean {
+        val response = parseResponse(message)
+        return complete(response, message)
+    }
+
+    private suspend fun complete(response: HttpClientResponse, message: RequestMessage): Boolean {
         val request = message.request
-        val response = this
-        val closed = response.httpFields.isCloseConnection(response.httpVersion)
+        val isNonPersistence = response.httpFields.isCloseConnection(response.httpVersion)
                 || request.fields.isCloseConnection(request.httpVersion)
-        if (closed) {
-            this@Http1ClientConnection.useAwait { message.response.complete(response) }
-            log.debug { "HTTP1 connection closed. id: $id, closed: ${this@Http1ClientConnection.isClosed}" }
-        } else message.response.complete(response)
-        return closed
+        if (isNonPersistence) {
+            this.useAwait { message.response.complete(response) }
+            log.debug { "HTTP1 connection closed. id: $id, closed: ${this.isClosed}" }
+        } else {
+            message.response.complete(response)
+        }
+        return isNonPersistence
     }
 
     private suspend fun parseResponse(message: RequestMessage): HttpClientResponse {
@@ -249,14 +269,23 @@ class Http1ClientConnection(
         return httpVersion == HttpVersion.HTTP_2 && http2ClientConnection != null
     }
 
-    private suspend fun serverAccepted(): Boolean {
-        parser.parse(tcpConnection) { it.ordinal >= HttpParser.State.HEADER.ordinal }
-        return handler.serverAccepted()
+    private suspend fun waitServerAcceptedContent(): Boolean {
+        val accepted = try {
+            parser.parse(tcpConnection) { it.ordinal >= HttpParser.State.HEADER.ordinal }
+            handler.isServerAcceptedContent()
+        } catch (e: Exception) {
+            log.error { "wait server accepted content exception. id: $id info: ${e.javaClass.name} ${e.message}" }
+            false
+        }
+        if (accepted) {
+            parser.reset()
+        }
+        return accepted
     }
 
     private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
         var accepted = false
-        genLoop@ while (true) {
+        generateRequestLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
                 COMMITTED -> {
@@ -264,14 +293,13 @@ class Http1ClientConnection(
                         if (accepted) {
                             generateContent(requestMessage)
                         } else {
-                            if (serverAccepted()) {
+                            if (waitServerAcceptedContent()) {
                                 accepted = true
-                                parser.reset()
                                 generateContent(requestMessage)
                                 log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
                             } else {
                                 requestMessage.contentProvider?.closeFuture()?.await()
-                                break@genLoop
+                                break@generateRequestLoop
                             }
                         }
                     } else generateContent(requestMessage)
@@ -280,7 +308,7 @@ class Http1ClientConnection(
                 END -> {
                     tcpConnection.flush().await()
                     requestMessage.contentProvider?.closeFuture()?.await()
-                    break@genLoop
+                    break@generateRequestLoop
                 }
                 else -> throw Http1GeneratingResultException("The HTTP client generator state error. ${generator.state}")
             }

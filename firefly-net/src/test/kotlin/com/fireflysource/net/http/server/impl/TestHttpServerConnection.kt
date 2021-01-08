@@ -584,9 +584,9 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
-    //    @ParameterizedTest
-//    @MethodSource("testParametersProvider")
-//    @DisplayName("should response 413 when the multi-part too large.")
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 413 when the multi-part too large.")
     fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking {
         val count = 20 // TODO http1 client close connection exception
 
@@ -629,6 +629,8 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     CompletableFuture.allOf(*futures.toTypedArray()).await()
                     val allDone = futures.all { it.isDone }
                     assertTrue(allDone)
+                    val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                    println("failure count: $failureCount")
 
                     val response = futures[0].await()
                     println(response)
@@ -642,9 +644,9 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
         finish(count, time, httpClient, httpServer)
     }
 
-    //    @ParameterizedTest
-//    @MethodSource("testParametersProvider")
-//    @DisplayName("should response 413 when the http body too large.")
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should response 413 when the http body too large.")
     fun testHttpBodyTooLarge(protocol: String, schema: String): Unit = runBlocking {
         val count = 20 // TODO http1 client close connection exception
 
@@ -670,6 +672,8 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     CompletableFuture.allOf(*futures.toTypedArray()).await()
                     val allDone = futures.all { it.isDone }
                     assertTrue(allDone)
+                    val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                    println("failure count: $failureCount")
 
                     val response = futures[0].await()
                     println(response)

@@ -112,7 +112,7 @@ abstract class AsyncHttp2Connection(
                     log.debug { "Stashed data frame is not empty. Stash a data frame. stream: $http2Stream" }
                 }
             } catch (e: Exception) {
-                log.error(e) { "flush data frame exception." }
+                log.error { "flush data frame exception. ${e.javaClass.name} ${e.message}" }
                 frameEntry.result.accept(createFailedResult(-1L, e))
             }
         }

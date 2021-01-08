@@ -98,7 +98,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                         result.accept(Result.SUCCESS)
                     }
                 } catch (e: Exception) {
-                    log.error(e) { "HTTP2 server accepts content exception. id: ${stream.id}" }
+                    log.error { "HTTP2 server accepts content exception. id: ${stream.id} info: ${e.javaClass.name} ${e.message}" }
                     notifyException(context, e)
                         .thenAccept { result.accept(Result.createFailedResult(e)) }
                         .exceptionallyAccept { result.accept(Result.createFailedResult(e)) }

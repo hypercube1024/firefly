@@ -18,7 +18,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
-    private var serverAccepted: Boolean = false
+    private var isServerAcceptedContent: Boolean = false
 
     fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean) {
         this.contentHandler = contentHandler
@@ -38,9 +38,9 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
         if (expectServerAcceptsContent) {
             if (status == HttpStatus.CONTINUE_100) {
-                serverAccepted = true
+                isServerAcceptedContent = true
             } else {
-                serverAccepted = false
+                isServerAcceptedContent = false
                 updateResponseLine()
             }
             expectServerAcceptsContent = false
@@ -93,7 +93,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         return responseChannel.receive()
     }
 
-    fun serverAccepted(): Boolean = serverAccepted
+    fun isServerAcceptedContent(): Boolean = isServerAcceptedContent
 
     fun reset() {
         response.recycle()
