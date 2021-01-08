@@ -50,13 +50,13 @@ Add maven dependency in your pom.xml.
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly</artifactId>
-        <version>5.0.0-alpha4</version>
+        <version>5.0.0-alpha5</version>
     </dependency>
 
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-slf4j</artifactId>
-        <version>5.0.0-alpha4</version>
+        <version>5.0.0-alpha5</version>
     </dependency>
 </dependencics>
 ```
@@ -70,13 +70,13 @@ Add log configuration file "firefly-log.xml" to the classpath.
     <logger>
         <name>firefly-system</name>
         <level>INFO</level>
-        <path>${log.path}</path>
+        <path>logs</path>
     </logger>
 
     <logger>
         <name>firefly-monitor</name>
         <level>INFO</level>
-        <path>${log.path}</path>
+        <path>logs</path>
     </logger>
 </loggers>
 ```
