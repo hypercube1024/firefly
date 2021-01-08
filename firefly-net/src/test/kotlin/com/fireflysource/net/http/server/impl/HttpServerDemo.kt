@@ -9,20 +9,22 @@ import java.nio.file.Paths
 import java.util.*
 
 /*
-wrk -t6 -c12 -d60s --latency http://localhost:9999/test
+Intel i5 1.4GHz 16GB macbook pro 13
+
+wrk -t4 -c16 -d60s --latency http://localhost:9999/test
 Running 1m test @ http://localhost:9999/test
-6 threads and 12 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-Latency   140.75us   41.13us   2.74ms   97.43%
-Req/Sec    13.92k   837.61    17.39k    75.68%
-Latency Distribution
-50%  137.00us
-75%  144.00us
-90%  153.00us
-99%  247.00us
-4993095 requests in 1.00m, 419.04MB read
-Requests/sec:  83080.51
-Transfer/sec:      6.97MB
+  4 threads and 16 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   176.68us   34.50us   4.43ms   76.07%
+    Req/Sec    22.00k     1.10k   25.58k    85.36%
+  Latency Distribution
+     50%  175.00us
+     75%  195.00us
+     90%  214.00us
+     99%  261.00us
+  5262054 requests in 1.00m, 441.61MB read
+Requests/sec:  87555.25
+Transfer/sec:      7.35MB
 */
 fun main() {
     val httpServer = HttpServerFactory.create()
