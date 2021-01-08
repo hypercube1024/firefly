@@ -88,13 +88,14 @@ class Http1ClientConnection(
 
                 handler.init(message.contentHandler, message.expectServerAcceptsContent)
                 val exit = if (message.expectServerAcceptsContent) {
+                    // flush content data after the server response 100 continue.
                     generateRequestAndFlushData(message)
-                    log.debug("HTTP1 client generates request complete. id: $id")
                     parseAndAwaitResponse(message)
                 } else {
-                    val f = async { parseAndAwaitResponse(message) }
+                    // avoid the request can not response the server error code when the I/O exception happened.
+                    val deferred = async { parseAndAwaitResponse(message) }
                     generateRequestAndFlushData(message)
-                    f.await()
+                    deferred.await()
                 }
 
                 if (exit) {
