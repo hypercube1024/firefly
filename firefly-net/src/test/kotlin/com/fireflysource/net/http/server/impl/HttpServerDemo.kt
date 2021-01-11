@@ -15,16 +15,16 @@ wrk -t4 -c16 -d60s --latency http://localhost:9999/test
 Running 1m test @ http://localhost:9999/test
   4 threads and 16 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   176.68us   34.50us   4.43ms   76.07%
-    Req/Sec    22.00k     1.10k   25.58k    85.36%
+    Latency   170.83us   34.94us   4.30ms   77.90%
+    Req/Sec    22.74k     0.99k   26.71k    81.82%
   Latency Distribution
-     50%  175.00us
-     75%  195.00us
-     90%  214.00us
-     99%  261.00us
-  5262054 requests in 1.00m, 441.61MB read
-Requests/sec:  87555.25
-Transfer/sec:      7.35MB
+     50%  170.00us
+     75%  189.00us
+     90%  207.00us
+     99%  252.00us
+  5438229 requests in 1.00m, 456.39MB read
+Requests/sec:  90486.34
+Transfer/sec:      7.59MB
 */
 fun main() {
     val httpServer = HttpServerFactory.create()
