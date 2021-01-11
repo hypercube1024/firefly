@@ -261,15 +261,17 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
         } catch (e: Exception) {
             log.error(e) { "HTTP1 server handles exception failure. id: ${connection.id}" }
         }
-        if (ctx == null) {
-            endHttpParser()
-            endResponseHandler()
-            connection.closeFuture()
-        } else {
-            if (!ctx.request.isRequestComplete) {
-                connection.parseNextRequest()
-            }
+        when {
+            exception is BadMessageException -> closeConnection()
+            ctx == null -> closeConnection()
+            !ctx.request.isRequestComplete -> connection.parseNextRequest()
         }
+    }
+
+    private suspend fun closeConnection() {
+        endHttpParser()
+        endResponseHandler()
+        connection.closeFuture()
     }
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
