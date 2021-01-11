@@ -82,7 +82,7 @@ class TestHttpClient {
     @DisplayName("should send the HTTP request no content successfully")
     fun testNoContent() = runBlocking {
         val httpClient = HttpClientFactory.create()
-        val count = 200_000
+        val count = 100
 
         val time = measureTimeMillis {
             val futures =
