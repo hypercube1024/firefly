@@ -20,7 +20,6 @@ import com.fireflysource.net.http.common.exception.Http1GeneratingResultExceptio
 import com.fireflysource.net.http.common.exception.NotSupportHttpVersionException
 import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
-import com.fireflysource.net.http.common.v1.decoder.parse
 import com.fireflysource.net.http.common.v1.decoder.parseAll
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator
 import com.fireflysource.net.http.common.v1.encoder.HttpGenerator.Result.*
@@ -272,7 +271,7 @@ class Http1ClientConnection(
 
     private suspend fun waitServerAcceptedContent(): Boolean {
         val accepted = try {
-            parser.parse(tcpConnection) { it.ordinal >= HttpParser.State.HEADER.ordinal }
+            parser.parseAll(tcpConnection)
             handler.isServerAcceptedContent()
         } catch (e: Exception) {
             log.error { "wait server accepted content exception. id: $id info: ${e.javaClass.name} ${e.message}" }

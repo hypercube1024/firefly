@@ -5,6 +5,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.TcpBasedHttpConnection
+import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.exception.HttpServerConnectionListenerNotSetException
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.http.common.v1.decoder.HttpParser
@@ -51,6 +52,9 @@ class Http1ServerConnection(
     private suspend fun parseNextHttpPacket() {
         try {
             parser.parseAll(tcpConnection)
+        } catch (e: BadMessageException) {
+            requestHandler.badMessage(e)
+            channel.offer(ExitHttpParser)
         } catch (e: IOException) {
             log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
             channel.offer(ExitHttpParser)

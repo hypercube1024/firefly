@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.fireflysource.net.http.common.model.HttpComplianceSection.NO_FIELD_FOLDING;
+import static com.fireflysource.net.http.common.model.HttpHeader.EXPECT;
+import static com.fireflysource.net.http.common.model.HttpHeaderValue.CONTINUE;
 import static com.fireflysource.net.http.common.v1.decoder.HttpParser.State;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -720,10 +722,12 @@ class HttpParserTest {
 
         HttpParser.ResponseHandler handler = new Handler();
         HttpParser parser = new HttpParser(handler);
+        System.out.println(buffer.remaining());
 
         while (!parser.isState(State.END)) {
             parser.parseNext(buffer);
         }
+        System.out.println(buffer.remaining());
 
         assertEquals("FOOGRADE", BufferUtils.toUTF8String(buffer));
     }
@@ -2121,7 +2125,7 @@ class HttpParserTest {
     }
 
     @Test
-    @DisplayName("should parse 100 successfully.")
+    @DisplayName("should parse 100 continue response successfully.")
     void testExpect100Continue() {
         ByteBuffer buffer1 = BufferUtils.toBuffer("HTTP/1.1 100 Continue\r\n");
         ByteBuffer buffer2 = BufferUtils.toBuffer("HTTP/1.1 200 OK\r\n");
@@ -2130,12 +2134,14 @@ class HttpParserTest {
                 "test");
         HttpParser.ResponseHandler handler = new Handler();
         HttpParser parser = new HttpParser(handler);
-        parser.parseNext(buffer1);
+        boolean exit = parser.parseNext(buffer1);
         assertEquals("HTTP/1.1", methodOrVersion);
         assertEquals("100", uriOrStatus);
         assertEquals("Continue", versionOrReason);
         assertEquals(State.HEADER, parser.getState());
+        assertTrue(exit);
         parser.reset();
+
         assertEquals(State.START, parser.getState());
         System.out.println(parser.getState());
 
@@ -2150,6 +2156,32 @@ class HttpParserTest {
         assertEquals("4", val[0]);
         assertEquals("test", content);
         System.out.println(parser.getState());
+    }
+
+    @Test
+    @DisplayName("should parse expect 100-continue request successfully.")
+    void testServerAcceptExpect100Header() {
+        ByteBuffer buffer = BufferUtils.toBuffer(
+                "POST /test/data HTTP/1.1\r\n" +
+                        "Host: localhost\r\n" +
+                        "Expect: 100-continue\r\n" +
+                        "Content-Length: 4\r\n" +
+                        "Accept-Encoding: gzip, deflated\r\n" +
+                        "Accept: unknown\r\n" + "\r\n");
+
+        ByteBuffer content = BufferUtils.toBuffer("test");
+
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        System.out.println(buffer.remaining());
+        boolean exit = parser.parseNext(buffer);
+        System.out.println(buffer.remaining());
+        assertTrue(exit);
+        assertEquals(State.CONTENT, parser.getState());
+
+        exit = parser.parseNext(content);
+        assertTrue(exit);
+        assertEquals(State.END, parser.getState());
     }
 
     @Test
@@ -2224,7 +2256,7 @@ class HttpParserTest {
         public boolean headerComplete() {
             content = null;
             headerCompleted = true;
-            return false;
+            return fields.stream().anyMatch(f -> f.getHeader() == EXPECT && f.getValue().equals(CONTINUE.getValue()));
         }
 
         @Override

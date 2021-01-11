@@ -45,7 +45,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
             }
             expectServerAcceptsContent = false
         } else updateResponseLine()
-        return false
+        return status == HttpStatus.CONTINUE_100
     }
 
     override fun parsedHeader(field: HttpField) {
