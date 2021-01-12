@@ -52,9 +52,8 @@ abstract class AbstractAioTcpConnection(
     private val socketChannelClosed: AtomicBoolean = AtomicBoolean(false)
     private val closeRequest: AtomicBoolean = AtomicBoolean(false)
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
-    private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
     private val outputMessageHandler = OutputMessageHandler()
-    private val inputMessageHandler = InputMessageHandler()
+    private val inputMessageHandler = InputMessageHandler(inputBufferSize)
 
     private inner class OutputMessageHandler {
         private val outputMessageChannel: Channel<OutputMessage> = Channel(UNLIMITED)
@@ -190,9 +189,10 @@ abstract class AbstractAioTcpConnection(
         }
     }
 
-    private inner class InputMessageHandler {
+    private inner class InputMessageHandler(inputBufferSize: Int) {
 
         private val inputMessageChannel: Channel<InputMessage> = Channel(UNLIMITED)
+        private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
 
         init {
             readJob()
