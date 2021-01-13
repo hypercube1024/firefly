@@ -32,12 +32,15 @@ import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.exception.UpgradeWebSocketConnectionException
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection
 import com.fireflysource.net.websocket.common.model.AcceptHash
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
 
@@ -91,20 +94,16 @@ class Http1ClientConnection(
                     generateRequestAndFlushData(message)
                     parseAndAwaitResponse(message)
                 } else {
-                    // avoid the request can not response the server error code when the I/O exception happened.
-                    val deferred = async { parseAndAwaitResponse(message) }
+                    // avoid the request can not response the server error code if the I/O exception happened during the client sends data.
+                    val responseDeferred = async { parseAndAwaitResponse(message) }
                     generateRequestAndFlushData(message)
-                    deferred.await()
+                    responseDeferred.await()
                 }
 
-                if (exit) {
-                    break@handleRequestLoop
-                }
-                if (message.expectUpgradeHttp2 && isUpgradeToHttp2Success()) {
-                    break@handleRequestLoop
-                }
-                if (message.expectUpgradeWebSocket && upgradeWebSocketSuccess) {
-                    break@handleRequestLoop
+                when {
+                    exit -> break@handleRequestLoop
+                    message.expectUpgradeHttp2 && isUpgradeToHttp2Success() -> break@handleRequestLoop
+                    message.expectUpgradeWebSocket && upgradeWebSocketSuccess -> break@handleRequestLoop
                 }
             } catch (e: IOException) {
                 log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
@@ -269,12 +268,17 @@ class Http1ClientConnection(
         return httpVersion == HttpVersion.HTTP_2 && http2ClientConnection != null
     }
 
-    private suspend fun waitServerAcceptedContent(): Boolean {
+    private suspend fun waitServerResponse100Continue(): Boolean {
         val accepted = try {
-            parser.parseAll(tcpConnection)
-            handler.isServerAcceptedContent()
+            withTimeout(Duration.ofSeconds(config.waitResponse100ContinueTimeout).toMillis()) {
+                parser.parseAll(tcpConnection)
+                handler.isServerAcceptedContent()
+            }
+        } catch (e: TimeoutCancellationException) {
+            log.info { "Wait server response 100 continue timeout. The client will send data." }
+            true
         } catch (e: Exception) {
-            log.error { "wait server accepted content exception. id: $id info: ${e.javaClass.name} ${e.message}" }
+            log.error { "Wait server response 100 continue failure. The client will not send data. id: $id info: ${e.javaClass.name} ${e.message}" }
             false
         }
         if (accepted) {
@@ -293,7 +297,7 @@ class Http1ClientConnection(
                         if (accepted) {
                             generateContent(requestMessage)
                         } else {
-                            if (waitServerAcceptedContent()) {
+                            if (waitServerResponse100Continue()) {
                                 accepted = true
                                 generateContent(requestMessage)
                                 log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
