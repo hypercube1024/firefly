@@ -36,13 +36,13 @@ public class PooledObject<T> implements AsyncCloseable {
     }
 
     @Override
-    public CompletableFuture<Void> closeFuture() {
+    public CompletableFuture<Void> closeAsync() {
         return pool.release(this);
     }
 
     @Override
     public void close() {
-        closeFuture();
+        closeAsync();
     }
 
     @Override

@@ -87,14 +87,14 @@ class CompressedServerOutputChannel(
         return output
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         compressedOutputStream?.close()
         outputStreamAdapter?.close()
-        return outputChannel.closeFuture()
+        return outputChannel.closeAsync()
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
     override fun isOpen(): Boolean = outputChannel.isOpen

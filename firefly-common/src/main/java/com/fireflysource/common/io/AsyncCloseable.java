@@ -5,6 +5,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface AsyncCloseable extends Closeable {
 
-    CompletableFuture<Void> closeFuture();
+    CompletableFuture<Void> closeAsync();
 
 }

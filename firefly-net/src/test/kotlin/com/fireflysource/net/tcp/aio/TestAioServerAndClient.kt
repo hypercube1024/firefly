@@ -128,7 +128,7 @@ class TestAioServerAndClient {
                                 messageCount.incrementAndGet()
 
                                 if (num == maxMessageCountPerOneConnection) {
-                                    connection.closeFuture().await()
+                                    connection.closeAsync().await()
                                     break@recvLoop
                                 }
                             }
@@ -257,7 +257,7 @@ class TestAioServerAndClient {
             }
         }
 
-        connection.closeFuture().await()
+        connection.closeAsync().await()
         println("close success")
         assertTrue(connection.isShutdownOutput)
         assertTrue(connection.isShutdownInput)

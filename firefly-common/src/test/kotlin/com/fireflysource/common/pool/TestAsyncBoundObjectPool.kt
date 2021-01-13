@@ -41,7 +41,7 @@ class TestAsyncBoundObjectPool {
                 assertTrue(pooledObject.getObject().id in 0..max)
                 println("1. get pooled object success. object: $pooledObject")
 
-                pooledObject.closeFuture().await()
+                pooledObject.closeAsync().await()
                 assertTrue(pooledObject.isReleased)
             }
 
@@ -92,9 +92,8 @@ class TestAsyncBoundObjectPool {
             }
         }
 
-        array.forEach { it.await().closeFuture().await() }
+        array.forEach { it.await().closeAsync().await() }
         pool.takePooledObject().use { assertTrue(it.getObject().id in 0..max) }
-        Unit
     }
 
     private fun createAsyncPool(

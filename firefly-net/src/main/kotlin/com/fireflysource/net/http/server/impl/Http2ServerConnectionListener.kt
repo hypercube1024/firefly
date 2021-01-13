@@ -80,7 +80,7 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
                     if (frame.isEndStream) {
                         val future = headerComplete
                         if (future != null) {
-                            future.thenCompose { context.request.contentHandler.closeFuture() }
+                            future.thenCompose { context.request.contentHandler.closeAsync() }
                                 .thenCompose { notifyRequestComplete(context) }
                                 .thenAccept { result.accept(Result.SUCCESS) }
                                 .exceptionallyAccept { e ->

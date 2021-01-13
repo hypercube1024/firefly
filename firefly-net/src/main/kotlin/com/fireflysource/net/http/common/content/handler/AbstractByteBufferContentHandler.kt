@@ -29,7 +29,7 @@ abstract class AbstractByteBufferContentHandler<T>(
         byteBufferList.add(byteBuffer)
     }
 
-    override fun closeFuture(): CompletableFuture<Void> = Result.DONE
+    override fun closeAsync(): CompletableFuture<Void> = Result.DONE
 
     override fun close() {
     }

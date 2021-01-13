@@ -99,7 +99,7 @@ class TestWebSocketServerAndClient {
             assertEquals("Server $i", clientReceivedMessage)
         }
 
-        webSocketConnection.closeFuture()
+        webSocketConnection.closeAsync()
         client.stop()
         server.stop()
     }

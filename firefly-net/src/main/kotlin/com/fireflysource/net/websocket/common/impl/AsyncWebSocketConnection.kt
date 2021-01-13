@@ -134,12 +134,12 @@ class AsyncWebSocketConnection(
         return sendFrame(closeFrame)
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         return close(StatusCode.NORMAL, null)
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
     override fun begin() {
@@ -156,7 +156,7 @@ class AsyncWebSocketConnection(
         parseFrameJob()
         ioState.addListener { state ->
             when (state) {
-                ConnectionState.CLOSED -> tcpConnection.closeFuture()
+                ConnectionState.CLOSED -> tcpConnection.closeAsync()
                 ConnectionState.CLOSING -> {
                     if (ioState.isOutputAvailable && ioState.isRemoteCloseInitiated) {
                         close(StatusCode.NORMAL, null)

@@ -299,7 +299,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             }
             .onHttpTunnelHandshakeComplete { connection ->
                 connection.write(BufferUtils.toBuffer("1234"))
-                    .thenCompose { connection.closeFuture() }
+                    .thenCompose { connection.closeAsync() }
             }
             .listen(address)
 
@@ -341,7 +341,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             }
             .onHttpTunnelHandshakeComplete { connection ->
                 connection.write(BufferUtils.toBuffer("1234"))
-                    .thenCompose { connection.closeFuture() }
+                    .thenCompose { connection.closeAsync() }
             }
             .listen(address)
 

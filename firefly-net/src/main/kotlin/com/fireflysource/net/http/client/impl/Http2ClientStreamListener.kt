@@ -42,7 +42,7 @@ class Http2ClientStreamListener(
 
     private fun onMessageComplete() {
         if (contentHandler != null) {
-            contentHandler.closeFuture()
+            contentHandler.closeAsync()
                 .thenAccept { future.complete(response) }
                 .exceptionallyAccept { future.completeExceptionally(it) }
         } else future.complete(response)

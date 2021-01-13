@@ -520,7 +520,7 @@ public interface RoutingContext {
      * @return The response future result.
      */
     default CompletableFuture<Void> end() {
-        return getResponse().commit().thenCompose(ignore -> getResponse().closeFuture());
+        return getResponse().commit().thenCompose(ignore -> getResponse().closeAsync());
     }
 
     /**

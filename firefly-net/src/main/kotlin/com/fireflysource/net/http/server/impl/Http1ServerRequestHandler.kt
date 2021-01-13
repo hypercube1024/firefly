@@ -117,7 +117,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun closeContentHandler(context: AsyncRoutingContext?) {
         requireNotNull(context)
-        context.request.contentHandler.closeFuture().await()
+        context.request.contentHandler.closeAsync().await()
     }
 
     private suspend fun notifyHttpRequestComplete(context: RoutingContext?) {
@@ -271,7 +271,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     private suspend fun closeConnection() {
         endHttpParser()
         endResponseHandler()
-        connection.closeFuture()
+        connection.closeAsync()
     }
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {

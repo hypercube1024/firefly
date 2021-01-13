@@ -50,7 +50,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                     .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE)
                     .contentProvider(DefaultContentProvider(e.code, e, ctx))
                     .end()
-                    .thenCompose { ctx.connection.closeFuture() }
+                    .thenCompose { ctx.connection.closeAsync() }
             } else {
                 ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
                     .setReason(HttpStatus.Code.INTERNAL_SERVER_ERROR.message)
@@ -82,7 +82,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         CompletableFuture.completedFuture(false)
     }
     private var onHttpTunnelHandshakeComplete: Function<TcpConnection, CompletableFuture<Void>> = Function {
-        it.closeFuture()
+        it.closeAsync()
     }
     private var onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
         Function { ctx -> ctx.response200ConnectionEstablished() }
@@ -98,7 +98,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
                     )
                 )
                 .end()
-                .thenCompose { ctx.connection.closeFuture() }
+                .thenCompose { ctx.connection.closeAsync() }
         }
 
 

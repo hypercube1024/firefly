@@ -155,7 +155,7 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
                 length < 0 -> break@writeLoop
             }
         }
-        provider.closeFuture().await()
+        provider.closeAsync().await()
     }
 
     private fun HttpServerContentProvider.getContentProviderBufferSize(): Int {
@@ -176,17 +176,17 @@ abstract class AbstractHttpServerResponse(private val httpServerConnection: Http
         }
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         val provider = contentProvider
         return if (provider == null) {
             httpServerConnection.coroutineScope.launch {
                 commit().await()
-                outputChannel.closeFuture().await()
+                outputChannel.closeAsync().await()
             }.asVoidFuture()
         } else Result.DONE
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 }

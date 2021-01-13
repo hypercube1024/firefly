@@ -29,11 +29,11 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
-        provider.closeFuture().await()
+        provider.closeAsync().await()
         val handler = MultiPartContentHandler()
 
         handler.accept(buffer, ctx)
-        handler.closeFuture().await()
+        handler.closeAsync().await()
         handler.getParts().forEach {
             val body = BufferUtils.allocate(64)
             val pos = body.flipToFill()
@@ -69,13 +69,13 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val ctx = mockRoutingContext(provider)
         val handler = MultiPartContentHandler()
-        provider.closeFuture().await()
+        provider.closeAsync().await()
 
         val buf = BufferUtils.toBuffer((1..100).joinToString { "a" })
         handler.accept(buf, ctx)
 
         val success = try {
-            handler.closeFuture().await()
+            handler.closeAsync().await()
             true
         } catch (e: Exception) {
             assertTrue(e is BadMessageException)
@@ -90,7 +90,7 @@ class TestMultiPartContentHandler {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
-        provider.closeFuture().await()
+        provider.closeAsync().await()
         val handler = MultiPartContentHandler(uploadFileSizeThreshold = 100)
 
         val buffers = LinkedList<ByteBuffer>()
@@ -103,7 +103,7 @@ class TestMultiPartContentHandler {
         }
 
         buffers.forEach { handler.accept(it, ctx) }
-        handler.closeFuture().await()
+        handler.closeAsync().await()
 
         val filePart = handler.getPart("file body")
         requireNotNull(filePart)

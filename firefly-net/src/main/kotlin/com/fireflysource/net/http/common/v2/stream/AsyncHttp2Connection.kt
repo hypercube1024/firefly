@@ -841,14 +841,14 @@ abstract class AsyncHttp2Connection(
         http2StreamMap.clear()
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
         close(ErrorCode.NO_ERROR.code, "no_error", futureToConsumer(future))
         return future
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
 

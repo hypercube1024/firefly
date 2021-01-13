@@ -145,7 +145,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
         http1ServerConnection.tcpConnection.flush().await()
         val result = generator.generateResponse(null, false, null, null, null, true)
         if (result == HttpGenerator.Result.SHUTDOWN_OUT || endResponse.closeConnection) {
-            http1ServerConnection.closeFuture()
+            http1ServerConnection.closeAsync()
             log.debug { "HTTP1 server connection is closing. id: ${http1ServerConnection.id}" }
         }
 

@@ -69,7 +69,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
                     is EndMultiPartProvider -> {
                         open = false
                         state = State.COMPLETE
-                        parts.forEach { part -> part.closeFuture().await() }
+                        parts.forEach { part -> part.closeAsync().await() }
                         break@readMessageLoop
                     }
                 }
@@ -137,7 +137,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         generatingJob.join()
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
         event {
             closeAwait()
@@ -278,8 +278,8 @@ class MultiPartContentProvider : HttpClientContentProvider {
             length = if (content.length() >= 0) headers.size + content.length() else -1
         }
 
-        override fun closeFuture(): CompletableFuture<Void> {
-            return content.closeFuture()
+        override fun closeAsync(): CompletableFuture<Void> {
+            return content.closeAsync()
         }
 
         override fun close() {

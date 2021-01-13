@@ -46,7 +46,7 @@ abstract class AbstractByteBufferContentProvider(private val content: ByteBuffer
         return future
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         close()
         return Result.DONE
     }

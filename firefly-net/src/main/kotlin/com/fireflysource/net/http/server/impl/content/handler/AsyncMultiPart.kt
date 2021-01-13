@@ -95,13 +95,13 @@ class AsyncMultiPart(
             }
 
             if (last) {
-                fileHandlerFuture = this.fileHandler?.closeFuture()
+                fileHandlerFuture = this.fileHandler?.closeAsync()
             }
         }
     }
 
     suspend fun closeFileHandler() {
-        fileHandler?.closeFuture()?.await()
+        fileHandler?.closeAsync()?.await()
     }
 
     override fun getContentType(): String = httpFields[HttpHeader.CONTENT_TYPE]
@@ -123,11 +123,11 @@ class AsyncMultiPart(
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
-        return getProvider().closeFuture()
+    override fun closeAsync(): CompletableFuture<Void> {
+        return getProvider().closeAsync()
             .thenCompose { deleteIfExistsAsync(path).asCompletableFuture() }
             .thenCompose { Result.DONE }
     }

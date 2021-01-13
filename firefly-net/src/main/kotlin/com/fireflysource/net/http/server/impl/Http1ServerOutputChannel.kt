@@ -61,7 +61,7 @@ class Http1ServerOutputChannel(
         return future
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         return if (closed.compareAndSet(false, true)) {
             val message = EndResponse(CompletableFuture(), closeConnection)
             http1ServerConnection.sendResponseMessage(message)
@@ -74,6 +74,6 @@ class Http1ServerOutputChannel(
     override fun isOpen(): Boolean = !closed.get()
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 }

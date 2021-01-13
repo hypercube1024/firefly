@@ -55,7 +55,7 @@ class DefaultContentProvider(
 
     override fun toByteBuffer(): ByteBuffer = provider.toByteBuffer()
 
-    override fun closeFuture(): CompletableFuture<Void> = provider.closeFuture()
+    override fun closeAsync(): CompletableFuture<Void> = provider.closeAsync()
 
     override fun close() = provider.close()
 

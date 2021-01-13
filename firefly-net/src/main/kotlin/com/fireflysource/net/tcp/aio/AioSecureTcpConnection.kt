@@ -115,7 +115,7 @@ class AioSecureTcpConnection(
 
     private suspend fun shutdownOutput(message: ShutdownOutput) {
         try {
-            tcpConnection.closeFuture().await()
+            tcpConnection.closeAsync().await()
             message.result.accept(Result.SUCCESS)
         } catch (e: Exception) {
             message.result.accept(Result.createFailedResult(e))

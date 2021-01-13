@@ -60,7 +60,7 @@ class TestFileContentProvider {
         (1..6).forEach { i ->
             assertEquals(i, readBuffer.int)
         }
-        provider.closeFuture().await()
+        provider.closeAsync().await()
         Unit
     }
 
@@ -92,7 +92,7 @@ class TestFileContentProvider {
         (3..6).forEach { i ->
             assertEquals(i, readBuffer.int)
         }
-        provider.closeFuture().await()
+        provider.closeAsync().await()
         Unit
     }
 }

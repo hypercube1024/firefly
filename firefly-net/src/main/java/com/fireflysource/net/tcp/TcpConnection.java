@@ -45,7 +45,7 @@ public interface TcpConnection extends Connection, ApplicationProtocolSelector, 
      *
      * @return The future result.
      */
-    default CompletableFuture<Void> closeFuture() {
+    default CompletableFuture<Void> closeAsync() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         close(futureToConsumer(future));
         return future;

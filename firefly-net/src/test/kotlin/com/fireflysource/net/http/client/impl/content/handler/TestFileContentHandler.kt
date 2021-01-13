@@ -45,7 +45,7 @@ class TestFileContentHandler {
             ByteBuffer.wrap(" handler".toByteArray())
         ).forEach { handler.accept(it, response) }
 
-        handler.closeFuture().await()
+        handler.closeAsync().await()
 
         val str = readAllBytesAsync(tmpFile).await()
         assertEquals("hello file handler", String(str))

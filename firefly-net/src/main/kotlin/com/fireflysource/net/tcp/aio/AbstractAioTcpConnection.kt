@@ -265,7 +265,7 @@ abstract class AbstractAioTcpConnection(
                 inputBuffer.copy().also { input.bufferFuture.complete(it) }
             } else {
                 shutdownInputAndClose()
-                closeFuture()
+                closeAsync()
                 failed(input, exception)
             }
             BufferUtils.clear(inputBuffer)

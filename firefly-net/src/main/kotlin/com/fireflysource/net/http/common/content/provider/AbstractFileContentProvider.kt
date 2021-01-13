@@ -83,7 +83,7 @@ abstract class AbstractFileContentProvider(
         throw UnsupportedOperationException("The file content does not support this method")
     }
 
-    override fun closeFuture(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
+    override fun closeAsync(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
         if (isOpen) readChannel.offer(EndReadFile)

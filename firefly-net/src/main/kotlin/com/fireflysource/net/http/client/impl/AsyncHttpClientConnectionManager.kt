@@ -67,7 +67,7 @@ class AsyncHttpClientConnectionManager(
         createHttpClientConnection(address, listOf(HTTP1.value)).thenCompose { sendAndCloseConnection(it, request) }
 
     private fun sendAndCloseConnection(connection: HttpClientConnection, request: HttpClientRequest) =
-        connection.send(request).thenCompose { response -> connection.closeFuture().thenApply { response } }
+        connection.send(request).thenCompose { response -> connection.closeAsync().thenApply { response } }
 
 
     private fun buildAddress(uri: HttpURI): Address {
@@ -129,7 +129,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         private fun onStop() {
-            httpClientConnections.forEach { it?.closeFuture() }
+            httpClientConnections.forEach { it?.closeAsync() }
             processUnhandledRequestInPool()
         }
 

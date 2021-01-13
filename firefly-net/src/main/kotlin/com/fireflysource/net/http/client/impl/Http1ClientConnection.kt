@@ -154,7 +154,7 @@ class Http1ClientConnection(
         if (!message.response.isDone) {
             message.response.completeExceptionally(e)
         }
-        closeFuture()
+        closeAsync()
     }
 
     private suspend fun parseAndAwaitResponse(message: RequestMessage): Boolean {
@@ -298,7 +298,7 @@ class Http1ClientConnection(
                                 generateContent(requestMessage)
                                 log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
                             } else {
-                                requestMessage.contentProvider?.closeFuture()?.await()
+                                requestMessage.contentProvider?.closeAsync()?.await()
                                 break@generateRequestLoop
                             }
                         }
@@ -307,7 +307,7 @@ class Http1ClientConnection(
                 COMPLETING -> completeContent()
                 END -> {
                     tcpConnection.flush().await()
-                    requestMessage.contentProvider?.closeFuture()?.await()
+                    requestMessage.contentProvider?.closeAsync()?.await()
                     break@generateRequestLoop
                 }
                 else -> throw Http1GeneratingResultException("The HTTP client generator state error. ${generator.state}")

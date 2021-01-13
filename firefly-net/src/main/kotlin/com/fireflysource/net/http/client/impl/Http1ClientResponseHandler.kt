@@ -89,7 +89,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     suspend fun complete(): HttpClientResponse {
-        contentHandler?.closeFuture()?.await()
+        contentHandler?.closeAsync()?.await()
         return responseChannel.receive()
     }
 

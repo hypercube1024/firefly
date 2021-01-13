@@ -82,7 +82,7 @@ class Http2ServerOutputChannel(
 
     override fun isOpen(): Boolean = closed.get()
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         if (closed.compareAndSet(false, true)) {
             writeOutputMessage()
             val trailers = response.trailerSupplier?.get()
@@ -97,7 +97,7 @@ class Http2ServerOutputChannel(
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
     private fun writeOutputMessage() {

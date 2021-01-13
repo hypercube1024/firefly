@@ -75,7 +75,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
         inputChannel.offer(WriteFileRequest(buffer))
     }
 
-    override fun closeFuture(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
+    override fun closeAsync(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
         inputChannel.offer(EndWriteFile)

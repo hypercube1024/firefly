@@ -68,7 +68,7 @@ suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
         throw e
     } finally {
         withContext(NonCancellable) {
-            this@useAwait?.closeFuture()?.await()
+            this@useAwait?.closeAsync()?.await()
         }
     }
 }

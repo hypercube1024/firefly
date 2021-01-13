@@ -264,7 +264,7 @@ class MultiPartContentHandler(
         multiPartChannel.offer(ParseMultiPartContent(byteBuffer))
     }
 
-    override fun closeFuture(): CompletableFuture<Void> {
+    override fun closeAsync(): CompletableFuture<Void> {
         val parsingJob = job
         return if (parsingJob != null) {
             if (parsingJob.isCompleted) complete()
@@ -283,7 +283,7 @@ class MultiPartContentHandler(
     }
 
     override fun close() {
-        closeFuture()
+        closeAsync()
     }
 
     fun getPart(name: String): MultiPart? {
