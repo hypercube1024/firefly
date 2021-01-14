@@ -90,6 +90,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         Function { ctx ->
             ctx.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407)
                 .setReason(HttpStatus.Code.PROXY_AUTHENTICATION_REQUIRED.message)
+                .put(HttpHeader.CONNECTION, HttpHeaderValue.CLOSE)
                 .contentProvider(
                     DefaultContentProvider(
                         HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407,
