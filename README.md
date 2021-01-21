@@ -50,13 +50,13 @@ Add maven dependency in your pom.xml.
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly</artifactId>
-        <version>5.0.0-alpha5</version>
+        <version>5.0.0-alpha6</version>
     </dependency>
 
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-slf4j</artifactId>
-        <version>5.0.0-alpha5</version>
+        <version>5.0.0-alpha6</version>
     </dependency>
 </dependencics>
 ```
