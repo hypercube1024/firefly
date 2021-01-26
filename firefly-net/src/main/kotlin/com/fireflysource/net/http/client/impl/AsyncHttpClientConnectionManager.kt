@@ -26,6 +26,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.math.absoluteValue
 
 class AsyncHttpClientConnectionManager(
     private val config: HttpConfig,
@@ -86,7 +87,6 @@ class AsyncHttpClientConnectionManager(
 
     private inner class HttpClientConnectionPool(val address: Address) : AbstractLifeCycle() {
         private var i = 0
-        private val maxIndex = config.connectionPoolSize - 1
         private val httpClientConnections: Array<HttpClientConnection?> = arrayOfNulls(config.connectionPoolSize)
         private val channel: Channel<ClientRequestMessage> = Channel(Channel.UNLIMITED)
         private val checkJob = event {
@@ -193,10 +193,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         private fun getIndex(): Int {
-            val index = if (i > maxIndex) {
-                i = 0
-                i
-            } else i
+            val index = i.absoluteValue % config.connectionPoolSize
             i++
             return index
         }
@@ -216,6 +213,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         private suspend fun checkConnectionLive() {
+            val maxIndex = config.connectionPoolSize - 1
             (0..maxIndex).forEach { index ->
                 try {
                     getConnection(index)
