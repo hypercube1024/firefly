@@ -57,7 +57,7 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.4.21</kotlin.version>
+        <kotlin.version>1.4.30</kotlin.version>
         <kotlin.coroutine.version>1.4.2</kotlin.coroutine.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
@@ -71,12 +71,12 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.11.4</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
         <conscrypt.version>2.5.1</conscrypt.version>
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.2</spring.reactor.version>
+        <spring.reactor.version>2020.0.3</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.7.0</junit.version>
