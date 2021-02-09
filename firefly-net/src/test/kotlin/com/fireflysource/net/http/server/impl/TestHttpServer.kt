@@ -28,7 +28,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should visit router chain successfully.")
-    fun testRouterChain(protocol: String, schema: String): Unit {
+    fun testRouterChain(protocol: String, schema: String) {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
