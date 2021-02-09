@@ -56,6 +56,8 @@ const val html = """
 """
 
 fun main() = runBlocking {
+    val host = "localhost"
+    val port = 8999
     val server = HttpServerFactory.create()
     server
         .router().get("/websocket/test")
@@ -70,15 +72,18 @@ fun main() = runBlocking {
         .onAcceptAsync { connection ->
             var id = 1
             while (true) {
-                connection.sendText("$id Server time: ${Date()}")
-                id += 2
-                delay(2000)
+                if (id < 10) {
+                    connection.sendText("$id Server time: ${Date()}")
+                    id += 2
+                    delay(2000)
+                } else break
             }
+            connection.closeAsync().await()
         }
-        .listen("localhost", 8999)
+        .listen(host, port)
 
     val client = HttpClientFactory.create()
-    val webSocketConnection = client.websocket("ws://localhost:8999/helloWebSocket")
+    val webSocketConnection = client.websocket("ws://$host:$port/helloWebSocket")
         .onMessage { frame, _ ->
             if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
                 println(frame.payloadAsUTF8)
@@ -91,10 +96,13 @@ fun main() = runBlocking {
     webSocketConnection.coroutineScope.launch {
         var id = 0
         while (true) {
-            webSocketConnection.sendText("$id Client time: ${Date()}")
-            id += 2
-            delay(2000)
+            if (id < 10) {
+                webSocketConnection.sendText("$id Client time: ${Date()}")
+                id += 2
+                delay(2000)
+            } else break
         }
+        webSocketConnection.closeAsync().await()
     }
 
     Unit
