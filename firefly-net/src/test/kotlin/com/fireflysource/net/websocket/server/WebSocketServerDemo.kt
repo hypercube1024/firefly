@@ -5,6 +5,7 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.frame.TextFrame
+import com.fireflysource.net.websocket.server.impl.onAcceptAsync
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -66,14 +67,13 @@ fun main() = runBlocking {
             }
             Result.DONE
         }
-        .onAccept { connection ->
-            connection.coroutineScope.launch {
-                while (true) {
-                    connection.sendText("Server time: ${Date()}")
-                    delay(1000)
-                }
+        .onAcceptAsync { connection ->
+            var id = 1
+            while (true) {
+                connection.sendText("$id Server time: ${Date()}")
+                id += 2
+                delay(2000)
             }
-            Result.DONE
         }
         .listen("localhost", 8999)
 
@@ -87,11 +87,15 @@ fun main() = runBlocking {
         }
         .connect()
         .await()
-    launch {
+
+    webSocketConnection.coroutineScope.launch {
+        var id = 0
         while (true) {
+            webSocketConnection.sendText("$id Client time: ${Date()}")
+            id += 2
             delay(2000)
-            webSocketConnection.sendText("Client time: ${Date()}")
         }
     }
+
     Unit
 }

@@ -28,7 +28,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should visit router chain successfully.")
-    fun testRouterChain(protocol: String, schema: String): Unit = runBlocking {
+    fun testRouterChain(protocol: String, schema: String): Unit {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -57,22 +57,24 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             .listen(address)
 
         val httpClient = HttpClientFactory.create()
-        val time = measureTimeMillis {
-            val futures = (1..count)
-                .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
-            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
-            CompletableFuture.allOf(*futures.toTypedArray()).await()
-            val allDone = futures.all { it.isDone }
-            assertTrue(allDone)
+        val time = runBlocking {
+            measureTimeMillis {
+                val futures = (1..count)
+                    .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
+                futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+                CompletableFuture.allOf(*futures.toTypedArray()).await()
+                val allDone = futures.all { it.isDone }
+                assertTrue(allDone)
 
-            val response = futures[0].await()
+                val response = futures[0].await()
 
-            assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals(
-                "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
-                response.stringBody
-            )
-            println(response)
+                assertEquals(HttpStatus.OK_200, response.status)
+                assertEquals(
+                    "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
+                    response.stringBody
+                )
+                println(response)
+            }
         }
 
         finish(count, time, httpClient, httpServer)

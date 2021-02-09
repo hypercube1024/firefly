@@ -121,7 +121,7 @@ private const val serverHandlerCoroutineContextKey = "_serverHandlerCoroutineCon
 
 fun getCurrentRoutingContext(): RoutingContext? = CoroutineLocalContext.getAttr(serverHandlerCoroutineContextKey)
 
-suspend fun Router.asyncHandler(block: suspend (RoutingContext) -> Unit): HttpServer {
+fun Router.asyncHandler(block: suspend (RoutingContext) -> Unit): HttpServer {
     return this.handler { ctx ->
         ctx.connection.coroutineScope
             .launch(CoroutineLocalContext.asElement(mutableMapOf(serverHandlerCoroutineContextKey to ctx))) { block(ctx) }

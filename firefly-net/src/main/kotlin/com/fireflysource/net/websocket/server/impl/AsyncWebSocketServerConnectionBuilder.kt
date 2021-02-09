@@ -1,12 +1,15 @@
 package com.fireflysource.net.websocket.server.impl
 
+import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.server.HttpServer
+import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection.Companion.defaultExtensionFactory
 import com.fireflysource.net.websocket.common.model.ExtensionConfig
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
 import com.fireflysource.net.websocket.server.*
+import kotlinx.coroutines.launch
 
 /**
  * @author Pengtao Qiu
@@ -65,5 +68,12 @@ class AsyncWebSocketServerConnectionBuilder(
         }
         webSocketManager.register(connectionHandler)
         return httpServer
+    }
+}
+
+fun WebSocketServerConnectionBuilder.onAcceptAsync(block: suspend (WebSocketConnection) -> Unit): HttpServer {
+    return this.onAccept { connection ->
+        connection.coroutineScope.launch { block(connection) }
+        Result.DONE
     }
 }
