@@ -3,7 +3,6 @@ package com.fireflysource.net.websocket.server
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.server.HttpServerFactory
-import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.frame.TextFrame
 import com.fireflysource.net.websocket.server.impl.onAcceptAsync
 import kotlinx.coroutines.delay
@@ -64,7 +63,7 @@ fun main() = runBlocking {
         .handler { ctx -> ctx.end(html) }
         .websocket("/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
@@ -85,7 +84,7 @@ fun main() = runBlocking {
     val client = HttpClientFactory.create()
     val webSocketConnection = client.websocket("ws://$host:$port/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
