@@ -90,12 +90,6 @@ Add log configuration file "firefly-log.xml" to the classpath.
         <level>INFO</level>
         <path>logs</path>
     </logger>
-
-    <logger>
-        <name>firefly-monitor</name>
-        <level>INFO</level>
-        <path>logs</path>
-    </logger>
 </loggers>
 ```
 
@@ -175,15 +169,7 @@ More detailed information, please refer to the
 * [WebSocket server and client]({{ site.url }}/docs/websocket-server-and-client.html)
 * [TCP server/client document]({{ site.url }}/docs/tcp-server-and-client.html)
 * [SSL/TLS configuration document]({{ site.url }}/docs/ssl-tls-configuration.html)
-* [Inversion of control document]({{ site.url }}/docs/ioc-framework.html)
-* [Database access document]({{ site.url }}/docs/database-access.html)
 * [Log document]({{ site.url }}/docs/log.html)
-* [OAuth2 server/client document]({{ site.url }}/docs/oauth2-server-and-client.html)
-* [CLI generator document]({{ site.url }}/docs/cli-generator.html)
-* [HTTP server/client document (Kotlin version)]({{ site.url }}/docs/http-server-and-client-kotlin-ext.html)
-* [Database access document (Kotlin version)]({{ site.url }}/docs/database-access-kotlin.html)
-* [Example (Java version)]({{ site.data.global.githubURL }}/tree/master/firefly-example/src/main/java/com/firefly/example)
-* [Example (Kotlin version)]({{ site.data.global.githubURL }}/tree/master/firefly-example/src/main/kotlin/com/firefly/example/kotlin)
 
 <a id="markdown-contact-information" name="contact-information"></a>
 # Contact information
