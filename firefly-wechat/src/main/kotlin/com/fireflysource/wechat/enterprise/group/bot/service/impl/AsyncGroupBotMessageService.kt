@@ -4,10 +4,11 @@ import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.MimeTypes
+import com.fireflysource.serialization.SerializationServiceFactory.json
+import com.fireflysource.serialization.impl.json.read
 import com.fireflysource.wechat.enterprise.group.bot.model.GroupBotMessageResult
 import com.fireflysource.wechat.enterprise.group.bot.model.Message
 import com.fireflysource.wechat.enterprise.group.bot.service.GroupBotMessageService
-import com.fireflysource.wechat.utils.JsonUtils
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -19,14 +20,14 @@ class AsyncGroupBotMessageService(
 ) : GroupBotMessageService {
 
     override fun sendMessage(message: Message): CompletableFuture<GroupBotMessageResult> {
-        val json = JsonUtils.write(message)
+        val json = json().write(message)
         return httpClient.post(webHookUrl)
             .put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
             .body(json)
             .submit()
             .thenApply { response ->
                 if (response.status == HttpStatus.OK_200) {
-                    JsonUtils.read(response.stringBody)
+                    json().read(response.stringBody)
                 } else {
                     GroupBotMessageResult(
                         -99999,

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<loggers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.fireflysource.com/loggers"
+         xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
+
+    <logger>
+        <name>firefly-system</name>
+        <level>INFO</level>
+        <path>${log.path}</path>
+    </logger>
+
+</loggers>

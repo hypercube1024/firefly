@@ -1,7 +1,8 @@
 package com.fireflysource.wechat.enterprise.group.bot.model
 
+import com.fireflysource.serialization.SerializationServiceFactory.json
+import com.fireflysource.serialization.impl.json.read
 import com.fireflysource.wechat.enterprise.group.bot.model.MessageBuilder.*
-import com.fireflysource.wechat.utils.JsonUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -105,10 +106,10 @@ class TestMessageModel {
     @DisplayName("should read wechat enterprise group bot message successfully.")
     fun test(json: String, message: Message) {
         val m = when (message.messageType) {
-            MessageType.TEXT -> JsonUtils.read<TextMessage>(json)
-            MessageType.MARKDOWN -> JsonUtils.read<MarkdownMessage>(json)
-            MessageType.IMAGE -> JsonUtils.read<ImageMessage>(json)
-            MessageType.NEWS -> JsonUtils.read<NewsMessage>(json)
+            MessageType.TEXT -> json().read<TextMessage>(json)
+            MessageType.MARKDOWN -> json().read<MarkdownMessage>(json)
+            MessageType.IMAGE -> json().read<ImageMessage>(json)
+            MessageType.NEWS -> json().read<NewsMessage>(json)
             else -> null
         }
         assertEquals(message, m)

@@ -4,9 +4,9 @@ import com.fireflysource.fx
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.MimeTypes
 import com.fireflysource.net.http.server.HttpServer
+import com.fireflysource.serialization.SerializationServiceFactory.json
 import com.fireflysource.wechat.enterprise.group.bot.model.GroupBotMessageResult
 import com.fireflysource.wechat.enterprise.group.bot.model.MessageBuilder
-import com.fireflysource.wechat.utils.JsonUtils
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -87,8 +87,7 @@ class TestGroupBotMessageService {
                     else -> GroupBotMessageResult(0, "ok")
                 }
 
-                ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
-                    .end(JsonUtils.write(result))
+                ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value).end(json().write(result))
             }
             .enableSecureConnection()
     }

@@ -43,6 +43,8 @@
         <module>firefly-slf4j</module>
         <module>firefly-net</module>
         <module>firefly-wechat</module>
+        <module>firefly-serialization</module>
+        <module>firefly-example</module>
     </modules>
 
     <properties>
@@ -105,6 +107,11 @@
             <dependency>
                 <groupId>com.fireflysource</groupId>
                 <artifactId>firefly-wechat</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fireflysource</groupId>
+                <artifactId>firefly-serialization</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

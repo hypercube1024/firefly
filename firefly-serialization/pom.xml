@@ -8,21 +8,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>firefly-wechat</artifactId>
+    <artifactId>firefly-serialization</artifactId>
     <packaging>jar</packaging>
 
-    <name>firefly-wechat</name>
+    <name>firefly-serialization</name>
     <url>http://www.fireflysource.com</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-net</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-serialization</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
         </dependency>
 
         <dependency>
@@ -33,7 +36,7 @@
     </dependencies>
 
     <build>
-        <finalName>firefly-wechat</finalName>
+        <finalName>firefly-serialization</finalName>
         <defaultGoal>install</defaultGoal>
         <resources>
             <resource>
