@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.client.impl
+package com.fireflysource.example
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.lifecycle.AbstractLifeCycle

@@ -1,4 +1,4 @@
-package com.fireflysource.net.http.server.impl
+package com.fireflysource.example
 
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.router.handler.CorsConfig

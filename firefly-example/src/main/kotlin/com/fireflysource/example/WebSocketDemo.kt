@@ -1,4 +1,4 @@
-package com.fireflysource.net.websocket.server
+package com.fireflysource.example
 
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
