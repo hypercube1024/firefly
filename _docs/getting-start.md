@@ -25,11 +25,12 @@ Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable.
 It taps into the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
 
 Firefly core provides functionality for things like:
-- TCP client and server
-- HTTP client and server
-- WebSocket client and server
+- HTTP server and client
+- WebSocket server and client
 - HTTP, Socks proxy
 - HTTP Gateway
+- TCP server and client
+- UDP server and client
 
 <a id="markdown-event-driven" name="event-driven"></a>
 # Event driven
@@ -118,44 +119,53 @@ fun main() = runBlocking {
 Create WebSocket server and client
 ```kotlin
 fun main() = runBlocking {
+    val host = "localhost"
+    val port = 8999
     val server = HttpServerFactory.create()
     server
         .websocket("/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
         }
-        .onAccept { connection ->
-            connection.coroutineScope.launch {
-                while (true) {
-                    connection.sendText("Server time: ${Date()}")
-                    delay(1000)
-                }
+        .onAcceptAsync { connection ->
+            var id = 1
+            while (true) {
+                if (id < 10) {
+                    connection.sendText("$id Server time: ${Date()}")
+                    id += 2
+                    delay(2000)
+                } else break
             }
-            Result.DONE
+            connection.closeAsync().await()
         }
-        .listen("localhost", 8999)
+        .listen(host, port)
 
     val client = HttpClientFactory.create()
-    val webSocketConnection = client
-        .websocket("ws://localhost:8999/helloWebSocket")
+    val webSocketConnection = client.websocket("ws://$host:$port/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
         }
         .connect()
         .await()
-        
-    launch {
+
+    webSocketConnection.coroutineScope.launch {
+        var id = 0
         while (true) {
-            delay(2000)
-            webSocketConnection.sendText("Client time: ${Date()}")
+            if (id < 10) {
+                webSocketConnection.sendText("$id Client time: ${Date()}")
+                id += 2
+                delay(2000)
+            } else break
         }
+        webSocketConnection.closeAsync().await()
     }
+
     Unit
 }
 ```
