@@ -3,18 +3,20 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/5.0.0-alpha1/jar)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
-It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing web applications, protocol servers, etc. 
-That means you can easy deploy your web without any other java web containers, in short, it's containerless. 
-Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. 
-It taps into the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
+Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***
+Quickly***. It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing
+web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers,
+in short, it's containerless. Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. It taps into
+the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
 
 Firefly core provides functionality for things like:
-- TCP client and server
-- HTTP client and server
-- WebSocket client and server
+
+- HTTP server and client
+- WebSocket server and client
 - HTTP, Socks proxy
 - HTTP Gateway
+- TCP server and client
+- UDP server and client
 
 # Event driven
 The Firefly APIs are largely event-driven. It means that when things happen in Firefly that you are interested in,
@@ -50,13 +52,13 @@ Add maven dependency in your pom.xml.
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly</artifactId>
-        <version>5.0.0-alpha7</version>
+        <version>5.0.0-alpha8</version>
     </dependency>
 
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-slf4j</artifactId>
-        <version>5.0.0-alpha7</version>
+        <version>5.0.0-alpha8</version>
     </dependency>
 </dependencics>
 ```
@@ -69,12 +71,6 @@ Add log configuration file "firefly-log.xml" to the classpath.
          xsi:schemaLocation="http://www.fireflysource.com/loggers http://www.fireflysource.com/loggers.xsd">
     <logger>
         <name>firefly-system</name>
-        <level>INFO</level>
-        <path>logs</path>
-    </logger>
-
-    <logger>
-        <name>firefly-monitor</name>
         <level>INFO</level>
         <path>logs</path>
     </logger>
@@ -99,45 +95,56 @@ fun main() = runBlocking {
 ```
 
 Create WebSocket server and client
+
 ```kotlin
 fun main() = runBlocking {
+    val host = "localhost"
+    val port = 8999
     val server = HttpServerFactory.create()
     server
         .websocket("/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
         }
-        .onAccept { connection ->
-            connection.coroutineScope.launch {
-                while (true) {
-                    connection.sendText("Server time: ${Date()}")
-                    delay(1000)
-                }
+        .onAcceptAsync { connection ->
+            var id = 1
+            while (true) {
+                if (id < 10) {
+                    connection.sendText("$id Server time: ${Date()}")
+                    id += 2
+                    delay(2000)
+                } else break
             }
-            Result.DONE
+            connection.closeAsync().await()
         }
-        .listen("localhost", 8999)
+        .listen(host, port)
 
     val client = HttpClientFactory.create()
-    val webSocketConnection = client
-        .websocket("ws://localhost:8999/helloWebSocket")
+    val webSocketConnection = client.websocket("ws://$host:$port/helloWebSocket")
         .onMessage { frame, _ ->
-            if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
+            if (frame is TextFrame) {
                 println(frame.payloadAsUTF8)
             }
             Result.DONE
         }
         .connect()
         .await()
-    launch {
+
+    webSocketConnection.coroutineScope.launch {
+        var id = 0
         while (true) {
-            delay(2000)
-            webSocketConnection.sendText("Client time: ${Date()}")
+            if (id < 10) {
+                webSocketConnection.sendText("$id Client time: ${Date()}")
+                id += 2
+                delay(2000)
+            } else break
         }
+        webSocketConnection.closeAsync().await()
     }
+
     Unit
 }
 ```
