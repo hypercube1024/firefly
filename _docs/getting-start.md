@@ -98,9 +98,7 @@ Create the HTTP server and client
 fun main() = runBlocking {
     val httpServer = HttpServerFactory.create()
     httpServer
-        .router().get("/test").handler {
-            it.end("Welcome")
-        }
+        .router().get("/test").handler { it.end("Welcome") }
         .listen("localhost", 9999)
 
     val client = HttpClientFactory.create()
