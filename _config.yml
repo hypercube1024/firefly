@@ -36,3 +36,7 @@ url: http://www.fireflysource.com
 
 exclude:
   - .gitignore
+
+webrick:
+  headers:
+    Access-Control-Allow-Origin: "*"

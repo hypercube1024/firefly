@@ -1,4 +1,5 @@
 downloadURL : https://github.com/hypercube1024/firefly
 githubURL : https://github.com/hypercube1024/firefly
 qqgroupURL : http://qgc.qq.com/4691508
-releaseVersion : 4.9.5
+exampleURL: https://github.com/hypercube1024/firefly/tree/firefly-5.0.0/firefly-example/src/main/kotlin/com/fireflysource/example
+releaseVersion : 5.0.0-alpha8
