@@ -16,7 +16,7 @@ title: HTTP server and client
 - [Routing by wildcard](#routing-by-wildcard)
 - [Routing by regular expressions](#routing-by-regular-expressions)
 - [Routing by HTTP method](#routing-by-http-method)
-- [Routing based on MIME type of request](#routing-based-on-mime-type-of-request)
+- [Routing by content type](#routing-by-content-type)
 - [Routing based on MIME types acceptable by the client](#routing-based-on-mime-types-acceptable-by-the-client)
 - [Error handling](#error-handling)
   - [Custom error handling](#custom-error-handling)
@@ -214,59 +214,41 @@ In the above example, we build the RESTful APIs. The URL `/product/:id` represen
 
 If you want to let a lot of HTTP methods match a router, just use the `router.methods(list: List)` instead of `router.method(name: String)`.
 
-# Routing based on MIME type of request
+# Routing by content type
 You can specify that a route will match against matching request MIME types using method `router.consumes`.
 
 In this case, the request will contain a content-type header specifying the MIME type of the request body. This will be matched against the value specified in consumes.
 
 Basically, The `router.consumes` method is describing which MIME types the handler can consume. For example:
-```java
-public class RoutingByConsumes {
+```kotlin
+@NoArg
+data class Car(var name: String, var color: String)
 
-    public static class Car {
-        public Long id;
-        public String name;
-        public String color;
+fun main() {
+    `$`.httpServer()
+        .router().put("/product/:id").consumes("*/json")
+        .handler { ctx ->
+            val id = ctx.getPathParameter("id")
+            val type = ctx.getPathParameter(0)
+            val car = json().read<Car>(ctx.stringBody)
 
-        @Override
-        public String toString() {
-            return "Car{" +
-                    "id=" + id +
-                    ", name='" + name + '\'' +
-                    ", color='" + color + '\'' +
-                    '}';
+            ctx.write("Update product. id: $id, type: $type. \r\n")
+                .end(car.toString())
         }
-    }
+        .listen("localhost", 8090)
 
-    public static void main(String[] args) {
-        String host = "localhost";
-        int port = 8081;
-
-        $.httpServer()
-         .router().put("/product/:id").consumes("*/json")
-         .handler(ctx -> {
-             String id = ctx.getPathParameter("id");
-             String type = ctx.getWildcardMatchedResult(0);
-             Car car = ctx.getJsonBody(Car.class);
-             ctx.end($.string.replace("Update resource {}: {}. The content type is {}/json", id, car, type));
-         })
-         .listen(host, port);
-
-        Car car = new Car();
-        car.id = 20L;
-        car.name = "My car";
-        car.color = "black";
-
-        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
-         .jsonBody(car)
-         .submit()
-         .thenAccept(resp -> System.out.println(resp.getStringBody()));
-    }
+    val url = "http://localhost:8090"
+    `$`.httpClient()
+        .put("$url/product/3")
+        .add(HttpField(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value))
+        .body(json().write(Car("Benz", "Black")))
+        .submit().thenAccept { response -> println(response.stringBody) }
 }
 ```
 Run it. The console shows:
 ```
-Update resource 20: Car{id=20, name='My car', color='black'}. The content type is application/json
+Update product. id: 3, type: application. 
+Car(name=Benz, color=Black)
 ```
 In the above example, we use the wildcard `*` to match the content type of the HTTP request. We can also use the exact MIME type to match the request.  
 
@@ -291,289 +273,152 @@ Accept: text/plain; q=0.9, text/html
 ```
 If the server can provide both text/plain and text/html it should provide the text/html in this case.
 
-By using **router.produces** you define which MIME type(s) the route produces, e.g. the following handler produces a response with MIME type application/json.
+By using `router.produces` you define which MIME type(s) the route produces, e.g. the following handler produces a response with MIME type application/json.
 
-```java
-public class RoutingByAcceptDemo {
+```kotlin
+fun main() {
+    `$`.httpServer()
+        .router().get("/product/:id").produces("text/plain")
+        .handler { ctx ->
+            ctx.end(Car("Benz", "Black").toString())
+        }
+        .router().get("/product/:id").produces("application/json")
+        .handler { ctx ->
+            ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
+                .end(json().write(Car("Benz", "Black")))
+        }
+        .listen("localhost", 8090)
 
-    public static void main(String[] args) {
-        String host = "localhost";
-        int port = 8081;
+    val url = "http://localhost:8090"
+    `$`.httpClient().get("$url/product/3")
+        .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
+        .submit().thenAccept { response -> println("accept text; ${response.stringBody}") }
 
-        $.httpServer()
-         .router().put("/product/:id").consumes("*/json").produces("text/plain")
-         .handler(ctx -> {
-             String id = ctx.getPathParameter("id");
-             String type = ctx.getWildcardMatchedResult(0);
-             Car car = ctx.getJsonBody(Car.class);
-             ctx.end($.string.replace("Update resource {}: {}. The content type is {}/json", id, car, type));
-         })
-         .router().put("/product/:id").consumes("*/json").produces("application/json")
-         .handler(ctx -> {
-             Car car = ctx.getJsonBody(Car.class);
-             ctx.writeJson(car).end();
-         })
-         .listen(host, port);
-
-        Car car = new Car();
-        car.id = 20L;
-        car.name = "My car";
-        car.color = "black";
-
-        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
-         .put(HttpHeader.ACCEPT, "text/plain, application/json;q=0.9, */*;q=0.8")
-         .jsonBody(car)
-         .submit()
-         .thenAccept(resp -> System.out.println(resp.getStringBody()));
-
-        $.httpClient().put($.string.replace("http://{}:{}/product/20", host, port))
-         .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
-         .jsonBody(car)
-         .submit()
-         .thenAccept(resp -> System.out.println(resp.getStringBody()));
-    }
+    `$`.httpClient().get("$url/product/3")
+        .put(HttpHeader.ACCEPT, "application/json, text/plain, */*;q=0.8")
+        .submit().thenAccept { response -> println("accept json; ${response.stringBody}") }
 }
 ```
 Run it. The console shows:
 ```
-Update resource 20: Car{id=20, name='My car', color='black'}. The content type is application/json
-{"color":"black","id":20,"name":"My car"}
+accept text; Car(name=Benz, color=Black)
+accept json; {"name":"Benz","color":"Black"}
 ```
 In the above example, the first request, the `text/plain` weight(1.0) is higher than `application/json`(0.9), so this request matches the first router that responds the text format.   
 
 The second request, the `application/json` weight equals the `text/plain`, but `application/json` is in front of `text/plain`, so the `application/json` priority is higher than `text/plain`. It matches the second router that responds the JSON format.
 
 # Error handling
-We provide default failure handler **com.firefly.server.http2.router.handler.error.DefaultErrorResponseHandler**  to handle some errors.
+When the handler throws exception, the server uses `DefaultContentProvider` response the error message.
 
-```java
-public class ErrorHandlerDemo {
-    public static void main(String[] args) {
-        $.httpServer().router().get("/error")
-         .handler(ctx -> {
-             throw new CommonRuntimeException("perhaps some errors happen");
-         }).listen("localhost", 8080);
-    }
+```kotlin
+fun main() {
+    `$`.httpServer()
+        .router().post("/product").handler {
+            throw IllegalStateException("Create product exception") // (1)
+        }
+        .listen("localhost", 8090)
+
+    val url = "http://localhost:8090"
+    `$`.httpClient().post("$url/product/").submit()
+        .thenAccept { response -> println(response) }
 }
 ```
-
-Visit "http://localhost:8080/error" and view:
-
-```
-500 Server Error
-
-The server internal error.
-perhaps some errors happen
-
-powered by Firefly {{ site.data.global.releaseVersion }}
-```
+The client will receive the `Create product exception`.
 
 ## Custom error handling
-Also you can extend **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** and add the SPI configuration instead of the default error handler.
+You can use `httpServer.onException` method to output custom error message.
 
 For example.
-```java
-public class DefaultErrorResponseHandler extends AbstractErrorResponseHandler {
-
-    @Override
-    public void render(RoutingContext ctx, int status, Throwable t) {
-        HttpStatus.Code code = HttpStatus.getCode(status);
-        String title = status + " " + (code != null ? code.getMessage() : "error");
-        String content;
-        switch (code) {
-            case NOT_FOUND: {
-                content = "Custom error handler. The resource " + ctx.getURI().getPath() + " is not found";
-            }
-            break;
-            case INTERNAL_SERVER_ERROR: {
-                content = "Custom error handler. The server internal error. <br/>" + (t != null ? t.getMessage() : "");
-            }
-            break;
-            default: {
-                content = title + "<br/>" + (t != null ? t.getMessage() : "");
-            }
-            break;
+```kotlin
+fun main() {
+    `$`.httpServer()
+        .onException { ctx, exception -> // (1)
+            ctx.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500)
+                .end("The server exception. ${exception.message}")
         }
-        ctx.setStatus(status).put(HttpHeader.CONTENT_TYPE, "text/html")
-           .write("<!DOCTYPE html>")
-           .write("<html>")
-           .write("<head>")
-           .write("<title>")
-           .write(title)
-           .write("</title>")
-           .write("</head>")
-           .write("<body>")
-           .write("<h1> " + title + " </h1>")
-           .write("<p>" + content + "</p>")
-           .write("<hr/>")
-           .write("<footer><em>powered by Firefly " + Version.value + "</em></footer>")
-           .write("</body>")
-           .end("</html>");
-    }
+        .router().post("/product").handler {
+            throw IllegalStateException("Create product exception")
+        }
+        .listen("localhost", 8090)
+
+    val url = "http://localhost:8090"
+    `$`.httpClient().post("$url/product/").submit()
+        .thenAccept { response -> println(response) }
 }
 ```
-
-The SPI configuration file **com.firefly.server.http2.router.handler.error.AbstractErrorResponseHandler** at **${classpath}/META-INF/services**.
-```
-com.firefly.example.error.handler.DefaultErrorResponseHandler
-```
-
-Visit "http://localhost:8080/error" and view:
-
-```
-500 Server Error
-
-Custom error handler. The server internal error.
-perhaps some errors happen
-
-powered by Firefly {{ site.data.global.releaseVersion }}
-```
+The client will receive the `The server exception. Create product exception`.
 
 
 # Serving static resources
 Firefly comes with an out of the box handler for serving static web resources so you can write static web servers very easily.
 
-To serve static resources such as .html, .css, .js or any other static resource, you use an instance of "StaticFileHandler".
-
-Any requests to paths handled by the static handler will result in files being served from a directory on the file system or from the classpath.
-
-In the following example, all requests to paths starting with /static/ will get served from the classpath.
-
-```java
-public class StaticFileDemo {
-    public static void main(String[] args) throws Exception {
-        Path path = Paths.get(StaticFileDemo.class.getResource("/").toURI());
-        $.httpServer().router().get("/static/*")
-         .handler(new StaticFileHandler(path.toAbsolutePath().toString()))
-         .listen("localhost", 8080);
-    }
+To serve static resources such as .html, .css, .js or any other static resource, you use an instance of `FileHandler`.
+```kotlin
+fun main() {
+    `$`.httpServer()
+        .router().method(HttpMethod.GET)
+        .paths(listOf("/favicon.ico", "/poem.html", "/poem.txt")) // (1)
+        .handler(FileHandler.createFileHandlerByResourcePath("files")) // (2)
+        .listen("localhost", 8090)
 }
 ```
-
-For example, if there was a request with path "/static/poem.html" the StaticFileHandler will look for a file in the directory "{classpath}/static/poem.html".
-
-You can find this demo in the project "firefly-example", run and view:
-```
-http://localhost:8080/static/poem.html
-```
+1. Use the `router.paths` method to bind some path to the file handler.
+2. Use the factory method `FileHandler.createFileHandlerByResourcePath` to create a file handler instance. When you visit the `http://localhost:8090/poem.html`, the server will read the file `resources/files/poem.html` and flush the file to the client.
 
 # Multipart file uploading
 
-```java
-public class MultipartDemo {
-    public static void main(String[] args) {
-        String host = "localhost";
-        int port = 8080;
-        String uri = "http://" + host + ":" + port;
-        Phaser phaser = new Phaser(3);
+```kotlin
+@NoArg
+data class Product(var id: String, var brand: String, var description: String)
 
-        HTTP2ServerBuilder httpServer = $.httpServer();
-        httpServer.router().post("/upload/string").handler(ctx -> {
-            // small multi part data test case
-            Part test1 = ctx.getPart("test1");
-            Part test2 = ctx.getPart("test2");
-            try (InputStream input1 = test1.getInputStream();
-                 InputStream input2 = test2.getInputStream()) {
-                String value = $.io.toString(input1);
-                System.out.println(value);
+fun main() {
+    `$`.httpServer()
+        .router().post("/product/file-upload").handler { ctx ->
+            val id = ctx.getPart("id") // (1)
+            val brand = ctx.getPart("brand")
+            val description = ctx.getPart("description")
+            ctx.end(Product(id.stringBody, brand.stringBody, description.stringBody).toString())
+        }
+        .listen("localhost", 8090)
 
-                String value2 = $.io.toString(input2);
-                System.out.println(value2);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            ctx.end("server received multi part data");
-        }).router().post("/upload/poetry").handler(ctx -> {
-            // upload poetry
-            Part poetry = ctx.getPart("poetry");
-            System.out.println(poetry.getSubmittedFileName());
-            try (InputStream inputStream = $.class.getResourceAsStream("/poem.txt")) {
-                String poem = $.io.toString(inputStream);
-                System.out.println(poem);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            ctx.end("server received poetry");
-        }).listen(host, port);
-
-        $.httpClient().post(uri + "/upload/string")
-         .addFieldPart("test1", new StringContentProvider("hello multi part1"), null)
-         .addFieldPart("test2", new StringContentProvider("hello multi part2"), null)
-         .submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             phaser.arrive();
-         });
-
-        InputStream inputStream = $.class.getResourceAsStream("/poem.txt");
-        InputStreamContentProvider inputStreamContentProvider = new InputStreamContentProvider(inputStream);
-        $.httpClient().post(uri + "/upload/poetry")
-         .addFilePart("poetry", "poem.txt", inputStreamContentProvider, null)
-         .submit()
-         .thenAccept(res -> {
-             System.out.println(res.getStringBody());
-             $.io.close(inputStreamContentProvider);
-             $.io.close(inputStream);
-             phaser.arrive();
-         });
-
-        phaser.arriveAndAwaitAdvance();
-        httpServer.stop();
-        $.httpClient().stop();
-    }
+    val url = "http://localhost:8090"
+    `$`.httpClient().post("$url/product/file-upload")
+        .addPart("id", stringBody("x01"), null) // (2)
+        .addPart("brand", stringBody("Test"), null)
+        .addFilePart(
+            "description", "poem.txt",
+            resourceFileBody("files/poem.txt", StandardOpenOption.READ), // (3)
+            null
+        )
+        .submit().thenAccept { response -> println(response) }
 }
 ```
 
-The HTTP server uses the **ctx.getPart** to get the content of multi-part format, and the client uses the **httpclient.addFilePart** to upload content using multi-part format.
+1. The server uses the `ctx.getPart` to get the content of multi-part format.
+2. The client uses the `httpclient.addPart` to upload content.
+3. The client uses the `httpclient.addFilePart` to upload file. The factory method `resourceFileBody` reads the resource file and encodes it to the multi-part format.
 
 # CORS handler
 Cross Origin Resource Sharing is a safe mechanism for allowing resources to be requested from one domain and served from another.
 
 The example:
-```java
-CORSConfiguration config = new CORSConfiguration();
-config.setAllowOrigins(new HashSet<>(Arrays.asList("http://foo.com", "http://bar.com")));
-config.setExposeHeaders(Arrays.asList("a1", "a2"));
-config.setAllowHeaders(new HashSet<>(Arrays.asList("a1", "a2", "a3", "a4")));
-CORSHandler corsHandler = new CORSHandler();
-corsHandler.setConfiguration(config);
+```kotlin
+fun main() {
+    val corsConfig = CorsConfig("*.cors.test.com") 
+    `$`.httpServer()
+        .router().path("*").handler(CorsHandler(corsConfig)) // (1)
+        .router().post("/cors-data-request/*")
+        .handler { it.end("success") }
+        .listen("localhost", 8090)
 
-HTTP2ServerBuilder s = $.httpServer();
-SimpleHTTPClient c = $.createHTTPClient();
-
-s.router().path("/cors/*").handler(corsHandler)
- .router().path("/cors/foo").handler(ctx -> ctx.end("foo"))
- .router().path("/cors/bar").handler(ctx -> {
-    JsonObject jsonObject = ctx.getJsonObjectBody();
-    Map<String, Object> map = new HashMap<>(jsonObject);
-    map.put("bar", "x1");
-    ctx.writeJson(map).end();
-})
- .listen(host, port);
-
-SimpleResponse resp = c.get(uri + "/cors/foo")
-                       .put(HttpHeader.ORIGIN, "http://foo.com")
-                       .put(HttpHeader.HOST, "foo.com")
-                       .submit().get(2, TimeUnit.SECONDS);
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.com"));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_EXPOSE_HEADERS), is("a1, a2"));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_CREDENTIALS), is("true"));
-
-resp = c.request(HttpMethod.OPTIONS, uri + "/cors/bar")
-        .put(HttpHeader.ORIGIN, "http://bar.com")
-        .put(HttpHeader.HOST, "bar.com")
-        .put(HttpHeader.ACCESS_CONTROL_REQUEST_METHOD, "GET, POST, PUT, DELETE")
-        .put(HttpHeader.ACCESS_CONTROL_REQUEST_HEADERS, "a2, a3, a4")
-        .put("a2", "foo_a2")
-        .submit().get(2, TimeUnit.SECONDS);
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_ORIGIN), is("http://bar.com"));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_CREDENTIALS), is("true"));
-System.out.println(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_METHODS));
-System.out.println(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_HEADERS));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_METHODS).contains("DELETE"), is(true));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_ALLOW_HEADERS).contains("a2"), is(true));
-Assert.assertThat(resp.getFields().get(HttpHeader.ACCESS_CONTROL_MAX_AGE), is("86400"));
-
-c.stop();
-s.stop();
+    val url = "http://localhost:8090"
+    `$`.httpClient().post("$url/cors-data-request/xxx")
+        .put(HttpHeader.ORIGIN, "hello.cors.test.com") // (2)
+        .put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.TEXT_PLAIN_UTF_8.value)
+        .body("hello")
+        .submit().thenAccept { response -> println(response) }
+}
 ```
+1. The server uses the `CorsHandler` to set some origin can visit the server resources.
+2. The client set the origin header, if the server allows this origin, the client can visit the server resources. 
