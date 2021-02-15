@@ -10,6 +10,7 @@ import com.fireflysource.net.tcp.secure.SecureEngineFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.launch
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
 import java.nio.channels.*
@@ -194,4 +195,9 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
         }
     }
 
+}
+
+fun TcpServer.onAcceptAsync(block: suspend (TcpConnection) -> Unit): TcpServer {
+    onAccept { connection -> connection.coroutineScope.launch { block(connection) } }
+    return this
 }
