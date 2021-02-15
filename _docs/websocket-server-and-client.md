@@ -43,7 +43,7 @@ fun main() {
             }
             Result.DONE
         }
-        .onConnectAsync { connection ->
+        .connectAsync { connection ->
             (1..10).forEach {
                 connection.sendText("Client. message: $it, time: ${Date()}")
                 delay(1000)
@@ -97,7 +97,7 @@ fun main() {
             }
             Result.DONE
         }
-        .onConnectAsync { connection ->
+        .connectAsync { connection ->
             (1..10).forEach {
                 connection.sendText("Client. message: $it, time: ${Date()}")
                 delay(1000)
