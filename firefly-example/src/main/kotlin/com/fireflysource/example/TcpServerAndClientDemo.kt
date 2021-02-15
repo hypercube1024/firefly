@@ -37,7 +37,7 @@ private suspend fun readLoop(connection: TcpConnection) {
 
 private suspend fun writeLoop(data: String, connection: TcpConnection) {
     (1..10).forEach {
-        connection.write(toBuffer("${data}. message: $it, time: ${Date()}"))
+        connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
     connection.closeAsync().await()
