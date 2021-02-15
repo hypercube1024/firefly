@@ -18,9 +18,26 @@ import kotlinx.coroutines.launch
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class FileHandler(val config: FileConfig) : Router.Handler {
+
+    companion object {
+        fun createFileHandlerByResourcePath(path: String): FileHandler {
+            val resourcePath = getResourcePath(path)
+            val fileConfig = FileConfig(resourcePath)
+            return FileHandler(fileConfig)
+        }
+
+        fun getResourcePath(path: String): String {
+            return Optional.ofNullable(FileHandler::class.java.classLoader.getResource(path))
+                .map { it.toURI() }
+                .map { Paths.get(it) }
+                .map { it.toString() }
+                .orElse("")
+        }
+    }
 
     override fun apply(ctx: RoutingContext): CompletableFuture<Void> =
         ctx.connection.coroutineScope.launch { handleFile(ctx) }.asVoidFuture()
@@ -118,6 +135,6 @@ class FileHandler(val config: FileConfig) : Router.Handler {
 class RangeNotSatisfiable(message: String) : IllegalArgumentException(message)
 
 @NoArg
-data class FileConfig constructor(
+data class FileConfig(
     var rootPath: String
 )

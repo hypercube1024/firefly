@@ -3,10 +3,7 @@ package com.fireflysource.example
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.router.handler.CorsConfig
 import com.fireflysource.net.http.server.impl.router.handler.CorsHandler
-import com.fireflysource.net.http.server.impl.router.handler.FileConfig
 import com.fireflysource.net.http.server.impl.router.handler.FileHandler
-import java.nio.file.Paths
-import java.util.*
 
 /*
 Intel i5 1.4GHz 16GB macbook pro 13
@@ -29,16 +26,11 @@ Transfer/sec:      7.59MB
 fun main() {
     val httpServer = HttpServerFactory.create()
     val corsConfig = CorsConfig("*")
-    val path = Optional.ofNullable(FileHandler::class.java.classLoader.getResource("files"))
-        .map { it.toURI() }
-        .map { Paths.get(it) }
-        .map { it.toString() }
-        .orElse("")
-    val fileConfig = FileConfig(path)
 
     httpServer
         .router().path("*").handler(CorsHandler(corsConfig))
-        .router().paths(listOf("/favicon.ico", "/poem.html", "/poem.txt")).handler(FileHandler(fileConfig))
+        .router().paths(listOf("/favicon.ico", "/poem.html", "/poem.txt"))
+        .handler(FileHandler.createFileHandlerByResourcePath("files"))
         .router().post("/cors-preflight/*").handler {
             it.end(
                 """
