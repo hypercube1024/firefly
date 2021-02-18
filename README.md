@@ -79,16 +79,13 @@ Add log configuration file "firefly-log.xml" to the classpath.
 
 Create HTTP server and client
 ```kotlin
-fun main() = runBlocking {
-    val httpServer = HttpServerFactory.create()
-    httpServer
-        .router().get("/test").handler { it.end("Welcome") }
-        .listen("localhost", 9999)
+fun main() {
+    `$`.httpServer()
+        .router().get("/").handler { ctx -> ctx.end("Hello http! ") }
+        .listen("localhost", 8090)
 
-    val client = HttpClientFactory.create()
-    val response = client.get("http://localhost:9999/test").submit().await()
-    println(response.status)
-    println(response.stringBody)
+    `$`.httpClient().get("http://localhost:8090/").submit()
+        .thenAccept { response -> println(response.stringBody) }
 }
 ```
 
