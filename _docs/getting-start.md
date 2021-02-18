@@ -93,72 +93,80 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create the HTTP server and client
+Create HTTP server and client
 ```kotlin
-fun main() = runBlocking {
-    val httpServer = HttpServerFactory.create()
-    httpServer
-        .router().get("/test").handler { it.end("Welcome") }
-        .listen("localhost", 9999)
+fun main() {
+    `$`.httpServer()
+        .router().get("/").handler { ctx -> ctx.end("Hello http! ") }
+        .listen("localhost", 8090)
 
-    val client = HttpClientFactory.create()
-    val response = client.get("http://localhost:9999/test").submit().await()
-    println(response.status)
-    println(response.stringBody)
+    `$`.httpClient().get("http://localhost:8090/").submit()
+        .thenAccept { response -> println(response.stringBody) }
 }
 ```
 
 Create WebSocket server and client
 ```kotlin
-fun main() = runBlocking {
-    val host = "localhost"
-    val port = 8999
-    val server = HttpServerFactory.create()
-    server
-        .websocket("/helloWebSocket")
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .onAcceptAsync { connection ->
-            var id = 1
-            while (true) {
-                if (id < 10) {
-                    connection.sendText("$id Server time: ${Date()}")
-                    id += 2
-                    delay(2000)
-                } else break
-            }
-            connection.closeAsync().await()
-        }
-        .listen(host, port)
+fun main() {
+    `$`.httpServer().websocket("/websocket/hello")
+        .onMessage { frame, _ -> onMessage(frame) }
+        .onAcceptAsync { connection -> sendMessage("Server", connection) }
+        .listen("localhost", 8090)
 
-    val client = HttpClientFactory.create()
-    val webSocketConnection = client.websocket("ws://$host:$port/helloWebSocket")
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .connect()
-        .await()
+    val url = "ws://localhost:8090"
+    `$`.httpClient().websocket("$url/websocket/hello")
+        .onMessage { frame, _ -> onMessage(frame) }
+        .connectAsync { connection -> sendMessage("Client", connection) }
+}
 
-    webSocketConnection.coroutineScope.launch {
-        var id = 0
-        while (true) {
-            if (id < 10) {
-                webSocketConnection.sendText("$id Client time: ${Date()}")
-                id += 2
-                delay(2000)
-            } else break
-        }
-        webSocketConnection.closeAsync().await()
+private suspend fun sendMessage(content: String, connection: WebSocketConnection) {
+    (1..10).forEach {
+        connection.sendText("${content}. message: $it, time: ${Date()}")
+        delay(1000)
     }
+    connection.closeAsync().await()
+}
 
-    Unit
+private fun onMessage(frame: Frame): CompletableFuture<Void> {
+    if (frame is TextFrame) {
+        println(frame.payloadAsUTF8)
+    }
+    return Result.DONE
+}
+```
+
+Create TCP server and client
+```kotlin
+fun main() {
+    `$`.tcpServer().onAcceptAsync { connection ->
+        launch { writeLoop("Server", connection) } 
+        launch { readLoop(connection) }
+    }.listen("localhost", 8090)
+
+    `$`.tcpClient().connectAsync("localhost", 8090) { connection ->
+        launch { writeLoop("Client", connection) } 
+        launch { readLoop(connection) }
+    }
+}
+
+private suspend fun readLoop(connection: TcpConnection) {
+    while (true) {
+        try {
+            val buffer = connection.read().await()
+            println(BufferUtils.toString(buffer))
+        } catch (e: Exception) {
+            println("Connection closed.")
+            break
+        }
+    }
+}
+
+private suspend fun writeLoop(data: String, connection: TcpConnection) {
+    (1..10).forEach {
+        connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
+        delay(1000)
+    }
+    connection.closeAsync().await()
 }
 ```
 

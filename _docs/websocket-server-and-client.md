@@ -8,7 +8,6 @@ title: WebSocket server and client
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [Basic concepts](#basic-concepts)
-- [WebSocket extensions](#websocket-extensions)
 
 <!-- /TOC -->
 
@@ -18,38 +17,31 @@ Unlike HTTP, WebSocket provides full-duplex communication. Additionally, WebSock
 The WebSocket example:
 ```kotlin
 fun main() {
-    `$`.httpServer()
-        .websocket("/websocket/hello")
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .onAcceptAsync { connection ->
-            (1..10).forEach {
-                connection.sendText("Server. message: $it, time: ${Date()}")
-                delay(1000)
-            }
-            connection.closeAsync().await()
-        }
+    `$`.httpServer().websocket("/websocket/hello")
+        .onMessage { frame, _ -> onMessage(frame) }
+        .onAcceptAsync { connection -> sendMessage("Server", connection) }
         .listen("localhost", 8090)
 
-    val url = "ws://localhost:8090"
+    val url = "ws://localhost:8090" // (1)
     `$`.httpClient().websocket("$url/websocket/hello")
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .connectAsync { connection ->
-            (1..10).forEach {
-                connection.sendText("Client. message: $it, time: ${Date()}")
-                delay(1000)
-            }
-            connection.closeAsync().await()
-        }
+        .extensions(listOf("permessage-deflate")) // (2)
+        .onMessage { frame, _ -> onMessage(frame) }
+        .connectAsync { connection -> sendMessage("Client", connection) }
+}
+
+private suspend fun sendMessage(content: String, connection: WebSocketConnection) {
+    (1..10).forEach {
+        connection.sendText("${content}. message: $it, time: ${Date()}")
+        delay(1000)
+    }
+    connection.closeAsync().await()
+}
+
+private fun onMessage(frame: Frame): CompletableFuture<Void> {
+    if (frame is TextFrame) {
+        println(frame.payloadAsUTF8)
+    }
+    return Result.DONE
 }
 ```
 
@@ -65,46 +57,5 @@ Client. message: 3, time: Mon Feb 15 15:35:26 CST 2021
 ......
 ```
 
-The WebSocket protocol specification defines `ws` and `wss` as two new uniform resource identifier (URI) schemes that are used for unencrypted and encrypted connections, respectively. Apart from the scheme name and fragment (# is not supported), the rest of the URI components are defined to use URI generic syntax.
-
-# WebSocket extensions
-The Firefly WebSocket server and client supports some extension protocol, such as `permessage-deflate`, `deflate-frame`, `x-webkit-deflate-frame`, `fragment`, and `identity`.
-```kotlin
-fun main() {
-    `$`.httpServer()
-        .websocket("/websocket/hello")
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .onAcceptAsync { connection ->
-            (1..10).forEach {
-                connection.sendText("Server. message: $it, time: ${Date()}")
-                delay(1000)
-            }
-            connection.closeAsync().await()
-        }
-        .listen("localhost", 8090)
-
-    val url = "ws://localhost:8090"
-    `$`.httpClient().websocket("$url/websocket/hello")
-        .extensions(listOf("permessage-deflate")) // (1)
-        .onMessage { frame, _ ->
-            if (frame is TextFrame) {
-                println(frame.payloadAsUTF8)
-            }
-            Result.DONE
-        }
-        .connectAsync { connection ->
-            (1..10).forEach {
-                connection.sendText("Client. message: $it, time: ${Date()}")
-                delay(1000)
-            }
-            connection.closeAsync().await()
-        }
-}
-```
-
-We can add extension using `extensions` method. Run it. And the console shows:
+1. The WebSocket protocol specification defines `ws` and `wss` as two new uniform resource identifier (URI) schemes that are used for unencrypted and encrypted connections, respectively. Apart from the scheme name and fragment (# is not supported), the rest of the URI components are defined to use URI generic syntax.
+2. The Firefly WebSocket server and client supports some extension protocol, such as `permessage-deflate`, `deflate-frame`, `x-webkit-deflate-frame`, `fragment`, and `identity`.

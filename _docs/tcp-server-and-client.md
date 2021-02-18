@@ -15,17 +15,17 @@ title: TCP server and client
 ```kotlin
 fun main() {
     `$`.tcpServer().onAcceptAsync { connection -> // (1)
-        connection.coroutineScope.launch { writeLoop("Server", connection) }
-        connection.coroutineScope.launch { readLoop(connection) }
+        launch { writeLoop("Server", connection) } 
+        launch { readLoop(connection) }
     }.listen("localhost", 8090)
 
     `$`.tcpClient().connectAsync("localhost", 8090) { connection -> // (2)
-        connection.coroutineScope.launch { writeLoop("Client", connection) } // (3)
-        connection.coroutineScope.launch { readLoop(connection) }
+        launch { writeLoop("Client", connection) } 
+        launch { readLoop(connection) }
     }
 }
 
-private suspend fun readLoop(connection: TcpConnection) {
+private suspend fun readLoop(connection: TcpConnection) { // (3)
     while (true) {
         try {
             val buffer = connection.read().await()
@@ -37,7 +37,7 @@ private suspend fun readLoop(connection: TcpConnection) {
     }
 }
 
-private suspend fun writeLoop(data: String, connection: TcpConnection) {
+private suspend fun writeLoop(data: String, connection: TcpConnection) { // (4)
     (1..10).forEach {
         connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
         delay(1000)
@@ -47,4 +47,5 @@ private suspend fun writeLoop(data: String, connection: TcpConnection) {
 ```
 1. Use the `onAcceptAsync` method to accept tcp connection.
 2. Use the `connectAsync` method to establish a tcp connection to the server.
-3. Lauch a coroutine and write data in a loop.
+3. Lauch a coroutine and read data in a loop.
+4. Write data in a loop.
