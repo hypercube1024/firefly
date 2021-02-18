@@ -13,13 +13,13 @@ import java.util.*
 
 fun main() {
     `$`.tcpServer().onAcceptAsync { connection ->
-        connection.coroutineScope.launch { writeLoop("Server", connection) }
-        connection.coroutineScope.launch { readLoop(connection) }
+        launch { writeLoop("Server", connection) }
+        launch { readLoop(connection) }
     }.listen("localhost", 8090)
 
     `$`.tcpClient().connectAsync("localhost", 8090) { connection ->
-        connection.coroutineScope.launch { writeLoop("Client", connection) }
-        connection.coroutineScope.launch { readLoop(connection) }
+        launch { writeLoop("Client", connection) }
+        launch { readLoop(connection) }
     }
 }
 

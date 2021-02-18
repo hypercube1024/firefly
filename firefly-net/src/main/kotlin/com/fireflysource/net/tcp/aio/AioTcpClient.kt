@@ -159,7 +159,7 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
 }
 
-fun TcpClient.connectAsync(host: String, port: Int, block: suspend (TcpConnection) -> Unit): TcpClient {
+fun TcpClient.connectAsync(host: String, port: Int, block: suspend CoroutineScope.(TcpConnection) -> Unit): TcpClient {
     connect(host, port).thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
     return this
 }

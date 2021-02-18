@@ -9,6 +9,7 @@ import com.fireflysource.net.websocket.common.model.ExtensionConfig
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
 import com.fireflysource.net.websocket.server.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -71,7 +72,7 @@ class AsyncWebSocketServerConnectionBuilder(
     }
 }
 
-fun WebSocketServerConnectionBuilder.onAcceptAsync(block: suspend (WebSocketConnection) -> Unit): HttpServer {
+fun WebSocketServerConnectionBuilder.onAcceptAsync(block: suspend CoroutineScope.(WebSocketConnection) -> Unit): HttpServer {
     return this.onAccept { connection ->
         connection.coroutineScope.launch { block(connection) }
         Result.DONE

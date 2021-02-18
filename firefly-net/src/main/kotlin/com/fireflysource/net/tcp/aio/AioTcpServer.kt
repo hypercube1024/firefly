@@ -197,7 +197,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
 }
 
-fun TcpServer.onAcceptAsync(block: suspend (TcpConnection) -> Unit): TcpServer {
+fun TcpServer.onAcceptAsync(block: suspend CoroutineScope.(TcpConnection) -> Unit): TcpServer {
     onAccept { connection -> connection.coroutineScope.launch { block(connection) } }
     return this
 }

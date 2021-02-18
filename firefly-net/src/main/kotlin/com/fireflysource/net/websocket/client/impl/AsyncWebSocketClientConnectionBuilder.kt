@@ -7,6 +7,7 @@ import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 
@@ -59,6 +60,6 @@ class AsyncWebSocketClientConnectionBuilder(
 
 }
 
-fun WebSocketClientConnectionBuilder.connectAsync(block: suspend (WebSocketConnection) -> Unit) {
+fun WebSocketClientConnectionBuilder.connectAsync(block: suspend CoroutineScope.(WebSocketConnection) -> Unit) {
     this.connect().thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
 }
