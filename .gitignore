@@ -13,3 +13,4 @@ firefly-common/logs/
 firefly/temp/
 logs/
 temp/
+/.java-version

@@ -1,14 +1,15 @@
 package org.slf4j.impl;
 
-import com.firefly.utils.log.Log;
-import com.firefly.utils.log.LogFactory;
+import com.fireflysource.log.Log;
+import com.fireflysource.log.LogFactory;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class LogFactoryImpl implements ILoggerFactory {
+public class LogFactoryImpl implements ILoggerFactory, Closeable {
 
     private Map<String, Logger> map = new ConcurrentHashMap<>();
 
@@ -29,4 +30,8 @@ public class LogFactoryImpl implements ILoggerFactory {
         }
     }
 
+    @Override
+    public void close() {
+        LogFactory.getInstance().close();
+    }
 }

@@ -1,6 +1,6 @@
 package org.slf4j.impl;
 
-import com.firefly.utils.ServiceUtils;
+import com.fireflysource.log.internal.utils.ServiceUtils;
 import org.slf4j.spi.MDCAdapter;
 
 /**
@@ -15,7 +15,7 @@ public class StaticMDCBinder {
     private MDCAdapter mdca;
 
     private StaticMDCBinder() {
-        mdca = ServiceUtils.loadService(org.slf4j.spi.MDCAdapter.class, new MDCAdapterImpl());
+        mdca = ServiceUtils.loadService(MDCAdapter.class, new MDCAdapterImpl());
     }
 
     public MDCAdapter getMDCA() {

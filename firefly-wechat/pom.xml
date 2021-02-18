@@ -1,5 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.fireflysource</groupId>
+        <artifactId>firefly-framework</artifactId>
+        <version>5.0.0-alpha9</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>firefly-wechat</artifactId>
@@ -8,16 +14,23 @@
     <name>firefly-wechat</name>
     <url>http://www.fireflysource.com</url>
 
-    <parent>
-        <artifactId>firefly-framework</artifactId>
-        <groupId>com.fireflysource</groupId>
-        <version>4.9.5</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-net</artifactId>
+        </dependency>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-serialization</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fireflysource</groupId>
+            <artifactId>firefly-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>firefly-wechat</finalName>
@@ -28,6 +41,14 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.jks</include>
                 </includes>
             </resource>
             <resource>
@@ -35,47 +56,36 @@
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>**/*.xml</exclude>
+                    <exclude>**/*.properties</exclude>
                 </excludes>
             </resource>
         </resources>
         <testResources>
             <testResource>
-                <filtering>true</filtering>
                 <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.ico</include>
+                    <include>**/*.html</include>
+                    <include>**/*.txt</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/*.xml</exclude>
+                    <exclude>**/*.properties</exclude>
+                </excludes>
             </testResource>
         </testResources>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-slf4j</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-
 </project>

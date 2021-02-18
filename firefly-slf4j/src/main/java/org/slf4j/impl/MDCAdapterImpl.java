@@ -1,7 +1,7 @@
 package org.slf4j.impl;
 
-import com.firefly.utils.log.MappedDiagnosticContext;
-import com.firefly.utils.log.MappedDiagnosticContextFactory;
+import com.fireflysource.log.MappedDiagnosticContext;
+import com.fireflysource.log.MappedDiagnosticContextFactory;
 import org.slf4j.spi.MDCAdapter;
 
 import java.util.Map;

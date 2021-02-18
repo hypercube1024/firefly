@@ -1,6 +1,6 @@
 package org.slf4j.impl;
 
-import com.firefly.utils.log.Log;
+import com.fireflysource.log.Log;
 import org.slf4j.helpers.MarkerIgnoringBase;
 
 public class LoggerImpl extends MarkerIgnoringBase {

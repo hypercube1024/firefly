@@ -1,5 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.fireflysource</groupId>
+        <artifactId>firefly-framework</artifactId>
+        <version>5.0.0-alpha9</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>firefly-common</artifactId>
@@ -8,12 +14,16 @@
     <name>firefly-common</name>
     <url>http://www.fireflysource.com</url>
 
-    <parent>
-        <groupId>com.fireflysource</groupId>
-        <artifactId>firefly-framework</artifactId>
-        <version>4.9.5</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>firefly-common</finalName>
@@ -32,6 +42,7 @@
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>**/*.xml</exclude>
+                    <exclude>**/*.properties</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -41,6 +52,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>**/*.xml</include>
+                    <include>**/*.properties</include>
                 </includes>
             </testResource>
             <testResource>
@@ -48,26 +60,9 @@
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>**/*.xml</exclude>
+                    <exclude>**/*.properties</exclude>
                 </excludes>
             </testResource>
         </testResources>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.47</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>
