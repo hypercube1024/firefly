@@ -8,6 +8,7 @@ import com.fireflysource.net.http.server.Matcher
 import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.Router.EMPTY_HANDLER
 import com.fireflysource.net.http.server.RoutingContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 
@@ -121,7 +122,7 @@ private const val serverHandlerCoroutineContextKey = "_serverHandlerCoroutineCon
 
 fun getCurrentRoutingContext(): RoutingContext? = CoroutineLocalContext.getAttr(serverHandlerCoroutineContextKey)
 
-fun Router.asyncHandler(block: suspend (RoutingContext) -> Unit): HttpServer {
+fun Router.asyncHandler(block: suspend CoroutineScope.(RoutingContext) -> Unit): HttpServer {
     return this.handler { ctx ->
         ctx.connection.coroutineScope
             .launch(CoroutineLocalContext.asElement(mutableMapOf(serverHandlerCoroutineContextKey to ctx))) { block(ctx) }
