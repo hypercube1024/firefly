@@ -25,7 +25,7 @@ fun main() {
     }
 }
 
-private suspend fun readLoop(connection: TcpConnection) { // (3)
+private suspend fun readLoop(connection: TcpConnection) = connection.useAwait { // (3)
     while (true) {
         try {
             val buffer = connection.read().await()
@@ -37,15 +37,14 @@ private suspend fun readLoop(connection: TcpConnection) { // (3)
     }
 }
 
-private suspend fun writeLoop(data: String, connection: TcpConnection) { // (4)
-    (1..10).forEach {
+private suspend fun writeLoop(data: String, connection: TcpConnection) = connection.useAwait {
+    (1..10).forEach { // (4)
         connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 ```
 1. Use the `onAcceptAsync` method to accept tcp connection.
 2. Use the `connectAsync` method to establish a tcp connection to the server.
-3. Lauch a coroutine and read data in a loop.
+3. Lauch a coroutine and read data in a loop. The function `connection.useAwait` closes connection automatically when the `readLoop` exits.
 4. Write data in a loop.

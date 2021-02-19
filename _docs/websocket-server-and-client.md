@@ -29,12 +29,11 @@ fun main() {
         .connectAsync { connection -> sendMessage("Client", connection) }
 }
 
-private suspend fun sendMessage(content: String, connection: WebSocketConnection) {
-    (1..10).forEach {
+private suspend fun sendMessage(content: String, connection: WebSocketConnection) = connection.useAwait {
+    (1..10).forEach { // (3)
         connection.sendText("${content}. message: $it, time: ${Date()}")
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 
 private fun onMessage(frame: Frame): CompletableFuture<Void> {
@@ -59,3 +58,4 @@ Client. message: 3, time: Mon Feb 15 15:35:26 CST 2021
 
 1. The WebSocket protocol specification defines `ws` and `wss` as two new uniform resource identifier (URI) schemes that are used for unencrypted and encrypted connections, respectively. Apart from the scheme name and fragment (# is not supported), the rest of the URI components are defined to use URI generic syntax.
 2. The Firefly WebSocket server and client supports some extension protocol, such as `permessage-deflate`, `deflate-frame`, `x-webkit-deflate-frame`, `fragment`, and `identity`.
+3. The function `connection.useAwait` closes connection automatically when the `readLoop` exits.
