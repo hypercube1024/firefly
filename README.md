@@ -77,7 +77,7 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create HTTP server and client
+HTTP server and client example:
 ```kotlin
 fun main() {
     `$`.httpServer()
@@ -89,8 +89,7 @@ fun main() {
 }
 ```
 
-Create WebSocket server and client
-
+WebSocket server and client example:
 ```kotlin
 fun main() {
     `$`.httpServer().websocket("/websocket/hello")
@@ -120,22 +119,21 @@ private fun onMessage(frame: Frame): CompletableFuture<Void> {
 }
 ```
 
-Create TCP server and client
-
+TCP server and client example:
 ```kotlin
 fun main() {
     `$`.tcpServer().onAcceptAsync { connection ->
-        launch { writeLoop("Server", connection) } 
+        launch { writeLoop("Server", connection) }
         launch { readLoop(connection) }
     }.listen("localhost", 8090)
 
     `$`.tcpClient().connectAsync("localhost", 8090) { connection ->
-        launch { writeLoop("Client", connection) } 
+        launch { writeLoop("Client", connection) }
         launch { readLoop(connection) }
     }
 }
 
-private suspend fun readLoop(connection: TcpConnection) {
+private suspend fun readLoop(connection: TcpConnection) = connection.useAwait {
     while (true) {
         try {
             val buffer = connection.read().await()
@@ -147,17 +145,15 @@ private suspend fun readLoop(connection: TcpConnection) {
     }
 }
 
-private suspend fun writeLoop(data: String, connection: TcpConnection) {
+private suspend fun writeLoop(data: String, connection: TcpConnection) = connection.useAwait {
     (1..10).forEach {
         connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 ```
 
 # Contact information
-
 - E-mail: qptkk@163.com
 - QQ Group: 126079579
 - Wechat: AlvinQiu

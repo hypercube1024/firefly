@@ -3,6 +3,7 @@ package com.fireflysource.example
 import com.fireflysource.`$`
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.BufferUtils.toBuffer
+import com.fireflysource.common.io.useAwait
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.connectAsync
 import com.fireflysource.net.tcp.aio.onAcceptAsync
@@ -23,7 +24,7 @@ fun main() {
     }
 }
 
-private suspend fun readLoop(connection: TcpConnection) {
+private suspend fun readLoop(connection: TcpConnection) = connection.useAwait {
     while (true) {
         try {
             val buffer = connection.read().await()
@@ -35,10 +36,9 @@ private suspend fun readLoop(connection: TcpConnection) {
     }
 }
 
-private suspend fun writeLoop(data: String, connection: TcpConnection) {
+private suspend fun writeLoop(data: String, connection: TcpConnection) = connection.useAwait {
     (1..10).forEach {
         connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
-    connection.closeAsync().await()
 }
