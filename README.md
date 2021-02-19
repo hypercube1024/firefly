@@ -103,12 +103,11 @@ fun main() {
         .connectAsync { connection -> sendMessage("Client", connection) }
 }
 
-private suspend fun sendMessage(content: String, connection: WebSocketConnection) {
+private suspend fun sendMessage(content: String, connection: WebSocketConnection) = connection.useAwait {
     (1..10).forEach {
         connection.sendText("${content}. message: $it, time: ${Date()}")
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 
 private fun onMessage(frame: Frame): CompletableFuture<Void> {
