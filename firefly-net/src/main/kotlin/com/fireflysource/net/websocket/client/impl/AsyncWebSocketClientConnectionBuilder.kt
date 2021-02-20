@@ -1,10 +1,12 @@
 package com.fireflysource.net.websocket.client.impl
 
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionManager
 import com.fireflysource.net.websocket.client.WebSocketClientRequest
 import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
+import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
 import kotlinx.coroutines.CoroutineScope
@@ -62,4 +64,9 @@ class AsyncWebSocketClientConnectionBuilder(
 
 fun WebSocketClientConnectionBuilder.connectAsync(block: suspend CoroutineScope.(WebSocketConnection) -> Unit) {
     this.connect().thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
+}
+
+fun WebSocketClientConnectionBuilder.onClientMessageAsync(block: suspend CoroutineScope.(Frame, WebSocketConnection) -> Unit): WebSocketClientConnectionBuilder {
+    this.onMessage { frame, connection -> connection.coroutineScope.launch { block(frame, connection) }.asVoidFuture() }
+    return this
 }

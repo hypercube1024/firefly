@@ -1,9 +1,11 @@
 package com.fireflysource.net.websocket.server.impl
 
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.websocket.common.WebSocketConnection
 import com.fireflysource.net.websocket.common.WebSocketMessageHandler
+import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection.Companion.defaultExtensionFactory
 import com.fireflysource.net.websocket.common.model.ExtensionConfig
 import com.fireflysource.net.websocket.common.model.WebSocketBehavior
@@ -77,4 +79,9 @@ fun WebSocketServerConnectionBuilder.onAcceptAsync(block: suspend CoroutineScope
         connection.coroutineScope.launch { block(connection) }
         Result.DONE
     }
+}
+
+fun WebSocketServerConnectionBuilder.onServerMessageAsync(block: suspend CoroutineScope.(Frame, WebSocketConnection) -> Unit): WebSocketServerConnectionBuilder {
+    this.onMessage { frame, connection -> connection.coroutineScope.launch { block(frame, connection) }.asVoidFuture() }
+    return this
 }

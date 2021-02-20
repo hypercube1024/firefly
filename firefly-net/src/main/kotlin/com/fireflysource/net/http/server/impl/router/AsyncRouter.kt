@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.server.impl.router
 
 import com.fireflysource.common.coroutine.CoroutineLocalContext
-import com.fireflysource.common.sys.Result
+import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.server.HttpServer
 import com.fireflysource.net.http.server.Matcher
@@ -9,7 +9,6 @@ import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.Router.EMPTY_HANDLER
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 
 class AsyncRouter(
@@ -126,7 +125,6 @@ fun Router.asyncHandler(block: suspend CoroutineScope.(RoutingContext) -> Unit):
     return this.handler { ctx ->
         ctx.connection.coroutineScope
             .launch(CoroutineLocalContext.asElement(mutableMapOf(serverHandlerCoroutineContextKey to ctx))) { block(ctx) }
-            .asCompletableFuture()
-            .thenCompose { Result.DONE }
+            .asVoidFuture()
     }
 }
