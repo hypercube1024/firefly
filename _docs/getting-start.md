@@ -109,28 +109,27 @@ WebSocket server and client example:
 ```kotlin
 fun main() {
     `$`.httpServer().websocket("/websocket/hello")
-        .onMessage { frame, _ -> onMessage(frame) }
+        .onServerMessageAsync { frame, _ -> onMessage(frame) }
         .onAcceptAsync { connection -> sendMessage("Server", connection) }
         .listen("localhost", 8090)
 
     val url = "ws://localhost:8090"
     `$`.httpClient().websocket("$url/websocket/hello")
-        .onMessage { frame, _ -> onMessage(frame) }
+        .onClientMessageAsync { frame, _ -> onMessage(frame) }
         .connectAsync { connection -> sendMessage("Client", connection) }
 }
 
-private suspend fun sendMessage(content: String, connection: WebSocketConnection) = connection.useAwait {
+private suspend fun sendMessage(data: String, connection: WebSocketConnection) = connection.useAwait {
     (1..10).forEach {
-        connection.sendText("${content}. message: $it, time: ${Date()}")
+        connection.sendText("WebSocket ${data}. count: $it, time: ${Date()}")
         delay(1000)
     }
 }
 
-private fun onMessage(frame: Frame): CompletableFuture<Void> {
+private fun onMessage(frame: Frame) {
     if (frame is TextFrame) {
         println(frame.payloadAsUTF8)
     }
-    return Result.DONE
 }
 ```
 
@@ -162,7 +161,7 @@ private suspend fun readLoop(connection: TcpConnection) = connection.useAwait {
 
 private suspend fun writeLoop(data: String, connection: TcpConnection) = connection.useAwait {
     (1..10).forEach {
-        connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
+        connection.write(toBuffer("TCP ${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
 }
