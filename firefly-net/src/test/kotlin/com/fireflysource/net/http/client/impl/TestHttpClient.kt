@@ -202,17 +202,12 @@ class TestHttpClient {
         val connection = httpClient.createHttpClientConnection(uri).await()
 
         connection.useAwait {
-            val builder = httpClient.get("/echo0")
-            val response = connection.send(builder.httpClientRequest).await()
-            assertEquals(HttpStatus.OK_200, response.status)
-            assertEquals("ok", response.stringBody)
-            println(response)
-
-            val builder1 = httpClient.get("/echo0")
-            val response1 = connection.send(builder1.httpClientRequest).await()
-            assertEquals(HttpStatus.OK_200, response1.status)
-            assertEquals("ok", response1.stringBody)
-            println(response1)
+            repeat(3) {
+                val response = connection.get("/echo0").submit().await()
+                assertEquals(HttpStatus.OK_200, response.status)
+                assertEquals("ok", response.stringBody)
+                println(response)
+            }
         }
 
         httpClient.stop()

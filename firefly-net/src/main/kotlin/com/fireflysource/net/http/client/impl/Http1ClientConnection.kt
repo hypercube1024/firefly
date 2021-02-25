@@ -44,11 +44,11 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
 
-
 class Http1ClientConnection(
     private val config: HttpConfig,
     private val tcpConnection: TcpConnection
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection, HttpClientConnection {
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection,
+    AbstractHttpClientConnection {
 
     companion object {
         private val log = SystemLogger.create(Http1ClientConnection::class.java)
