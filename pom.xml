@@ -59,7 +59,7 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.4.30</kotlin.version>
+        <kotlin.version>1.4.31</kotlin.version>
         <kotlin.coroutine.version>1.4.2</kotlin.coroutine.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
@@ -68,7 +68,7 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.4.10.2</dokka.version>
+        <dokka.version>1.4.20</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
@@ -78,12 +78,11 @@
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.3</spring.reactor.version>
+        <spring.reactor.version>2020.0.4</spring.reactor.version>
 
         <!-- test lib -->
-        <junit.version>5.7.0</junit.version>
-        <mockito.version>3.5.15</mockito.version>
-        <h2.version>1.4.200</h2.version>
+        <junit.version>5.7.1</junit.version>
+        <mockito.version>3.8.0</mockito.version>
     </properties>
 
     <dependencyManagement>
@@ -134,14 +133,6 @@
                 <version>${spring.reactor.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <!-- db -->
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${h2.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- kotlin lib -->
