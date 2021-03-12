@@ -87,7 +87,7 @@ class TestGroupBotMessageService {
                     else -> GroupBotMessageResult(0, "ok")
                 }
 
-                ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value).end(json().write(result))
+                ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value).end(json.write(result))
             }
             .enableSecureConnection()
     }

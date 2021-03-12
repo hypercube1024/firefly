@@ -14,7 +14,7 @@ fun main() {
         .router().get("/product/:id").produces("application/json")
         .handler { ctx ->
             ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
-                .end(json().write(Car("Benz", "Black")))
+                .end(json.write(Car("Benz", "Black")))
         }
         .listen("localhost", 8090)
 

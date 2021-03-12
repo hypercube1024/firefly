@@ -28,6 +28,6 @@ fun main() {
     `$`.httpClient()
         .put("$url/product/3")
         .add(HttpField(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value))
-        .body(json().write(Car("Benz", "Black")))
+        .body(json.write(Car("Benz", "Black")))
         .submit().thenAccept { response -> println(response.stringBody) }
 }
