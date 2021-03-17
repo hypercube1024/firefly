@@ -52,13 +52,13 @@ Add maven dependency in your pom.xml.
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly</artifactId>
-        <version>5.0.0-alpha10</version>
+        <version>5.0.0-alpha11</version>
     </dependency>
 
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-slf4j</artifactId>
-        <version>5.0.0-alpha10</version>
+        <version>5.0.0-alpha11</version>
     </dependency>
 </dependencics>
 ```
