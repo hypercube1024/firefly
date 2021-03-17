@@ -230,7 +230,7 @@ fun main() {
         .handler { ctx ->
             val id = ctx.getPathParameter("id")
             val type = ctx.getPathParameter(0)
-            val car = json().read<Car>(ctx.stringBody)
+            val car = json.read<Car>(ctx.stringBody)
 
             ctx.write("Update product. id: $id, type: $type. \r\n")
                 .end(car.toString())
@@ -241,7 +241,7 @@ fun main() {
     `$`.httpClient()
         .put("$url/product/3")
         .add(HttpField(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value))
-        .body(json().write(Car("Benz", "Black")))
+        .body(json.write(Car("Benz", "Black")))
         .submit().thenAccept { response -> println(response.stringBody) }
 }
 ```
@@ -285,7 +285,7 @@ fun main() {
         .router().get("/product/:id").produces("application/json")
         .handler { ctx ->
             ctx.put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
-                .end(json().write(Car("Benz", "Black")))
+                .end(json.write(Car("Benz", "Black")))
         }
         .listen("localhost", 8090)
 
