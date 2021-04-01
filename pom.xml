@@ -68,17 +68,17 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.4.20</dokka.version>
+        <dokka.version>1.4.30</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.12.1</jackson.version>
-        <conscrypt.version>2.5.1</conscrypt.version>
+        <jackson.version>2.12.2</jackson.version>
+        <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.5</openjsse.version>
         <javassist.version>3.27.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.4</spring.reactor.version>
+        <spring.reactor.version>2020.0.5</spring.reactor.version>
 
         <!-- test lib -->
         <junit.version>5.7.1</junit.version>
