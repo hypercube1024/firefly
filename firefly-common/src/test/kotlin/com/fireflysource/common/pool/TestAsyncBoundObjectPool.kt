@@ -122,7 +122,7 @@ class TestAsyncBoundObjectPool {
 
         dispose { pooledObject ->
             pooledObject.getObject().closed = true
-            destroyedChannel.offer(pooledObject)
+            destroyedChannel.trySend(pooledObject).isSuccess
         }
 
         noLeakCallback {

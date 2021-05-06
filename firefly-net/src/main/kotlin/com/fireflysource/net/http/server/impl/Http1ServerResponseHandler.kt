@@ -31,7 +31,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     private val responseChannel: Channel<Http1ResponseMessage> = Channel(Channel.UNLIMITED)
 
     fun sendResponseMessage(message: Http1ResponseMessage) {
-        responseChannel.offer(message)
+        responseChannel.trySend(message).isSuccess
     }
 
     fun generateResponseJob() = http1ServerConnection.coroutineScope.launch {
@@ -51,7 +51,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     fun endResponseHandler() {
-        responseChannel.offer(EndResponseHandler)
+        responseChannel.trySend(EndResponseHandler).isSuccess
     }
 
     private suspend fun generateHeader(header: Header) {

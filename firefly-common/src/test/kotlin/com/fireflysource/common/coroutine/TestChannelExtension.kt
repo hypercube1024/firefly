@@ -21,7 +21,7 @@ class TestChannelExtension {
     fun testPollAll() {
         val channel = Channel<Int>(Channel.UNLIMITED)
         repeat(3) {
-            channel.offer(1)
+            channel.trySend(1).isSuccess
         }
         val list = mutableListOf<Int>()
         channel.pollAll {
@@ -35,10 +35,10 @@ class TestChannelExtension {
     fun testClear() {
         val channel = Channel<Int>(Channel.UNLIMITED)
         repeat(3) {
-            channel.offer(1)
+            channel.trySend(1).isSuccess
         }
         channel.clear()
-        assertNull(channel.poll())
+        assertNull(channel.tryReceive().getOrNull())
     }
 
     @Test

@@ -54,13 +54,13 @@ class Http1ServerConnection(
             parser.parseAll(tcpConnection)
         } catch (e: BadMessageException) {
             requestHandler.badMessage(e)
-            channel.offer(ExitHttpParser)
+            channel.trySend(ExitHttpParser).isSuccess
         } catch (e: IOException) {
             log.info { "The TCP connection IO exception. message: ${e.message ?: e.javaClass.name}, id: $id" }
-            channel.offer(ExitHttpParser)
+            channel.trySend(ExitHttpParser).isSuccess
         } catch (e: CancellationException) {
             log.info { "Cancel HTTP1 parsing. message: ${e.message} id: $id" }
-            channel.offer(ExitHttpParser)
+            channel.trySend(ExitHttpParser).isSuccess
         } catch (e: Exception) {
             log.error(e) { "Parse HTTP1 request exception. id: $id" }
         } finally {
@@ -69,11 +69,11 @@ class Http1ServerConnection(
     }
 
     fun parseNextRequest() {
-        channel.offer(ParseNextHttpPacket)
+        channel.trySend(ParseNextHttpPacket).isSuccess
     }
 
     suspend fun endHttpParser() {
-        channel.offer(ExitHttpParser)
+        channel.trySend(ExitHttpParser).isSuccess
         parseRequestJob?.join()
     }
 

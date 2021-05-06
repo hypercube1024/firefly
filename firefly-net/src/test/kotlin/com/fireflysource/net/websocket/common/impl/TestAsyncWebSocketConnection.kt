@@ -93,7 +93,7 @@ class TestAsyncWebSocketConnection {
                 is TextFrame -> {
                     val payload = frame.payloadAsUTF8
                     println("Client receive: $payload")
-                    channel.offer(payload)
+                    channel.trySend(payload).isSuccess
                     Result.DONE
                 }
                 else -> Result.DONE

@@ -425,7 +425,7 @@ class Http1ClientConnection(
             prepareHttp1Headers(request) { this.remoteAddress.hostName }
         }
         val future = CompletableFuture<HttpClientResponse>()
-        requestChannel.offer(RequestMessage(request, future))
+        requestChannel.trySend(RequestMessage(request, future)).isSuccess
         return future
     }
 
@@ -467,7 +467,7 @@ class Http1ClientConnection(
             webSocketClientConnection = websocketFuture,
             webSocketClientRequest = webSocketClientRequest
         )
-        requestChannel.offer(message)
+        requestChannel.trySend(message).isSuccess
         return websocketFuture
     }
 

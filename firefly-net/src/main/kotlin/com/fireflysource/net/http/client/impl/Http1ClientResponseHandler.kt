@@ -76,7 +76,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         requireNotNull(clientResponse)
         val trailer = HttpFields(trailers)
         clientResponse.response.trailerSupplier = Supplier { trailer }
-        responseChannel.offer(clientResponse)
+        responseChannel.trySend(clientResponse).isSuccess
         return true
     }
 

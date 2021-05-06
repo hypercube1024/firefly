@@ -123,7 +123,7 @@ class AioSecureTcpConnection(
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        encryptedOutChannel.offer(OutputBuffer(byteBuffer, result))
+        encryptedOutChannel.trySend(OutputBuffer(byteBuffer, result)).isSuccess
         return this
     }
 
@@ -133,7 +133,7 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(OutputBuffers(byteBuffers, offset, length, result))
+        encryptedOutChannel.trySend(OutputBuffers(byteBuffers, offset, length, result)).isSuccess
         return this
     }
 
@@ -143,12 +143,12 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(OutputBufferList(byteBufferList, offset, length, result))
+        encryptedOutChannel.trySend(OutputBufferList(byteBufferList, offset, length, result)).isSuccess
         return this
     }
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
-        encryptedOutChannel.offer(ShutdownOutput(result))
+        encryptedOutChannel.trySend(ShutdownOutput(result)).isSuccess
         return this
     }
 

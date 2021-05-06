@@ -59,9 +59,9 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.4.32</kotlin.version>
-        <kotlin.coroutine.version>1.4.3</kotlin.coroutine.version>
-        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <kotlin.version>1.5.0</kotlin.version>
+        <kotlin.coroutine.version>1.5.0-RC</kotlin.coroutine.version>
+        <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.4</kotlin.compiler.languageVersion>
         <kotlin.compiler.apiVersion>1.4</kotlin.compiler.apiVersion>

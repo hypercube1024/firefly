@@ -88,7 +88,7 @@ class TestAsyncHttp2Connection {
         http2Connection.newStream(headersFrame,
             {
                 if (it.isSuccess) {
-                    val success = newStreamChannel.offer(it.value)
+                    val success = newStreamChannel.trySend(it.value).isSuccess
                     println("offer new stream success: $success .")
                 } else {
                     println("new a stream failed")
@@ -98,7 +98,7 @@ class TestAsyncHttp2Connection {
             object : Stream.Listener.Adapter() {
                 override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                     println("Client received headers: $frame")
-                    responseHeadersChannel.offer(frame)
+                    responseHeadersChannel.trySend(frame).isSuccess
                 }
             })
 
@@ -115,7 +115,7 @@ class TestAsyncHttp2Connection {
         http2Connection.newStream(headersFrameWithPriority,
             {
                 if (it.isSuccess) {
-                    val success = newStreamChannel.offer(it.value)
+                    val success = newStreamChannel.trySend(it.value).isSuccess
                     println("offer new stream success: $success .")
                 } else {
                     println("new a stream failed")
@@ -125,7 +125,7 @@ class TestAsyncHttp2Connection {
             object : Stream.Listener.Adapter() {
                 override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                     println("Client received headers: $frame")
-                    responseHeadersChannel.offer(frame)
+                    responseHeadersChannel.trySend(frame).isSuccess
                 }
             })
 
@@ -178,7 +178,7 @@ class TestAsyncHttp2Connection {
 
                     override fun onReset(http2Connection: Http2Connection, frame: ResetFrame) {
                         println("Server receives reset frame for an unknown stream. frame: $frame")
-                        resetFrameChannel.offer(frame)
+                        resetFrameChannel.trySend(frame).isSuccess
                     }
 
                     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
@@ -193,7 +193,7 @@ class TestAsyncHttp2Connection {
                         return object : Stream.Listener.Adapter() {
                             override fun onReset(stream: Stream, frame: ResetFrame) {
                                 println("Server receives the reset frame: $frame .")
-                                resetFrameChannel.offer(frame)
+                                resetFrameChannel.trySend(frame).isSuccess
                             }
                         }
                     }
@@ -216,7 +216,7 @@ class TestAsyncHttp2Connection {
         http2Connection.newStream(headersFrame,
             {
                 if (it.isSuccess) {
-                    val success = newStreamChannel.offer(it.value)
+                    val success = newStreamChannel.trySend(it.value).isSuccess
                     println("offer new stream success: $success .")
                 } else {
                     println("new a stream failed")
@@ -226,7 +226,7 @@ class TestAsyncHttp2Connection {
             object : Stream.Listener.Adapter() {
                 override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                     println("Client receives headers: $frame")
-                    responseHeadersChannel.offer(frame)
+                    responseHeadersChannel.trySend(frame).isSuccess
                 }
 
                 override fun onReset(stream: Stream, frame: ResetFrame) {
@@ -338,10 +338,10 @@ class TestAsyncHttp2Connection {
                 }
 
                 override fun onPush(stream: Stream, frame: PushPromiseFrame): Stream.Listener {
-                    val success = newPushStreamChannel.offer(stream)
+                    val success = newPushStreamChannel.trySend(stream).isSuccess
                     println("Client received push stream: $stream . $success , $frame")
 
-                    pushPromiseChannel.offer(frame)
+                    pushPromiseChannel.trySend(frame).isSuccess
                     return Stream.Listener.Adapter()
                 }
             })
@@ -423,7 +423,7 @@ class TestAsyncHttp2Connection {
 
             override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
                 println("Client received data frame: $frame")
-                dataFrameChannel.offer(frame)
+                dataFrameChannel.trySend(frame).isSuccess
                 result.accept(Result.SUCCESS)
             }
         })
@@ -469,7 +469,7 @@ class TestAsyncHttp2Connection {
 
                     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
                         println("Server creates the remote stream: $stream . the headers: $frame .")
-                        requestHeadersChannel.offer(frame)
+                        requestHeadersChannel.trySend(frame).isSuccess
 
                         val fields = HttpFields()
                         fields.put("Test-New-Stream-Response", "R1")
@@ -496,7 +496,7 @@ class TestAsyncHttp2Connection {
         val future = http2Connection.newStream(headersFrame, object : Stream.Listener.Adapter() {
             override fun onHeaders(stream: Stream, frame: HeadersFrame) {
                 println("Client received headers: $frame")
-                responseHeadersChannel.offer(frame)
+                responseHeadersChannel.trySend(frame).isSuccess
             }
         })
 
@@ -635,7 +635,7 @@ class TestAsyncHttp2Connection {
                         println("server receives settings: $frame")
 
                         if (frame.settings == settingsFrame.settings) {
-                            val success = channel.offer(frame)
+                            val success = channel.trySend(frame).isSuccess
                             println("put result settings frame: $success")
                         }
                     }
@@ -706,7 +706,7 @@ class TestAsyncHttp2Connection {
                 override fun onPing(http2Connection: Http2Connection, frame: PingFrame) {
                     println("Client receives the ping frame. ${frame.payloadAsLong}: ${frame.isReply}")
                     if (frame.payloadAsLong == count) {
-                        val success = channel.offer(frame.payloadAsLong)
+                        val success = channel.trySend(frame.payloadAsLong).isSuccess
                         println("put result ping frame: $success")
                     }
                 }
@@ -790,7 +790,7 @@ class TestAsyncHttp2Connection {
 
             override fun onReset(stream: Stream, frame: ResetFrame) {
                 println("Client received reset: $frame")
-                channel.offer(frame)
+                channel.trySend(frame).isSuccess
             }
         })
 
@@ -843,7 +843,7 @@ class TestAsyncHttp2Connection {
                         return object : Stream.Listener.Adapter() {
                             override fun onReset(stream: Stream, frame: ResetFrame) {
                                 println("Server received reset: $frame")
-                                channel.offer(frame)
+                                channel.trySend(frame).isSuccess
                             }
 
                             override fun onIdleTimeout(stream: Stream, x: Throwable): Boolean {

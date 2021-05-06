@@ -28,7 +28,7 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     private var group: TcpChannelGroup = AioTcpChannelGroup("aio-tcp-server")
     private var stopGroup = true
     private val connectionChannel = Channel<TcpConnection>(UNLIMITED)
-    private var connectionConsumer: Consumer<TcpConnection> = Consumer { connectionChannel.offer(it) }
+    private var connectionConsumer: Consumer<TcpConnection> = Consumer { connectionChannel.trySend(it).isSuccess }
     private var secureEngineFactory: SecureEngineFactory =
         DefaultSecureEngineFactorySelector.createSecureEngineFactory(false)
     private var supportedProtocols: List<String> = defaultSupportedProtocols

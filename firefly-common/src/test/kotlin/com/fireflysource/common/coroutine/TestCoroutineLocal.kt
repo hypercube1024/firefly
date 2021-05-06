@@ -96,7 +96,7 @@ class TestCoroutineLocal {
         compute {
             (1..10).forEach {
                 delay(100)
-                channel.offer(it)
+                channel.trySend(it).isSuccess
             }
         }
 

@@ -316,7 +316,7 @@ class FileLog : Log {
 
     override fun close() = runBlocking {
         try {
-            channel.offer(stopLogMessage)
+            channel.trySend(stopLogMessage).isSuccess
             consumerJob.cancel(CancellationException("Cancel file log exception."))
             consumerJob.join()
         } finally {
@@ -352,7 +352,7 @@ class FileLog : Log {
     }
 
     private fun write(logItem: LogItem) {
-        channel.offer(logItem)
+        channel.trySend(logItem).isSuccess
     }
 
     override fun equals(other: Any?): Boolean {

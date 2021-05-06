@@ -116,7 +116,7 @@ class AsyncWebSocketConnection(
     }
 
     override fun setWebSocketMessageHandler(handler: WebSocketMessageHandler) {
-        extensionNegotiator.setNextIncomingFrames { messageChannel.offer(it) }
+        extensionNegotiator.setNextIncomingFrames { messageChannel.trySend(it).isSuccess }
         messageHandler = handler
     }
 

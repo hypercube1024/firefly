@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 inline fun <T> Channel<T>.pollAll(crossinline block: (T) -> Unit) {
     while (true) {
-        val message = this.poll()
+        val message = this.tryReceive().getOrNull()
         if (message != null) block(message)
         else break
     }
@@ -23,7 +23,7 @@ class Signal<T> {
 
     fun notify(e: T) {
         if (notified.compareAndSet(false, true)) {
-            channel.offer(e)
+            channel.trySend(e).isSuccess
         }
     }
 

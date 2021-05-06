@@ -16,7 +16,8 @@ import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
 import com.fireflysource.net.tcp.TcpConnection
-import com.fireflysource.net.tcp.aio.ApplicationProtocol.*
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
+import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.channels.Channel
@@ -99,7 +100,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         fun sendMessage(message: ClientRequestMessage) {
-            channel.offer(message)
+            channel.trySend(message).isSuccess
         }
 
         override fun init() {
