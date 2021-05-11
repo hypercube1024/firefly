@@ -63,8 +63,8 @@
         <kotlin.coroutine.version>1.5.0-RC</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-        <kotlin.compiler.languageVersion>1.4</kotlin.compiler.languageVersion>
-        <kotlin.compiler.apiVersion>1.4</kotlin.compiler.apiVersion>
+        <kotlin.compiler.languageVersion>1.5</kotlin.compiler.languageVersion>
+        <kotlin.compiler.apiVersion>1.5</kotlin.compiler.apiVersion>
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
@@ -304,7 +304,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.6</version>
+                    <version>0.8.7</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>
