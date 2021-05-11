@@ -31,6 +31,7 @@ class FileLog : Log {
 
         val executor = newSingleThreadExecutor()
         private val logThread: CoroutineDispatcher = executor.asCoroutineDispatcher()
+        private val fileLogThreadScope: CoroutineScope = CoroutineScope(logThread + CoroutineName("FireflyFileLogThread"))
 
         class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
             protected fun finalize() {
@@ -64,7 +65,7 @@ class FileLog : Log {
 
     private val output = LogOutputStream()
     private val channel = Channel<LogItem>(UNLIMITED)
-    private val consumerJob = GlobalScope.launch(logThread) {
+    private val consumerJob = fileLogThreadScope.launch(logThread) {
         recvLogItemLoop@ while (true) {
             val logItem = channel.receive()
             if (logItem === stopLogMessage) {
@@ -316,7 +317,7 @@ class FileLog : Log {
 
     override fun close() = runBlocking {
         try {
-            channel.trySend(stopLogMessage).isSuccess
+            channel.trySend(stopLogMessage)
             consumerJob.cancel(CancellationException("Cancel file log exception."))
             consumerJob.join()
         } finally {
@@ -352,7 +353,7 @@ class FileLog : Log {
     }
 
     private fun write(logItem: LogItem) {
-        channel.trySend(logItem).isSuccess
+        channel.trySend(logItem)
     }
 
     override fun equals(other: Any?): Boolean {

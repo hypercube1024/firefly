@@ -23,7 +23,7 @@ class Signal<T> {
 
     fun notify(e: T) {
         if (notified.compareAndSet(false, true)) {
-            channel.trySend(e).isSuccess
+            channel.trySend(e)
         }
     }
 

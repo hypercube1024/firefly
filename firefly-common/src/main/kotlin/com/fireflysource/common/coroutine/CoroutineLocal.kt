@@ -159,23 +159,27 @@ suspend fun <T> withContextInheritable(
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
 
+val computationScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.computation + CoroutineName("FireflyCommonComputation"))
+val ioBlockingScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.ioBlocking + CoroutineName("FireflyCommonIOBlocking"))
+val singleThreadScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.ioBlocking + CoroutineName("FireflyCommonSingleThread"))
+
 inline fun compute(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    GlobalScope.launch(CoroutineDispatchers.computation) { block(this) }
+    computationScope.launch(CoroutineDispatchers.computation) { block(this) }
 
 inline fun <T> computeAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    GlobalScope.async(CoroutineDispatchers.computation) { block(this) }
+    computationScope.async(CoroutineDispatchers.computation) { block(this) }
 
 inline fun blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    GlobalScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
+    ioBlockingScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
 
 inline fun <T> blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    GlobalScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
+    ioBlockingScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
 
 inline fun event(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    GlobalScope.launch(CoroutineDispatchers.singleThread) { block(this) }
+    singleThreadScope.launch(CoroutineDispatchers.singleThread) { block(this) }
 
 inline fun <T> eventAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    GlobalScope.async(CoroutineDispatchers.singleThread) { block(this) }
+    singleThreadScope.async(CoroutineDispatchers.singleThread) { block(this) }
 
 inline fun CoroutineScope.blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
     this.launch(CoroutineDispatchers.ioBlocking) { block(this) }

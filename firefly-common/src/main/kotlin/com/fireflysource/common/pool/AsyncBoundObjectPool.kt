@@ -57,7 +57,7 @@ class AsyncBoundObjectPool<T>(
                 future.completeExceptionally(TimeoutException("Take pooled object timeout"))
             }
         }, timeout, TimeUnit.SECONDS)
-        poolMessageChannel.trySend(PollObject(future, timeoutJob)).isSuccess
+        poolMessageChannel.trySend(PollObject(future, timeoutJob))
         return future
     }
 
@@ -189,7 +189,7 @@ class AsyncBoundObjectPool<T>(
 
     override fun release(pooledObject: PooledObject<T>): CompletableFuture<Void> {
         val future = CompletableFuture<Void>()
-        poolMessageChannel.trySend(ReleaseObject(pooledObject, future)).isSuccess
+        poolMessageChannel.trySend(ReleaseObject(pooledObject, future))
         return future
     }
 
