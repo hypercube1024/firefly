@@ -72,13 +72,13 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
 
 
     override fun accept(buffer: ByteBuffer, t: T) {
-        inputChannel.trySend(WriteFileRequest(buffer)).isSuccess
+        inputChannel.trySend(WriteFileRequest(buffer))
     }
 
     override fun closeAsync(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
-        inputChannel.trySend(EndWriteFile).isSuccess
+        inputChannel.trySend(EndWriteFile)
     }
 
     private suspend fun closeAwait() {

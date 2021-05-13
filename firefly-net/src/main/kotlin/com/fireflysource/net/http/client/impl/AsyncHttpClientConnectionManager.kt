@@ -100,7 +100,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         fun sendMessage(message: ClientRequestMessage) {
-            channel.trySend(message).isSuccess
+            channel.trySend(message)
         }
 
         override fun init() {

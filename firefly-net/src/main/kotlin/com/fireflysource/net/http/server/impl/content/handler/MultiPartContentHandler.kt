@@ -55,30 +55,30 @@ class MultiPartContentHandler(
     private inner class MultiPartHandler : MultiPartParser.Handler {
 
         override fun startPart() {
-            multiPartChannel.trySend(StartPart).isSuccess
+            multiPartChannel.trySend(StartPart)
         }
 
         override fun parsedField(name: String, value: String) {
-            multiPartChannel.trySend(PartField(name, value)).isSuccess
+            multiPartChannel.trySend(PartField(name, value))
         }
 
         override fun headerComplete(): Boolean {
-            multiPartChannel.trySend(PartHeaderComplete).isSuccess
+            multiPartChannel.trySend(PartHeaderComplete)
             return false
         }
 
         override fun content(item: ByteBuffer, last: Boolean): Boolean {
-            multiPartChannel.trySend(PartContent(item, last)).isSuccess
+            multiPartChannel.trySend(PartContent(item, last))
             return false
         }
 
         override fun messageComplete(): Boolean {
-            multiPartChannel.trySend(PartMessageComplete).isSuccess
+            multiPartChannel.trySend(PartMessageComplete)
             return true
         }
 
         override fun earlyEOF() {
-            multiPartChannel.trySend(PartEarlyEOF).isSuccess
+            multiPartChannel.trySend(PartEarlyEOF)
         }
 
     }
@@ -258,10 +258,10 @@ class MultiPartContentHandler(
 
         if (firstMessage) {
             job = parsingJob()
-            multiPartChannel.trySend(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE])).isSuccess
+            multiPartChannel.trySend(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
             firstMessage = false
         }
-        multiPartChannel.trySend(ParseMultiPartContent(byteBuffer)).isSuccess
+        multiPartChannel.trySend(ParseMultiPartContent(byteBuffer))
     }
 
     override fun closeAsync(): CompletableFuture<Void> {
@@ -278,7 +278,7 @@ class MultiPartContentHandler(
     }
 
     private suspend fun closeAwait() {
-        multiPartChannel.trySend(EndMultiPartHandler).isSuccess
+        multiPartChannel.trySend(EndMultiPartHandler)
         job?.join()
     }
 

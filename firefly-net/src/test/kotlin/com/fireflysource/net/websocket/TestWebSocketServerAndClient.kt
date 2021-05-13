@@ -63,7 +63,7 @@ class TestWebSocketServerAndClient {
         server.websocket("/websocket/echo")
             .onMessage { frame, _ ->
                 if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
-                    serverChannel.trySend(frame.payloadAsUTF8).isSuccess
+                    serverChannel.trySend(frame.payloadAsUTF8)
                 }
                 Result.DONE
             }
@@ -80,7 +80,7 @@ class TestWebSocketServerAndClient {
             .extensions(extensions.split(","))
             .onMessage { frame, _ ->
                 if (frame.type == Frame.Type.TEXT && frame is TextFrame) {
-                    clientChannel.trySend(frame.payloadAsUTF8).isSuccess
+                    clientChannel.trySend(frame.payloadAsUTF8)
                 }
                 Result.DONE
             }

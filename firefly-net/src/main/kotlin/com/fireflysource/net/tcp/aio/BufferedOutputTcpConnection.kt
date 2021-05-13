@@ -106,14 +106,14 @@ class BufferedOutputTcpConnection(
     }
 
     override fun flush(result: Consumer<Result<Void>>): TcpConnection {
-        outputMessageChannel.trySend(FlushOutput(result)).isSuccess
+        outputMessageChannel.trySend(FlushOutput(result))
         return this
     }
 
     override fun getBufferSize(): Int = bufferSize
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        outputMessageChannel.trySend(OutputBuffer(byteBuffer, result)).isSuccess
+        outputMessageChannel.trySend(OutputBuffer(byteBuffer, result))
         return this
     }
 
@@ -121,7 +121,7 @@ class BufferedOutputTcpConnection(
         byteBuffers: Array<ByteBuffer>, offset: Int, length: Int, result: Consumer<Result<Long>>
     ): TcpConnection {
         val message = OutputBuffers(byteBuffers, offset, length, result)
-        outputMessageChannel.trySend(message).isSuccess
+        outputMessageChannel.trySend(message)
         return this
     }
 
@@ -129,12 +129,12 @@ class BufferedOutputTcpConnection(
         byteBufferList: List<ByteBuffer>, offset: Int, length: Int, result: Consumer<Result<Long>>
     ): TcpConnection {
         val message = OutputBufferList(byteBufferList, offset, length, result)
-        outputMessageChannel.trySend(message).isSuccess
+        outputMessageChannel.trySend(message)
         return this
     }
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
-        outputMessageChannel.trySend(ShutdownOutput(result)).isSuccess
+        outputMessageChannel.trySend(ShutdownOutput(result))
         return this
     }
 }

@@ -184,7 +184,7 @@ abstract class AsyncHttp2Connection(
         }
 
         fun onWindowUpdate(stream: Stream?, frame: WindowUpdateFrame) {
-            frameEntryChannel.trySend(OnWindowUpdateMessage(stream, frame)).isSuccess
+            frameEntryChannel.trySend(OnWindowUpdateMessage(stream, frame))
         }
 
         private suspend fun onWindowUpdateMessage(onWindowUpdateMessage: OnWindowUpdateMessage) {
@@ -299,13 +299,13 @@ abstract class AsyncHttp2Connection(
 
         fun sendControlFrame(stream: Stream?, vararg frames: Frame): CompletableFuture<Long> {
             val future = CompletableFuture<Long>()
-            frameEntryChannel.trySend(ControlFrameEntry(stream, arrayOf(*frames), futureToConsumer(future))).isSuccess
+            frameEntryChannel.trySend(ControlFrameEntry(stream, arrayOf(*frames), futureToConsumer(future)))
             return future
         }
 
         fun sendDataFrame(stream: Stream, frame: DataFrame): CompletableFuture<Long> {
             val future = CompletableFuture<Long>()
-            frameEntryChannel.trySend(DataFrameEntry(stream, frame, futureToConsumer(future))).isSuccess
+            frameEntryChannel.trySend(DataFrameEntry(stream, frame, futureToConsumer(future)))
             return future
         }
     }

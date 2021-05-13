@@ -86,7 +86,7 @@ abstract class AbstractFileContentProvider(
     override fun closeAsync(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
 
     override fun close() {
-        if (isOpen) readChannel.trySend(EndReadFile).isSuccess
+        if (isOpen) readChannel.trySend(EndReadFile)
     }
 
     private suspend fun closeAwait() {
@@ -96,7 +96,7 @@ abstract class AbstractFileContentProvider(
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
         val future = CompletableFuture<Int>()
-        readChannel.trySend(ReadFileRequest(byteBuffer, future)).isSuccess
+        readChannel.trySend(ReadFileRequest(byteBuffer, future))
         return future
     }
 

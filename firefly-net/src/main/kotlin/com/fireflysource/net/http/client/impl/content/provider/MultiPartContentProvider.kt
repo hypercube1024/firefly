@@ -147,7 +147,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 
     override fun close() {
-        multiPartChannel.trySend(EndMultiPartProvider).isSuccess
+        multiPartChannel.trySend(EndMultiPartProvider)
     }
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
@@ -160,7 +160,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         }
 
         val future = CompletableFuture<Int>()
-        multiPartChannel.trySend(GenerateMultiPart(byteBuffer, future)).isSuccess
+        multiPartChannel.trySend(GenerateMultiPart(byteBuffer, future))
         return future
     }
 

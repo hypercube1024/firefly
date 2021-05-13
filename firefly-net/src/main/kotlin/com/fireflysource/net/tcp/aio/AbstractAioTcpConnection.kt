@@ -63,7 +63,7 @@ abstract class AbstractAioTcpConnection(
         }
 
         fun sendOutputMessage(output: OutputMessage) {
-            outputMessageChannel.trySend(output).isSuccess
+            outputMessageChannel.trySend(output)
         }
 
         fun shutdownOutput() {
@@ -199,7 +199,7 @@ abstract class AbstractAioTcpConnection(
         }
 
         fun sendInputMessage(input: InputMessage) {
-            inputMessageChannel.trySend(input).isSuccess
+            inputMessageChannel.trySend(input)
         }
 
         fun shutdownInput() {

@@ -156,7 +156,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     private suspend fun endHttpParser() {
-        parserChannel.trySend(EndRequestHandler).isSuccess
+        parserChannel.trySend(EndRequestHandler)
         connection.endHttpParser()
         log.info { "Upgrade protocol success. Exit HTTP1 parser. id: ${connection.id}" }
     }
@@ -275,42 +275,42 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
-        parserChannel.trySend(StartRequest(method, uri, version)).isSuccess
+        parserChannel.trySend(StartRequest(method, uri, version))
         return false
     }
 
     override fun getHeaderCacheSize(): Int = 4096
 
     override fun parsedHeader(field: HttpField) {
-        parserChannel.trySend(ParsedHeader(field)).isSuccess
+        parserChannel.trySend(ParsedHeader(field))
     }
 
     override fun headerComplete(): Boolean {
-        parserChannel.trySend(HeaderComplete).isSuccess
+        parserChannel.trySend(HeaderComplete)
         return false
     }
 
     override fun content(byteBuffer: ByteBuffer): Boolean {
-        parserChannel.trySend(Content(byteBuffer)).isSuccess
+        parserChannel.trySend(Content(byteBuffer))
         return false
     }
 
     override fun contentComplete(): Boolean {
-        parserChannel.trySend(ContentComplete).isSuccess
+        parserChannel.trySend(ContentComplete)
         return false
     }
 
     override fun messageComplete(): Boolean {
-        parserChannel.trySend(MessageComplete).isSuccess
+        parserChannel.trySend(MessageComplete)
         return true
     }
 
     override fun earlyEOF() {
-        parserChannel.trySend(EarlyEOF).isSuccess
+        parserChannel.trySend(EarlyEOF)
     }
 
     override fun badMessage(failure: BadMessageException) {
-        parserChannel.trySend(BadMessage(failure)).isSuccess
+        parserChannel.trySend(BadMessage(failure))
     }
 
 }
