@@ -104,32 +104,6 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     ) {
         start()
 
-        fun createSecureEngine(scope: CoroutineScope) = if (peerHost.isNotBlank() && peerPort != 0) {
-            secureEngineFactory.create(scope, true, peerHost, peerPort, supportedProtocols)
-        } else {
-            secureEngineFactory.create(scope, true, supportedProtocols)
-        }
-
-        fun createConnection(connectionId: Int, socketChannel: AsynchronousSocketChannel): TcpConnection {
-            val aioTcpConnection =
-                AioTcpConnection(
-                    connectionId,
-                    config.timeout,
-                    socketChannel,
-                    group.getDispatcher(connectionId),
-                    config.inputBufferSize
-                )
-
-            val tcpConnection = if (config.enableSecureConnection) {
-                val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
-                AioSecureTcpConnection(aioTcpConnection, secureEngine)
-            } else aioTcpConnection
-
-            return if (config.enableOutputBuffer) {
-                BufferedOutputTcpConnection(tcpConnection, config.outputBufferSize)
-            } else tcpConnection
-        }
-
         try {
             val socketChannel = AsynchronousSocketChannel.open(group.asynchronousChannelGroup)
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
@@ -139,7 +113,19 @@ class AioTcpClient(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
 
                 override fun completed(result: Void?, connectionId: Int) {
                     try {
-                        future.complete(createConnection(connectionId, socketChannel))
+                        future.complete(
+                            createTcpConnection(
+                                connectionId,
+                                socketChannel,
+                                group,
+                                config,
+                                peerHost,
+                                peerPort,
+                                true,
+                                supportedProtocols,
+                                secureEngineFactory
+                            )
+                        )
                     } catch (e: Exception) {
                         log.warn(e) { "connecting exception. id: ${connectionId}, address: $address" }
                         future.completeExceptionally(e)

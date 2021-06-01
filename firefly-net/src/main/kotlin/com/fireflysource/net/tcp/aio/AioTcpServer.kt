@@ -147,31 +147,24 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
     }
 
     private fun onAcceptCompleted(socketChannel: AsynchronousSocketChannel, connectionId: Int) {
-        fun createSecureEngine(scope: CoroutineScope) = if (peerHost.isNotBlank() && peerPort != 0) {
-            secureEngineFactory.create(scope, false, peerHost, peerPort, supportedProtocols)
-        } else {
-            secureEngineFactory.create(scope, false, supportedProtocols)
-        }
-
         try {
             socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, config.reuseAddr)
             socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, config.keepAlive)
             socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, config.tcpNoDelay)
-            val aioTcpConnection = AioTcpConnection(
-                connectionId, config.timeout,
-                socketChannel, group.getDispatcher(connectionId), config.inputBufferSize
+
+            connectionConsumer.accept(
+                createTcpConnection(
+                    connectionId,
+                    socketChannel,
+                    group,
+                    config,
+                    peerHost,
+                    peerPort,
+                    false,
+                    supportedProtocols,
+                    secureEngineFactory
+                )
             )
-
-            val tcpConnection = if (config.enableSecureConnection) {
-                val secureEngine = createSecureEngine(aioTcpConnection.coroutineScope)
-                AioSecureTcpConnection(aioTcpConnection, secureEngine)
-            } else aioTcpConnection
-
-            val connection = if (config.enableOutputBuffer) {
-                BufferedOutputTcpConnection(tcpConnection, config.outputBufferSize)
-            } else tcpConnection
-
-            connectionConsumer.accept(connection)
             log.debug { "accept the client connection. $connectionId" }
         } catch (e: Exception) {
             log.warn(e) { "accept connection exception. $connectionId" }

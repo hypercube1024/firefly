@@ -184,7 +184,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
 
     private suspend fun flushChunkedContentBuffer(contentBuffer: ByteBuffer): Long {
         val bufArray = arrayOf(chunkBuffer, contentBuffer)
-        val remaining = bufArray.map { it.remaining().toLong() }.sum()
+        val remaining = bufArray.sumOf { it.remaining().toLong() }
         val length = if (remaining > 0) {
             val len = http1ServerConnection.tcpConnection.write(bufArray, 0, bufArray.size).await()
             log.debug { "flush chunked content bytes: $len" }

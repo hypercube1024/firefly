@@ -6,6 +6,7 @@ import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.WrappedTcpConnection
 import com.fireflysource.net.tcp.buffer.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
@@ -16,7 +17,7 @@ import java.util.function.Consumer
 class BufferedOutputTcpConnection(
     private val tcpConnection: TcpConnection,
     private val bufferSize: Int = 8192
-) : TcpConnection by tcpConnection {
+) : TcpConnection by tcpConnection, WrappedTcpConnection {
 
     companion object {
         private val log = SystemLogger.create(BufferedOutputTcpConnection::class.java)
@@ -30,12 +31,14 @@ class BufferedOutputTcpConnection(
         flushJob()
     }
 
+    override fun getRawTcpConnection(): TcpConnection = tcpConnection
+
     private fun flushJob() = coroutineScope.launch {
         flushLoop@ while (true) {
             when (val message = outputMessageChannel.receive()) {
-                is OutputBuffer -> flushOutputBuffer(message)
-                is OutputBuffers -> flushOutputBuffers(message)
-                is OutputBufferList -> flushOutputBuffers(message)
+                is OutputBuffer -> appendOutputBuffer(message)
+                is OutputBuffers -> appendOutputBuffers(message)
+                is OutputBufferList -> appendOutputBuffers(message)
                 is FlushOutput -> flushBuffer(message)
                 is ShutdownOutput -> {
                     shutdownOutput(message)
@@ -45,7 +48,7 @@ class BufferedOutputTcpConnection(
         }
     }
 
-    private suspend fun flushOutputBuffer(message: OutputBuffer) {
+    private suspend fun appendOutputBuffer(message: OutputBuffer) {
         try {
             val remaining = message.buffer.remaining()
             append(message.buffer)
@@ -55,7 +58,7 @@ class BufferedOutputTcpConnection(
         }
     }
 
-    private suspend fun flushOutputBuffers(message: OutputBuffers) {
+    private suspend fun appendOutputBuffers(message: OutputBuffers) {
         try {
             val remaining = message.remaining()
             val offset = message.getCurrentOffset()
