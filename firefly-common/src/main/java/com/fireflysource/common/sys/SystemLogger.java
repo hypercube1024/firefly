@@ -14,9 +14,9 @@ public class SystemLogger {
     public static LazyLogger create(Class<?> clazz) {
         try {
             String className = clazz.getSimpleName();
-            return JavassistClassProxyFactory.INSTANCE.createProxy(system, ((handler, instance, args) -> {
+            return JavassistClassProxyFactory.INSTANCE.createProxy(system, ((handler, originalInstance, args) -> {
                 try (MDC.MDCCloseable mdc = MDC.putCloseable("class", className)) {
-                    return handler.invoke(instance, args);
+                    return handler.invoke(originalInstance, args);
                 }
             }), null);
         } catch (Throwable e) {

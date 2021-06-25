@@ -22,9 +22,9 @@ public class JavassistClassProxyFactory implements ClassProxyFactory {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T createProxy(T instance, ClassProxy proxy, MethodFilter filter) throws Throwable {
+    public <T> T createProxy(T instance, ClassProxy proxy, MethodFilter methodFilter) throws Throwable {
         Class<?> clazz = instance.getClass();
-        Method[] methods = Arrays.stream(clazz.getMethods()).filter(m -> filterMethods(filter, m)).toArray(Method[]::new);
+        Method[] methods = Arrays.stream(clazz.getMethods()).filter(m -> filterMethods(methodFilter, m)).toArray(Method[]::new);
         if (methods.length == 0) {
             return instance;
         }
