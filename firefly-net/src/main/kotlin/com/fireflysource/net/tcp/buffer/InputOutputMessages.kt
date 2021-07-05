@@ -9,7 +9,7 @@ sealed class InputMessage
 
 class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : InputMessage()
 
-class ShutdownInput(val result: Consumer<Result<Void>>) : InputMessage()
+object ShutdownInput : InputMessage()
 
 
 sealed class OutputMessage {

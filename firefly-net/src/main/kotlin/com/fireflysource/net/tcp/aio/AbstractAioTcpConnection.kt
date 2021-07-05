@@ -54,6 +54,7 @@ abstract class AbstractAioTcpConnection(
     private val closeCallbacks: MutableList<Callback> = mutableListOf()
     private val outputMessageHandler = OutputMessageHandler()
     private val inputMessageHandler = InputMessageHandler(inputBufferSize)
+    private val closeResultChannel: Channel<Consumer<Result<Void>>> = Channel(UNLIMITED)
 
     private inner class OutputMessageHandler {
         private val outputMessageChannel: Channel<OutputMessage> = Channel(UNLIMITED)
@@ -66,7 +67,7 @@ abstract class AbstractAioTcpConnection(
             outputMessageChannel.trySend(output)
         }
 
-        fun shutdownOutput() {
+        private fun shutdownOutput() {
             if (isOutputShutdown.compareAndSet(false, true)) {
                 try {
                     socketChannel.shutdownOutput()
@@ -93,6 +94,7 @@ abstract class AbstractAioTcpConnection(
                     else -> throw UnknownTypeException("Unknown output message. $message")
                 }
             }
+            closeResultChannel.pollAll { it.accept(Result.SUCCESS) }
         }
 
         private suspend fun handleOutputMessage(output: OutputMessage) {
@@ -199,10 +201,13 @@ abstract class AbstractAioTcpConnection(
         }
 
         fun sendInputMessage(input: InputMessage) {
+            if (input is ShutdownInput) {
+                shutdownInput()
+            }
             inputMessageChannel.trySend(input)
         }
 
-        fun shutdownInput() {
+        private fun shutdownInput() {
             if (isInputShutdown.compareAndSet(false, true)) {
                 try {
                     socketChannel.shutdownInput()
@@ -221,17 +226,17 @@ abstract class AbstractAioTcpConnection(
         }.invokeOnCompletion { cause ->
             val e = cause ?: ClosedChannelException()
             inputMessageChannel.pollAll { message ->
-                when (message) {
-                    is InputBuffer -> message.bufferFuture.completeExceptionally(e)
-                    is ShutdownInput -> message.result.accept(Result.SUCCESS)
+                if (message is InputBuffer) {
+                    message.bufferFuture.completeExceptionally(e)
                 }
             }
+            closeResultChannel.pollAll { it.accept(Result.SUCCESS) }
         }
 
         private suspend fun handleInputMessage(input: InputMessage) {
             when (input) {
                 is InputBuffer -> readBuffers(input)
-                is ShutdownInput -> shutdownInputAndClose(input)
+                is ShutdownInput -> shutdownInputAndClose()
             }
         }
 
@@ -265,16 +270,10 @@ abstract class AbstractAioTcpConnection(
                 inputBuffer.copy().also { input.bufferFuture.complete(it) }
             } else {
                 shutdownInputAndClose()
-                closeAsync()
                 failed(input, exception)
             }
             BufferUtils.clear(inputBuffer)
             return success
-        }
-
-        private fun shutdownInputAndClose(input: ShutdownInput) {
-            shutdownInputAndClose()
-            input.result.accept(Result.SUCCESS)
         }
 
         private fun shutdownInputAndClose() {
@@ -284,13 +283,14 @@ abstract class AbstractAioTcpConnection(
             log.debug { "TCP connection shutdown input. id $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
             if (isShutdownOutput) {
                 closeNow()
+            } else {
+                shutdownOutput()
             }
         }
 
         private fun failed(input: InputMessage, e: Exception?) {
-            when (input) {
-                is InputBuffer -> input.bufferFuture.completeExceptionally(e)
-                is ShutdownInput -> input.result.accept(createFailedResult(e))
+            if (input is InputBuffer) {
+                input.bufferFuture.completeExceptionally(e)
             }
         }
     }
@@ -337,9 +337,9 @@ abstract class AbstractAioTcpConnection(
             if (isClosed) {
                 result.accept(Result.SUCCESS)
             } else {
+                closeResultChannel.trySend(result)
                 outputMessageHandler.sendOutputMessage(ShutdownOutput {
-                    inputMessageHandler.shutdownInput()
-                    inputMessageHandler.sendInputMessage(ShutdownInput { r -> result.accept(r) })
+                    inputMessageHandler.sendInputMessage(ShutdownInput)
                 })
             }
         } else {
@@ -353,7 +353,7 @@ abstract class AbstractAioTcpConnection(
     }
 
     override fun shutdownInput(): TcpConnection {
-        inputMessageHandler.sendInputMessage(ShutdownInput(discard()))
+        inputMessageHandler.sendInputMessage(ShutdownInput)
         return this
     }
 
@@ -388,6 +388,8 @@ abstract class AbstractAioTcpConnection(
             } catch (e: Throwable) {
                 log.warn { "Cancel TCP coroutine exception. ${e.message} id: $id" }
             }
+
+            closeResultChannel.pollAll { it.accept(Result.SUCCESS) }
 
             log.info { "The TCP connection close success. id: $id, out: $isOutputShutdown, in: $isInputShutdown, socket: ${!socketChannel.isOpen}" }
         }
