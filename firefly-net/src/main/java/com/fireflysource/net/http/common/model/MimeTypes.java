@@ -460,7 +460,7 @@ public class MimeTypes {
                      .collect(Collectors.toList());
     }
 
-    public synchronized Map<String, String> getMimeMap() {
+    public Map<String, String> getMimeMap() {
         return _mimeMap;
     }
 

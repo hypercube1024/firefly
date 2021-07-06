@@ -10,7 +10,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 /**
  * URI Utility methods.
@@ -1001,37 +1000,6 @@ public class URIUtils implements Cloneable {
 
                 default:
                     url.append(':').append(port);
-            }
-        }
-    }
-
-    /**
-     * Append scheme, host and port URI prefix, handling IPv6 address encoding and default ports
-     *
-     * @param url    StringBuffer to append to
-     * @param scheme the URI scheme
-     * @param server the URI server
-     * @param port   the URI port
-     */
-    public static void appendSchemeHostPort(StringBuffer url, String scheme, String server, int port) {
-        synchronized (url) {
-            url.append(scheme).append("://").append(HostPort.normalizeHost(server));
-
-            if (port > 0) {
-                switch (scheme) {
-                    case "http":
-                        if (port != 80)
-                            url.append(':').append(port);
-                        break;
-
-                    case "https":
-                        if (port != 443)
-                            url.append(':').append(port);
-                        break;
-
-                    default:
-                        url.append(':').append(port);
-                }
             }
         }
     }

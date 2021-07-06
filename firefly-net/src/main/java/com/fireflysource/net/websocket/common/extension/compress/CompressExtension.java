@@ -1,5 +1,6 @@
 package com.fireflysource.net.websocket.common.extension.compress;
 
+import com.fireflysource.common.concurrent.AutoLock;
 import com.fireflysource.common.concurrent.IteratingCallback;
 import com.fireflysource.common.io.BufferUtils;
 import com.fireflysource.common.slf4j.LazyLogger;
@@ -66,6 +67,7 @@ public abstract class CompressExtension extends AbstractExtension {
      */
     private static final int DECOMPRESS_BUF_SIZE = 8 * 1024;
 
+    private final AutoLock lock = new AutoLock();
     private final Queue<FrameEntry> entries = new ArrayDeque<>();
     private final IteratingCallback flusher = new Flusher();
     private Deflater deflaterImpl;
@@ -201,15 +203,11 @@ public abstract class CompressExtension extends AbstractExtension {
     }
 
     private void offerEntry(FrameEntry entry) {
-        synchronized (this) {
-            entries.offer(entry);
-        }
+        lock.lock(() -> entries.offer(entry));
     }
 
     private FrameEntry pollEntry() {
-        synchronized (this) {
-            return entries.poll();
-        }
+        return lock.lock(entries::poll);
     }
 
     protected void notifyCallbackSuccess(Consumer<Result<Void>> result) {

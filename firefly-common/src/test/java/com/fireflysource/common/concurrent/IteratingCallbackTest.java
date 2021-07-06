@@ -52,7 +52,7 @@ public class IteratingCallbackTest {
             int i = 4;
 
             @Override
-            protected Action process() throws Exception {
+            protected Action process() {
                 processed++;
                 if (i-- > 1) {
                     scheduler.schedule(successTask, 50, TimeUnit.MILLISECONDS);
@@ -75,7 +75,7 @@ public class IteratingCallbackTest {
             int i = 4;
 
             @Override
-            protected Action process() throws Exception {
+            protected Action process() {
                 processed++;
                 if (i-- > 1) {
                     scheduler.schedule(successTask, 50, TimeUnit.MILLISECONDS);
