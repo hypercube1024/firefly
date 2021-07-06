@@ -167,7 +167,7 @@ public class IteratingCallbackTest {
                         return Action.SCHEDULED;
 
                     case 3:
-                        scheduler.schedule(() -> idle.countDown(), 5, TimeUnit.MILLISECONDS);
+                        scheduler.schedule(idle::countDown, 5, TimeUnit.MILLISECONDS);
                         return Action.IDLE;
 
                     case 2:
