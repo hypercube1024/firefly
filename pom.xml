@@ -593,7 +593,7 @@
         <profile>
             <id>jdk_11_plus</id>
             <activation>
-                <jdk>[11,)</jdk>
+                <jdk>[11,16)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -744,6 +744,139 @@
                                 <dir>${project.basedir}/src/main/java</dir>
                                 <dir>${project.basedir}/src/main/kotlin</dir>
                             </sourceDirectories>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jdk_16_plus</id>
+            <activation>
+                <jdk>[16,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-plugin</artifactId>
+                        <configuration>
+                            <compilerPlugins>
+                                <!-- Or "jpa" for JPA support -->
+                                <plugin>no-arg</plugin>
+                                <plugin>all-open</plugin>
+                            </compilerPlugins>
+
+                            <pluginOptions>
+                                <option>no-arg:annotation=com.fireflysource.common.annotation.NoArg</option>
+
+                                <!--<option>all-open:annotation=com.firefly.annotation.Component</option>-->
+                                <!--<option>all-open:annotation=com.firefly.annotation.Proxies</option>-->
+                                <!--<option>all-open:annotation=com.firefly.annotation.Proxy</option>-->
+                                <!--<option>all-open:annotation=com.firefly.db.annotation.Table</option>-->
+                            </pluginOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-compile</id>
+                                <goals>
+                                    <goal>test-compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-noarg</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-allopen</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-parameters</arg>
+                            </compilerArgs>
+                            <release>${java.release.version}</release>
+                            <source>${java.release.version}</source>
+                            <target>${java.release.version}</target>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <!-- Replacing default-compile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-compile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Replacing default-testCompile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-testCompile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>java-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>java-test-compile</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>testCompile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <source>${java.release.version}</source>
+                            <release>${java.release.version}</release>
+                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>
+                            <failOnError>true</failOnError>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
                         </configuration>
                     </plugin>
 
