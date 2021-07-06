@@ -66,7 +66,7 @@ class TestHttpClient {
                     .end()
             }
             .router().get("/echo0").handler { it.end("ok") }
-            .timeout(120 * 1000)
+            .timeout(120 * 1000L)
             .listen(address)
     }
 

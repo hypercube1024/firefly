@@ -44,7 +44,7 @@ class TestHttp2ClientConnection {
     }
 
     private fun createHttpServer(listener: HttpServerConnection.Listener): TcpServer {
-        val server = TcpServerFactory.create().timeout(120 * 1000).enableSecureConnection()
+        val server = TcpServerFactory.create().timeout(120 * 1000L).enableSecureConnection()
 
         return server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")

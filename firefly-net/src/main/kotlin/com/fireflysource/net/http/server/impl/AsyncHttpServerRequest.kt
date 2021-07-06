@@ -153,7 +153,7 @@ class AsyncHttpServerRequest(
     private fun getContentEncoding(): Optional<ContentEncoding> {
         return Optional.ofNullable(this.httpFields[HttpHeader.CONTENT_ENCODING])
             .map { it.trim() }
-            .map { it.toLowerCase() }
+            .map { it.lowercase(Locale.getDefault()) }
             .flatMap { ContentEncoding.from(it) }
     }
 

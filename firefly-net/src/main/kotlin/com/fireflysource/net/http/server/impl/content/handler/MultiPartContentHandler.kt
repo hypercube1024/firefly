@@ -141,7 +141,7 @@ class MultiPartContentHandler(
         var fileName: String? = null
         while (token.hasMoreTokens()) {
             val tokenValue = token.nextToken().trim()
-            val lowerCaseValue = tokenValue.toLowerCase()
+            val lowerCaseValue = tokenValue.lowercase(Locale.getDefault())
             when {
                 lowerCaseValue.startsWith("form-data") -> formData = true
                 lowerCaseValue.startsWith("name=") -> name = value(tokenValue)

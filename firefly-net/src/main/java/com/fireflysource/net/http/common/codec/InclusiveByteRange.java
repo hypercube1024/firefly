@@ -7,23 +7,23 @@ import java.util.*;
 
 /**
  * Byte range inclusive of end points.
- * <PRE>
- * <p>
+ * &lt;PRE&gt;
+ * &lt;p&gt;
  * parses the following types of byte ranges:
- * <p>
+ * &lt;p&gt;
  * bytes=100-499
  * bytes=-300
  * bytes=100-
  * bytes=1-2,2-3,6-,-2
- * <p>
+ * &lt;p&gt;
  * given an entity length, converts range to string
- * <p>
+ * &lt;p&gt;
  * bytes 100-499/500
  *
- * </PRE>
- * <p>
+ * &lt;/PRE&gt;
+ * &lt;p&gt;
  * Based on RFC2616 3.12, 14.16, 14.35.1, 14.35.2
- * <p>
+ * &lt;p&gt;
  * And yes the spec does strangely say that while 10-20, is bytes 10 to 20 and 10- is bytes 10 until the end that -20 IS NOT bytes 0-20, but the last 20 bytes of the content.
  */
 public class InclusiveByteRange {

@@ -20,8 +20,8 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     companion object {
         private const val newLine = "\r\n"
-        private val colonSpaceBytes: ByteArray = byteArrayOf(':'.toByte(), ' '.toByte())
-        private val newLineBytes: ByteArray = byteArrayOf('\r'.toByte(), '\n'.toByte())
+        private val colonSpaceBytes: ByteArray = byteArrayOf(':'.code.toByte(), ' '.code.toByte())
+        private val newLineBytes: ByteArray = byteArrayOf('\r'.code.toByte(), '\n'.code.toByte())
     }
 
     val contentType: String
