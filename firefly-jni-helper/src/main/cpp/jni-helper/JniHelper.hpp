@@ -6,7 +6,6 @@
 #define TEST_JNI_JNI_HELPER_JNIHELPER_HPP_
 #include <string>
 #include <jni.h>
-#include <iostream>
 
 namespace com {
 namespace fireflysource {
@@ -22,7 +21,6 @@ class LocalReference {
 
   ~LocalReference() {
     env->DeleteLocalRef(javaObject);
-    std::cout << "delete local reference." << std::endl;
   };
 
   JniType get() {

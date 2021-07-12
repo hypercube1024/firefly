@@ -48,11 +48,12 @@ link_directories(${JNI_LIB_DIRS})
 
 # set jni helper sources
 set(JNI_HELPER_SOURCES JniHelper.hpp JniHelper.cpp)
-add_library(${PROJECT_NAME} SHARED ${JNI_HELPER_SOURCES})
+add_library(jni_helper_static STATIC ${JNI_HELPER_SOURCES})
+add_library(jni_helper SHARED ${JNI_HELPER_SOURCES})
 
 # set jni example sources
 set(JNI_HELPER_EXAMPLE_SOURCES
         example/com_fireflysource_jni_example_JniExample.h
         example/JniExample.cpp)
 add_library(jni_helper_example SHARED ${JNI_HELPER_EXAMPLE_SOURCES})
-target_link_libraries(jni_helper_example ${PROJECT_NAME})
+target_link_libraries(jni_helper_example ${CMAKE_BINARY_DIR}/release/lib/libjni_helper_static.a)
