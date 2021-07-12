@@ -47,13 +47,6 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <includes>
-                    <include>**/*.jks</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
                 <excludes>
                     <exclude>**/*.xml</exclude>
                     <exclude>**/*.properties</exclude>
@@ -67,15 +60,6 @@
                 <includes>
                     <include>**/*.xml</include>
                     <include>**/*.properties</include>
-                </includes>
-            </testResource>
-            <testResource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-                <includes>
-                    <include>**/*.ico</include>
-                    <include>**/*.html</include>
-                    <include>**/*.txt</include>
                 </includes>
             </testResource>
             <testResource>
