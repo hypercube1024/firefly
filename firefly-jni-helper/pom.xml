@@ -8,31 +8,27 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>firefly-example</artifactId>
+    <artifactId>firefly-jni-helper</artifactId>
     <packaging>jar</packaging>
 
-    <name>firefly-example</name>
+    <name>firefly-jni-helper</name>
     <url>http://www.fireflysource.com</url>
 
     <dependencies>
         <dependency>
             <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-net</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fireflysource</groupId>
-            <artifactId>firefly-serialization</artifactId>
+            <artifactId>firefly-common</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.fireflysource</groupId>
             <artifactId>firefly-slf4j</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>firefly-example</finalName>
+        <finalName>firefly-jni-helper</finalName>
         <defaultGoal>install</defaultGoal>
         <resources>
             <resource>
@@ -46,12 +42,6 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <includes>
-                    <include>**/*.jks</include>
-                    <include>**/*.ico</include>
-                    <include>**/*.html</include>
-                    <include>**/*.txt</include>
-                </includes>
                 <excludes>
                     <exclude>**/*.xml</exclude>
                     <exclude>**/*.properties</exclude>
@@ -70,12 +60,6 @@
             <testResource>
                 <directory>src/test/resources</directory>
                 <filtering>false</filtering>
-                <includes>
-                    <include>**/*.jks</include>
-                    <include>**/*.ico</include>
-                    <include>**/*.html</include>
-                    <include>**/*.txt</include>
-                </includes>
                 <excludes>
                     <exclude>**/*.xml</exclude>
                     <exclude>**/*.properties</exclude>

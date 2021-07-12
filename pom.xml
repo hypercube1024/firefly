@@ -45,6 +45,7 @@
         <module>firefly-wechat</module>
         <module>firefly-serialization</module>
         <module>firefly-example</module>
+        <module>firefly-jni-helper</module>
     </modules>
 
     <properties>
@@ -507,6 +508,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
                             </compilerArgs>
                             <source>${java.release.version}</source>
                             <target>${java.release.version}</target>
@@ -663,6 +666,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
                             </compilerArgs>
                             <release>${java.release.version}</release>
                             <source>${java.release.version}</source>
@@ -824,6 +829,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
                             </compilerArgs>
                             <release>${java.release.version}</release>
                             <source>${java.release.version}</source>
