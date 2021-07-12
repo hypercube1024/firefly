@@ -56,4 +56,4 @@ set(JNI_HELPER_EXAMPLE_SOURCES
         example/com_fireflysource_jni_example_JniExample.h
         example/JniExample.cpp)
 add_library(jni_helper_example SHARED ${JNI_HELPER_EXAMPLE_SOURCES})
-target_link_libraries(jni_helper_example ${CMAKE_BINARY_DIR}/release/lib/libjni_helper_static.a)
+target_link_libraries(jni_helper_example jni_helper_static)
