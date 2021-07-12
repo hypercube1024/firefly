@@ -14,9 +14,12 @@ namespace jni {
 template<typename JniType>
 class LocalReference {
  public:
-  LocalReference(JNIEnv *env, JniType javaObject) {
+  template<typename CppType>
+  LocalReference(JNIEnv *env,
+                 const CppType &cppParam,
+                 JniType(*newJavaType)(JNIEnv *, const CppType &)) {
     this->env = env;
-    this->javaObject = javaObject;
+    this->javaObject = newJavaType(env, cppParam);
   }
 
   ~LocalReference() {

@@ -21,7 +21,7 @@ jstring newJavaString(JNIEnv *env, const std::string &cppString) {
 }
 
 LocalReference<jstring> newJavaStringLocalReference(JNIEnv *env, const std::string &cppString) {
-  return LocalReference<jstring>(env, newJavaString(env, cppString));
+  return LocalReference<jstring>(env, cppString, newJavaString);
 }
 
 namespace java {
