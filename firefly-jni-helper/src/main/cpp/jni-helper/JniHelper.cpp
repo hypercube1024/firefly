@@ -2,6 +2,7 @@
 // Created by qiupengtao on 2021/7/9.
 //
 #include "JniHelper.hpp"
+#include <cstring>
 
 namespace com {
 namespace fireflysource {
