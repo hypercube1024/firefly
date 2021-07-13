@@ -6,6 +6,8 @@ echo "cmake release dir: $RELEASE_BUILD_DIR"
 
 if [ ! -d "$RELEASE_BUILD_DIR" ]; then
   mkdir "$RELEASE_BUILD_DIR"
+else
+  rm -rf "$RELEASE_BUILD_DIR"
 fi
 
 cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
