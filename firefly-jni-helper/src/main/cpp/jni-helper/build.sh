@@ -10,8 +10,25 @@ else
   rm -rf "$RELEASE_BUILD_DIR"
 fi
 
-cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
-cmake --build "$RELEASE_BUILD_DIR" --target clean -- -j 4
-cmake --build  "$RELEASE_BUILD_DIR" --target all -- -j 4
-
-cd "$RELEASE_BUILD_DIR" && make
+if [ "$(uname)" == "Darwin" ];then
+# Mac OS X 操作系统
+  echo "build on MacOS"
+  cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
+  cmake --build "$RELEASE_BUILD_DIR" --target clean
+  cmake --build  "$RELEASE_BUILD_DIR" --target all
+  cd "$RELEASE_BUILD_DIR" && make
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ];then
+  # GNU/Linux操作系统
+  echo "build on Linux"
+  cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
+  cmake --build "$RELEASE_BUILD_DIR" --target clean
+  cmake --build  "$RELEASE_BUILD_DIR" --target all
+  cd "$RELEASE_BUILD_DIR" && make
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ];then
+  # Windows NT操作系统
+  echo "build on Windows"
+  cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
+  cmake --build "$RELEASE_BUILD_DIR" --target clean
+  cmake --build  "$RELEASE_BUILD_DIR" --target ALL_BUILD
+  cd "$RELEASE_BUILD_DIR" && msbuild.exe ALL_BUILD.vcxproj -t:rebuild -p:Configuration=Release
+fi

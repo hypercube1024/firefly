@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestJniExample {
 
     @Test
-    @EnabledOnOs({OS.MAC, OS.LINUX})
+    @EnabledOnOs({OS.MAC, OS.LINUX, OS.WINDOWS})
     void testSayHello() {
         String result = JniExample.sayHello("欢迎！");
         System.out.println(result);
