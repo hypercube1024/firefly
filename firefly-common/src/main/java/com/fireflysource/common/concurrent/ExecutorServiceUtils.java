@@ -20,8 +20,9 @@ abstract public class ExecutorServiceUtils {
      * @param unit    The time unit of the timeout argument.
      */
     public static void shutdownAndAwaitTermination(ExecutorService pool, long timeout, TimeUnit unit) {
-        pool.shutdown(); // Disable new tasks from being submitted
         try {
+            // Disable new tasks from being submitted
+            pool.shutdown();
             // Wait a while for existing tasks to terminate
             if (!pool.awaitTermination(timeout, unit)) {
                 pool.shutdownNow(); // Cancel currently executing tasks
@@ -34,6 +35,8 @@ abstract public class ExecutorServiceUtils {
             pool.shutdownNow();
             // Preserve interrupt status
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

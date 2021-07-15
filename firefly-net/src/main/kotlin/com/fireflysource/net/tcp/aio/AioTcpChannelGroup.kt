@@ -43,8 +43,8 @@ class AioTcpChannelGroup(threadName: String) : AbstractLifeCycle(), TcpChannelGr
     }
 
     override fun destroy() {
-        group.shutdown()
         try {
+            group.shutdown()
             // Wait a while for existing tasks to terminate
             if (!group.awaitTermination(awaitTerminationTimeout, TimeUnit.SECONDS)) {
                 group.shutdownNow() // Cancel currently executing tasks

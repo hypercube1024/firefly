@@ -4,15 +4,12 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers.defaultPoolSize
 import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.coroutine.eventAsync
 import com.fireflysource.common.sys.Result.discard
-import com.fireflysource.net.tcp.TcpClientFactory
-import com.fireflysource.net.tcp.TcpServerFactory
+import com.fireflysource.net.tcp.*
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFactory
 import com.fireflysource.net.tcp.secure.conscrypt.SelfSignedCertificateConscryptSSLContextFactory
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -62,10 +59,10 @@ class TestAioServerAndClient {
     @DisplayName("should send and receive messages successfully.")
     fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean, securityProvider: String) = runBlocking {
         val host = "localhost"
-        val port = Random.nextInt(10000, 20000)
+        val port = Random.nextInt(30000, 50000)
 
         val connectionCount = defaultPoolSize
-        val maxMessageCountPerOneConnection = 64
+        val maxMessageCountPerOneConnection = 32
         val expectMessageCount = maxMessageCountPerOneConnection * connectionCount
 
         val messageCount = AtomicInteger()
@@ -82,21 +79,27 @@ class TestAioServerAndClient {
         server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
             connection.beginHandshake().await()
-            recvLoop@ while (true) {
+            readLoop@ while (true) {
                 val buf = try {
-                    connection.read().await()
+                    connection.read(3000L)
                 } catch (e: Exception) {
-                    break@recvLoop
+                    println(e.message + "|" + e::class.java.name)
+                    break@readLoop
                 }
 
-                readBufLoop@ while (buf.hasRemaining()) {
+                writeLoop@ while (buf.hasRemaining()) {
                     val num = buf.int
                     val newBuf = ByteBuffer.allocate(4)
                     newBuf.putInt(num).flip()
 
                     if (num == maxMessageCountPerOneConnection) {
-                        connection.write(newBuf).await()
-                        connection.flush().await()
+                        connection.write(newBuf)
+                        try {
+                            connection.flush(300L)
+                        } catch (e: Exception) {
+                            println(e.message + "|" + e::class.java.name)
+                        }
+                        break@readLoop
                     } else {
                         connection.write(newBuf, discard())
                     }
@@ -111,25 +114,33 @@ class TestAioServerAndClient {
         val time = measureTimeMillis {
             val jobs = (1..connectionCount).map {
                 event {
-                    val connection = client.connect(host, port).await()
-                    println("create connection. ${connection.id}")
-                    connection.beginHandshake().await()
+                    val connection = withTimeout(1000L) {
+                        val c = client.connect(host, port).await()
+                        println("create connection. ${c.id}")
+                        c.beginHandshake().await()
+                        c
+                    }
 
                     val readingJob = connection.coroutineScope.launch {
-                        recvLoop@ while (true) {
+                        readLoop@ while (true) {
                             val buf = try {
-                                connection.read().await()
+                                connection.read(3000L)
                             } catch (e: Exception) {
-                                break@recvLoop
+                                println(e.message + "|" + e::class.java.name)
+                                break@readLoop
                             }
 
-                            readBufLoop@ while (buf.hasRemaining()) {
+                            writeLoop@ while (buf.hasRemaining()) {
                                 val num = buf.int
                                 messageCount.incrementAndGet()
 
                                 if (num == maxMessageCountPerOneConnection) {
-                                    connection.closeAsync().await()
-                                    break@recvLoop
+                                    try {
+                                        connection.close(1000L)
+                                    } catch (e: Exception) {
+                                        println(e.message + "|" + e::class.java.name)
+                                    }
+                                    break@readLoop
                                 }
                             }
                         }
@@ -194,7 +205,7 @@ class TestAioServerAndClient {
     @DisplayName("should close when the connection is timeout.")
     fun testTimeout() = runBlocking {
         val host = "localhost"
-        val port = 4001
+        val port = Random.nextInt(10000, 50000)
 
         val server = TcpServerFactory.create(TcpConfig(1)).onAcceptAsync { conn ->
             try {
@@ -232,7 +243,7 @@ class TestAioServerAndClient {
     @DisplayName("should close connection successfully.")
     fun testClose(): Unit = runBlocking {
         val host = "localhost"
-        val port = 4002
+        val port = Random.nextInt(10000, 50000)
 
         val server = TcpServerFactory.create().onAcceptAsync { conn ->
             try {
@@ -248,7 +259,7 @@ class TestAioServerAndClient {
 
         val success = eventAsync {
             try {
-                connection.read().await()
+                connection.read(2000L)
                 println("Client reads success.")
                 true
             } catch (e: Exception) {
@@ -258,13 +269,18 @@ class TestAioServerAndClient {
         }
 
         connection.closeAsync().await()
-        println("close success")
+        println("close client connection success")
         assertTrue(connection.isShutdownOutput)
         assertTrue(connection.isShutdownInput)
         assertTrue(connection.isClosed)
         assertFalse(success.await())
 
-        client.stop()
-        server.stop()
+        val stopTime = measureTimeMillis {
+            withTimeoutOrNull(2000L) {
+                client.stop()
+                server.stop()
+            }
+        }
+        println("stop success. $stopTime")
     }
 }
