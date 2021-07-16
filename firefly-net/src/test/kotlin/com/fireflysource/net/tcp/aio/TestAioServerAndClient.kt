@@ -245,9 +245,9 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = Random.nextInt(10000, 50000)
 
-        val server = TcpServerFactory.create().onAcceptAsync { conn ->
+        val server = TcpServerFactory.create().onAcceptAsync { connection ->
             try {
-                conn.read().await()
+                connection.read(2000L)
                 println("Server reads success.")
             } catch (e: Exception) {
                 println("Server reads failure. ${e.javaClass.name}")
