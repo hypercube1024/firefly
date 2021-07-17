@@ -31,7 +31,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ];then
   if [ -f "$JNI_HELPER_EXAMPLE_LIB_DIR/lib/libjni_helper_example.so" ]; then
     cp "$JNI_HELPER_EXAMPLE_LIB_DIR/lib/libjni_helper_example.so" "$PROJECT_HOME/src/test/resources/lib/linux"
   fi
-elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ];then
+elif [[ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" || "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]];then
   # Windows NT操作系统
   if [ -f "$JNI_HELPER_EXAMPLE_LIB_DIR/bin/jni_helper_example.dll" ]; then
     cp "$JNI_HELPER_EXAMPLE_LIB_DIR/bin/jni_helper_example.dll" "$PROJECT_HOME/src/test/resources/lib/windows/libjni_helper_example.dll"
