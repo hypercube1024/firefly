@@ -29,5 +29,5 @@ elif [[ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" || "$(expr substr $(un
   cmake -S "$PROJECT_HOME" -B "$RELEASE_BUILD_DIR"
   cmake --build "$RELEASE_BUILD_DIR" --target clean
   cmake --build  "$RELEASE_BUILD_DIR" --target ALL_BUILD
-  cd "$RELEASE_BUILD_DIR" && msbuild.exe ALL_BUILD.vcxproj -t:rebuild -p:Configuration=Release -pPreferredToolArchitecture=x64
+  cd "$RELEASE_BUILD_DIR" && msbuild.exe ALL_BUILD.vcxproj -t:rebuild -p:Configuration=Release
 fi
