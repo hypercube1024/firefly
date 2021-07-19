@@ -40,7 +40,7 @@ class AsyncMultiPart(
         object : AbstractFileContentProvider(path, StandardOpenOption.READ) {}
     }
     private val byteBufferProvider: AbstractByteBufferContentProvider by lazy {
-        val size = byteBufferHandler.getByteBuffers().sumBy { it.remaining() }
+        val size = byteBufferHandler.getByteBuffers().sumOf { it.remaining() }
         val buf = BufferUtils.allocate(size)
         val pos = buf.flipToFill()
         byteBufferHandler.getByteBuffers().forEach { BufferUtils.put(it, buf) }

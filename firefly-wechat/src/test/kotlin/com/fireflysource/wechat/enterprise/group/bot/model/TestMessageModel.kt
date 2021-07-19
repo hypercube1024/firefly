@@ -104,12 +104,12 @@ class TestMessageModel {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should read wechat enterprise group bot message successfully.")
-    fun test(json: String, message: Message) {
+    fun test(string: String, message: Message) {
         val m = when (message.messageType) {
-            MessageType.TEXT -> json().read<TextMessage>(json)
-            MessageType.MARKDOWN -> json().read<MarkdownMessage>(json)
-            MessageType.IMAGE -> json().read<ImageMessage>(json)
-            MessageType.NEWS -> json().read<NewsMessage>(json)
+            MessageType.TEXT -> json.read<TextMessage>(string)
+            MessageType.MARKDOWN -> json.read<MarkdownMessage>(string)
+            MessageType.IMAGE -> json.read<ImageMessage>(string)
+            MessageType.NEWS -> json.read<NewsMessage>(string)
             else -> null
         }
         assertEquals(message, m)

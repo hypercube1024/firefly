@@ -6,7 +6,7 @@
 
     <groupId>com.fireflysource</groupId>
     <artifactId>firefly-framework</artifactId>
-    <version>5.0.0-alpha9</version>
+    <version>5.0.0-alpha13</version>
     <packaging>pom</packaging>
 
 
@@ -45,6 +45,7 @@
         <module>firefly-wechat</module>
         <module>firefly-serialization</module>
         <module>firefly-example</module>
+        <module>firefly-jni-helper</module>
     </modules>
 
     <properties>
@@ -59,31 +60,30 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.4.30</kotlin.version>
-        <kotlin.coroutine.version>1.4.2</kotlin.coroutine.version>
-        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <kotlin.version>1.5.21</kotlin.version>
+        <kotlin.coroutine.version>1.5.1</kotlin.coroutine.version>
+        <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-        <kotlin.compiler.languageVersion>1.4</kotlin.compiler.languageVersion>
-        <kotlin.compiler.apiVersion>1.4</kotlin.compiler.apiVersion>
+        <kotlin.compiler.languageVersion>1.5</kotlin.compiler.languageVersion>
+        <kotlin.compiler.apiVersion>1.5</kotlin.compiler.apiVersion>
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.4.10.2</dokka.version>
+        <dokka.version>1.5.0</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.12.1</jackson.version>
-        <conscrypt.version>2.5.1</conscrypt.version>
-        <openjsse.version>1.1.5</openjsse.version>
-        <javassist.version>3.27.0-GA</javassist.version>
+        <jackson.version>2.12.3</jackson.version>
+        <conscrypt.version>2.5.2</conscrypt.version>
+        <openjsse.version>1.1.6</openjsse.version>
+        <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.3</spring.reactor.version>
+        <spring.reactor.version>2020.0.7</spring.reactor.version>
 
         <!-- test lib -->
-        <junit.version>5.7.0</junit.version>
-        <mockito.version>3.5.15</mockito.version>
-        <h2.version>1.4.200</h2.version>
+        <junit.version>5.7.1</junit.version>
+        <mockito.version>3.8.0</mockito.version>
     </properties>
 
     <dependencyManagement>
@@ -136,14 +136,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- db -->
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${h2.version}</version>
-                <scope>test</scope>
-            </dependency>
-
             <!-- kotlin lib -->
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -157,7 +149,7 @@
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlinx</groupId>
-                <artifactId>kotlinx-coroutines-core</artifactId>
+                <artifactId>kotlinx-coroutines-core-jvm</artifactId>
                 <version>${kotlin.coroutine.version}</version>
             </dependency>
             <dependency>
@@ -229,7 +221,7 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-coroutines-core</artifactId>
+            <artifactId>kotlinx-coroutines-core-jvm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
@@ -313,7 +305,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.6</version>
+                    <version>0.8.7</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>
@@ -516,6 +508,8 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
                             </compilerArgs>
                             <source>${java.release.version}</source>
                             <target>${java.release.version}</target>
@@ -549,54 +543,52 @@
                         </executions>
                     </plugin>
 
-                    <!-- javadoc -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>
-                            <failOnError>true</failOnError>
-                            <charset>UTF-8</charset>
-                            <encoding>UTF-8</encoding>
-                        </configuration>
-                    </plugin>
-
                     <!--                    <plugin>-->
-                    <!--                        <groupId>org.jetbrains.dokka</groupId>-->
-                    <!--                        <artifactId>dokka-maven-plugin</artifactId>-->
+                    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+                    <!--                        <artifactId>maven-javadoc-plugin</artifactId>-->
                     <!--                        <executions>-->
                     <!--                            <execution>-->
-                    <!--                                <phase>prepare-package</phase>-->
+                    <!--                                <id>attach-javadocs</id>-->
                     <!--                                <goals>-->
-                    <!--                                    <goal>dokka</goal>-->
-                    <!--                                    <goal>javadoc</goal>-->
-                    <!--                                    <goal>javadocJar</goal>-->
+                    <!--                                    <goal>jar</goal>-->
                     <!--                                </goals>-->
                     <!--                            </execution>-->
                     <!--                        </executions>-->
                     <!--                        <configuration>-->
-                    <!--                            <sourceDirectories>-->
-                    <!--                                <dir>${project.basedir}/src/main/java</dir>-->
-                    <!--                                <dir>${project.basedir}/src/main/kotlin</dir>-->
-                    <!--                            </sourceDirectories>-->
-                    <!--                            <sourceLinks>-->
-                    <!--                                <link>-->
-                    <!--                                    <path>${project.basedir}/src/main/java</path>-->
-                    <!--                                    <path>${project.basedir}/src/main/kotlin</path>-->
-                    <!--                                </link>-->
-                    <!--                            </sourceLinks>-->
-                    <!--                            <noStdlibLink>${dokka.config.noStdlibLink}</noStdlibLink>-->
-                    <!--                            <jdkVersion>${dokka.config.jdkVersion}</jdkVersion>-->
+                    <!--                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>-->
+                    <!--                            <failOnError>true</failOnError>-->
+                    <!--                            <charset>UTF-8</charset>-->
+                    <!--                            <encoding>UTF-8</encoding>-->
                     <!--                        </configuration>-->
                     <!--                    </plugin>-->
+
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>dokka</goal>
+                                    <goal>javadoc</goal>
+                                    <goal>javadocJar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <dokkaPlugins>
+                                <plugin>
+                                    <groupId>org.jetbrains.dokka</groupId>
+                                    <artifactId>kotlin-as-java-plugin</artifactId>
+                                    <version>${dokka.version}</version>
+                                </plugin>
+                            </dokkaPlugins>
+                            <sourceDirectories>
+                                <dir>${project.basedir}/src/main/java</dir>
+                                <dir>${project.basedir}/src/main/kotlin</dir>
+                            </sourceDirectories>
+                        </configuration>
+                    </plugin>
 
                 </plugins>
             </build>
@@ -604,7 +596,7 @@
         <profile>
             <id>jdk_11_plus</id>
             <activation>
-                <jdk>[11,)</jdk>
+                <jdk>[11,16)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -674,6 +666,171 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
+                            </compilerArgs>
+                            <release>${java.release.version}</release>
+                            <source>${java.release.version}</source>
+                            <target>${java.release.version}</target>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                        <executions>
+                            <!-- Replacing default-compile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-compile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Replacing default-testCompile as it is treated specially by maven -->
+                            <execution>
+                                <id>default-testCompile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>java-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>java-test-compile</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>testCompile</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- javadoc -->
+<!--                    <plugin>-->
+<!--                        <groupId>org.apache.maven.plugins</groupId>-->
+<!--                        <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>attach-javadocs</id>-->
+<!--                                <goals>-->
+<!--                                    <goal>jar</goal>-->
+<!--                                </goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                        <configuration>-->
+<!--                            <source>${java.release.version}</source>-->
+<!--                            <release>${java.release.version}</release>-->
+<!--                            <sourceFileIncludes>**/*Doc.java</sourceFileIncludes>-->
+<!--                            <failOnError>true</failOnError>-->
+<!--                            <charset>UTF-8</charset>-->
+<!--                            <encoding>UTF-8</encoding>-->
+<!--                        </configuration>-->
+<!--                    </plugin>-->
+
+                    <plugin>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>dokka</goal>
+                                    <goal>javadoc</goal>
+                                    <goal>javadocJar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <dokkaPlugins>
+                                <plugin>
+                                    <groupId>org.jetbrains.dokka</groupId>
+                                    <artifactId>kotlin-as-java-plugin</artifactId>
+                                    <version>${dokka.version}</version>
+                                </plugin>
+                            </dokkaPlugins>
+                            <sourceDirectories>
+                                <dir>${project.basedir}/src/main/java</dir>
+                                <dir>${project.basedir}/src/main/kotlin</dir>
+                            </sourceDirectories>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jdk_16_plus</id>
+            <activation>
+                <jdk>[16,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-plugin</artifactId>
+                        <configuration>
+                            <compilerPlugins>
+                                <!-- Or "jpa" for JPA support -->
+                                <plugin>no-arg</plugin>
+                                <plugin>all-open</plugin>
+                            </compilerPlugins>
+
+                            <pluginOptions>
+                                <option>no-arg:annotation=com.fireflysource.common.annotation.NoArg</option>
+
+                                <!--<option>all-open:annotation=com.firefly.annotation.Component</option>-->
+                                <!--<option>all-open:annotation=com.firefly.annotation.Proxies</option>-->
+                                <!--<option>all-open:annotation=com.firefly.annotation.Proxy</option>-->
+                                <!--<option>all-open:annotation=com.firefly.db.annotation.Table</option>-->
+                            </pluginOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-compile</id>
+                                <goals>
+                                    <goal>test-compile</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceDirs>
+                                        <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                                        <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-noarg</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.jetbrains.kotlin</groupId>
+                                <artifactId>kotlin-maven-allopen</artifactId>
+                                <version>${kotlin.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-parameters</arg>
+                                <arg>-h</arg>
+                                <arg>target/headers</arg>
                             </compilerArgs>
                             <release>${java.release.version}</release>
                             <source>${java.release.version}</source>

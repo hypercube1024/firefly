@@ -9,7 +9,10 @@ import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.client.*
+import com.fireflysource.net.http.client.HttpClientContentHandler
+import com.fireflysource.net.http.client.HttpClientContentProvider
+import com.fireflysource.net.http.client.HttpClientRequest
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeHttp2
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.expectUpgradeWebsocket
 import com.fireflysource.net.http.client.impl.HttpProtocolNegotiator.isUpgradeSuccess
@@ -44,11 +47,11 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ThreadLocalRandom
 
-
 class Http1ClientConnection(
     private val config: HttpConfig,
     private val tcpConnection: TcpConnection
-) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection, HttpClientConnection {
+) : Connection by tcpConnection, TcpCoroutineDispatcher by tcpConnection, TcpBasedHttpConnection,
+    AbstractHttpClientConnection {
 
     companion object {
         private val log = SystemLogger.create(Http1ClientConnection::class.java)
@@ -386,7 +389,7 @@ class Http1ClientConnection(
 
     private suspend fun flushChunkedContentBuffer() {
         val bufArray = arrayOf(chunkBuffer, contentBuffer)
-        val remaining = bufArray.map { it.remaining().toLong() }.sum()
+        val remaining = bufArray.sumOf { it.remaining().toLong() }
         if (remaining > 0) {
             val size = tcpConnection.write(bufArray, 0, bufArray.size).await()
             log.debug { "flush chunked content bytes: $size" }
@@ -422,7 +425,7 @@ class Http1ClientConnection(
             prepareHttp1Headers(request) { this.remoteAddress.hostName }
         }
         val future = CompletableFuture<HttpClientResponse>()
-        requestChannel.offer(RequestMessage(request, future))
+        requestChannel.trySend(RequestMessage(request, future))
         return future
     }
 
@@ -464,7 +467,7 @@ class Http1ClientConnection(
             webSocketClientConnection = websocketFuture,
             webSocketClientRequest = webSocketClientRequest
         )
-        requestChannel.offer(message)
+        requestChannel.trySend(message)
         return websocketFuture
     }
 

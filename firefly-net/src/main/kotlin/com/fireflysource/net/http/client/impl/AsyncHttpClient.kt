@@ -6,7 +6,6 @@ import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.HttpClientRequestBuilder
 import com.fireflysource.net.http.common.HttpConfig
-import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.HttpVersion
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
@@ -14,7 +13,8 @@ import com.fireflysource.net.tcp.aio.AioTcpChannelGroup
 import com.fireflysource.net.websocket.client.WebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionBuilder
 import com.fireflysource.net.websocket.client.impl.AsyncWebSocketClientConnectionManager
-import java.net.URL
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 
 class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClient, AbstractLifeCycle() {
@@ -39,38 +39,6 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
     private fun createTcpChannelGroup() =
         if (config.tcpChannelGroup != null) config.tcpChannelGroup
         else AioTcpChannelGroup("async-http-client")
-
-    override fun get(url: String): HttpClientRequestBuilder {
-        return request(HttpMethod.GET, url)
-    }
-
-    override fun post(url: String): HttpClientRequestBuilder {
-        return request(HttpMethod.POST, url)
-    }
-
-    override fun head(url: String): HttpClientRequestBuilder {
-        return request(HttpMethod.HEAD, url)
-    }
-
-    override fun put(url: String): HttpClientRequestBuilder {
-        return request(HttpMethod.PUT, url)
-    }
-
-    override fun delete(url: String): HttpClientRequestBuilder {
-        return request(HttpMethod.DELETE, url)
-    }
-
-    override fun request(method: HttpMethod, url: String): HttpClientRequestBuilder {
-        return request(method.value, url)
-    }
-
-    override fun request(method: String, url: String): HttpClientRequestBuilder {
-        return request(method, HttpURI(url))
-    }
-
-    override fun request(method: String, url: URL): HttpClientRequestBuilder {
-        return request(method, HttpURI(url.toURI()))
-    }
 
     override fun request(method: String, httpURI: HttpURI): HttpClientRequestBuilder {
         return AsyncHttpClientRequestBuilder(httpClientConnectionManager, method, httpURI, HttpVersion.HTTP_1_1)
@@ -99,4 +67,26 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
         httpClientConnectionManager.stop()
         webSocketClientConnectionManager.stop()
     }
+}
+
+fun HttpClient.connectAsync(uri: String, block: suspend CoroutineScope.(HttpClientConnection) -> Unit) {
+    this.createHttpClientConnection(uri)
+        .thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
+}
+
+fun HttpClient.connectAsync(
+    httpURI: HttpURI,
+    supportedProtocols: List<String>,
+    block: suspend CoroutineScope.(HttpClientConnection) -> Unit
+) {
+    this.createHttpClientConnection(httpURI, supportedProtocols)
+        .thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
+}
+
+fun HttpClient.connectAsync(
+    httpURI: HttpURI,
+    block: suspend CoroutineScope.(HttpClientConnection) -> Unit
+) {
+    this.createHttpClientConnection(httpURI)
+        .thenAccept { connection -> connection.coroutineScope.launch { block(connection) } }
 }

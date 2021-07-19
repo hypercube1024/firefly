@@ -156,7 +156,7 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     private suspend fun endHttpParser() {
-        parserChannel.offer(EndRequestHandler)
+        parserChannel.trySend(EndRequestHandler)
         connection.endHttpParser()
         log.info { "Upgrade protocol success. Exit HTTP1 parser. id: ${connection.id}" }
     }
@@ -275,42 +275,42 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     override fun startRequest(method: String, uri: String, version: HttpVersion): Boolean {
-        parserChannel.offer(StartRequest(method, uri, version))
+        parserChannel.trySend(StartRequest(method, uri, version))
         return false
     }
 
     override fun getHeaderCacheSize(): Int = 4096
 
     override fun parsedHeader(field: HttpField) {
-        parserChannel.offer(ParsedHeader(field))
+        parserChannel.trySend(ParsedHeader(field))
     }
 
     override fun headerComplete(): Boolean {
-        parserChannel.offer(HeaderComplete)
+        parserChannel.trySend(HeaderComplete)
         return false
     }
 
     override fun content(byteBuffer: ByteBuffer): Boolean {
-        parserChannel.offer(Content(byteBuffer))
+        parserChannel.trySend(Content(byteBuffer))
         return false
     }
 
     override fun contentComplete(): Boolean {
-        parserChannel.offer(ContentComplete)
+        parserChannel.trySend(ContentComplete)
         return false
     }
 
     override fun messageComplete(): Boolean {
-        parserChannel.offer(MessageComplete)
+        parserChannel.trySend(MessageComplete)
         return true
     }
 
     override fun earlyEOF() {
-        parserChannel.offer(EarlyEOF)
+        parserChannel.trySend(EarlyEOF)
     }
 
     override fun badMessage(failure: BadMessageException) {
-        parserChannel.offer(BadMessage(failure))
+        parserChannel.trySend(BadMessage(failure))
     }
 
 }

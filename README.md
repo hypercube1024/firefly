@@ -1,10 +1,10 @@
 # What is Firefly?
-[![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
+[![Build Status](https://travis-ci.com/hypercube1024/firefly.svg?branch=firefly-5.0.0)](https://travis-ci.com/hypercube1024/firefly)
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***
-Quickly***. It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing
+Firefly framework is an asynchronous Java web framework. It helps you create a web application ***Easy*** and ***Quickly***. 
+It provides asynchronous HTTP, Websocket, TCP Server/Client, and many other useful components for developing
 web applications, protocol servers, etc. That means you can easy deploy your web without any other java web containers,
 in short, it's containerless. Using Kotlin coroutines, Firefly is truly asynchronous and highly scalable. It taps into
 the fullest potential of hardware. Use the power of non-blocking development without the callback nightmare.
@@ -52,13 +52,13 @@ Add maven dependency in your pom.xml.
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly</artifactId>
-        <version>5.0.0-alpha9</version>
+        <version>5.0.0-alpha13</version>
     </dependency>
 
     <dependency>
         <groupId>com.fireflysource</groupId>
         <artifactId>firefly-slf4j</artifactId>
-        <version>5.0.0-alpha9</version>
+        <version>5.0.0-alpha13</version>
     </dependency>
 </dependencics>
 ```
@@ -77,7 +77,7 @@ Add log configuration file "firefly-log.xml" to the classpath.
 </loggers>
 ```
 
-Create HTTP server and client
+HTTP server and client example:
 ```kotlin
 fun main() {
     `$`.httpServer()
@@ -89,53 +89,49 @@ fun main() {
 }
 ```
 
-Create WebSocket server and client
-
+WebSocket server and client example:
 ```kotlin
 fun main() {
     `$`.httpServer().websocket("/websocket/hello")
-        .onMessage { frame, _ -> onMessage(frame) }
+        .onServerMessageAsync { frame, _ -> onMessage(frame) }
         .onAcceptAsync { connection -> sendMessage("Server", connection) }
         .listen("localhost", 8090)
 
     val url = "ws://localhost:8090"
     `$`.httpClient().websocket("$url/websocket/hello")
-        .onMessage { frame, _ -> onMessage(frame) }
+        .onClientMessageAsync { frame, _ -> onMessage(frame) }
         .connectAsync { connection -> sendMessage("Client", connection) }
 }
 
-private suspend fun sendMessage(content: String, connection: WebSocketConnection) {
+private suspend fun sendMessage(data: String, connection: WebSocketConnection) = connection.useAwait {
     (1..10).forEach {
-        connection.sendText("${content}. message: $it, time: ${Date()}")
+        connection.sendText("WebSocket ${data}. count: $it, time: ${Date()}")
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 
-private fun onMessage(frame: Frame): CompletableFuture<Void> {
+private fun onMessage(frame: Frame) {
     if (frame is TextFrame) {
         println(frame.payloadAsUTF8)
     }
-    return Result.DONE
 }
 ```
 
-Create TCP server and client
-
+TCP server and client example:
 ```kotlin
 fun main() {
     `$`.tcpServer().onAcceptAsync { connection ->
-        launch { writeLoop("Server", connection) } 
+        launch { writeLoop("Server", connection) }
         launch { readLoop(connection) }
     }.listen("localhost", 8090)
 
     `$`.tcpClient().connectAsync("localhost", 8090) { connection ->
-        launch { writeLoop("Client", connection) } 
+        launch { writeLoop("Client", connection) }
         launch { readLoop(connection) }
     }
 }
 
-private suspend fun readLoop(connection: TcpConnection) {
+private suspend fun readLoop(connection: TcpConnection) = connection.useAwait {
     while (true) {
         try {
             val buffer = connection.read().await()
@@ -147,17 +143,15 @@ private suspend fun readLoop(connection: TcpConnection) {
     }
 }
 
-private suspend fun writeLoop(data: String, connection: TcpConnection) {
+private suspend fun writeLoop(data: String, connection: TcpConnection) = connection.useAwait {
     (1..10).forEach {
-        connection.write(toBuffer("${data}. count: $it, time: ${Date()}"))
+        connection.write(toBuffer("TCP ${data}. count: $it, time: ${Date()}"))
         delay(1000)
     }
-    connection.closeAsync().await()
 }
 ```
 
 # Contact information
-
 - E-mail: qptkk@163.com
 - QQ Group: 126079579
 - Wechat: AlvinQiu

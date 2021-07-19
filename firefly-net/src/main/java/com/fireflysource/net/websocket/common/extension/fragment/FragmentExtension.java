@@ -1,5 +1,6 @@
 package com.fireflysource.net.websocket.common.extension.fragment;
 
+import com.fireflysource.common.concurrent.AutoLock;
 import com.fireflysource.common.concurrent.IteratingCallback;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.Result;
@@ -21,6 +22,7 @@ import java.util.function.Consumer;
 public class FragmentExtension extends AbstractExtension {
     private static LazyLogger LOG = SystemLogger.create(FragmentExtension.class);
 
+    private final AutoLock lock = new AutoLock();
     private final Queue<FrameEntry> entries = new ArrayDeque<>();
     private final IteratingCallback flusher = new Flusher();
     private int maxLength;
@@ -62,15 +64,11 @@ public class FragmentExtension extends AbstractExtension {
     }
 
     private void offerEntry(FrameEntry entry) {
-        synchronized (this) {
-            entries.offer(entry);
-        }
+        lock.lock(() -> entries.offer(entry));
     }
 
     private FrameEntry pollEntry() {
-        synchronized (this) {
-            return entries.poll();
-        }
+        return lock.lock(entries::poll);
     }
 
     @Override

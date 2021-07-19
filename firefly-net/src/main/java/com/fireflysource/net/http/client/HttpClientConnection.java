@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Pengtao Qiu
  */
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection, HttpClientRequestBuilderFactory {
 
     /**
      * Send HTTP request to the remote endpoint.

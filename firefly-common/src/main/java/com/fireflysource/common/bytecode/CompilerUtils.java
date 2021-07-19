@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CompilerUtils {
 
     public static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    private static final Map<String, JavaFileObject> output = new ConcurrentHashMap<>();
+    private static final Map<String, JavaFileObject> outputJavaFile = new ConcurrentHashMap<>();
     private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
     private static ClassLoader classLoader = new CompilerClassLoader(CompilerUtils.class.getClassLoader());
 
@@ -54,7 +54,7 @@ public class CompilerUtils {
             @Override
             public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, FileObject sibling) throws IOException {
                 JavaFileObject jfo = new ByteJavaObject(className, kind);
-                output.put(className, jfo);
+                outputJavaFile.put(className, jfo);
                 return jfo;
             }
         };
@@ -95,25 +95,25 @@ public class CompilerUtils {
 
     private static class ByteJavaObject extends SimpleJavaFileObject {
 
-        private ByteArrayOutputStream baos;
+        private ByteArrayOutputStream byteArrayOutputStream;
 
         public ByteJavaObject(String name, Kind kind) {
             super(toURI(name), kind);
         }
 
         @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException, IllegalStateException, UnsupportedOperationException {
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IllegalStateException, UnsupportedOperationException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public InputStream openInputStream() throws IOException, IllegalStateException, UnsupportedOperationException {
-            return new ByteArrayInputStream(baos.toByteArray());
+        public InputStream openInputStream() throws IllegalStateException, UnsupportedOperationException {
+            return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
 
         @Override
-        public OutputStream openOutputStream() throws IOException, IllegalStateException, UnsupportedOperationException {
-            return baos = new ByteArrayOutputStream();
+        public OutputStream openOutputStream() throws IllegalStateException, UnsupportedOperationException {
+            return byteArrayOutputStream = new ByteArrayOutputStream();
         }
     }
 
@@ -125,10 +125,10 @@ public class CompilerUtils {
 
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
-            JavaFileObject jfo = output.get(name);
+            JavaFileObject jfo = outputJavaFile.get(name);
             if (jfo != null) {
-                byte[] bytes = ((ByteJavaObject) jfo).baos.toByteArray();
-                output.remove(name);
+                byte[] bytes = ((ByteJavaObject) jfo).byteArrayOutputStream.toByteArray();
+                outputJavaFile.remove(name);
                 return defineClass(name, bytes, 0, bytes.length);
             }
             return super.findClass(name);

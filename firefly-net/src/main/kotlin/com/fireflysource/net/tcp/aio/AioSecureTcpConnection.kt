@@ -5,6 +5,7 @@ import com.fireflysource.common.exception.UnknownTypeException
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.WrappedTcpConnection
 import com.fireflysource.net.tcp.buffer.*
 import com.fireflysource.net.tcp.secure.SecureEngine
 import kotlinx.coroutines.channels.Channel
@@ -22,7 +23,7 @@ import java.util.function.Consumer
 class AioSecureTcpConnection(
     private val tcpConnection: TcpConnection,
     private val secureEngine: SecureEngine
-) : TcpConnection by tcpConnection {
+) : TcpConnection by tcpConnection, WrappedTcpConnection {
 
     companion object {
         private val log = SystemLogger.create(AioSecureTcpConnection::class.java)
@@ -38,6 +39,8 @@ class AioSecureTcpConnection(
             .onHandshakeRead { tcpConnection.read() }
         tcpConnection.onClose { secureEngine.close() }
     }
+
+    override fun getRawTcpConnection(): TcpConnection = tcpConnection
 
     override fun read(): CompletableFuture<ByteBuffer> {
         if (!beginHandshake.get()) {
@@ -123,7 +126,7 @@ class AioSecureTcpConnection(
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
-        encryptedOutChannel.offer(OutputBuffer(byteBuffer, result))
+        encryptedOutChannel.trySend(OutputBuffer(byteBuffer, result))
         return this
     }
 
@@ -133,7 +136,7 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(OutputBuffers(byteBuffers, offset, length, result))
+        encryptedOutChannel.trySend(OutputBuffers(byteBuffers, offset, length, result))
         return this
     }
 
@@ -143,12 +146,12 @@ class AioSecureTcpConnection(
         length: Int,
         result: Consumer<Result<Long>>
     ): TcpConnection {
-        encryptedOutChannel.offer(OutputBufferList(byteBufferList, offset, length, result))
+        encryptedOutChannel.trySend(OutputBufferList(byteBufferList, offset, length, result))
         return this
     }
 
     override fun close(result: Consumer<Result<Void>>): TcpConnection {
-        encryptedOutChannel.offer(ShutdownOutput(result))
+        encryptedOutChannel.trySend(ShutdownOutput(result))
         return this
     }
 

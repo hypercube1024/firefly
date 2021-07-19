@@ -69,7 +69,7 @@ object CoroutineDispatchers {
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
             1, 1, 0, TimeUnit.MILLISECONDS,
-            LinkedTransferQueue<Runnable>()
+            LinkedTransferQueue()
         ) { runnable -> Thread(runnable, name) }
         return FinalizableExecutorService(executor)
     }
@@ -79,7 +79,7 @@ object CoroutineDispatchers {
             poolSize,
             maxPoolSize,
             defaultPoolKeepAliveTime, TimeUnit.SECONDS,
-            LinkedTransferQueue<Runnable>()
+            LinkedTransferQueue()
         ) { runnable -> Thread(runnable, name) }
         return FinalizableExecutorService(executor)
     }

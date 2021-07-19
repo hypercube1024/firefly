@@ -13,11 +13,11 @@ import java.util.stream.StreamSupport;
 /**
  * HTTP Fields. A collection of HTTP header and or Trailer fields.
  *
- * <p>
+ * &lt;p&gt;
  * This class is not synchronized as it is expected that modifications will only
  * be performed by a single thread.
  *
- * <p>
+ * &lt;p&gt;
  * The cookie handling provided by this class is guided by the Servlet
  * specification and RFC6265.
  */
@@ -59,11 +59,11 @@ public class HttpFields implements Iterable<HttpField> {
      * parameters. This method separates the value from the parameters and
      * optionally populates a map with the parameters. For example:
      *
-     * <PRE>
-     * <p>
+     * &lt;PRE&gt;
+     * &lt;p&gt;
      * FieldName : Value ; param1=val1 ; param2=val2
      *
-     * </PRE>
+     * &lt;/PRE&gt;
      *
      * @param value The Field value, possibly with parameters.
      * @return The value.
@@ -83,11 +83,11 @@ public class HttpFields implements Iterable<HttpField> {
      * method separates the value from the parameters and optionally populates a
      * map with the parameters. For example:
      *
-     * <PRE>
-     * <p>
+     * &lt;PRE&gt;
+     * &lt;p&gt;
      * FieldName : Value ; param1=val1 ; param2=val2
      *
-     * </PRE>
+     * &lt;/PRE&gt;
      *
      * @param value      The Field value, possibly with parameters.
      * @param parameters A map to populate with the parameters, or null

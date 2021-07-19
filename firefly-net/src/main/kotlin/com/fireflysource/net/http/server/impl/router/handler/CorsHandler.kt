@@ -10,6 +10,7 @@ import com.fireflysource.net.http.common.model.MimeTypes
 import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -118,8 +119,8 @@ class CorsHandler(val config: CorsConfig) : Router.Handler {
     private fun allowHeaders(ctx: RoutingContext): Boolean {
         val accessControlRequestHeaders = ctx.httpFields.getCSV(ACCESS_CONTROL_REQUEST_HEADERS, false)
         return if (accessControlRequestHeaders.isNullOrEmpty()) true
-        else config.allowHeaders.map { it.toLowerCase() }
-            .containsAll(accessControlRequestHeaders.map { it.toLowerCase() })
+        else config.allowHeaders.map { it.lowercase(Locale.getDefault()) }
+            .containsAll(accessControlRequestHeaders.map { it.lowercase(Locale.getDefault()) })
     }
 
 

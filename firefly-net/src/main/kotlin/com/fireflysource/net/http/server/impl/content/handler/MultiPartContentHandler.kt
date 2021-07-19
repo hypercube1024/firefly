@@ -55,30 +55,30 @@ class MultiPartContentHandler(
     private inner class MultiPartHandler : MultiPartParser.Handler {
 
         override fun startPart() {
-            multiPartChannel.offer(StartPart)
+            multiPartChannel.trySend(StartPart)
         }
 
         override fun parsedField(name: String, value: String) {
-            multiPartChannel.offer(PartField(name, value))
+            multiPartChannel.trySend(PartField(name, value))
         }
 
         override fun headerComplete(): Boolean {
-            multiPartChannel.offer(PartHeaderComplete)
+            multiPartChannel.trySend(PartHeaderComplete)
             return false
         }
 
         override fun content(item: ByteBuffer, last: Boolean): Boolean {
-            multiPartChannel.offer(PartContent(item, last))
+            multiPartChannel.trySend(PartContent(item, last))
             return false
         }
 
         override fun messageComplete(): Boolean {
-            multiPartChannel.offer(PartMessageComplete)
+            multiPartChannel.trySend(PartMessageComplete)
             return true
         }
 
         override fun earlyEOF() {
-            multiPartChannel.offer(PartEarlyEOF)
+            multiPartChannel.trySend(PartEarlyEOF)
         }
 
     }
@@ -141,7 +141,7 @@ class MultiPartContentHandler(
         var fileName: String? = null
         while (token.hasMoreTokens()) {
             val tokenValue = token.nextToken().trim()
-            val lowerCaseValue = tokenValue.toLowerCase()
+            val lowerCaseValue = tokenValue.lowercase(Locale.getDefault())
             when {
                 lowerCaseValue.startsWith("form-data") -> formData = true
                 lowerCaseValue.startsWith("name=") -> name = value(tokenValue)
@@ -258,10 +258,10 @@ class MultiPartContentHandler(
 
         if (firstMessage) {
             job = parsingJob()
-            multiPartChannel.offer(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
+            multiPartChannel.trySend(ParseMultiPartBoundary(ctx.httpFields[HttpHeader.CONTENT_TYPE]))
             firstMessage = false
         }
-        multiPartChannel.offer(ParseMultiPartContent(byteBuffer))
+        multiPartChannel.trySend(ParseMultiPartContent(byteBuffer))
     }
 
     override fun closeAsync(): CompletableFuture<Void> {
@@ -278,7 +278,7 @@ class MultiPartContentHandler(
     }
 
     private suspend fun closeAwait() {
-        multiPartChannel.offer(EndMultiPartHandler)
+        multiPartChannel.trySend(EndMultiPartHandler)
         job?.join()
     }
 

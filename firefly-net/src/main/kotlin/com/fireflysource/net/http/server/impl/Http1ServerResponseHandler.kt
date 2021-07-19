@@ -31,7 +31,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     private val responseChannel: Channel<Http1ResponseMessage> = Channel(Channel.UNLIMITED)
 
     fun sendResponseMessage(message: Http1ResponseMessage) {
-        responseChannel.offer(message)
+        responseChannel.trySend(message)
     }
 
     fun generateResponseJob() = http1ServerConnection.coroutineScope.launch {
@@ -51,7 +51,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
     }
 
     fun endResponseHandler() {
-        responseChannel.offer(EndResponseHandler)
+        responseChannel.trySend(EndResponseHandler)
     }
 
     private suspend fun generateHeader(header: Header) {
@@ -184,7 +184,7 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
 
     private suspend fun flushChunkedContentBuffer(contentBuffer: ByteBuffer): Long {
         val bufArray = arrayOf(chunkBuffer, contentBuffer)
-        val remaining = bufArray.map { it.remaining().toLong() }.sum()
+        val remaining = bufArray.sumOf { it.remaining().toLong() }
         val length = if (remaining > 0) {
             val len = http1ServerConnection.tcpConnection.write(bufArray, 0, bufArray.size).await()
             log.debug { "flush chunked content bytes: $len" }

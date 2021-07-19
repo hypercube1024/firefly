@@ -20,8 +20,8 @@ class MultiPartContentProvider : HttpClientContentProvider {
 
     companion object {
         private const val newLine = "\r\n"
-        private val colonSpaceBytes: ByteArray = byteArrayOf(':'.toByte(), ' '.toByte())
-        private val newLineBytes: ByteArray = byteArrayOf('\r'.toByte(), '\n'.toByte())
+        private val colonSpaceBytes: ByteArray = byteArrayOf(':'.code.toByte(), ' '.code.toByte())
+        private val newLineBytes: ByteArray = byteArrayOf('\r'.code.toByte(), '\n'.code.toByte())
     }
 
     val contentType: String
@@ -147,7 +147,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
     }
 
     override fun close() {
-        multiPartChannel.offer(EndMultiPartProvider)
+        multiPartChannel.trySend(EndMultiPartProvider)
     }
 
     override fun read(byteBuffer: ByteBuffer): CompletableFuture<Int> {
@@ -160,7 +160,7 @@ class MultiPartContentProvider : HttpClientContentProvider {
         }
 
         val future = CompletableFuture<Int>()
-        multiPartChannel.offer(GenerateMultiPart(byteBuffer, future))
+        multiPartChannel.trySend(GenerateMultiPart(byteBuffer, future))
         return future
     }
 

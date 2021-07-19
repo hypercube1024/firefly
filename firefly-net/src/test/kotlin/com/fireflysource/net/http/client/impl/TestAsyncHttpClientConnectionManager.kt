@@ -43,7 +43,7 @@ class TestAsyncHttpClientConnectionManager {
                 return Result.DONE
             }
         }
-        httpServer = TcpServerFactory.create().timeout(120 * 1000).enableOutputBuffer()
+        httpServer = TcpServerFactory.create().timeout(120 * 1000L).enableOutputBuffer()
             .onAcceptAsync { connection ->
                 println("accept connection. ${connection.id}")
                 connection.beginHandshake().await()

@@ -7,10 +7,7 @@ import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.Result.discard
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.HttpClientConnection
-import com.fireflysource.net.http.client.HttpClientContentProvider
-import com.fireflysource.net.http.client.HttpClientRequest
-import com.fireflysource.net.http.client.HttpClientResponse
+import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.HttpConfig.DEFAULT_WINDOW_SIZE
 import com.fireflysource.net.http.common.model.MetaData
@@ -33,7 +30,7 @@ class Http2ClientConnection(
     flowControl: FlowControl = BufferedFlowControlStrategy(),
     listener: Http2Connection.Listener = defaultHttp2ConnectionListener,
     priorKnowledge: Boolean = true
-) : AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener), HttpClientConnection {
+) : AsyncHttp2Connection(1, config, tcpConnection, flowControl, listener), AbstractHttpClientConnection {
 
     companion object {
         private val log = SystemLogger.create(Http2ClientConnection::class.java)

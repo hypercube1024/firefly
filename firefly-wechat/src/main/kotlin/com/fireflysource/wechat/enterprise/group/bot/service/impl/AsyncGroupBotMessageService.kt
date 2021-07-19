@@ -20,14 +20,13 @@ class AsyncGroupBotMessageService(
 ) : GroupBotMessageService {
 
     override fun sendMessage(message: Message): CompletableFuture<GroupBotMessageResult> {
-        val json = json().write(message)
         return httpClient.post(webHookUrl)
             .put(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON_UTF_8.value)
-            .body(json)
+            .body(json.write(message))
             .submit()
             .thenApply { response ->
                 if (response.status == HttpStatus.OK_200) {
-                    json().read(response.stringBody)
+                    json.read(response.stringBody)
                 } else {
                     GroupBotMessageResult(
                         -99999,

@@ -17,7 +17,7 @@ public class DefaultSecureEngineFactorySelector {
                 if (update.length == 2) {
                     try {
                         int u = Integer.parseInt(update[1]);
-                        if (u >= 252) {
+                        if (u >= 291) {
                             secureEngineFactory = createOpenJdkSecureEngineFactory(client);
                         } else {
                             secureEngineFactory = createConscryptSecureEngineFactory(client);
