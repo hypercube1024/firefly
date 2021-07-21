@@ -16,6 +16,7 @@ import com.fireflysource.net.http.server.impl.exception.ProxyAuthException
 import com.fireflysource.net.http.server.impl.exception.RouterNotCommitException
 import com.fireflysource.net.http.server.impl.router.AsyncRouterManager
 import com.fireflysource.net.tcp.TcpConnection
+import com.fireflysource.net.tcp.TcpServer
 import com.fireflysource.net.tcp.aio.AioTcpServer
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
@@ -36,9 +37,9 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         private val log = SystemLogger.create(AsyncHttpServer::class.java)
     }
 
-    private val routerManager: RouterManager = AsyncRouterManager(this)
-    private val webSocketManager: WebSocketManager = AsyncWebSocketManager()
-    private val tcpServer = AioTcpServer()
+    private var routerManager: RouterManager = AsyncRouterManager(this)
+    private var webSocketManager: WebSocketManager = AsyncWebSocketManager()
+    private var tcpServer: TcpServer = AioTcpServer()
     private var address: SocketAddress? = null
     private var onHeaderComplete: Function<RoutingContext, CompletableFuture<Void>> = Function { ctx ->
         if (ctx.expect100Continue()) ctx.response100Continue() else Result.DONE
@@ -256,5 +257,25 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
 
     override fun destroy() {
         tcpServer.stop()
+    }
+
+    override fun clone(): HttpServer {
+        val server = AsyncHttpServer(this.config.clone())
+        server.routerManager = (this.routerManager as AsyncRouterManager).copy(server)
+        server.webSocketManager = (this.webSocketManager as AsyncWebSocketManager).clone()
+        server.tcpServer = (this.tcpServer as AioTcpServer).clone()
+        server.onHeaderComplete = this.onHeaderComplete
+        server.onException = this.onException
+        server.onRouterNotFound = this.onRouterNotFound
+        server.onRouterComplete = this.onRouterComplete
+        server.onAcceptHttpTunnel = this.onAcceptHttpTunnel
+        server.onHttpTunnelHandshakeComplete = this.onHttpTunnelHandshakeComplete
+        server.onAcceptHttpTunnelHandshakeResponse = this.onAcceptHttpTunnelHandshakeResponse
+        server.onRefuseHttpTunnelHandshakeResponse = this.onRefuseHttpTunnelHandshakeResponse
+        return server
+    }
+
+    override fun copy(): HttpServer {
+        return this.clone()
     }
 }

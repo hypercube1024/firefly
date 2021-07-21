@@ -15,7 +15,7 @@ import java.util.function.Function;
 /**
  * @author Pengtao Qiu
  */
-public interface HttpServer extends LifeCycle {
+public interface HttpServer extends LifeCycle, Cloneable {
 
     /**
      * Register a new router.
@@ -178,4 +178,11 @@ public interface HttpServer extends LifeCycle {
     default void listen(String host, int port) {
         listen(new InetSocketAddress(host, port));
     }
+
+    /**
+     * Copy the HTTP server instance.
+     *
+     * @return The new HTTP server instance.
+     */
+    HttpServer copy();
 }

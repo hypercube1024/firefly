@@ -4,7 +4,7 @@ import com.fireflysource.common.coroutine.CoroutineDispatchers;
 import com.fireflysource.net.tcp.TcpChannelGroup;
 import com.fireflysource.net.tcp.secure.SecureEngineFactory;
 
-public class HttpConfig {
+public class HttpConfig implements Cloneable {
 
     public static int DEFAULT_WINDOW_SIZE = 65535;
     public static int DEFAULT_HEADER_TABLE_SIZE = 4096;
@@ -227,5 +227,14 @@ public class HttpConfig {
                 ", maxRequestBodySize=" + maxRequestBodySize +
                 ", uploadFileSizeThreshold=" + uploadFileSizeThreshold +
                 '}';
+    }
+
+    @Override
+    public HttpConfig clone() throws CloneNotSupportedException {
+        HttpConfig config = (HttpConfig) super.clone();
+        if (this.proxyConfig != null) {
+            config.proxyConfig = (ProxyConfig) this.proxyConfig.clone();
+        }
+        return config;
     }
 }

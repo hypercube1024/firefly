@@ -30,4 +30,10 @@ class AsyncWebSocketManager : WebSocketManager {
     override fun findWebSocketHandler(path: String): WebSocketServerConnectionHandler? {
         return webSocketHandlers[path]
     }
+
+    public override fun clone(): AsyncWebSocketManager {
+        val newWebSocketManager = AsyncWebSocketManager()
+        newWebSocketManager.webSocketHandlers.putAll(this.webSocketHandlers)
+        return newWebSocketManager
+    }
 }

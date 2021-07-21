@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.common;
 
-public class ProxyAuthentication {
+public class ProxyAuthentication implements Cloneable {
 
     private String username;
     private String password;
@@ -27,5 +27,10 @@ public class ProxyAuthentication {
                 "username=******'" + '\'' +
                 ", password='******" + '\'' +
                 '}';
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

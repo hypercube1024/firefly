@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  *
  * @author Pengtao Qiu
  */
-public interface TcpServer extends LifeCycle {
+public interface TcpServer extends LifeCycle, Cloneable {
 
     /**
      * Set the TCP channel group.

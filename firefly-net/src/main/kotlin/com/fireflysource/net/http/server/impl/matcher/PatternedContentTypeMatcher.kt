@@ -9,7 +9,7 @@ import com.fireflysource.net.http.server.Matcher.MatchType
 class PatternedContentTypeMatcher : AbstractPatternMatcher() {
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (patternMap.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val mimeType = MimeTypes.getContentTypeMIMEType(value)
         return if (StringUtils.hasText(mimeType)) super.match(mimeType) else null

@@ -3,7 +3,7 @@ package com.fireflysource.net.websocket.server;
 /**
  * @author Pengtao Qiu
  */
-public interface WebSocketManager {
+public interface WebSocketManager extends Cloneable {
 
     /**
      * Find the websocket handler.

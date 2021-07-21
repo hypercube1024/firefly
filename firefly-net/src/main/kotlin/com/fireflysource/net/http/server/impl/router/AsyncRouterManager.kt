@@ -106,4 +106,22 @@ class AsyncRouterManager(val httpServer: HttpServer) : RouterManager {
     fun produces(accept: String, router: AsyncRouter) {
         acceptHeaderMatcher.add(accept, router)
     }
+
+    fun copy(httpServer: HttpServer): AsyncRouterManager {
+        val newManager = AsyncRouterManager(httpServer)
+        newManager.routerId.set(this.routerId.get())
+        newManager.httpMethodMatcher.routersMap.putAll(this.httpMethodMatcher.copyRouterMap(newManager))
+        newManager.precisePathMatcher.routersMap.putAll(this.precisePathMatcher.copyRouterMap(newManager))
+        newManager.parameterPathMatcher.routersMap.putAll(this.parameterPathMatcher.copyRouterMap(newManager))
+        newManager.patternedPathMatcher.routersMap.putAll(this.patternedPathMatcher.copyRouterMap(newManager))
+        newManager.regexPathMatcher.routersMap.putAll(this.regexPathMatcher.copyRouterMap(newManager))
+        newManager.preciseContentTypeMatcher.routersMap.putAll(this.preciseContentTypeMatcher.copyRouterMap(newManager))
+        newManager.patternedContentTypeMatcher.routersMap.putAll(
+            this.patternedContentTypeMatcher.copyRouterMap(
+                newManager
+            )
+        )
+        newManager.acceptHeaderMatcher.routersMap.putAll(this.acceptHeaderMatcher.copyRouterMap(newManager))
+        return newManager
+    }
 }

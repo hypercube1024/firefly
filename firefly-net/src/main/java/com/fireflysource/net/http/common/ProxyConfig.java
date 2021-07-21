@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.common;
 
-public class ProxyConfig {
+public class ProxyConfig implements Cloneable {
 
     private String protocol;
     private String host;
@@ -47,5 +47,14 @@ public class ProxyConfig {
                 ", port=" + port +
                 ", proxyAuthentication=" + proxyAuthentication +
                 '}';
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        ProxyConfig proxyConfig = (ProxyConfig) super.clone();
+        if (this.proxyAuthentication != null) {
+            proxyConfig.proxyAuthentication = (ProxyAuthentication) this.proxyAuthentication.clone();
+        }
+        return proxyConfig;
     }
 }

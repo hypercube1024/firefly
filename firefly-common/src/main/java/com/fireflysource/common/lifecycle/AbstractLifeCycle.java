@@ -19,7 +19,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     }
 
     protected AtomicBoolean start = new AtomicBoolean(false);
-    private Callback stopCallback = this::stopNoRemove;
+    private final Callback stopCallback = this::stopNoRemove;
 
     public AbstractLifeCycle() {
         stopActions.add(stopCallback);

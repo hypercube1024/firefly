@@ -6,13 +6,11 @@ import java.util.*
 import java.util.regex.Pattern
 
 
-abstract class AbstractRegexMatcher : Matcher {
+abstract class AbstractRegexMatcher :AbstractMatcher<AbstractRegexMatcher.RegexRule>(), Matcher {
 
     companion object {
         const val paramName = "group"
     }
-
-    protected val regexMap: MutableMap<RegexRule, SortedSet<Router>> = HashMap<RegexRule, SortedSet<Router>>()
 
     class RegexRule(val rule: String) {
         val pattern: Pattern = Pattern.compile(rule)
@@ -31,16 +29,16 @@ abstract class AbstractRegexMatcher : Matcher {
     }
 
     override fun add(rule: String, router: Router) {
-        regexMap.computeIfAbsent(RegexRule(rule)) { TreeSet() }.add(router)
+        routersMap.computeIfAbsent(RegexRule(rule)) { TreeSet() }.add(router)
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (regexMap.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
 
-        regexMap.forEach { (rule, routerSet) ->
+        routersMap.forEach { (rule, routerSet) ->
             var matcher = rule.pattern.matcher(value)
             if (matcher.matches()) {
                 routers.addAll(routerSet)

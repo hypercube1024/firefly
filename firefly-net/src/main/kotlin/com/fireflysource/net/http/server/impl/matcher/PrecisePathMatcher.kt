@@ -12,7 +12,7 @@ class PrecisePathMatcher : AbstractPreciseMatcher() {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (map.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val path = toPath(value)
         return super.match(path)

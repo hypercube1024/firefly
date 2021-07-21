@@ -11,7 +11,7 @@ class HttpMethodMatcher : AbstractPreciseMatcher() {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        return if (map.isEmpty()) null else super.match(value.uppercase(Locale.getDefault()))
+        return if (routersMap.isEmpty()) null else super.match(value.uppercase(Locale.getDefault()))
     }
 
     override fun getMatchType(): Matcher.MatchType {

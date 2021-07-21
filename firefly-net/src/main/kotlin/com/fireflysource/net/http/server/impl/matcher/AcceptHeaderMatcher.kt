@@ -17,7 +17,7 @@ class AcceptHeaderMatcher : AbstractPreciseMatcher() {
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (map.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val acceptMIMETypes = parseAcceptMIMETypes(value)
         if (acceptMIMETypes.isNullOrEmpty()) return null
@@ -30,7 +30,7 @@ class AcceptHeaderMatcher : AbstractPreciseMatcher() {
     }
 
     private fun findRouters(type: AcceptMIMEType) =
-        map.entries.filter { matchMimeType(it, type) }.flatMap { it.value }.toSortedSet()
+        routersMap.entries.filter { matchMimeType(it, type) }.flatMap { it.value }.toSortedSet()
 
     private fun matchMimeType(e: MutableMap.MutableEntry<String, SortedSet<Router>>, type: AcceptMIMEType): Boolean {
         val acceptType: Array<String> = StringUtils.split(e.key, '/')

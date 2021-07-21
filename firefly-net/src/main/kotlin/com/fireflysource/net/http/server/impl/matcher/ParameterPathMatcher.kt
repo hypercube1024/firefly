@@ -5,7 +5,7 @@ import com.fireflysource.net.http.server.Router
 import java.util.*
 
 
-class ParameterPathMatcher : Matcher {
+class ParameterPathMatcher : AbstractMatcher<ParameterPathMatcher.ParameterRule>(), Matcher {
 
     companion object {
         fun isParameterPath(path: String): Boolean {
@@ -32,10 +32,7 @@ class ParameterPathMatcher : Matcher {
         }
     }
 
-    private val parameterRuleMap: MutableMap<ParameterRule, SortedSet<Router>> =
-        HashMap<ParameterRule, SortedSet<Router>>()
-
-    private inner class ParameterRule(val rule: String) {
+    inner class ParameterRule(val rule: String) {
 
         val paths = split(rule)
 
@@ -76,17 +73,17 @@ class ParameterPathMatcher : Matcher {
 
     override fun add(rule: String, router: Router) {
         val parameterRule = ParameterRule(rule)
-        parameterRuleMap.computeIfAbsent(parameterRule) { TreeSet() }.add(router)
+        routersMap.computeIfAbsent(parameterRule) { TreeSet() }.add(router)
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (parameterRuleMap.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
         val paths = split(value)
 
-        parameterRuleMap.forEach { (rule, routerSet) ->
+        routersMap.forEach { (rule, routerSet) ->
             val param = rule.match(paths)
             if (param.isNotEmpty()) {
                 routers.addAll(routerSet)

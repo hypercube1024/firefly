@@ -6,13 +6,11 @@ import com.fireflysource.net.http.server.Router
 import java.util.*
 
 
-abstract class AbstractPatternMatcher : Matcher {
+abstract class AbstractPatternMatcher : AbstractMatcher<AbstractPatternMatcher.PatternRule>(), Matcher {
 
     companion object {
         const val paramName = "param"
     }
-
-    protected val patternMap: MutableMap<PatternRule, SortedSet<Router>> = HashMap<PatternRule, SortedSet<Router>>()
 
     class PatternRule(val rule: String) {
 
@@ -32,16 +30,16 @@ abstract class AbstractPatternMatcher : Matcher {
     }
 
     override fun add(rule: String, router: Router) {
-        patternMap.computeIfAbsent(PatternRule(rule)) { TreeSet() }.add(router)
+        routersMap.computeIfAbsent(PatternRule(rule)) { TreeSet() }.add(router)
     }
 
     override fun match(value: String): Matcher.MatchResult? {
-        if (patternMap.isEmpty()) return null
+        if (routersMap.isEmpty()) return null
 
         val routers = TreeSet<Router>()
         val parameters = HashMap<Router, Map<String, String>>()
 
-        patternMap.forEach { (rule, routerSet) ->
+        routersMap.forEach { (rule, routerSet) ->
             val strings: Array<String>? = rule.pattern.match(value)
             if (strings != null) {
                 routers.addAll(routerSet)

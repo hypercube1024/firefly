@@ -17,10 +17,12 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 class TestHttpServer : AbstractHttpServerTestBase() {
@@ -373,5 +375,35 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
         tcpClient.stop()
         httpServer.stop()
+    }
+
+    @Test
+    fun testCopy() {
+        val httpServer = createHttpServer("http1", "http")
+        httpServer.router().get("/testCopy").handler { it.end("Origin server") }
+            .listen(address)
+
+        var newAddress = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
+        while (newAddress == address) {
+            newAddress = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
+        }
+        val newHttpServer = httpServer.copy()
+        newHttpServer.enableSecureConnection().listen(newAddress)
+
+        val httpClient = HttpClientFactory.create()
+        runBlocking {
+            @Suppress("HttpUrlsUsage")
+            var response = httpClient.get("http://${address.hostName}:${address.port}/testCopy").submit().await()
+            assertEquals("Origin server", response.stringBody)
+            println(response)
+
+            response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/testCopy").submit().await()
+            assertEquals("Origin server", response.stringBody)
+            println(response)
+        }
+
+        httpClient.stop()
+        httpServer.stop()
+        newHttpServer.stop()
     }
 }

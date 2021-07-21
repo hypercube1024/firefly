@@ -168,4 +168,39 @@ class TestAsyncRouterManager {
         `when`(ctx.contentType).thenReturn(contentType)
         return ctx
     }
+
+    @Test
+    fun testCopy() {
+        val routerManager = AsyncRouterManager(httpServer)
+        routerManager.register().get("/hello")
+        routerManager.register().post("/hello")
+        routerManager.register().put("/hello")
+        routerManager.register().delete("/hello")
+
+        var ctx = createContext("GET", "/hello")
+        var result = routerManager.findRouters(ctx)
+        assertEquals(1, result.size)
+        assertEquals(0, result.first().router.id)
+        assertTrue(result.first().matchTypes.containsAll(listOf(METHOD, PATH)))
+
+        val newRouterManager = routerManager.copy(httpServer)
+        newRouterManager.register().get("/helloCopy")
+
+        ctx = createContext("POST", "/hello")
+        result = newRouterManager.findRouters(ctx)
+        assertEquals(1, result.size)
+        assertEquals(1, result.first().router.id)
+        assertTrue(result.first().matchTypes.containsAll(listOf(METHOD, PATH)))
+
+        ctx = createContext("GET", "/helloCopy")
+        result = newRouterManager.findRouters(ctx)
+        assertEquals(1, result.size)
+        assertEquals(4, result.first().router.id)
+        assertTrue(result.first().matchTypes.containsAll(listOf(METHOD, PATH)))
+
+        ctx = createContext("GET", "/helloCopy")
+        result = routerManager.findRouters(ctx)
+        assertTrue(result.isEmpty())
+    }
+
 }

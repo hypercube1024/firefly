@@ -115,6 +115,13 @@ class AsyncRouter(
         return id
     }
 
+    fun copy(manager: AsyncRouterManager): AsyncRouter {
+        val router = AsyncRouter(this.id, manager)
+        router.matchTypes.addAll(this.matchTypes)
+        router.enabled = this.enabled
+        router.handler = this.handler
+        return router
+    }
 }
 
 private const val serverHandlerCoroutineContextKey = "_serverHandlerCoroutineContextKey"

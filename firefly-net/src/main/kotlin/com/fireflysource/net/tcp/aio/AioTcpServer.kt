@@ -188,6 +188,13 @@ class AioTcpServer(private val config: TcpConfig = TcpConfig()) : AbstractLifeCy
         }
     }
 
+    public override fun clone(): AioTcpServer {
+        val config = this.config.copy()
+        val server = AioTcpServer(config)
+        server.group = this.group
+        server.stopGroup = this.stopGroup
+        return server
+    }
 }
 
 fun TcpServer.onAcceptAsync(block: suspend CoroutineScope.(TcpConnection) -> Unit): TcpServer {
