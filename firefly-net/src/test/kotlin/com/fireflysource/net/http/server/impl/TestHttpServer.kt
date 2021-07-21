@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
+@Suppress("HttpUrlsUsage")
 class TestHttpServer : AbstractHttpServerTestBase() {
 
     @ParameterizedTest
@@ -392,7 +393,6 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
         val httpClient = HttpClientFactory.create()
         runBlocking {
-            @Suppress("HttpUrlsUsage")
             var response = httpClient.get("http://${address.hostName}:${address.port}/testCopy").submit().await()
             assertEquals("Origin server", response.stringBody)
             println(response)
