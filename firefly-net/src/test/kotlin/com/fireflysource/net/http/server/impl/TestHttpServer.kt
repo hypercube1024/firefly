@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.impl.router.asyncHandler
+import com.fireflysource.net.http.server.impl.router.blockingHandler
 import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
@@ -381,7 +382,11 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @Test
     fun testCopy() {
         val httpServer = createHttpServer("http1", "http")
-        httpServer.router().get("/testCopy").handler { it.end("Origin server") }
+        httpServer.router().get("/testCopy")
+            .blockingHandler {
+                println(Thread.currentThread().name)
+                it.end("Origin server")
+            }
             .listen(address)
 
         var newAddress = InetSocketAddress("localhost", Random.nextInt(20000, 40000))
