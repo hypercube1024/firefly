@@ -12,10 +12,10 @@ public class IO {
     public final static byte[] CRLF_BYTES = {(byte) '\015', (byte) '\012'};
 
     public static final int bufferSize = 64 * 1024;
-    private static NullOS NULL_STREAM = new NullOS();
-    private static ClosedIS CLOSED_STREAM = new ClosedIS();
-    private static NullWrite NULL_WRITER = new NullWrite();
-    private static PrintWriter NULL_PRINT_WRITER = new PrintWriter(NULL_WRITER);
+    private static final NullOS NULL_STREAM = new NullOS();
+    private static final ClosedIS CLOSED_STREAM = new ClosedIS();
+    private static final NullWrite NULL_WRITER = new NullWrite();
+    private static final PrintWriter NULL_PRINT_WRITER = new PrintWriter(NULL_WRITER);
 
     /**
      * Copy Stream in to Stream out until EOF or exception.
@@ -56,17 +56,18 @@ public class IO {
                 int max = byteCount < bufferSize ? (int) byteCount : bufferSize;
                 len = in.read(buffer, 0, max);
 
-                if (len == -1)
+                if (len == -1) {
                     break;
-
+                }
                 byteCount -= len;
                 out.write(buffer, 0, len);
             }
         } else {
             while (true) {
                 len = in.read(buffer, 0, bufferSize);
-                if (len < 0)
+                if (len < 0) {
                     break;
+                }
                 out.write(buffer, 0, len);
             }
         }
@@ -86,14 +87,14 @@ public class IO {
 
         if (byteCount >= 0) {
             while (byteCount > 0) {
-                if (byteCount < bufferSize)
+                if (byteCount < bufferSize) {
                     len = in.read(buffer, 0, (int) byteCount);
-                else
+                } else {
                     len = in.read(buffer, 0, bufferSize);
-
-                if (len == -1)
+                }
+                if (len == -1) {
                     break;
-
+                }
                 byteCount -= len;
                 out.write(buffer, 0, len);
             }
@@ -108,8 +109,9 @@ public class IO {
         } else {
             while (true) {
                 len = in.read(buffer, 0, bufferSize);
-                if (len == -1)
+                if (len == -1) {
                     break;
+                }
                 out.write(buffer, 0, len);
             }
         }
@@ -123,25 +125,32 @@ public class IO {
      * @throws IOException if unable to copy
      */
     public static void copy(File from, File to) throws IOException {
-        if (from.isDirectory())
+        if (from.isDirectory()) {
             copyDir(from, to);
-        else
+        } else {
             copyFile(from, to);
+        }
     }
 
     public static void copyDir(File from, File to) throws IOException {
         if (to.exists()) {
-            if (!to.isDirectory())
+            if (!to.isDirectory()) {
                 throw new IllegalArgumentException(to.toString());
-        } else
-            to.mkdirs();
+            }
+        } else {
+            boolean success = to.mkdirs();
+            if (!success) {
+                return;
+            }
+        }
 
         File[] files = from.listFiles();
         if (files != null) {
             for (File file : files) {
                 String name = file.getName();
-                if (".".equals(name) || "..".equals(name))
+                if (".".equals(name) || "..".equals(name)) {
                     continue;
+                }
                 copy(file, new File(to, name));
             }
         }
@@ -214,12 +223,14 @@ public class IO {
      * content in a directory was deleted)
      */
     public static boolean delete(File file) {
-        if (!file.exists())
+        if (!file.exists()) {
             return false;
+        }
         if (file.isDirectory()) {
             File[] files = file.listFiles();
-            for (int i = 0; files != null && i < files.length; i++)
+            for (int i = 0; files != null && i < files.length; i++) {
                 delete(files[i]);
+            }
         }
         return file.delete();
     }
