@@ -1,12 +1,11 @@
 package com.fireflysource.net.http.common.content.handler
 
 import com.fireflysource.common.coroutine.asVoidFuture
-import com.fireflysource.common.coroutine.event
 import com.fireflysource.common.io.closeJob
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.common.sys.SystemLogger
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.nio.ByteBuffer
 import java.nio.file.OpenOption
@@ -20,53 +19,50 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
     }
 
     private val inputChannel: Channel<WriteFileMessage> = Channel(Channel.UNLIMITED)
-    private val writeJob: Job
+    private val scope: CoroutineScope = CoroutineScope(CoroutineName("Firefly-file-content-handler"))
+    private val writeJob: Job = scope.launch {
+        val fileChannel = openFileChannelAsync(path, *options).await()
+        var pos = 0L
 
-    init {
-        writeJob = event {
-            val fileChannel = openFileChannelAsync(path, *options).await()
-            var pos = 0L
-
-            suspend fun closeFileChannel() {
-                try {
-                    fileChannel.closeJob().join()
-                } catch (e: Exception) {
-                    log.error(e) { "close file channel exception." }
-                }
+        suspend fun closeFileChannel() {
+            try {
+                fileChannel.closeJob().join()
+            } catch (e: Exception) {
+                log.error(e) { "close file channel exception." }
             }
+        }
 
-            suspend fun read(): Boolean {
-                var closed = false
-                when (val writeFileMessage = inputChannel.receive()) {
-                    is WriteFileRequest -> {
-                        val buf = writeFileMessage.buffer
-                        flushDataLoop@ while (buf.hasRemaining()) {
-                            val len = fileChannel.writeAwait(buf, pos)
-                            if (len < 0) {
-                                closeFileChannel()
-                                closed = true
-                            }
-                            pos += len
+        suspend fun read(): Boolean {
+            var closed = false
+            when (val writeFileMessage = inputChannel.receive()) {
+                is WriteFileRequest -> {
+                    val buf = writeFileMessage.buffer
+                    flushDataLoop@ while (buf.hasRemaining()) {
+                        val len = fileChannel.writeAwait(buf, pos)
+                        if (len < 0) {
+                            closeFileChannel()
+                            closed = true
                         }
-                    }
-                    is EndWriteFile -> {
-                        closeFileChannel()
-                        closed = true
+                        pos += len
                     }
                 }
-                return closed
-            }
-
-            writeMessageLoop@ while (true) {
-                val closed = try {
-                    read()
-                } catch (e: Exception) {
-                    log.error(e) { "read file exception." }
+                is EndWriteFile -> {
                     closeFileChannel()
-                    true
+                    closed = true
                 }
-                if (closed) break@writeMessageLoop
             }
+            return closed
+        }
+
+        writeMessageLoop@ while (true) {
+            val closed = try {
+                read()
+            } catch (e: Exception) {
+                log.error(e) { "read file exception." }
+                closeFileChannel()
+                true
+            }
+            if (closed) break@writeMessageLoop
         }
     }
 
@@ -75,7 +71,8 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
         inputChannel.trySend(WriteFileRequest(buffer))
     }
 
-    override fun closeAsync(): CompletableFuture<Void> = event { closeAwait() }.asVoidFuture()
+    override fun closeAsync(): CompletableFuture<Void> =
+        scope.launch { closeAwait() }.asVoidFuture().thenAccept { scope.cancel() }
 
     override fun close() {
         inputChannel.trySend(EndWriteFile)

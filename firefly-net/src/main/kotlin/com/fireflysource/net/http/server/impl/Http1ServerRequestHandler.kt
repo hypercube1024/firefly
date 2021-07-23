@@ -14,6 +14,8 @@ import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import com.fireflysource.net.websocket.common.impl.AsyncWebSocketConnection
 import com.fireflysource.net.websocket.common.model.AcceptHash
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -72,7 +74,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun newContextAndNotifyHeaderComplete(request: MetaData.Request?): AsyncRoutingContext {
         requireNotNull(request)
-        val httpServerRequest = AsyncHttpServerRequest(request, connection.config)
+        val httpServerRequest = AsyncHttpServerRequest(
+            request,
+            connection.config,
+            CoroutineScope(CoroutineName("Firefly-HTTP-server-request") + connection.coroutineDispatcher)
+        )
 
         this.expectUpgradeHttp2 = HttpProtocolNegotiator.expectUpgradeHttp2(httpServerRequest)
         if (expectUpgradeHttp2) {
@@ -91,7 +97,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private fun newContext(request: MetaData.Request?): AsyncRoutingContext? {
         return if (request != null) {
-            val httpServerRequest = AsyncHttpServerRequest(request, connection.config)
+            val httpServerRequest = AsyncHttpServerRequest(
+                request,
+                connection.config,
+                CoroutineScope(CoroutineName("Firefly-HTTP-server-request") + connection.coroutineDispatcher)
+            )
             newContext(httpServerRequest)
         } else null
     }

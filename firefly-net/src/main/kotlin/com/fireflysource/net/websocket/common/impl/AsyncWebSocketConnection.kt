@@ -1,7 +1,7 @@
 package com.fireflysource.net.websocket.common.impl
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
-import com.fireflysource.common.coroutine.pollAll
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -213,7 +213,7 @@ class AsyncWebSocketConnection(
             }
         }.invokeOnCompletion { cause ->
             log.info { "The websocket connection closed, handle the remaining message. id: ${this@AsyncWebSocketConnection.id},  cause: ${cause?.message}" }
-            messageChannel.pollAll { frame ->
+            messageChannel.consumeAll { frame ->
                 try {
                     messageHandler?.handle(frame, this@AsyncWebSocketConnection)
                 } catch (e: Exception) {

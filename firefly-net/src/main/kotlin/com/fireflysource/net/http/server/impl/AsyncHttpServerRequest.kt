@@ -11,6 +11,8 @@ import com.fireflysource.net.http.server.impl.content.handler.ByteBufferContentH
 import com.fireflysource.net.http.server.impl.content.handler.FormInputsContentHandler
 import com.fireflysource.net.http.server.impl.content.handler.MultiPartContentHandler
 import com.fireflysource.net.http.server.impl.content.handler.StringContentHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -20,7 +22,8 @@ import java.util.function.Supplier
 
 class AsyncHttpServerRequest(
     val request: MetaData.Request,
-    config: HttpConfig
+    config: HttpConfig,
+    scope: CoroutineScope = CoroutineScope(CoroutineName("Firefly-HTTP-server-request"))
 ) : HttpServerRequest {
 
     private var cookieList: List<Cookie>? = null
@@ -40,7 +43,10 @@ class AsyncHttpServerRequest(
                     FormInputsContentHandler(config.maxRequestBodySize)
                 contentType.contains("multipart/form-data", true) ->
                     MultiPartContentHandler(
-                        config.maxUploadFileSize, config.maxRequestBodySize, config.uploadFileSizeThreshold
+                        config.maxUploadFileSize,
+                        config.maxRequestBodySize,
+                        config.uploadFileSizeThreshold,
+                        scope
                     )
                 else -> StringContentHandler(config.maxRequestBodySize)
             }

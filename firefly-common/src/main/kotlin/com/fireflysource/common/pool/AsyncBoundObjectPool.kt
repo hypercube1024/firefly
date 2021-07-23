@@ -1,8 +1,8 @@
 package com.fireflysource.common.pool
 
 import com.fireflysource.common.coroutine.CoroutineDispatchers.scheduler
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.coroutine.event
-import com.fireflysource.common.coroutine.pollAll
 import com.fireflysource.common.func.Callback
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
@@ -81,7 +81,7 @@ class AsyncBoundObjectPool<T>(
     }
 
     private fun clearMessage() {
-        poolMessageChannel.pollAll {
+        poolMessageChannel.consumeAll {
             when (it) {
                 is PollObject<T> -> it.future.completeExceptionally(IllegalStateException("The pool has closed."))
                 is ReleaseObject<T> -> it.future.completeExceptionally(IllegalStateException("The pool has closed."))

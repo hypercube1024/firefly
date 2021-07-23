@@ -43,7 +43,7 @@ class CoroutineLocal<T> {
  */
 object CoroutineLocalContext {
 
-    private val ctx: CoroutineLocal<MutableMap<String, Any>> by lazy { CoroutineLocal<MutableMap<String, Any>>() }
+    private val ctx: CoroutineLocal<MutableMap<String, Any>> by lazy { CoroutineLocal() }
 
     /**
      * Convert the attributes to the coroutine context element.
@@ -125,20 +125,20 @@ object CoroutineLocalContext {
     }
 }
 
-fun <T> CoroutineScope.inheritableAsync(
+inline fun <T> CoroutineScope.inheritableAsync(
     context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
     start: CoroutineStart = CoroutineStart.DEFAULT,
-    block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
     return this.async(context + CoroutineLocalContext.inheritParentElement(attributes), start) { block(this) }
 }
 
-fun CoroutineScope.inheritableLaunch(
+inline fun CoroutineScope.inheritableLaunch(
     context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
     start: CoroutineStart = CoroutineStart.DEFAULT,
-    block: suspend CoroutineScope.() -> Unit
+    crossinline block: suspend CoroutineScope.() -> Unit
 ): Job {
     return this.launch(context + CoroutineLocalContext.inheritParentElement(attributes), start) { block(this) }
 }
@@ -151,38 +151,10 @@ fun CoroutineScope.inheritableLaunch(
  * @param block The coroutine code block.
  * @return The result.
  */
-suspend fun <T> withContextInheritable(
+suspend inline fun <T> withContextInheritable(
     context: CoroutineContext = EmptyCoroutineContext,
     attributes: MutableMap<String, Any>? = null,
-    block: suspend CoroutineScope.() -> T
+    crossinline block: suspend CoroutineScope.() -> T
 ): T {
     return withContext(context + CoroutineLocalContext.inheritParentElement(attributes)) { block(this) }
 }
-
-val computationScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.computation + CoroutineName("FireflyCommonComputation"))
-val ioBlockingScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.ioBlocking + CoroutineName("FireflyCommonIOBlocking"))
-val singleThreadScope: CoroutineScope = CoroutineScope(CoroutineDispatchers.ioBlocking + CoroutineName("FireflyCommonSingleThread"))
-
-inline fun compute(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    computationScope.launch(CoroutineDispatchers.computation) { block(this) }
-
-inline fun <T> computeAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    computationScope.async(CoroutineDispatchers.computation) { block(this) }
-
-inline fun blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    ioBlockingScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
-
-inline fun <T> blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    ioBlockingScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
-
-inline fun event(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    singleThreadScope.launch(CoroutineDispatchers.singleThread) { block(this) }
-
-inline fun <T> eventAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    singleThreadScope.async(CoroutineDispatchers.singleThread) { block(this) }
-
-inline fun CoroutineScope.blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    this.launch(CoroutineDispatchers.ioBlocking) { block(this) }
-
-inline fun <T> CoroutineScope.blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    this.async(CoroutineDispatchers.ioBlocking) { block(this) }

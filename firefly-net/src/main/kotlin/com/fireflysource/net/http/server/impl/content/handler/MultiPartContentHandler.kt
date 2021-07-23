@@ -1,8 +1,7 @@
 package com.fireflysource.net.http.server.impl.content.handler
 
 import com.fireflysource.common.concurrent.CompletableFutures
-import com.fireflysource.common.coroutine.event
-import com.fireflysource.common.coroutine.pollAll
+import com.fireflysource.common.coroutine.clear
 import com.fireflysource.common.string.QuotedStringTokenizer
 import com.fireflysource.common.string.QuotedStringTokenizer.unquote
 import com.fireflysource.common.string.QuotedStringTokenizer.unquoteOnly
@@ -15,7 +14,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.server.HttpServerContentHandler
 import com.fireflysource.net.http.server.MultiPart
 import com.fireflysource.net.http.server.RoutingContext
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.asCompletableFuture
 import java.nio.ByteBuffer
@@ -28,6 +27,7 @@ class MultiPartContentHandler(
     private val maxUploadFileSize: Long = 200 * 1024 * 1024,
     private val maxRequestBodySize: Long = 200 * 1024 * 1024,
     private val uploadFileSizeThreshold: Int = 4 * 1024 * 1024,
+    private val scope: CoroutineScope = CoroutineScope(CoroutineName("Firefly-file-content-provider")),
     private val path: Path = tempPath
 ) : HttpServerContentHandler {
 
@@ -83,7 +83,7 @@ class MultiPartContentHandler(
 
     }
 
-    private fun parsingJob() = event {
+    private fun parsingJob() = scope.launch {
         parseLoop@ while (true) {
             try {
                 when (val message = multiPartChannel.receive()) {
@@ -106,12 +106,9 @@ class MultiPartContentHandler(
             }
         }
 
-        multiPartChannel.pollAll { }
-        try {
-            closeAllFileHandlers()
-        } catch (e: Exception) {
-            log.error(e) { "close file handlers exception" }
-        }
+        multiPartChannel.clear()
+        val result = runCatching { closeAllFileHandlers() }
+        log.debug { "close file handlers. result: ${result.isSuccess}" }
     }
 
 
@@ -162,12 +159,13 @@ class MultiPartContentHandler(
     }
 
     private suspend fun handleMessageComplete() {
-        closeAllFileHandlers()
-        log.debug { "Multi-part complete. part: $part" }
+        val result = runCatching { closeAllFileHandlers() }
+        log.debug { "Multi-part complete. part: $part. result: ${result.isSuccess}" }
     }
 
     private suspend fun handleEarlyEOF() {
-        closeAllFileHandlers()
+        val result = runCatching { closeAllFileHandlers() }
+        log.debug { "Early EOF. result: ${result.isSuccess}" }
         throw BadMessageException(HttpStatus.BAD_REQUEST_400)
     }
 
@@ -268,7 +266,7 @@ class MultiPartContentHandler(
         val parsingJob = job
         return if (parsingJob != null) {
             if (parsingJob.isCompleted) complete()
-            else event { closeAwait() }.asCompletableFuture().thenCompose { complete() }
+            else scope.launch { closeAwait() }.asCompletableFuture().thenCompose { complete() }.thenAccept { scope.cancel() }
         } else Result.DONE
     }
 

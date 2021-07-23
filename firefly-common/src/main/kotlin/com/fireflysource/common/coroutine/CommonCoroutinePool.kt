@@ -34,14 +34,14 @@ object CoroutineDispatchers {
         ThreadPoolExecutor(
             availableProcessors, ioBlockingPoolSize,
             ioBlockingPoolKeepAliveTime, TimeUnit.SECONDS,
-            LinkedTransferQueue<Runnable>()
+            LinkedTransferQueue()
         ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) }
     }
 
     val singleThreadPool: ExecutorService by lazy {
         ThreadPoolExecutor(
             1, 1, 0, TimeUnit.MILLISECONDS,
-            LinkedTransferQueue<Runnable>()
+            LinkedTransferQueue()
         ) { runnable -> Thread(runnable, "firefly-single-thread-pool") }
     }
 
@@ -157,3 +157,29 @@ class FinalizableScheduledExecutorService(private val executor: ScheduledExecuto
         }
     }
 }
+
+val applicationScope = CoroutineScope(CoroutineName("Firefly-Application"))
+
+inline fun compute(crossinline block: suspend CoroutineScope.() -> Unit): Job =
+    applicationScope.launch(CoroutineDispatchers.computation) { block(this) }
+
+inline fun <T> computeAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
+    applicationScope.async(CoroutineDispatchers.computation) { block(this) }
+
+inline fun blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
+    applicationScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
+
+inline fun <T> blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
+    applicationScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
+
+inline fun event(crossinline block: suspend CoroutineScope.() -> Unit): Job =
+    applicationScope.launch(CoroutineDispatchers.singleThread) { block(this) }
+
+inline fun <T> eventAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
+    applicationScope.async(CoroutineDispatchers.singleThread) { block(this) }
+
+inline fun CoroutineScope.blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
+    this.launch(CoroutineDispatchers.ioBlocking) { block(this) }
+
+inline fun <T> CoroutineScope.blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
+    this.async(CoroutineDispatchers.ioBlocking) { block(this) }

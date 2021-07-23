@@ -2,7 +2,7 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.codec.base64.Base64Utils
 import com.fireflysource.common.concurrent.exceptionallyAccept
-import com.fireflysource.common.coroutine.pollAll
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -131,7 +131,7 @@ class Http1ClientConnection(
 
     private fun processUnhandledRequest() {
         when {
-            isUpgradeToHttp2Success() -> requestChannel.pollAll { message ->
+            isUpgradeToHttp2Success() -> requestChannel.consumeAll { message ->
                 if (!message.response.isDone) {
                     log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
                     val future = message.response
@@ -140,7 +140,7 @@ class Http1ClientConnection(
                         .exceptionallyAccept { future.completeExceptionally(it) }
                 }
             }
-            else -> requestChannel.pollAll { message ->
+            else -> requestChannel.consumeAll { message ->
                 if (!message.response.isDone) {
                     message.response.completeExceptionally(
                         UnhandledRequestException(

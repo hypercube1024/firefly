@@ -1,7 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.common.coroutine.event
-import com.fireflysource.common.coroutine.pollAll
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
@@ -20,8 +19,8 @@ import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
@@ -39,6 +38,7 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val connectionPoolMap = ConcurrentHashMap<Address, HttpClientConnectionPool>()
+    private val scope = CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager"))
 
     init {
         start()
@@ -90,7 +90,7 @@ class AsyncHttpClientConnectionManager(
         private var i = 0
         private val httpClientConnections: Array<HttpClientConnection?> = arrayOfNulls(config.connectionPoolSize)
         private val channel: Channel<ClientRequestMessage> = Channel(Channel.UNLIMITED)
-        private val checkJob = event {
+        private val checkJob = scope.launch {
             delay(TimeUnit.SECONDS.toMillis(config.checkConnectionLiveInterval))
             sendMessage(CheckConnectionLiveMessage)
         }
@@ -104,7 +104,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         override fun init() {
-            event {
+            scope.launch {
                 requestLoop@ while (true) {
                     when (val message = channel.receive()) {
                         is RequestMessage -> handleRequest(message)
@@ -225,7 +225,7 @@ class AsyncHttpClientConnectionManager(
         }
 
         private fun processUnhandledRequestInPool() {
-            channel.pollAll { message ->
+            channel.consumeAll { message ->
                 if (message is RequestMessage) {
                     message.response.completeExceptionally(UnhandledRequestException("The HTTP client connection pool is shutdown. This request does not send."))
                 }
@@ -262,6 +262,7 @@ class AsyncHttpClientConnectionManager(
         connectionPoolMap.values.forEach { it.stop() }
         connectionPoolMap.clear()
         connectionFactory.stop()
+        scope.cancel()
     }
 
     private data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)

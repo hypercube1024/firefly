@@ -3,16 +3,24 @@ package com.fireflysource.common.coroutine
 import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.atomic.AtomicBoolean
 
-inline fun <T> Channel<T>.pollAll(crossinline block: (T) -> Unit) {
-    while (true) {
-        val message = this.tryReceive().getOrNull()
-        if (message != null) block(message)
-        else break
+inline fun <T> Channel<T>.consumeAll(crossinline block: (T) -> Unit) {
+    try {
+        while (true) {
+            val result = this.tryReceive()
+            if (result.isFailure) {
+                break
+            }
+            val message = result.getOrNull() ?: break
+            block(message)
+        }
+    } catch (ignore: Exception) {
+    } finally {
+        this.close()
     }
 }
 
 fun <T> Channel<T>.clear() {
-    this.pollAll { }
+    this.consumeAll { }
 }
 
 class Signal<T> {

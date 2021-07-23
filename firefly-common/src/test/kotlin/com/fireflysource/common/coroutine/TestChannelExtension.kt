@@ -24,7 +24,7 @@ class TestChannelExtension {
             channel.trySend(1)
         }
         val list = mutableListOf<Int>()
-        channel.pollAll {
+        channel.consumeAll {
             list.add(it)
         }
         assertEquals(3, list.size)

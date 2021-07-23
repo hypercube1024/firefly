@@ -13,6 +13,8 @@ import com.fireflysource.net.http.server.Router
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import com.fireflysource.net.http.server.impl.content.provider.FileContentProvider
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.file.Path
@@ -87,7 +89,13 @@ class FileHandler(val config: FileConfig) : Router.Handler {
         setContentType(ctx, filePath)
 
         ctx.setStatus(HttpStatus.OK_200)
-            .contentProvider(FileContentProvider(filePath, StandardOpenOption.READ))
+            .contentProvider(
+                FileContentProvider(
+                    filePath,
+                    CoroutineScope(CoroutineName("Firefly-server-file-content-provider") + ctx.connection.coroutineDispatcher),
+                    StandardOpenOption.READ
+                )
+            )
             .end()
             .await()
     }
@@ -118,7 +126,15 @@ class FileHandler(val config: FileConfig) : Router.Handler {
         val length = inclusiveByteRange.size
         ctx.setStatus(HttpStatus.PARTIAL_CONTENT_206)
             .put(HttpHeader.CONTENT_RANGE, inclusiveByteRange.toHeaderRangeString(fileLength))
-            .contentProvider(FileContentProvider(filePath, setOf(StandardOpenOption.READ), position, length))
+            .contentProvider(
+                FileContentProvider(
+                    filePath,
+                    setOf(StandardOpenOption.READ),
+                    position,
+                    length,
+                    CoroutineScope(CoroutineName("Firefly-server-file-content-provider") + ctx.connection.coroutineDispatcher)
+                )
+            )
             .end()
             .await()
     }

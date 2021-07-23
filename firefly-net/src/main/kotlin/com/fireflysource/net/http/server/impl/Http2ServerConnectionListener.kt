@@ -12,6 +12,8 @@ import com.fireflysource.net.http.common.v2.stream.Stream
 import com.fireflysource.net.http.server.HttpServerConnection
 import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -26,7 +28,11 @@ class Http2ServerConnectionListener : Http2Connection.Listener.Adapter() {
     override fun onNewStream(stream: Stream, frame: HeadersFrame): Stream.Listener {
         val http2Connection = stream.http2Connection as Http2ServerConnection
 
-        val request = AsyncHttpServerRequest(frame.metaData as MetaData.Request, http2Connection.config)
+        val request = AsyncHttpServerRequest(
+            frame.metaData as MetaData.Request,
+            http2Connection.config,
+            CoroutineScope(CoroutineName("Firefly-HTTP-server-request") + http2Connection.coroutineDispatcher)
+        )
         val response = Http2ServerResponse(http2Connection, stream)
         val context = AsyncRoutingContext(
             request,
