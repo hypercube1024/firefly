@@ -13,8 +13,6 @@ inline fun <T> Channel<T>.consumeAll(crossinline block: (T) -> Unit) {
             block(message)
         }
     } catch (ignore: Exception) {
-    } finally {
-        this.close()
     }
 }
 
