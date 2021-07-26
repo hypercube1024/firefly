@@ -94,19 +94,17 @@ class Http1ClientConnection(
                 handler.init(message.contentHandler, message.expectServerAcceptsContent)
                 val exit = if (message.expectServerAcceptsContent) {
                     // flush content data after the server response 100 continue.
-                    generateRequestAndFlushData(message)
-                    parseAndAwaitResponse(message)
+                    generateRequestAndWaitServerAccept(message)
+                    waitResponse(message)
                 } else {
                     // avoid the request can not response the server error code if the I/O exception happened during the client sends data.
-                    val responseDeferred = async { parseAndAwaitResponse(message) }
-                    generateRequestAndFlushData(message)
-                    responseDeferred.await()
+                    val result = async { waitResponse(message) }
+                    generateRequest(message)
+                    result.await()
                 }
 
-                when {
-                    exit -> break@handleRequestLoop
-                    message.expectUpgradeHttp2 && isUpgradeToHttp2Success() -> break@handleRequestLoop
-                    message.expectUpgradeWebSocket && upgradeWebSocketSuccess -> break@handleRequestLoop
+                if (exit) {
+                    break@handleRequestLoop
                 }
             } catch (e: IOException) {
                 log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
@@ -159,9 +157,15 @@ class Http1ClientConnection(
         closeAsync()
     }
 
-    private suspend fun parseAndAwaitResponse(message: RequestMessage): Boolean {
+    private suspend fun waitResponse(message: RequestMessage): Boolean {
         val response = parseResponse(message)
-        return complete(response, message)
+        val isNonPersistence = complete(response, message)
+        return when {
+            isNonPersistence -> true
+            message.expectUpgradeHttp2 && isUpgradeToHttp2Success() -> true
+            message.expectUpgradeWebSocket && upgradeWebSocketSuccess -> true
+            else -> false
+        }
     }
 
     private suspend fun complete(response: HttpClientResponse, message: RequestMessage): Boolean {
@@ -290,31 +294,43 @@ class Http1ClientConnection(
         return accepted
     }
 
-    private suspend fun generateRequestAndFlushData(requestMessage: RequestMessage) {
+    private suspend fun generateRequestAndWaitServerAccept(requestMessage: RequestMessage) {
         var accepted = false
         generateRequestLoop@ while (true) {
             when (generator.state) {
                 START -> generateHeader(requestMessage)
                 COMMITTED -> {
-                    if (requestMessage.expectServerAcceptsContent) {
-                        if (accepted) {
+                    if (accepted) {
+                        generateContent(requestMessage)
+                    } else {
+                        if (waitServerResponse100Continue()) {
+                            accepted = true
                             generateContent(requestMessage)
+                            log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
                         } else {
-                            if (waitServerResponse100Continue()) {
-                                accepted = true
-                                generateContent(requestMessage)
-                                log.debug("HTTP1 client receives 100 continue and generates content complete. id: $id")
-                            } else {
-                                requestMessage.contentProvider?.closeAsync()?.await()
-                                break@generateRequestLoop
-                            }
+                            requestMessage.contentProvider?.closeAsync()?.await()
+                            break@generateRequestLoop
                         }
-                    } else generateContent(requestMessage)
+                    }
                 }
                 COMPLETING -> completeContent()
                 END -> {
-                    tcpConnection.flush().await()
-                    requestMessage.contentProvider?.closeAsync()?.await()
+                    completeRequest(requestMessage)
+                    break@generateRequestLoop
+                }
+                else -> throw Http1GeneratingResultException("The HTTP client generator state error. ${generator.state}")
+            }
+        }
+    }
+
+    private suspend fun generateRequest(requestMessage: RequestMessage) {
+        generateRequestLoop@ while (true) {
+            when (generator.state) {
+                START -> generateHeader(requestMessage)
+                COMMITTED -> generateContent(requestMessage)
+                COMPLETING -> completeContent()
+                END -> {
+                    completeRequest(requestMessage)
                     break@generateRequestLoop
                 }
                 else -> throw Http1GeneratingResultException("The HTTP client generator state error. ${generator.state}")
@@ -369,6 +385,11 @@ class Http1ClientConnection(
             generator.generateRequest(null, null, null, null, true)
                 .assert(setOf(DONE, SHUTDOWN_OUT, CONTINUE))
         }
+    }
+
+    private suspend fun completeRequest(requestMessage: RequestMessage) {
+        tcpConnection.flush().await()
+        requestMessage.contentProvider?.closeAsync()?.await()
     }
 
     private suspend fun flushHeaderBuffer() {
