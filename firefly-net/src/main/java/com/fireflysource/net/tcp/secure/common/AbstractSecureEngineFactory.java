@@ -1,6 +1,6 @@
 package com.fireflysource.net.tcp.secure.common;
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers;
+import com.fireflysource.common.coroutine.CommonCoroutinePoolKt;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
@@ -79,7 +79,7 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
         SSLEngine sslEngine = getSSLContext().createSSLEngine();
         sslEngine.setUseClientMode(clientMode);
         ApplicationProtocolSelector selector = createApplicationProtocolSelector(sslEngine, supportedProtocols);
-        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
+        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CommonCoroutinePoolKt::getApplicationScope);
         return createSecureEngine(scope, sslEngine, selector);
     }
 
@@ -89,7 +89,7 @@ abstract public class AbstractSecureEngineFactory implements SecureEngineFactory
         SSLEngine sslEngine = getSSLContext().createSSLEngine(peerHost, peerPort);
         sslEngine.setUseClientMode(clientMode);
         ApplicationProtocolSelector selector = createApplicationProtocolSelector(sslEngine, supportedProtocols);
-        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CoroutineDispatchers.INSTANCE::getComputationScope);
+        CoroutineScope scope = Optional.ofNullable(coroutineScope).orElseGet(CommonCoroutinePoolKt::getApplicationScope);
         return createSecureEngine(scope, sslEngine, selector);
     }
 

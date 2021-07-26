@@ -64,8 +64,6 @@ object CoroutineDispatchers {
         }
     }
 
-    val computationScope: CoroutineScope = CoroutineScope(computation + SupervisorJob())
-
     fun newSingleThreadExecutor(name: String): ExecutorService {
         val executor = ThreadPoolExecutor(
             1, 1, 0, TimeUnit.MILLISECONDS,
