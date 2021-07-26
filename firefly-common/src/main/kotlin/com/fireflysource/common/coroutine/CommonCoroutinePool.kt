@@ -158,30 +158,25 @@ class FinalizableScheduledExecutorService(private val executor: ScheduledExecuto
     }
 }
 
-val applicationComputeScope =
-    CoroutineScope(CoroutineName("Firefly-Application-Compute") + CoroutineDispatchers.computation)
-val applicationBlockingScope =
-    CoroutineScope(CoroutineName("Firefly-Application-Blocking") + CoroutineDispatchers.ioBlocking)
-val applicationSingleThreadScope =
-    CoroutineScope(CoroutineName("Firefly-Application-Single-Thread") + CoroutineDispatchers.singleThread)
+val applicationScope = CoroutineScope(CoroutineName("Firefly-Application"))
 
 inline fun compute(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    applicationComputeScope.launch { block(this) }
+    applicationScope.launch(CoroutineDispatchers.computation) { block(this) }
 
 inline fun <T> computeAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    applicationComputeScope.async { block(this) }
+    applicationScope.async(CoroutineDispatchers.computation) { block(this) }
 
 inline fun blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    applicationBlockingScope.launch { block(this) }
+    applicationScope.launch(CoroutineDispatchers.ioBlocking) { block(this) }
 
 inline fun <T> blockingAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    applicationBlockingScope.async { block(this) }
+    applicationScope.async(CoroutineDispatchers.ioBlocking) { block(this) }
 
 inline fun event(crossinline block: suspend CoroutineScope.() -> Unit): Job =
-    applicationSingleThreadScope.launch { block(this) }
+    applicationScope.launch(CoroutineDispatchers.singleThread) { block(this) }
 
 inline fun <T> eventAsync(crossinline block: suspend CoroutineScope.() -> T): Deferred<T> =
-    applicationSingleThreadScope.async { block(this) }
+    applicationScope.async(CoroutineDispatchers.singleThread) { block(this) }
 
 inline fun CoroutineScope.blocking(crossinline block: suspend CoroutineScope.() -> Unit): Job =
     this.launch(CoroutineDispatchers.ioBlocking) { block(this) }
