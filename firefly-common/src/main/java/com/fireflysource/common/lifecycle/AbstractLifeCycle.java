@@ -51,15 +51,15 @@ public abstract class AbstractLifeCycle implements LifeCycle {
         }
     }
 
-    private void stopNoRemove() {
-        if (start.compareAndSet(true, false)) {
-            try {
-                destroy();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    private void stopNoRemove() {
+//        if (start.compareAndSet(true, false)) {
+//            try {
+//                destroy();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 
     abstract protected void init();
 
