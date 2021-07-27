@@ -1,6 +1,5 @@
 package com.fireflysource.net.websocket.common.extension;
 
-import com.fireflysource.common.lifecycle.AbstractLifeCycle;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.common.sys.SystemLogger;
@@ -10,9 +9,9 @@ import com.fireflysource.net.websocket.common.model.*;
 import java.io.IOException;
 import java.util.function.Consumer;
 
-public abstract class AbstractExtension extends AbstractLifeCycle implements Extension {
+public abstract class AbstractExtension implements Extension {
 
-    private static LazyLogger log = SystemLogger.create(AbstractExtension.class);
+    private static final LazyLogger log = SystemLogger.create(AbstractExtension.class);
 
     private WebSocketPolicy policy;
     private ExtensionConfig config;

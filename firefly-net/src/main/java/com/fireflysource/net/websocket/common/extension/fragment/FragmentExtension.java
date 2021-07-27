@@ -27,10 +27,6 @@ public class FragmentExtension extends AbstractExtension {
     private final IteratingCallback flusher = new Flusher();
     private int maxLength;
 
-    public FragmentExtension() {
-        start();
-    }
-
     @Override
     public String getName() {
         return "fragment";
@@ -69,16 +65,6 @@ public class FragmentExtension extends AbstractExtension {
 
     private FrameEntry pollEntry() {
         return lock.lock(entries::poll);
-    }
-
-    @Override
-    protected void init() {
-
-    }
-
-    @Override
-    protected void destroy() {
-
     }
 
     private static class FrameEntry {

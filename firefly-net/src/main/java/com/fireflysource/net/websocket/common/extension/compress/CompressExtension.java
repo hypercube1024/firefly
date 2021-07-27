@@ -484,16 +484,4 @@ public abstract class CompressExtension extends AbstractExtension {
         }
     }
 
-    @Override
-    protected void init() {
-
-    }
-
-    @Override
-    protected void destroy() {
-        if (deflaterImpl != null)
-            deflaterImpl.end();
-        if (inflaterImpl != null)
-            inflaterImpl.end();
-    }
 }

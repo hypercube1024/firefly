@@ -1,29 +1,26 @@
 package com.fireflysource.common.lifecycle;
 
-import com.fireflysource.common.func.Callback;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractLifeCycle implements LifeCycle {
 
-    private static final List<Callback> stopActions = new CopyOnWriteArrayList<>();
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(AbstractLifeCycle::stopAll, "the firefly shutdown thread"));
-    }
+//    private static final List<Callback> stopActions = new CopyOnWriteArrayList<>();
+//
+//    static {
+//        Runtime.getRuntime().addShutdownHook(new Thread(AbstractLifeCycle::stopAll, "the firefly shutdown thread"));
+//    }
 
     protected AtomicBoolean start = new AtomicBoolean(false);
-    private final Callback stopCallback = this::stopNoRemove;
+//    private final Callback stopCallback = this::stopNoRemove;
 
-    public AbstractLifeCycle() {
-        stopActions.add(stopCallback);
-    }
+//    public AbstractLifeCycle() {
+//        stopActions.add(stopCallback);
+//    }
 
     @Override
     public boolean isStarted() {
@@ -50,7 +47,7 @@ public abstract class AbstractLifeCycle implements LifeCycle {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            stopActions.remove(stopCallback);
+//            stopActions.remove(stopCallback);
         }
     }
 
@@ -69,17 +66,17 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     abstract protected void destroy();
 
     public static void stopAll() {
-        if (!stopActions.isEmpty()) {
-            stopActions.forEach(a -> {
-                try {
-                    a.call();
-                } catch (Exception e) {
-                    System.err.println(e.getMessage());
-                }
-            });
-            System.out.println("Shutdown instance: " + stopActions.size());
-            stopActions.clear();
-        }
+//        if (!stopActions.isEmpty()) {
+//            stopActions.forEach(a -> {
+//                try {
+//                    a.call();
+//                } catch (Exception e) {
+//                    System.err.println(e.getMessage());
+//                }
+//            });
+//            System.out.println("Shutdown instance: " + stopActions.size());
+//            stopActions.clear();
+//        }
 
         ILoggerFactory iLoggerFactory = LoggerFactory.getILoggerFactory();
         if (iLoggerFactory instanceof Closeable) {

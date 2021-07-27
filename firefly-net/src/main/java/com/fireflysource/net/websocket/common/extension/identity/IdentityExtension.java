@@ -13,10 +13,6 @@ public class IdentityExtension extends AbstractExtension {
 
     private String id;
 
-    public IdentityExtension() {
-        start();
-    }
-
     public String getParam(String key) {
         return getConfig().getParameter(key, "?");
     }
@@ -62,13 +58,4 @@ public class IdentityExtension extends AbstractExtension {
         return id;
     }
 
-    @Override
-    protected void init() {
-
-    }
-
-    @Override
-    protected void destroy() {
-
-    }
 }
