@@ -2,7 +2,7 @@ package com.fireflysource.common.coroutine
 
 import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwaitTermination
 import com.fireflysource.common.coroutine.CoroutineDispatchers.awaitTerminationTimeout
-import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.ref.Cleaner
 import kotlinx.coroutines.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -111,48 +111,28 @@ object CoroutineDispatchers {
     }
 }
 
-class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor,
-    AbstractLifeCycle() {
+val applicationCleaner: Cleaner = Cleaner.create()
 
-    init {
-        start()
-    }
-
-    override fun init() {
-    }
-
-    override fun destroy() {
-        if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
-        }
-    }
-
-    protected fun finalize() {
+class ExecutorCleanTask(private val executor: ExecutorService) : Runnable {
+    override fun run() {
         if (!executor.isShutdown) {
             shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
         }
     }
 }
 
-class FinalizableScheduledExecutorService(private val executor: ScheduledExecutorService) :
-    ScheduledExecutorService by executor, AbstractLifeCycle() {
+class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
+
     init {
-        start()
+        applicationCleaner.register(this, ExecutorCleanTask(executor))
     }
+}
 
-    override fun init() {
-    }
+class FinalizableScheduledExecutorService(private val executor: ScheduledExecutorService) :
+    ScheduledExecutorService by executor {
 
-    override fun destroy() {
-        if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
-        }
-    }
-
-    protected fun finalize() {
-        if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
-        }
+    init {
+        applicationCleaner.register(this, ExecutorCleanTask(executor))
     }
 }
 

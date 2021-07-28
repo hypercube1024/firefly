@@ -21,6 +21,8 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
 
+import static com.fireflysource.common.coroutine.CommonCoroutinePoolKt.getApplicationCleaner;
+
 public abstract class CompressExtension extends AbstractExtension {
 
     private static final LazyLogger LOG = SystemLogger.create(CompressExtension.class);
@@ -70,8 +72,8 @@ public abstract class CompressExtension extends AbstractExtension {
     private final AutoLock lock = new AutoLock();
     private final Queue<FrameEntry> entries = new ArrayDeque<>();
     private final IteratingCallback flusher = new Flusher();
-    private Deflater deflaterImpl;
-    private Inflater inflaterImpl;
+    private final Deflater deflaterImpl;
+    private final Inflater inflaterImpl;
     protected AtomicInteger decompressCount = new AtomicInteger(0);
     private int tailDrop = TAIL_DROP_NEVER;
     private int rsvUse = RSV_USE_ALWAYS;
@@ -79,20 +81,33 @@ public abstract class CompressExtension extends AbstractExtension {
     protected CompressExtension() {
         tailDrop = getTailDropMode();
         rsvUse = getRsvUseMode();
+        deflaterImpl = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        inflaterImpl = new Inflater(true);
+        getApplicationCleaner().register(this, new CompressExtensionCleanTask(deflaterImpl, inflaterImpl));
     }
 
+    public static class CompressExtensionCleanTask implements Runnable {
+
+        private final Deflater deflaterImpl;
+        private final Inflater inflaterImpl;
+
+        public CompressExtensionCleanTask(Deflater deflaterImpl, Inflater inflaterImpl) {
+            this.deflaterImpl = deflaterImpl;
+            this.inflaterImpl = inflaterImpl;
+        }
+
+        @Override
+        public void run() {
+            deflaterImpl.end();
+            inflaterImpl.end();
+        }
+    }
 
     public Deflater getDeflater() {
-        if (deflaterImpl == null) {
-            deflaterImpl = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        }
         return deflaterImpl;
     }
 
     public Inflater getInflater() {
-        if (inflaterImpl == null) {
-            inflaterImpl = new Inflater(true);
-        }
         return inflaterImpl;
     }
 

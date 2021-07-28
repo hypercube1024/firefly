@@ -1,6 +1,7 @@
 package com.fireflysource.net
 
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
+import com.fireflysource.common.lifecycle.ShutdownTasks
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
@@ -59,5 +60,6 @@ object CommonTcpChannelGroup : AbstractLifeCycle() {
     }
 
     override fun init() {
+        ShutdownTasks.register(CommonTcpChannelGroup::stop)
     }
 }

@@ -89,7 +89,7 @@ class DelegatedOutputBufferArray(
 
     override fun remaining(): Long {
         val offset = getCurrentOffset()
-        return (offset..lastIndex).map { buffers[it].remaining().toLong() }.sum()
+        return (offset..lastIndex).sumOf { buffers[it].remaining().toLong() }
     }
 
     override fun hasRemaining(): Boolean {

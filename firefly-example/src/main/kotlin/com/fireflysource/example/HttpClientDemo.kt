@@ -1,7 +1,5 @@
 package com.fireflysource.example
 
-import com.fireflysource.common.coroutine.CoroutineDispatchers
-import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.fx
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -23,7 +21,4 @@ fun main(): Unit = runBlocking {
         println(response.stringBody)
         println()
     }
-
-    AbstractLifeCycle.stopAll()
-    CoroutineDispatchers.stopAll()
 }
