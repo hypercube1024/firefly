@@ -5,5 +5,5 @@ package com.fireflysource.common.func;
  */
 @FunctionalInterface
 public interface Callback {
-    void call();
+    void call() throws Exception;
 }

@@ -2,6 +2,7 @@ package com.fireflysource.common.sys;
 
 import com.fireflysource.common.string.StringUtils;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -66,6 +67,15 @@ public class Result<T> {
                 future.completeExceptionally(result.getThrowable());
             }
         };
+    }
+
+    public static <T> Result<T> runCaching(Callable<T> callable) {
+        try {
+            T t = callable.call();
+            return new Result<>(true, t, null);
+        } catch (Throwable t) {
+            return new Result<>(false, null, t);
+        }
     }
 
     public boolean isSuccess() {
