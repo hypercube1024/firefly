@@ -3,12 +3,13 @@ package com.fireflysource.common.actor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.fireflysource.common.actor.BlockingTask.runBlockingTask;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestActor {
@@ -26,7 +27,7 @@ public class TestActor {
 
         StoreActor.CloseMessage closeMessage = new StoreActor.CloseMessage();
         results.add(closeMessage.todayAmount.thenApply(amount -> {
-            System.out.println("Today sales amount: " + amount);
+            log("Today sales amount: " + amount);
             return null;
         }));
         store.send(closeMessage);
@@ -47,7 +48,7 @@ public class TestActor {
         return IntStream.range(0, count).parallel().boxed().map(i -> {
             StoreActor.PurchaseMessage purchaseMessage = new StoreActor.PurchaseMessage(new StoreActor.Product(name, price));
             store.send(purchaseMessage);
-            return purchaseMessage.result.thenAccept(ignore -> System.out.println("purchase " + name + " success."));
+            return purchaseMessage.result.thenAccept(ignore -> log("purchase " + name + " success."));
         }).collect(Collectors.toList());
     }
 
@@ -145,15 +146,15 @@ public class TestActor {
 
         private CompletableFuture<Void> stock(Product product) {
             return CompletableFuture.runAsync(() -> {
-                sleep(100);
+                BlockingTask.sleep(100);
                 products.computeIfAbsent(product.name, k -> new LinkedList<>()).offer(product);
-                System.out.println("stock " + product.name + " success.");
+                log("stock " + product.name + " success.");
             });
         }
 
         private CompletableFuture<Void> purchase(PurchaseMessage purchaseMessage) {
             return CompletableFuture.runAsync(() -> {
-                sleep(200);
+                BlockingTask.sleep(200);
                 Optional<Product> orderProduct = Optional.ofNullable(products.get(purchaseMessage.product.name)).map(Queue::poll);
                 if (orderProduct.isPresent()) {
                     amount += purchaseMessage.product.price;
@@ -164,17 +165,17 @@ public class TestActor {
             });
         }
 
-        private void sleep(long time) {
-            runBlockingTask(() -> Thread.sleep(time));
-        }
-
         @Override
         public void onDiscard(Message message) {
-            System.out.println(Thread.currentThread().getName() + " -- discard message: " + message.getType());
+            log("discard message: " + message.getType());
             if (message.getType() == MessageType.PURCHASE) {
                 PurchaseMessage purchaseMessage = (PurchaseMessage) message;
                 purchaseMessage.result.completeExceptionally(new IllegalStateException("The store is close"));
             }
         }
+    }
+
+    public static void log(String text) {
+        System.out.println(LocalDateTime.now().format(ISO_LOCAL_DATE_TIME) + " " + Thread.currentThread().getName() + " -- " + text);
     }
 }

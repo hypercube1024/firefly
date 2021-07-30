@@ -67,4 +67,8 @@ public class BlockingTask<T> implements ForkJoinPool.ManagedBlocker {
             return task.result;
         });
     }
+
+    public static void sleep(long millisecond) {
+        runBlockingTask(() -> Thread.sleep(millisecond));
+    }
 }
