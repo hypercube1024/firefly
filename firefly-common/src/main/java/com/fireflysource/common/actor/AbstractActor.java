@@ -2,10 +2,11 @@ package com.fireflysource.common.actor;
 
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.SystemLogger;
+import org.jctools.queues.MpscLinkedQueue;
+import org.jctools.queues.SpscLinkedQueue;
 
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +16,7 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
 
     private static final LazyLogger log = SystemLogger.create(AbstractActor.class);
 
-    private final String id;
+    private final String address;
     private final Executor executor;
     private final Queue<T> userMailbox;
     private final Queue<SystemMessage> systemMailbox;
@@ -25,23 +26,23 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
     private ActorState actorState = ActorState.RUNNING;
 
     public AbstractActor() {
-        this(UUID.randomUUID().toString(), ForkJoinPool.commonPool(), new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>());
+        this(UUID.randomUUID().toString(), ForkJoinPool.commonPool());
     }
 
-    public AbstractActor(String id, Executor executor) {
-        this(id, executor, new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>());
+    public AbstractActor(String address, Executor executor) {
+        this(address, executor, new MpscLinkedQueue<>(), new SpscLinkedQueue<>());
     }
 
-    public AbstractActor(String id, Executor executor, Queue<T> userMailbox, Queue<SystemMessage> systemMailbox) {
-        this.id = id;
+    public AbstractActor(String address, Executor executor, Queue<T> userMailbox, Queue<SystemMessage> systemMailbox) {
+        this.address = address;
         this.executor = executor;
         this.userMailbox = userMailbox;
         this.systemMailbox = systemMailbox;
     }
 
     @Override
-    public String getId() {
-        return id;
+    public String getAddress() {
+        return address;
     }
 
     @Override
@@ -174,7 +175,7 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
         try {
             onReceive(message);
         } catch (Exception e) {
-            log.error("on receive exception. id: " + getId(), e);
+            log.error("on receive exception. address: " + getAddress(), e);
         }
     }
 
@@ -182,7 +183,7 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
         try {
             onDiscard(message);
         } catch (Exception e) {
-            log.error("on discard exception. id: " + getId(), e);
+            log.error("on discard exception. address: " + getAddress(), e);
         }
     }
 

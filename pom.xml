@@ -80,6 +80,7 @@
         <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>2020.0.7</spring.reactor.version>
+        <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
         <junit.version>5.7.1</junit.version>
@@ -206,6 +207,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>${jctools.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

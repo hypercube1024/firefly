@@ -7,7 +7,7 @@ public interface Actor<T> {
      *
      * @return The actor id.
      */
-    String getId();
+    String getAddress();
 
     /**
      * Send message to this actor.

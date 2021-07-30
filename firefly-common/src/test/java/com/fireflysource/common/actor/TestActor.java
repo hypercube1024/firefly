@@ -1,5 +1,6 @@
 package com.fireflysource.common.actor;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestActor {
 
     @Test
+    @DisplayName("should purchase products successfully")
     void test() throws Exception {
         StoreActor store = new StoreActor();
         stock(store, "iPhone", 5200, 5);

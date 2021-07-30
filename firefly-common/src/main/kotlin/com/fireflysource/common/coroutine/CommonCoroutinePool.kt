@@ -45,14 +45,7 @@ object CoroutineDispatchers {
         ) { runnable -> Thread(runnable, "firefly-single-thread-pool") }
     }
 
-    val computationThreadPool: ExecutorService by lazy {
-        ForkJoinPool(defaultPoolSize, { pool ->
-            val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
-            worker.name = "firefly-computation-pool-" + worker.poolIndex
-            worker
-        }, null, true)
-    }
-
+    val computationThreadPool: ExecutorService = ForkJoinPool.commonPool()
 
     val computation: CoroutineDispatcher by lazy { computationThreadPool.asCoroutineDispatcher() }
     val ioBlocking: CoroutineDispatcher by lazy { ioBlockingThreadPool.asCoroutineDispatcher() }
