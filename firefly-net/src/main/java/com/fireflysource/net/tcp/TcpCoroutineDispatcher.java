@@ -4,7 +4,9 @@ import kotlinx.coroutines.CompletableJob;
 import kotlinx.coroutines.CoroutineDispatcher;
 import kotlinx.coroutines.CoroutineScope;
 
-public interface TcpCoroutineDispatcher {
+import java.util.concurrent.Executor;
+
+public interface TcpCoroutineDispatcher extends Executor {
 
     /**
      * Get the coroutine dispatcher of this connection. One TCP connection is always in the same coroutine context.
@@ -12,13 +14,6 @@ public interface TcpCoroutineDispatcher {
      * @return The coroutine dispatcher of this connection.
      */
     CoroutineDispatcher getCoroutineDispatcher();
-
-    /**
-     * Execute a task in the current TCP message process thread.
-     *
-     * @param runnable The runnable task.
-     */
-    void execute(Runnable runnable);
 
     /**
      * Get the coroutine scope of this connection.

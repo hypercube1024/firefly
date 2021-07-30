@@ -67,6 +67,10 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
         sendSystemMessage(SystemMessage.SHUTDOWN);
     }
 
+    public void restart() {
+        sendSystemMessage(SystemMessage.RESTART);
+    }
+
     protected ActorState getActorState() {
         return actorState;
     }
@@ -144,6 +148,11 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
                 case SHUTDOWN:
                     actorState = ActorState.SHUTDOWN;
                     break;
+                case RESTART:
+                    if (actorState == ActorState.SHUTDOWN) {
+                        actorState = ActorState.RUNNING;
+                    }
+                    break;
             }
         }
     }
@@ -192,6 +201,6 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T> {
     }
 
     public enum SystemMessage {
-        PAUSE, RESUME, SHUTDOWN
+        PAUSE, RESUME, SHUTDOWN, RESTART
     }
 }
