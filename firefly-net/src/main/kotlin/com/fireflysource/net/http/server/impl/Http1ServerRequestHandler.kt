@@ -325,13 +325,25 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
 }
 
-sealed class ParserMessage
-data class StartRequest(val method: String, val uri: String, val version: HttpVersion) : ParserMessage()
-data class ParsedHeader(val field: HttpField) : ParserMessage()
-object HeaderComplete : ParserMessage()
-class Content(val byteBuffer: ByteBuffer) : ParserMessage()
-object ContentComplete : ParserMessage()
-object MessageComplete : ParserMessage()
-object EarlyEOF : ParserMessage()
-class BadMessage(val exception: Exception) : ParserMessage()
-object EndRequestHandler : ParserMessage()
+sealed interface ParserMessage
+
+data class StartRequest(val method: String, val uri: String, val version: HttpVersion) : ParserMessage
+
+@JvmInline
+value class ParsedHeader(val field: HttpField) : ParserMessage
+
+object HeaderComplete : ParserMessage
+
+@JvmInline
+value class Content(val byteBuffer: ByteBuffer) : ParserMessage
+
+object ContentComplete : ParserMessage
+
+object MessageComplete : ParserMessage
+
+object EarlyEOF : ParserMessage
+
+@JvmInline
+value class BadMessage(val exception: Exception) : ParserMessage
+
+object EndRequestHandler : ParserMessage

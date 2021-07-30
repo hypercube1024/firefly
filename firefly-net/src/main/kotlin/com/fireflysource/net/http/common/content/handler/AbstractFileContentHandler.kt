@@ -85,6 +85,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
 
 }
 
-sealed class WriteFileMessage
-class WriteFileRequest(val buffer: ByteBuffer) : WriteFileMessage()
-object EndWriteFile : WriteFileMessage()
+sealed interface WriteFileMessage
+@JvmInline
+value class WriteFileRequest(val buffer: ByteBuffer) : WriteFileMessage
+object EndWriteFile : WriteFileMessage

@@ -97,7 +97,6 @@ object CoroutineDispatchers {
     }
 
     fun stopAll() {
-        shutdownAndAwaitTermination(computationThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
         shutdownAndAwaitTermination(singleThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
         shutdownAndAwaitTermination(ioBlockingThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
         shutdownAndAwaitTermination(scheduler, awaitTerminationTimeout, TimeUnit.SECONDS)

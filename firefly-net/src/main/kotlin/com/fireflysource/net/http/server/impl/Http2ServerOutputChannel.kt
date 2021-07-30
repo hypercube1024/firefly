@@ -157,15 +157,16 @@ class Http2ServerOutputChannel(
 
 }
 
-sealed class Http2OutputMessage
+sealed interface Http2OutputMessage
 
-object HeadersOutputMessage : Http2OutputMessage()
+object HeadersOutputMessage : Http2OutputMessage
 
-class BufferOutputMessage(val byteBuffer: ByteBuffer) : Http2OutputMessage()
+@JvmInline
+value class BufferOutputMessage(val byteBuffer: ByteBuffer) : Http2OutputMessage
 
 class BuffersOutputMessage(
     val byteBuffers: Array<ByteBuffer>, val offset: Int, val length: Int,
     private val delegatedBufferArray: DelegatedOutputBufferArray = DelegatedOutputBufferArray(
         byteBuffers, offset, length, discard()
     )
-) : OutputBufferArray by delegatedBufferArray, Http2OutputMessage()
+) : OutputBufferArray by delegatedBufferArray, Http2OutputMessage

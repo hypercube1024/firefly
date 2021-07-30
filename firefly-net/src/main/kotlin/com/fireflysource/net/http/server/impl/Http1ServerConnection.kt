@@ -119,6 +119,6 @@ class Http1ServerConnection(
     override fun getTcpConnection(): TcpConnection = tcpConnection
 }
 
-sealed class ParseHttpPacketMessage
-object ParseNextHttpPacket : ParseHttpPacketMessage()
-object ExitHttpParser : ParseHttpPacketMessage()
+sealed interface ParseHttpPacketMessage
+object ParseNextHttpPacket : ParseHttpPacketMessage
+object ExitHttpParser : ParseHttpPacketMessage

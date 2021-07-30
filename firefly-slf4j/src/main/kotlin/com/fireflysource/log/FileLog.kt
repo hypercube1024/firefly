@@ -5,10 +5,7 @@ import com.fireflysource.log.internal.utils.TimeUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.OutputStream
+import java.io.*
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,24 +27,23 @@ class FileLog : Log {
             java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
 
         val executor = newSingleThreadExecutor()
-        private val logThread: CoroutineDispatcher = executor.asCoroutineDispatcher()
-        private val fileLogThreadScope: CoroutineScope = CoroutineScope(logThread + CoroutineName("FireflyFileLogThread"))
-
-        class FinalizableExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
-            protected fun finalize() {
-                executor.shutdown()
-            }
-        }
+        private val fileLogThreadScope: CoroutineScope =
+            CoroutineScope(executor.asCoroutineDispatcher() + CoroutineName("FireflyFileLogThread"))
 
         private fun newSingleThreadExecutor(): ExecutorService {
-            val executor = ThreadPoolExecutor(
+            return ThreadPoolExecutor(
                 1, 1, 0, TimeUnit.MILLISECONDS, LinkedTransferQueue()
             ) { runnable -> Thread(runnable, "firefly-log-thread") }
-            return FinalizableExecutorService(executor)
         }
-
-        private val stopLogMessage = LogItem()
     }
+
+    sealed interface LogMessage
+
+    @JvmInline
+    value class WriteLogMessage(val logItem: LogItem) : LogMessage
+    object Flush : LogMessage
+    object Stop : LogMessage
+
 
     var level: LogLevel = LogLevel.fromName(DEFAULT_LOG_LEVEL)
     var path: String = DEFAULT_LOG_DIRECTORY.absolutePath
@@ -64,29 +60,47 @@ class FileLog : Log {
     private val mdc: MappedDiagnosticContext = MappedDiagnosticContextFactory.getInstance().mappedDiagnosticContext
 
     private val output = LogOutputStream()
-    private val channel = Channel<LogItem>(UNLIMITED)
-    private val consumerJob = fileLogThreadScope.launch(logThread) {
-        recvLogItemLoop@ while (true) {
-            val logItem = channel.receive()
-            if (logItem === stopLogMessage) {
-                break@recvLogItemLoop
-            }
-
-            logFilter.filter(logItem)
-            if (consoleOutput) {
-                println(logFormatter.format(logItem))
-            }
-
-            if (fileOutput) {
-                output.write(logFormatter.format(logItem), logItem.date)
-            }
+    private val channel = Channel<LogMessage>(UNLIMITED)
+    private val consumerJob = fileLogThreadScope.launch {
+        while (true) {
+            val message = channel.receive()
+            val exit = handleWriteLogMessage(message)
+            if (exit) break
         }
         println("File log $logName is closed.")
+    }
+    private val flushTickJob = fileLogThreadScope.launch {
+        while (true) {
+            delay(500)
+            channel.trySend(Flush)
+        }
+    }
+
+    private fun handleWriteLogMessage(message: LogMessage): Boolean {
+        return when (message) {
+            is WriteLogMessage -> {
+                val logItem = message.logItem
+                logFilter.filter(logItem)
+                if (consoleOutput) {
+                    println(logFormatter.format(logItem))
+                }
+
+                if (fileOutput) {
+                    output.write(logFormatter.format(logItem), logItem.date)
+                }
+                return false
+            }
+            is Flush -> {
+                output.flush()
+                return false
+            }
+            is Stop -> true
+        }
     }
 
 
     private inner class LogOutputStream {
-        private var fileOutputStream: FileOutputStream? = null
+        private var fileOutputStream: BufferedOutputStream? = null
         private var writtenSize: Long = 0
         private var lastWrittenTime: LocalDateTime? = null
 
@@ -178,12 +192,12 @@ class FileLog : Log {
         ) {
             close()
             Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDateTime)))
-            fileOutputStream = FileOutputStream(File(path, logName), true)
+            fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true))
         }
 
         private fun createLogOutputIfNull(logName: String) {
             if (fileOutputStream == null) {
-                fileOutputStream = FileOutputStream(File(path, logName), true)
+                fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true))
             }
         }
 
@@ -195,7 +209,7 @@ class FileLog : Log {
                 writtenSize += text.size
                 lastWrittenTime = TimeUtils.toLocalDateTime(date)
             } catch (e: IOException) {
-                System.err.println("write log exception, " + e.message)
+                System.err.println("write log exception. " + e.message)
             }
         }
 
@@ -206,8 +220,16 @@ class FileLog : Log {
                     output.close()
                     writtenSize = 0
                 } catch (e: IOException) {
-                    System.err.println("close log writer exception, " + e.message)
+                    System.err.println("close log writer exception. " + e.message)
                 }
+            }
+        }
+
+        fun flush() {
+            try {
+                fileOutputStream?.flush()
+            } catch (e: IOException) {
+                System.err.println("flush log exception. " + e.message)
             }
         }
 
@@ -317,9 +339,10 @@ class FileLog : Log {
 
     override fun close() = runBlocking {
         try {
-            channel.trySend(stopLogMessage)
+            channel.trySend(Stop)
             consumerJob.cancel(CancellationException("Cancel file log exception."))
             consumerJob.join()
+            flushTickJob.cancel(CancellationException("Cancel flush file log exception."))
         } finally {
             output.close()
         }
@@ -353,7 +376,7 @@ class FileLog : Log {
     }
 
     private fun write(logItem: LogItem) {
-        channel.trySend(logItem)
+        channel.trySend(WriteLogMessage(logItem))
     }
 
     override fun equals(other: Any?): Boolean {

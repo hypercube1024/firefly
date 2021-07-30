@@ -95,7 +95,7 @@ class TestLog {
 
     private static void sleep() {
         try {
-            Thread.sleep(1000L);
+            Thread.sleep(2000L);
         } catch (InterruptedException e1) {
             e1.printStackTrace();
         }

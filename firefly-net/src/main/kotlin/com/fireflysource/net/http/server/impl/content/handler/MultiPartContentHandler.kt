@@ -266,7 +266,8 @@ class MultiPartContentHandler(
         val parsingJob = job
         return if (parsingJob != null) {
             if (parsingJob.isCompleted) complete()
-            else scope.launch { closeAwait() }.asCompletableFuture().thenCompose { complete() }.thenAccept { scope.cancel() }
+            else scope.launch { closeAwait() }.asCompletableFuture().thenCompose { complete() }
+                .thenAccept { scope.cancel() }
         } else Result.DONE
     }
 
@@ -291,13 +292,24 @@ class MultiPartContentHandler(
     fun getParts(): List<MultiPart> = multiParts
 }
 
-sealed class MultiPartHandlerMessage
-class ParseMultiPartBoundary(val contentType: String?) : MultiPartHandlerMessage()
-class ParseMultiPartContent(val byteBuffer: ByteBuffer) : MultiPartHandlerMessage()
-object StartPart : MultiPartHandlerMessage()
-data class PartField(val name: String, val value: String) : MultiPartHandlerMessage()
-object PartHeaderComplete : MultiPartHandlerMessage()
-class PartContent(val byteBuffer: ByteBuffer, val last: Boolean) : MultiPartHandlerMessage()
-object PartMessageComplete : MultiPartHandlerMessage()
-object PartEarlyEOF : MultiPartHandlerMessage()
-object EndMultiPartHandler : MultiPartHandlerMessage()
+sealed interface MultiPartHandlerMessage
+
+@JvmInline
+value class ParseMultiPartBoundary(val contentType: String?) : MultiPartHandlerMessage
+
+@JvmInline
+value class ParseMultiPartContent(val byteBuffer: ByteBuffer) : MultiPartHandlerMessage
+
+object StartPart : MultiPartHandlerMessage
+
+data class PartField(val name: String, val value: String) : MultiPartHandlerMessage
+
+object PartHeaderComplete : MultiPartHandlerMessage
+
+class PartContent(val byteBuffer: ByteBuffer, val last: Boolean) : MultiPartHandlerMessage
+
+object PartMessageComplete : MultiPartHandlerMessage
+
+object PartEarlyEOF : MultiPartHandlerMessage
+
+object EndMultiPartHandler : MultiPartHandlerMessage

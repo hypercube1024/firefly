@@ -5,11 +5,12 @@ import java.nio.ByteBuffer
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
-sealed class InputMessage
+sealed interface InputMessage
 
-class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : InputMessage()
+@JvmInline
+value class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : InputMessage
 
-object ShutdownInput : InputMessage()
+object ShutdownInput : InputMessage
 
 
 sealed class OutputMessage {
