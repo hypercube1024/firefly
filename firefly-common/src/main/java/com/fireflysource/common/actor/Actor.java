@@ -1,5 +1,10 @@
 package com.fireflysource.common.actor;
 
+/**
+ * The actor interface.
+ *
+ * @param <T> The actor message type.
+ */
 public interface Actor<T> {
 
     /**
