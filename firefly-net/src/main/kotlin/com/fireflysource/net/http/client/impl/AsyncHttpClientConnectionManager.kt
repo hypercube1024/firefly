@@ -38,7 +38,7 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val connectionPoolMap = ConcurrentHashMap<Address, HttpClientConnectionPool>()
-    private val scope = CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager"))
+    private val scope = CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager") + connectionFactory.tcpChannelGroup.getDispatcher(0))
 
     init {
         start()
