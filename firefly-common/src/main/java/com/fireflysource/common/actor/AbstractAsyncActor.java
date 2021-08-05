@@ -6,6 +6,13 @@ import java.util.concurrent.CompletableFuture;
 
 abstract public class AbstractAsyncActor<T> extends AbstractActor<T> {
 
+    public AbstractAsyncActor() {
+        super();
+    }
+
+    public AbstractAsyncActor(String address, Dispatcher dispatcher, Mailbox<T, SystemMessage> mailbox) {
+        super(address, dispatcher, mailbox);
+    }
 
     @Override
     public void onReceive(T message) {
