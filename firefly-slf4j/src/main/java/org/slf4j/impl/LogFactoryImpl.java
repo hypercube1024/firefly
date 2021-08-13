@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LogFactoryImpl implements ILoggerFactory, Closeable {
 
-    private Map<String, Logger> map = new ConcurrentHashMap<>();
+    private final Map<String, Logger> map = new ConcurrentHashMap<>();
 
     @Override
     public Logger getLogger(String name) {

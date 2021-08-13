@@ -20,6 +20,7 @@ import java.io.IOException
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -37,7 +38,7 @@ class AsyncHttp2Stream(
         val defaultStreamListener = Stream.Listener.Adapter()
     }
 
-    private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
+    private val attributes: ConcurrentMap<String, Any> by lazy { ConcurrentHashMap() }
 
     private val sendWindow = AtomicInteger()
     private val recvWindow = AtomicInteger()

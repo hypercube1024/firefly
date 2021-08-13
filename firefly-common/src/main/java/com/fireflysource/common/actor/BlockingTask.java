@@ -5,6 +5,7 @@ import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.common.sys.SystemLogger;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 
@@ -70,5 +71,13 @@ public class BlockingTask<T> implements ForkJoinPool.ManagedBlocker {
 
     public static void sleep(long millisecond) {
         runBlockingTask(() -> Thread.sleep(millisecond));
+    }
+
+    public static <T> T blockingTake(final BlockingQueue<T> queue) {
+        Result<T> result = runBlockingTask(queue::take, () -> {
+            T t = queue.poll();
+            return new Result<>(t != null, t, null);
+        });
+        return result.getValue();
     }
 }

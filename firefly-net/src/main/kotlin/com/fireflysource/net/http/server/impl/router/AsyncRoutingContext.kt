@@ -10,6 +10,7 @@ import com.fireflysource.net.http.server.impl.matcher.AbstractPatternMatcher
 import com.fireflysource.net.http.server.impl.matcher.AbstractRegexMatcher
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 class AsyncRoutingContext(
     private val request: HttpServerRequest,
@@ -17,7 +18,7 @@ class AsyncRoutingContext(
     private val connection: HttpServerConnection
 ) : RoutingContext {
 
-    private val attributes: ConcurrentHashMap<String, Any> by lazy { ConcurrentHashMap<String, Any>() }
+    private val attributes: ConcurrentMap<String, Any> by lazy { ConcurrentHashMap() }
     var routerMatchResult: RouterManager.RouterMatchResult? = null
     var routerIterator: Iterator<RouterManager.RouterMatchResult>? = null
 
