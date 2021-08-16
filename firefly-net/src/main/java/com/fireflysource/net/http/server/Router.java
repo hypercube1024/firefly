@@ -1,11 +1,13 @@
 package com.fireflysource.net.http.server;
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers;
 import com.fireflysource.common.sys.Result;
 import com.fireflysource.net.http.common.model.HttpMethod;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface Router extends Comparable<Router> {
@@ -129,6 +131,17 @@ public interface Router extends Comparable<Router> {
      * @return The HTTP server.
      */
     HttpServer handler(Handler handler);
+
+    /**
+     * Set router handler. The handler executes thread blocking task on the IO thread pool.
+     *
+     * @param consumer The thread blocking router handler.
+     * @return The HTTP server.
+     */
+    default HttpServer blockingHandler(Consumer<RoutingContext> consumer) {
+        return this.handler(ctx -> CompletableFuture.runAsync(() -> consumer.accept(ctx),
+                CoroutineDispatchers.INSTANCE.getIoBlockingThreadPool()));
+    }
 
     /**
      * Enable this router.

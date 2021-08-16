@@ -137,7 +137,7 @@ fun Router.asyncHandler(block: suspend CoroutineScope.(RoutingContext) -> Unit):
     }
 }
 
-fun Router.blockingHandler(block: suspend CoroutineScope.(RoutingContext) -> Unit): HttpServer {
+fun Router.asyncBlockingHandler(block: suspend CoroutineScope.(RoutingContext) -> Unit): HttpServer {
     return this.handler { ctx ->
         ctx.connection.coroutineScope
             .launch(CoroutineLocalContext.asElement(mutableMapOf(serverHandlerCoroutineContextKey to ctx)) + CoroutineDispatchers.ioBlocking) {

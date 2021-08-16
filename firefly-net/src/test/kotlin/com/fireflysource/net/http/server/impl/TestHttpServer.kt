@@ -7,8 +7,8 @@ import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.server.impl.router.asyncBlockingHandler
 import com.fireflysource.net.http.server.impl.router.asyncHandler
-import com.fireflysource.net.http.server.impl.router.blockingHandler
 import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
@@ -383,9 +383,15 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     fun testCopy() {
         val httpServer = createHttpServer("http1", "http")
         httpServer.router().get("/testCopy")
-            .blockingHandler {
+            .asyncBlockingHandler {
                 println(Thread.currentThread().name)
                 it.end("Origin server")
+            }
+            .router().get("/blockingTask")
+            .blockingHandler {
+                Thread.sleep(100)
+                println(Thread.currentThread().name)
+                it.end("Blocking task").get()
             }
             .listen(address)
 
@@ -402,8 +408,16 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             assertEquals("Origin server", response.stringBody)
             println(response)
 
+            response = httpClient.get("http://${address.hostName}:${address.port}/blockingTask").submit().await()
+            assertEquals("Blocking task", response.stringBody)
+            println(response)
+
             response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/testCopy").submit().await()
             assertEquals("Origin server", response.stringBody)
+            println(response)
+
+            response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/blockingTask").submit().await()
+            assertEquals("Blocking task", response.stringBody)
             println(response)
         }
 
