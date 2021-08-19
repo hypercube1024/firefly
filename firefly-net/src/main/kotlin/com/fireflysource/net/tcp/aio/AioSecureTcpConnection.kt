@@ -1,7 +1,7 @@
 package com.fireflysource.net.tcp.aio
 
 import com.fireflysource.common.concurrent.exceptionallyAccept
-import com.fireflysource.common.exception.UnknownTypeException
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.TcpConnection
@@ -12,6 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
@@ -60,18 +61,28 @@ class AioSecureTcpConnection(
     }
 
     private fun launchEncryptingAndFlushJob() = tcpConnection.coroutineScope.launch {
-        while (!isShutdownOutput) {
-            encryptMessageAndFlush(encryptedOutChannel.receive())
+        while (true) {
+            when (val message = encryptedOutChannel.receive()) {
+                is OutputBuffer -> encryptAndFlushBuffer(message)
+                is OutputBuffers -> encryptAndFlushBuffers(message)
+                is OutputBufferList -> encryptAndFlushBuffers(message)
+                is ShutdownOutput -> {
+                    shutdownOutput(message)
+                    break
+                }
+            }
         }
-    }
-
-    private suspend fun encryptMessageAndFlush(outputMessage: OutputMessage) {
-        when (outputMessage) {
-            is OutputBuffer -> encryptAndFlushBuffer(outputMessage)
-            is OutputBuffers -> encryptAndFlushBuffers(outputMessage)
-            is OutputBufferList -> encryptAndFlushBuffers(outputMessage)
-            is ShutdownOutput -> shutdownOutput(outputMessage)
-            else -> throw UnknownTypeException("Unknown output message. $outputMessage")
+    }.invokeOnCompletion { cause ->
+        val e = cause ?: ClosedChannelException()
+        encryptedOutChannel.consumeAll { message ->
+            when (message) {
+                is OutputBuffer -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBufferList -> message.result.accept(Result.createFailedResult(-1, e))
+                is ShutdownOutput -> message.result.accept(Result.createFailedResult(e))
+                else -> {
+                }
+            }
         }
     }
 
@@ -116,13 +127,8 @@ class AioSecureTcpConnection(
         }
     }
 
-    private suspend fun shutdownOutput(message: ShutdownOutput) {
-        try {
-            tcpConnection.closeAsync().await()
-            message.result.accept(Result.SUCCESS)
-        } catch (e: Exception) {
-            message.result.accept(Result.createFailedResult(e))
-        }
+    private fun shutdownOutput(message: ShutdownOutput) {
+        tcpConnection.close(message.result)
     }
 
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {

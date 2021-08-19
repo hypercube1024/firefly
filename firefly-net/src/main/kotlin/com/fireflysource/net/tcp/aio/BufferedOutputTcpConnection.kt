@@ -1,5 +1,6 @@
 package com.fireflysource.net.tcp.aio
 
+import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.flipToFill
 import com.fireflysource.common.io.flipToFlush
@@ -12,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.util.function.Consumer
 
 class BufferedOutputTcpConnection(
@@ -34,7 +36,7 @@ class BufferedOutputTcpConnection(
     override fun getRawTcpConnection(): TcpConnection = tcpConnection
 
     private fun flushJob() = coroutineScope.launch {
-        flushLoop@ while (true) {
+        while (true) {
             when (val message = outputMessageChannel.receive()) {
                 is OutputBuffer -> appendOutputBuffer(message)
                 is OutputBuffers -> appendOutputBuffers(message)
@@ -42,7 +44,20 @@ class BufferedOutputTcpConnection(
                 is FlushOutput -> flushBuffer(message)
                 is ShutdownOutput -> {
                     shutdownOutput(message)
-                    break@flushLoop
+                    break
+                }
+            }
+        }
+    }.invokeOnCompletion { cause ->
+        val e = cause ?: ClosedChannelException()
+        outputMessageChannel.consumeAll { message ->
+            when (message) {
+                is OutputBuffer -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBufferList -> message.result.accept(Result.createFailedResult(-1, e))
+                is ShutdownOutput -> message.result.accept(Result.createFailedResult(e))
+                is FlushOutput -> message.result.accept(Result.createFailedResult(e))
+                else -> {
                 }
             }
         }

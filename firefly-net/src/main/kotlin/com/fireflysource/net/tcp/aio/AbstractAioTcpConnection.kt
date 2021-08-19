@@ -80,7 +80,8 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffers -> message.result.accept(createFailedResult(-1, e))
                     is OutputBufferList -> message.result.accept(createFailedResult(-1, e))
                     is ShutdownOutput -> message.result.accept(createFailedResult(e))
-                    else -> throw UnknownTypeException("Unknown output message. $message")
+                    else -> {
+                    }
                 }
             }
             closeResultChannel.consumeAll { it.accept(Result.SUCCESS) }
@@ -108,7 +109,6 @@ abstract class AbstractAioTcpConnection(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
                 writeTimeout, timeUnit
             )
-            else -> throw UnknownTypeException("The output message cannot write.")
         }
 
         private suspend fun writeBuffers(output: OutputDataMessage): Boolean {
@@ -145,7 +145,6 @@ abstract class AbstractAioTcpConnection(
                     is OutputBuffer -> output.result.accept(Result(true, totalLength.toInt(), null))
                     is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                     is OutputBufferList -> output.result.accept(Result(true, totalLength, null))
-                    else -> throw UnknownTypeException("The output message type error")
                 }
             }
 
@@ -164,7 +163,6 @@ abstract class AbstractAioTcpConnection(
                 is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBufferList -> outputBuffers.result.accept(Result(false, -1, exception))
-                else -> throw UnknownTypeException("The output message type error")
             }
         }
 

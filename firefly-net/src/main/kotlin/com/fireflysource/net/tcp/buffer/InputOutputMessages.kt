@@ -17,7 +17,7 @@ value class SetReadTimeout(val timeout: Long) : InputMessage
 
 sealed interface OutputMessage
 
-interface OutputDataMessage {
+sealed interface OutputDataMessage {
     fun hasRemaining(): Boolean = false
 }
 
@@ -55,11 +55,12 @@ value class FlushOutput(val result: Consumer<Result<Void>>) : OutputMessage
 @JvmInline
 value class SetWriteTimeout(val timeout: Long) : OutputMessage
 
-interface OutputBufferArray : OutputDataMessage {
+interface OutputBufferArray {
     fun getCurrentOffset(): Int
     fun getCurrentLength(): Int
     fun getLastIndex(): Int
     fun remaining(): Long
+    fun hasRemaining(): Boolean
 }
 
 class DelegatedOutputBufferArray(
