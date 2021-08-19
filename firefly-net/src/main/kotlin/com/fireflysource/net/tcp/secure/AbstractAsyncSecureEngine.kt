@@ -10,7 +10,7 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.tcp.buffer.OutputBuffer
 import com.fireflysource.net.tcp.buffer.OutputBufferList
 import com.fireflysource.net.tcp.buffer.OutputBuffers
-import com.fireflysource.net.tcp.buffer.OutputMessage
+import com.fireflysource.net.tcp.buffer.OutputDataMessage
 import com.fireflysource.net.tcp.secure.exception.SecureNetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
@@ -170,7 +170,7 @@ abstract class AbstractAsyncSecureEngine(
     override fun encrypt(byteBuffers: MutableList<ByteBuffer>, offset: Int, length: Int): ByteBuffer =
         encryptBuffers(OutputBufferList(byteBuffers, offset, length, discard()))
 
-    private fun encryptBuffers(outAppBuffer: OutputMessage): ByteBuffer {
+    private fun encryptBuffers(outAppBuffer: OutputDataMessage): ByteBuffer {
         var packetBuffer = this.outPacketBuffer
         val pos = packetBuffer.flipToFill()
 
@@ -196,7 +196,9 @@ abstract class AbstractAsyncSecureEngine(
                     if (handshakeStatus != NEED_WRAP && result.bytesProduced() == 0 && result.bytesConsumed() == 0) {
                         break@wrap
                     }
-                    if (!outAppBuffer.hasRemaining()) break@wrap
+                    if (!outAppBuffer.hasRemaining()) {
+                        break@wrap
+                    }
                 }
                 CLOSED -> {
                     sslEngine.closeOutbound()

@@ -59,6 +59,7 @@ abstract class AbstractAioTcpConnection(
 
     private inner class OutputMessageHandler {
         private val outputMessageChannel: Channel<OutputMessage> = Channel(UNLIMITED)
+        private var writeTimeout = maxIdleTime
 
         init {
             writeJob()
@@ -87,26 +88,30 @@ abstract class AbstractAioTcpConnection(
 
         private suspend fun handleOutputMessage(output: OutputMessage) {
             when (output) {
-                is OutputBuffer, is OutputBuffers, is OutputBufferList -> writeBuffers(output)
+                is OutputDataMessage -> writeBuffers(output)
                 is ShutdownOutput -> shutdownOutputAndClose(output)
+                is SetWriteTimeout -> if (output.timeout > 0) {
+                    writeTimeout = output.timeout
+                    log.info("Set write timeout: $writeTimeout, id: $id")
+                }
                 else -> throw UnknownTypeException("Unknown output message. $output")
             }
         }
 
-        private suspend fun write(output: OutputMessage): Long = when (output) {
-            is OutputBuffer -> socketChannel.writeAwait(output.buffer, maxIdleTime, timeUnit).toLong()
+        private suspend fun write(output: OutputDataMessage): Long = when (output) {
+            is OutputBuffer -> socketChannel.writeAwait(output.buffer, writeTimeout, timeUnit).toLong()
             is OutputBuffers -> socketChannel.writeAwait(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
-                maxIdleTime, timeUnit
+                writeTimeout, timeUnit
             )
             is OutputBufferList -> socketChannel.writeAwait(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
-                maxIdleTime, timeUnit
+                writeTimeout, timeUnit
             )
             else -> throw UnknownTypeException("The output message cannot write.")
         }
 
-        private suspend fun writeBuffers(output: OutputMessage): Boolean {
+        private suspend fun writeBuffers(output: OutputDataMessage): Boolean {
             lastWrittenTime = System.currentTimeMillis()
             var totalLength = 0L
             var success = true
@@ -154,7 +159,7 @@ abstract class AbstractAioTcpConnection(
             return success
         }
 
-        private fun failed(outputBuffers: OutputMessage, exception: Exception?) {
+        private fun failed(outputBuffers: OutputDataMessage, exception: Exception?) {
             when (outputBuffers) {
                 is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
@@ -195,6 +200,7 @@ abstract class AbstractAioTcpConnection(
 
         private val inputMessageChannel: Channel<InputMessage> = Channel(UNLIMITED)
         private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
+        private var readTimeout = maxIdleTime
 
         init {
             readJob()
@@ -225,6 +231,10 @@ abstract class AbstractAioTcpConnection(
             when (input) {
                 is InputBuffer -> readBuffers(input)
                 is ShutdownInput -> shutdownInputAndClose()
+                is SetReadTimeout -> if (input.timeout > 0) {
+                    readTimeout = input.timeout
+                    log.info("Set read timeout: $readTimeout, id: $id")
+                }
             }
         }
 
@@ -235,7 +245,7 @@ abstract class AbstractAioTcpConnection(
             var length = 0
             try {
                 val pos = inputBuffer.flipToFill()
-                length = socketChannel.readAwait(inputBuffer, maxIdleTime, timeUnit)
+                length = socketChannel.readAwait(inputBuffer, readTimeout, timeUnit)
                 inputBuffer.flipToFlush(pos)
                 if (length < 0) {
                     success = false
@@ -305,6 +315,10 @@ abstract class AbstractAioTcpConnection(
         return future
     }
 
+    override fun setReadTimeout(timeout: Long) {
+        inputMessageHandler.sendInputMessage(SetReadTimeout(timeout))
+    }
+
     override fun write(byteBuffer: ByteBuffer, result: Consumer<Result<Int>>): TcpConnection {
         if (outputMessageHandler.sendOutputMessage(OutputBuffer(byteBuffer, result)).isFailure) {
             result.accept(createFailedResult(-1, ClosedChannelException()))
@@ -338,6 +352,10 @@ abstract class AbstractAioTcpConnection(
             result.accept(createFailedResult(-1L, ClosedChannelException()))
         }
         return this
+    }
+
+    override fun setWriteTimeout(timeout: Long) {
+        outputMessageHandler.sendOutputMessage(SetWriteTimeout(timeout))
     }
 
     override fun flush(result: Consumer<Result<Void>>): TcpConnection {

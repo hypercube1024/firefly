@@ -207,7 +207,9 @@ class TestAioServerAndClient {
         val host = "localhost"
         val port = Random.nextInt(10000, 50000)
 
-        val server = TcpServerFactory.create(TcpConfig(1)).onAcceptAsync { conn ->
+        val server = TcpServerFactory.create(TcpConfig(30)).onAcceptAsync { conn ->
+            conn.setReadTimeout(1)
+            conn.setWriteTimeout(1)
             try {
                 conn.read().await()
                 println("Server reads success.")
@@ -216,10 +218,12 @@ class TestAioServerAndClient {
             }
         }.listen(host, port)
 
-        val client = TcpClientFactory.create(TcpConfig(1))
+        val client = TcpClientFactory.create(TcpConfig(30))
         val connection = client.connect(host, port).await()
         assertEquals(port, connection.remoteAddress.port)
 
+        connection.setReadTimeout(1)
+        connection.setWriteTimeout(1)
         val success = try {
             connection.read().await()
             true

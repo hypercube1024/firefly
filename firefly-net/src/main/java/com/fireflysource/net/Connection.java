@@ -43,4 +43,8 @@ public interface Connection extends AsyncCloseable {
 
     boolean isInvalid();
 
+    void setWriteTimeout(long timeout);
+
+    void setReadTimeout(long timeout);
+
 }

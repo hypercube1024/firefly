@@ -12,12 +12,16 @@ value class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : Input
 
 object ShutdownInput : InputMessage
 
+@JvmInline
+value class SetReadTimeout(val timeout: Long) : InputMessage
 
-sealed class OutputMessage {
-    open fun hasRemaining(): Boolean = false
+sealed interface OutputMessage
+
+interface OutputDataMessage {
+    fun hasRemaining(): Boolean = false
 }
 
-data class OutputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage() {
+data class OutputBuffer(val buffer: ByteBuffer, val result: Consumer<Result<Int>>) : OutputMessage, OutputDataMessage {
     override fun hasRemaining(): Boolean = buffer.hasRemaining()
 }
 
@@ -29,7 +33,7 @@ open class OutputBuffers(
     private val outputBufferArray: DelegatedOutputBufferArray = DelegatedOutputBufferArray(
         buffers, offset, length, result
     )
-) : OutputMessage(), OutputBufferArray by outputBufferArray {
+) : OutputMessage, OutputBufferArray by outputBufferArray, OutputDataMessage {
     override fun hasRemaining(): Boolean {
         return outputBufferArray.hasRemaining()
     }
@@ -42,17 +46,20 @@ class OutputBufferList(
     result: Consumer<Result<Long>>
 ) : OutputBuffers(bufferList.toTypedArray(), offset, length, result)
 
-class ShutdownOutput(val result: Consumer<Result<Void>>) : OutputMessage()
+@JvmInline
+value class ShutdownOutput(val result: Consumer<Result<Void>>) : OutputMessage
 
-class FlushOutput(val result: Consumer<Result<Void>>) : OutputMessage()
+@JvmInline
+value class FlushOutput(val result: Consumer<Result<Void>>) : OutputMessage
 
+@JvmInline
+value class SetWriteTimeout(val timeout: Long) : OutputMessage
 
-interface OutputBufferArray {
+interface OutputBufferArray : OutputDataMessage {
     fun getCurrentOffset(): Int
     fun getCurrentLength(): Int
     fun getLastIndex(): Int
     fun remaining(): Long
-    fun hasRemaining(): Boolean
 }
 
 class DelegatedOutputBufferArray(
