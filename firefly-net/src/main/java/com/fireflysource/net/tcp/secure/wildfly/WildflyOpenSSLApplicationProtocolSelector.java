@@ -1,62 +1,46 @@
-package com.fireflysource.net.tcp.secure.jdk;
+package com.fireflysource.net.tcp.secure.wildfly;
 
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.string.StringUtils;
-import com.fireflysource.common.sys.JavaVersion;
 import com.fireflysource.common.sys.SystemLogger;
 import com.fireflysource.net.tcp.secure.ApplicationProtocolSelector;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiFunction;
 
-public class OpenJdkApplicationProtocolSelector implements ApplicationProtocolSelector {
+public class WildflyOpenSSLApplicationProtocolSelector implements ApplicationProtocolSelector {
 
-    private static final LazyLogger LOG = SystemLogger.create(OpenJdkApplicationProtocolSelector.class);
+    private static final LazyLogger LOG = SystemLogger.create(WildflyOpenSSLApplicationProtocolSelector.class);
     private static Method setApplicationProtocols;
     private static Method setHandshakeApplicationProtocolSelector;
     private static Method getApplicationProtocol;
 
-    private final List<String> supportedProtocolList;
     private final SSLEngine sslEngine;
+    private final List<String> supportedProtocolList;
 
     static {
         try {
-            if (JavaVersion.VERSION.getPlatform() < 9) {
-                setApplicationProtocols = org.openjsse.javax.net.ssl.SSLParameters.class.getMethod("setApplicationProtocols", String[].class);
-                Class<?> sslEngineImpl = Class.forName("org.openjsse.sun.security.ssl.SSLEngineImpl");
-                setHandshakeApplicationProtocolSelector = sslEngineImpl.getMethod("setHandshakeApplicationProtocolSelector", BiFunction.class);
-                getApplicationProtocol = sslEngineImpl.getMethod("getApplicationProtocol");
-            } else {
-                setApplicationProtocols = SSLParameters.class.getMethod("setApplicationProtocols", String[].class);
-                setHandshakeApplicationProtocolSelector = SSLEngine.class.getMethod("setHandshakeApplicationProtocolSelector", BiFunction.class);
-                getApplicationProtocol = SSLEngine.class.getMethod("getApplicationProtocol");
-            }
+            Class<?> sslEngineImpl = Class.forName("org.wildfly.openssl.OpenSSLEngine");
+            setApplicationProtocols = sslEngineImpl.getMethod("setApplicationProtocols", String[].class);
+            setHandshakeApplicationProtocolSelector = sslEngineImpl.getMethod("setHandshakeApplicationProtocolSelector", BiFunction.class);
+            getApplicationProtocol = sslEngineImpl.getMethod("getApplicationProtocol");
             setApplicationProtocols.setAccessible(true);
             setHandshakeApplicationProtocolSelector.setAccessible(true);
             getApplicationProtocol.setAccessible(true);
         } catch (Exception e) {
-            LOG.error("Init openjsse application protocol selector exception", e);
+            LOG.error("Get wildfly openssl application protocol selector methods exception.", e);
         }
     }
 
-    public OpenJdkApplicationProtocolSelector(SSLEngine sslEngine, List<String> supportedProtocolList) {
+    public WildflyOpenSSLApplicationProtocolSelector(SSLEngine sslEngine, List<String> supportedProtocolList) {
         this.sslEngine = sslEngine;
         this.supportedProtocolList = supportedProtocolList;
 
         try {
             if (sslEngine.getUseClientMode()) {
-                SSLParameters parameters;
-                if (JavaVersion.VERSION.getPlatform() < 9) {
-                    parameters = new org.openjsse.javax.net.ssl.SSLParameters();
-                } else {
-                    parameters = new SSLParameters();
-                }
-                setApplicationProtocols.invoke(parameters, new Object[]{supportedProtocolList.toArray(StringUtils.EMPTY_STRING_ARRAY)});
-                sslEngine.setSSLParameters(parameters);
-
+                setApplicationProtocols.invoke(sslEngine, new Object[]{supportedProtocolList.toArray(StringUtils.EMPTY_STRING_ARRAY)});
             } else {
                 BiFunction<SSLEngine, List<String>, String> selector = (serverEngine, clientProtocols) -> {
                     if (clientProtocols != null) {
@@ -72,7 +56,7 @@ public class OpenJdkApplicationProtocolSelector implements ApplicationProtocolSe
                 setHandshakeApplicationProtocolSelector.invoke(sslEngine, selector);
             }
         } catch (Exception e) {
-            LOG.error("Init openjsse application protocol selector exception", e);
+            LOG.error("Init wildfly openssl application protocol selector exception.", e);
         }
     }
 

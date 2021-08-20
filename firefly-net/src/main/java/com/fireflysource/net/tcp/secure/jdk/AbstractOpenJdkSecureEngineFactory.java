@@ -26,7 +26,7 @@ abstract public class AbstractOpenJdkSecureEngineFactory extends AbstractSecureE
             Provider provider = new OpenJSSE();
             PROVIDER_NAME = provider.getName();
             Security.addProvider(provider);
-            LOG.info("Add Openjsse security provider. info: {}", provider.getInfo());
+            LOG.info("Add Openjsse security provider. info: {}, name: {}", provider.getInfo(), PROVIDER_NAME);
         } else {
             PROVIDER_NAME = "SunJSSE";
             Provider provider = Security.getProvider(PROVIDER_NAME);

@@ -77,6 +77,7 @@
         <jackson.version>2.12.3</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.6</openjsse.version>
+        <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
         <spring.reactor.version>2020.0.7</spring.reactor.version>
@@ -190,6 +191,11 @@
                 <groupId>org.openjsse</groupId>
                 <artifactId>openjsse</artifactId>
                 <version>${openjsse.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>${wildfly-openssl.version}</version>
             </dependency>
 
             <!--jackson-->

@@ -1,5 +1,4 @@
-package com.fireflysource.net.tcp.secure.conscrypt;
-
+package com.fireflysource.net.tcp.secure.wildfly;
 
 import com.fireflysource.net.tcp.secure.utils.SecureUtils;
 
@@ -8,14 +7,11 @@ import java.io.InputStream;
 
 import static com.fireflysource.net.tcp.secure.utils.SecureUtils.*;
 
-/**
- * @author Pengtao Qiu
- */
-public class SelfSignedCertificateConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
+public class SelfSignedCertificateWildflySSLContextFactory extends AbstractWildflySecureEngineFactory {
 
     private SSLContext sslContext;
 
-    public SelfSignedCertificateConscryptSSLContextFactory() {
+    public SelfSignedCertificateWildflySSLContextFactory() {
         try (InputStream in = SecureUtils.getSelfSignedCertificate()) {
             sslContext = getSSLContext(in, SELF_SIGNED_KEY_STORE_PASSWORD, SELF_SIGNED_KEY_PASSWORD, SELF_SIGNED_KEY_STORE_TYPE);
         } catch (Throwable e) {

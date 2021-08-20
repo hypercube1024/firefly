@@ -16,20 +16,19 @@ import java.util.List;
  */
 abstract public class AbstractConscryptSecureEngineFactory extends AbstractSecureEngineFactory {
 
-    public static final String SECURE_PROTOCOL = "TLSv1.3";
-
-    private static String providerName;
+    private static final String SECURE_PROTOCOL = "TLSv1.3";
+    private static final String PROVIDER_NAME;
 
     static {
         Provider provider = Conscrypt.newProvider();
-        providerName = provider.getName();
+        PROVIDER_NAME = provider.getName();
         Security.addProvider(provider);
-        LOG.info("Add Conscrypt security provider. info: {}", provider.getInfo());
+        LOG.info("Add Conscrypt security provider. info: {}, name: {}", provider.getInfo(), PROVIDER_NAME);
     }
 
     @Override
     public String getProviderName() {
-        return providerName;
+        return PROVIDER_NAME;
     }
 
     @Override

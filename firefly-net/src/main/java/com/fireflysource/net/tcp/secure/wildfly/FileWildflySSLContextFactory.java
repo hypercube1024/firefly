@@ -1,22 +1,20 @@
-package com.fireflysource.net.tcp.secure.jdk;
+package com.fireflysource.net.tcp.secure.wildfly;
+
+import com.fireflysource.net.tcp.secure.jdk.FileOpenJdkSSLContextFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.InputStream;
 
-/**
- * @author Pengtao Qiu
- */
-public class FileOpenJdkSSLContextFactory extends AbstractOpenJdkSecureEngineFactory {
-
+public class FileWildflySSLContextFactory extends AbstractWildflySecureEngineFactory {
     private SSLContext sslContext;
 
-    public FileOpenJdkSSLContextFactory(String path, String keystorePassword, String keyPassword, String keyStoreType) {
+    public FileWildflySSLContextFactory(String path, String keystorePassword, String keyPassword, String keyStoreType) {
         this(FileOpenJdkSSLContextFactory.class.getClassLoader().getResourceAsStream(path),
                 keystorePassword, keyPassword,
                 keyStoreType, null, null, null);
     }
 
-    public FileOpenJdkSSLContextFactory(
+    public FileWildflySSLContextFactory(
             InputStream inputStream, String keystorePassword, String keyPassword,
             String keyStoreType,
             String keyManagerFactoryType,

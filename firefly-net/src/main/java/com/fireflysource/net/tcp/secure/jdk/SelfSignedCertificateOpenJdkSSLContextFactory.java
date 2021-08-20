@@ -19,7 +19,7 @@ public class SelfSignedCertificateOpenJdkSSLContextFactory extends AbstractOpenJ
         try (InputStream in = SecureUtils.getSelfSignedCertificate()) {
             sslContext = getSSLContext(in, SELF_SIGNED_KEY_STORE_PASSWORD, SELF_SIGNED_KEY_PASSWORD, SELF_SIGNED_KEY_STORE_TYPE);
         } catch (Throwable e) {
-            LOG.error(e, () -> "get SSL context error");
+            LOG.error("get SSL context error", e);
         }
     }
 

@@ -8,6 +8,8 @@ import com.fireflysource.net.tcp.*
 import com.fireflysource.net.tcp.onAcceptAsync
 import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFactory
 import com.fireflysource.net.tcp.secure.conscrypt.SelfSignedCertificateConscryptSSLContextFactory
+import com.fireflysource.net.tcp.secure.wildfly.NoCheckWildflySSLContextFactory
+import com.fireflysource.net.tcp.secure.wildfly.SelfSignedCertificateWildflySSLContextFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import org.junit.jupiter.api.Assertions.*
@@ -17,9 +19,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.wildfly.openssl.OpenSSLProvider
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
+import javax.net.ssl.SSLContext
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -37,16 +41,23 @@ class TestAioServerAndClient {
                 arguments("single", true, false, "default"),
                 arguments("array", true, false, "default"),
                 arguments("list", true, false, "default"),
+
                 arguments("single", true, false, "conscrypt"),
                 arguments("array", true, false, "conscrypt"),
                 arguments("list", true, false, "conscrypt"),
-                arguments("single", false, false, "default"),
-                arguments("array", false, false, "default"),
-                arguments("list", false, false, "default"),
+
+                arguments("single", true, false, "wildfly"),
+                arguments("array", true, false, "wildfly"),
+                arguments("list", true, false, "wildfly"),
 
                 arguments("single", true, true, "default"),
                 arguments("array", true, true, "default"),
                 arguments("list", true, true, "default"),
+
+                arguments("single", false, false, "default"),
+                arguments("array", false, false, "default"),
+                arguments("list", false, false, "default"),
+
                 arguments("single", false, true, "default"),
                 arguments("array", false, true, "default"),
                 arguments("list", false, true, "default")
@@ -73,8 +84,9 @@ class TestAioServerAndClient {
         )
 
         val server = TcpServerFactory.create(tcpConfig)
-        if (securityProvider == "conscrypt") {
-            server.secureEngineFactory(SelfSignedCertificateConscryptSSLContextFactory())
+        when(securityProvider) {
+            "conscrypt" -> server.secureEngineFactory(SelfSignedCertificateConscryptSSLContextFactory())
+            "wildfly" -> server.secureEngineFactory(SelfSignedCertificateWildflySSLContextFactory())
         }
         server.onAcceptAsync { connection ->
             println("accept connection. ${connection.id}")
@@ -108,8 +120,9 @@ class TestAioServerAndClient {
         }.listen(host, port)
 
         val client = TcpClientFactory.create(tcpConfig)
-        if (securityProvider == "conscrypt") {
-            client.secureEngineFactory(NoCheckConscryptSSLContextFactory())
+        when(securityProvider) {
+            "conscrypt" -> client.secureEngineFactory(NoCheckConscryptSSLContextFactory())
+            "wildfly" -> client.secureEngineFactory(NoCheckWildflySSLContextFactory())
         }
         val time = measureTimeMillis {
             val jobs = (1..connectionCount).map {
@@ -286,5 +299,13 @@ class TestAioServerAndClient {
             }
         }
         println("stop success. $stopTime")
+    }
+
+    @Test
+    fun testProvider() {
+        println(OpenSSLProvider.INSTANCE.name)
+        println(OpenSSLProvider.INSTANCE.info)
+        val ctx = SSLContext.getInstance("TLSv1.3", OpenSSLProvider.INSTANCE.name)
+        println(ctx.provider.name)
     }
 }

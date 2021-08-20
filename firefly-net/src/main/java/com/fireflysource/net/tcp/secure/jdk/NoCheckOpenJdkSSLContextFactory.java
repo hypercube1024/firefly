@@ -17,7 +17,7 @@ public class NoCheckOpenJdkSSLContextFactory extends AbstractOpenJdkSecureEngine
         try {
             sslContext = getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
         } catch (Throwable e) {
-            LOG.error(e, () -> "get SSL context error");
+            LOG.error("get SSL context error", e);
         }
     }
 

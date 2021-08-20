@@ -1,19 +1,15 @@
-package com.fireflysource.net.tcp.secure.conscrypt;
-
+package com.fireflysource.net.tcp.secure.wildfly;
 
 import com.fireflysource.net.tcp.secure.utils.SecureUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
-/**
- * @author Pengtao Qiu
- */
-public class NoCheckConscryptSSLContextFactory extends AbstractConscryptSecureEngineFactory {
+public class NoCheckWildflySSLContextFactory extends AbstractWildflySecureEngineFactory{
 
     private SSLContext sslContext;
 
-    public NoCheckConscryptSSLContextFactory() {
+    public NoCheckWildflySSLContextFactory() {
         try {
             sslContext = getSSLContextWithManager(null, new TrustManager[]{SecureUtils.createX509TrustManagerNoCheck()}, null);
         } catch (Throwable e) {

@@ -13,7 +13,7 @@ public class DefaultConscryptSSLContextFactory extends AbstractConscryptSecureEn
         try {
             sslContext = getSSLContextWithManager(null, null, null);
         } catch (Throwable e) {
-            LOG.error(e, () -> "get SSL context error");
+            LOG.error("get SSL context error", e);
         }
     }
 

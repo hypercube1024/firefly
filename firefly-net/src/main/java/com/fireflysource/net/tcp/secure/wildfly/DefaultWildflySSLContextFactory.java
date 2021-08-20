@@ -1,15 +1,11 @@
-package com.fireflysource.net.tcp.secure.jdk;
+package com.fireflysource.net.tcp.secure.wildfly;
 
 import javax.net.ssl.SSLContext;
 
-/**
- * @author Pengtao Qiu
- */
-public class DefaultOpenJdkSSLContextFactory extends AbstractOpenJdkSecureEngineFactory {
-
+public class DefaultWildflySSLContextFactory extends AbstractWildflySecureEngineFactory {
     private SSLContext sslContext;
 
-    public DefaultOpenJdkSSLContextFactory() {
+    public DefaultWildflySSLContextFactory() {
         try {
             sslContext = getSSLContextWithManager(null, null, null);
         } catch (Throwable e) {
