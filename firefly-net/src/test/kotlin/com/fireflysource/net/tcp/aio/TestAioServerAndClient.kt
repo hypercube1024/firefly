@@ -19,11 +19,9 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.wildfly.openssl.OpenSSLProvider
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Stream
-import javax.net.ssl.SSLContext
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -84,7 +82,7 @@ class TestAioServerAndClient {
         )
 
         val server = TcpServerFactory.create(tcpConfig)
-        when(securityProvider) {
+        when (securityProvider) {
             "conscrypt" -> server.secureEngineFactory(SelfSignedCertificateConscryptSSLContextFactory())
             "wildfly" -> server.secureEngineFactory(SelfSignedCertificateWildflySSLContextFactory())
         }
@@ -120,7 +118,7 @@ class TestAioServerAndClient {
         }.listen(host, port)
 
         val client = TcpClientFactory.create(tcpConfig)
-        when(securityProvider) {
+        when (securityProvider) {
             "conscrypt" -> client.secureEngineFactory(NoCheckConscryptSSLContextFactory())
             "wildfly" -> client.secureEngineFactory(NoCheckWildflySSLContextFactory())
         }
@@ -301,11 +299,4 @@ class TestAioServerAndClient {
         println("stop success. $stopTime")
     }
 
-    @Test
-    fun testProvider() {
-        println(OpenSSLProvider.INSTANCE.name)
-        println(OpenSSLProvider.INSTANCE.info)
-        val ctx = SSLContext.getInstance("TLSv1.3", OpenSSLProvider.INSTANCE.name)
-        println(ctx.provider.name)
-    }
 }
