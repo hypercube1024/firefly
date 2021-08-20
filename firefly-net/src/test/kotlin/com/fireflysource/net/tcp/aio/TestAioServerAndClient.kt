@@ -44,9 +44,9 @@ class TestAioServerAndClient {
                 arguments("array", true, false, "conscrypt"),
                 arguments("list", true, false, "conscrypt"),
 
-                arguments("single", true, false, "wildfly"),
-                arguments("array", true, false, "wildfly"),
-                arguments("list", true, false, "wildfly"),
+//                arguments("single", true, false, "wildfly"),
+//                arguments("array", true, false, "wildfly"),
+//                arguments("list", true, false, "wildfly"),
 
                 arguments("single", true, true, "default"),
                 arguments("array", true, true, "default"),
