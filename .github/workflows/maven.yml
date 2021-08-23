@@ -28,6 +28,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
+      - name: Install dependencies Ubuntu
+        run: sudo apt-get update && sudo apt-get install openssl
+
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
