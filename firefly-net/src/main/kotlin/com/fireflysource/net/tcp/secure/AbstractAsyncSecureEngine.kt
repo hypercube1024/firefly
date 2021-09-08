@@ -178,7 +178,6 @@ abstract class AbstractAsyncSecureEngine(
             is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, packetBuffer)
             is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
             is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
-            else -> throw UnknownTypeException("Unknown out app buffer message type.")
         }
 
         wrap@ while (true) {
