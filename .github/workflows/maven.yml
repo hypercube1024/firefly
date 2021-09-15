@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11, 16]
+        java: [8, 11, 17]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:

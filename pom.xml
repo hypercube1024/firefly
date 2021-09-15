@@ -768,7 +768,6 @@
                 </plugins>
             </build>
         </profile>
-
         <profile>
             <id>jdk_16_plus</id>
             <activation>
