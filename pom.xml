@@ -84,8 +84,8 @@
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
-        <junit.version>5.7.1</junit.version>
-        <mockito.version>3.8.0</mockito.version>
+        <junit.version>5.8.0</junit.version>
+        <mockito.version>3.12.4</mockito.version>
     </properties>
 
     <dependencyManagement>
