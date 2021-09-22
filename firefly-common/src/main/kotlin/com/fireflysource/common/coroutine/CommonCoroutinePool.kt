@@ -23,7 +23,7 @@ object CoroutineDispatchers {
 
     val ioBlockingPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingPoolSize",
-        32.coerceAtLeast(availableProcessors)
+        64.coerceAtLeast(availableProcessors)
     )
     val ioBlockingPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()

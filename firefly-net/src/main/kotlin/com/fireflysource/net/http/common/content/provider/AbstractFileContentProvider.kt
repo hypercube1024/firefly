@@ -4,7 +4,7 @@ import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.coroutine.clear
 import com.fireflysource.common.exception.UnsupportedOperationException
 import com.fireflysource.common.io.InputChannel
-import com.fireflysource.common.io.closeJob
+import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.readAwait
 import kotlinx.coroutines.*
@@ -41,7 +41,7 @@ abstract class AbstractFileContentProvider(
                         val (buf, future) = readFileMessage
 
                         suspend fun endRead() {
-                            fileChannel.closeJob().join()
+                            fileChannel.closeAsync().join()
                             closed.set(true)
                             future.complete(-1)
                         }
@@ -64,7 +64,7 @@ abstract class AbstractFileContentProvider(
                         }
                     }
                     is EndReadFile -> {
-                        fileChannel.closeJob().join()
+                        fileChannel.closeAsync().join()
                         closed.set(true)
                         break@readMessageLoop
                     }

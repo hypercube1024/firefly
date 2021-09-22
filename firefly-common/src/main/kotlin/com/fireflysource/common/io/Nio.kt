@@ -56,7 +56,7 @@ suspend fun <T : Closeable?, R> T.useAwait(block: suspend (T) -> R): R {
         throw e
     } finally {
         withContext(NonCancellable) {
-            this@useAwait?.closeJob()?.join()
+            this@useAwait?.closeAsync()?.join()
         }
     }
 }
@@ -76,7 +76,7 @@ suspend fun <T : AsyncCloseable?, R> T.useAwait(block: suspend (T) -> R): R {
 /**
  * Close in the I/O blocking coroutine dispatcher
  */
-fun Closeable.closeJob() = blocking {
+fun Closeable.closeAsync() = blocking {
     close()
 }
 
@@ -92,11 +92,11 @@ fun listFilesAsync(dir: Path) = blockingAsync {
     Files.list(dir)
 }
 
-fun readAllLinesAsync(file: Path, charset: Charset = StandardCharsets.UTF_8) = blockingAsync {
+fun readFileLinesAsync(file: Path, charset: Charset = StandardCharsets.UTF_8) = blockingAsync {
     Files.readAllLines(file, charset)
 }
 
-fun readAllBytesAsync(file: Path) = blockingAsync {
+fun readFileBytesAsync(file: Path) = blockingAsync {
     Files.readAllBytes(file)
 }
 
@@ -112,9 +112,15 @@ fun readAttributesAsync(file: Path, vararg options: LinkOption) = blockingAsync 
     Files.readAttributes(file, BasicFileAttributes::class.java, *options)
 }
 
-fun writeAsync(file: Path, iterable: Iterable<CharSequence>, vararg options: OpenOption) = blockingAsync {
+fun writeFileLinesAsync(file: Path, iterable: Iterable<CharSequence>, vararg options: OpenOption) = blockingAsync {
     Files.write(file, iterable, *options)
 }
+
+fun writeFileBytesAsync(file: Path, byteArray: ByteArray, vararg options: OpenOption) = blockingAsync {
+    Files.write(file, byteArray, *options)
+}
+
+
 
 /**
  * Performs [AsynchronousFileChannel.read] without blocking a thread and resumes when asynchronous operation completes.

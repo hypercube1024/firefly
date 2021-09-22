@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client.impl.content.handler
 
-import com.fireflysource.common.io.readAllBytesAsync
+import com.fireflysource.common.io.readFileBytesAsync
 import com.fireflysource.net.http.client.HttpClientContentHandlerFactory.fileHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.future.await
@@ -47,7 +47,7 @@ class TestFileContentHandler {
 
         handler.closeAsync().await()
 
-        val str = readAllBytesAsync(tmpFile).await()
+        val str = readFileBytesAsync(tmpFile).await()
         assertEquals("hello file handler", String(str))
     }
 }

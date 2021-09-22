@@ -1,7 +1,7 @@
 package com.fireflysource.net.http.common.content.handler
 
 import com.fireflysource.common.coroutine.asVoidFuture
-import com.fireflysource.common.io.closeJob
+import com.fireflysource.common.io.closeAsync
 import com.fireflysource.common.io.openFileChannelAsync
 import com.fireflysource.common.io.writeAwait
 import com.fireflysource.common.sys.SystemLogger
@@ -26,7 +26,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
 
         suspend fun closeFileChannel() {
             try {
-                fileChannel.closeJob().join()
+                fileChannel.closeAsync().join()
             } catch (e: Exception) {
                 log.error(e) { "close file channel exception." }
             }
