@@ -65,7 +65,7 @@ class Http1ClientConnection(
 
     private val handler = Http1ClientResponseHandler()
     private val parser = HttpParser(handler)
-    private val requestChannel = Channel<RequestMessage>(Channel.UNLIMITED)
+    private val requestChannel = Channel<Http1ClientConnectionMessage>(Channel.UNLIMITED)
 
     @Volatile
     private var httpVersion: HttpVersion = HttpVersion.HTTP_1_1
@@ -76,48 +76,19 @@ class Http1ClientConnection(
     private var upgradeWebSocketSuccess: Boolean = false
 
     init {
-        handleRequestMessage()
+        handleMessage()
     }
 
-    private fun handleRequestMessage() = coroutineScope.launch {
-        handleRequestLoop@ while (true) {
-            val message = requestChannel.receive()
-            try {
-                log.debug {
-                    """
-                    |handle http1 request:
-                    |${message.request.method} ${message.request.uri} ${message.request.httpVersion}
-                    |${message.request.fields}
-                """.trimMargin()
+    private fun handleMessage() = coroutineScope.launch {
+        while (true) {
+            when (val message = requestChannel.receive()) {
+                is RequestMessage -> {
+                    val exit = handleRequest(message)
+                    if (exit) {
+                        break
+                    }
                 }
-
-                handler.init(message.contentHandler, message.expectServerAcceptsContent)
-                val exit = if (message.expectServerAcceptsContent) {
-                    // flush content data after the server response 100 continue.
-                    generateRequestAndWaitServerAccept(message)
-                    waitResponse(message)
-                } else {
-                    // avoid the request can not response the server error code if the I/O exception happened during the client sends data.
-                    val result = async { waitResponse(message) }
-                    generateRequest(message)
-                    result.await()
-                }
-
-                if (exit) {
-                    break@handleRequestLoop
-                }
-            } catch (e: IOException) {
-                log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
-                completeResponseExceptionally(message, e)
-                break@handleRequestLoop
-            } catch (e: Exception) {
-                log.error { "HTTP1 client handler exception. id: $id info: ${e.javaClass.name} ${e.message}" }
-                completeResponseExceptionally(message, e)
-                break@handleRequestLoop
-            } finally {
-                handler.reset()
-                parser.reset()
-                generator.reset()
+                is Stop -> break
             }
         }
     }.invokeOnCompletion { e ->
@@ -127,10 +98,48 @@ class Http1ClientConnection(
         processUnhandledRequest()
     }
 
+    private suspend fun handleRequest(message: RequestMessage): Boolean {
+        return try {
+            log.debug {
+                """
+                    |handle http1 request:
+                    |${message.request.method} ${message.request.uri} ${message.request.httpVersion}
+                    |${message.request.fields}
+                """.trimMargin()
+            }
+
+            handler.init(message.contentHandler, message.expectServerAcceptsContent, message.isHttpTunnel)
+            val exit = if (message.expectServerAcceptsContent) {
+                // flush content data after the server response 100 continue.
+                generateRequestAndWaitServerAccept(message)
+                waitResponse(message)
+            } else {
+                // avoid the request can not response the server error code if the I/O exception happened during the client sends data.
+                val result = coroutineScope.async { waitResponse(message) }
+                generateRequest(message)
+                result.await()
+            }
+
+            exit
+        } catch (e: IOException) {
+            log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
+            completeResponseExceptionally(message, e)
+            true
+        } catch (e: Exception) {
+            log.error { "HTTP1 client handler exception. id: $id info: ${e.javaClass.name} ${e.message}" }
+            completeResponseExceptionally(message, e)
+            true
+        } finally {
+            handler.reset()
+            parser.reset()
+            generator.reset()
+        }
+    }
+
     private fun processUnhandledRequest() {
         when {
             isUpgradeToHttp2Success() -> requestChannel.consumeAll { message ->
-                if (!message.response.isDone) {
+                if (message is RequestMessage && !message.response.isDone) {
                     log.info { "Client sends remaining request via HTTP2 protocol. id: $id, path: ${message.httpClientRequest.uri.path}" }
                     val future = message.response
                     sendRequestViaHttp2(message.httpClientRequest)
@@ -139,7 +148,7 @@ class Http1ClientConnection(
                 }
             }
             else -> requestChannel.consumeAll { message ->
-                if (!message.response.isDone) {
+                if (message is RequestMessage && !message.response.isDone) {
                     message.response.completeExceptionally(
                         UnhandledRequestException(
                             "The HTTP1 connection has closed. This request does not send."
@@ -164,14 +173,16 @@ class Http1ClientConnection(
             isNonPersistence -> true
             message.expectUpgradeHttp2 && isUpgradeToHttp2Success() -> true
             message.expectUpgradeWebSocket && upgradeWebSocketSuccess -> true
+            message.isHttpTunnel -> true
             else -> false
         }
     }
 
     private suspend fun complete(response: HttpClientResponse, message: RequestMessage): Boolean {
         val request = message.request
-        val isNonPersistence = response.httpFields.isCloseConnection(response.httpVersion)
-                || request.fields.isCloseConnection(request.httpVersion)
+        val isCloseConnection =
+            response.httpFields.isCloseConnection(response.httpVersion) || request.fields.isCloseConnection(request.httpVersion)
+        val isNonPersistence = !message.isHttpTunnel && isCloseConnection
         if (isNonPersistence) {
             this.useAwait { message.response.complete(response) }
             log.debug { "HTTP1 connection closed. id: $id, closed: ${this.isClosed}" }
@@ -492,11 +503,17 @@ class Http1ClientConnection(
         return websocketFuture
     }
 
+    fun dispose() {
+        requestChannel.trySend(Stop)
+    }
+
     private fun genRandomWebSocketKey(): String {
         val bytes = ByteArray(16)
         ThreadLocalRandom.current().nextBytes(bytes)
         return String(Base64Utils.encode(bytes))
     }
+
+    sealed interface Http1ClientConnectionMessage
 
     private data class RequestMessage(
         val httpClientRequest: HttpClientRequest,
@@ -507,10 +524,12 @@ class Http1ClientConnection(
         val expectServerAcceptsContent: Boolean = httpClientRequest.httpFields.expectServerAcceptsContent(),
         val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest),
         val expectUpgradeWebSocket: Boolean = expectUpgradeWebsocket(httpClientRequest),
+        val isHttpTunnel: Boolean = httpClientRequest.method.equals(HttpMethod.CONNECT.value),
         val webSocketClientConnection: CompletableFuture<WebSocketConnection>? = null,
         val webSocketClientRequest: WebSocketClientRequest? = null
-    )
+    ) : Http1ClientConnectionMessage
 
+    private object Stop : Http1ClientConnectionMessage
 }
 
 fun prepareHttp1Headers(request: HttpClientRequest, defaultHost: () -> String) {

@@ -19,10 +19,12 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
     private var isServerAcceptedContent: Boolean = false
+    private var isHttpTunnel: Boolean = false
 
-    fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean) {
+    fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean, isHttpTunnel: Boolean) {
         this.contentHandler = contentHandler
         this.expectServerAcceptsContent = expectServerAcceptsContent
+        this.isHttpTunnel = isHttpTunnel
     }
 
     override fun getHeaderCacheSize(): Int {
@@ -53,8 +55,14 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun headerComplete(): Boolean {
-        httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), contentHandler)
-        return false
+        val httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), contentHandler)
+        this.httpClientResponse = httpClientResponse
+        return if (isHttpTunnel) {
+            responseChannel.trySend(httpClientResponse)
+            true
+        } else {
+            false
+        }
     }
 
     override fun content(buffer: ByteBuffer): Boolean {

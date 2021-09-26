@@ -5,6 +5,7 @@ import com.fireflysource.common.io.useAwait
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.ProxyConfig
 import com.fireflysource.net.http.common.exception.MissingRemoteHostException
 import com.fireflysource.net.http.common.model.ContentEncoding
 import com.fireflysource.net.http.common.model.Cookie
@@ -220,6 +221,19 @@ class TestHttpClient {
         assertThrows(MissingRemoteHostException::class.java) {
             httpClient.get("/echo0").submit()
         }
+    }
+
+//    @Test
+    fun testProxy() = runBlocking {
+        val proxyConfig = ProxyConfig()
+        proxyConfig.host = "127.0.0.1"
+        proxyConfig.port = 1091
+        val httpConfig = HttpConfig()
+        httpConfig.proxyConfig = proxyConfig
+        val client = HttpClientFactory.create(httpConfig)
+        val response = client.get("https://nghttp2.org/").submit().await()
+        println(response)
+        println(response.stringBody)
     }
 
     class MockChunkByteBufferContentProvider(content: ByteBuffer) : ByteBufferContentProvider(content) {

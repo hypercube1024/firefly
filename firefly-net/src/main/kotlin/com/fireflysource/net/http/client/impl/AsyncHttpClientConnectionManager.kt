@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.coroutine.CoroutineDispatchers
 import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
@@ -21,6 +22,7 @@ import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
@@ -38,7 +40,9 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val connectionPoolMap = ConcurrentHashMap<Address, HttpClientConnectionPool>()
-    private val scope = CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager") + connectionFactory.tcpChannelGroup.getDispatcher(0))
+    private val httpProxyClientConnectionFactory = HttpProxyClientConnectionFactory(config, connectionFactory)
+    private val scope =
+        CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager") + CoroutineDispatchers.singleThread)
 
     init {
         start()
@@ -233,8 +237,24 @@ class AsyncHttpClientConnectionManager(
         }
     }
 
-    private fun createHttpClientConnection(address: Address, supportedProtocols: List<String> = listOf()) =
-        createTcpConnection(address, supportedProtocols).thenCompose { createHttpClientConnection(it) }
+    private fun createHttpClientConnection(
+        address: Address,
+        supportedProtocols: List<String> = listOf()
+    ): CompletableFuture<HttpClientConnection> {
+        return if (config.proxyConfig == null) {
+            createTcpConnection(address, supportedProtocols).thenCompose { createHttpClientConnection(it) }
+        } else {
+            scope.async {
+                httpProxyClientConnectionFactory.createHttpClientConnection(
+                    address.socketAddress.hostName,
+                    address.socketAddress.port,
+                    address.secure,
+                    supportedProtocols
+                )
+            }.asCompletableFuture()
+        }
+    }
+
 
     private fun createHttpClientConnection(connection: TcpConnection): CompletableFuture<HttpClientConnection> {
         return if (connection.isSecureConnection) {
