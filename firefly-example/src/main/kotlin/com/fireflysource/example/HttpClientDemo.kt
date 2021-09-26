@@ -12,7 +12,7 @@ fun main(): Unit = runBlocking {
     val count = 1
     (1..count).forEach {
         val response = fx.httpClient()
-            .get("http://nghttp2.org")
+            .get("http://nghttp2.org/")
             .putQueryString("name", "PT_$it")
             .upgradeHttp2()
             .submit().await()
