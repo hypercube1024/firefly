@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.codec.base64.Base64
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.impl.exception.HttpTunnelHandshakeException
@@ -42,7 +43,7 @@ class HttpProxyClientConnectionFactory(
                     val secureEngineFactory = if (connectionFactory.secureEngineFactory == null)
                         DefaultSecureEngineFactorySelector.createSecureEngineFactory(true)
                     else connectionFactory.secureEngineFactory
-                    
+
                     val secureTcpConnection = createSecureTcpConnection(
                         proxyTcpConnection,
                         "",
@@ -74,6 +75,11 @@ class HttpProxyClientConnectionFactory(
         request.uri = HttpURI("$host:$port")
         request.httpFields.put(HttpHeader.HOST, host)
         request.httpFields.put(HttpHeader.PROXY_CONNECTION, "keep-alive")
+        val auth = httpConfig.proxyConfig.proxyAuthentication
+        if (auth != null && auth.username != null && auth.password != null) {
+            val authStr = Base64.encodeBase64String("${auth.username}:${auth.password}".toByteArray())
+            request.httpFields.put(HttpHeader.PROXY_AUTHORIZATION, "Basic $authStr")
+        }
         val response = httpConnection.send(request).await()
         log.info("HTTP tunnel handshake result: ${response.status}")
         return response.status == HttpStatus.OK_200
