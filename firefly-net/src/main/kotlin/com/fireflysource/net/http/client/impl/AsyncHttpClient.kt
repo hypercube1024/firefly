@@ -1,5 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
+import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClient
@@ -41,6 +42,7 @@ class AsyncHttpClient(private val config: HttpConfig = HttpConfig()) : HttpClien
         else AioTcpChannelGroup("async-http-client")
 
     override fun request(method: String, httpURI: HttpURI): HttpClientRequestBuilder {
+        Assert.hasText(httpURI.path, "The http path must be not null.")
         return AsyncHttpClientRequestBuilder(httpClientConnectionManager, method, httpURI, HttpVersion.HTTP_1_1)
     }
 
