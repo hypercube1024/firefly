@@ -8,8 +8,10 @@ import kotlinx.coroutines.future.await
 
 suspend fun main() {
     val client = createProxyHttpClient("127.0.0.1", 1091)
+    val host = "nghttp2.org"
+//    val host = "www.google.com"
     val response = client
-        .get("https://nghttp2.org/")
+        .get("https://$host/")
         .submit().await()
     println("${response.status} ${response.reason}")
     println(response.httpFields)

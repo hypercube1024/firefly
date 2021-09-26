@@ -260,7 +260,7 @@ public interface Stream {
 
             @Override
             public Listener onPush(Stream stream, PushPromiseFrame frame) {
-                return null;
+                return new Adapter();
             }
 
             @Override

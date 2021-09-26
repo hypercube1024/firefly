@@ -93,7 +93,9 @@ class Http1ClientConnection(
         }
     }.invokeOnCompletion { e ->
         if (e != null) {
-            log.info { "The HTTP1 request message job completion. info: ${e.javaClass.name} ${e.message}" }
+            log.info { "The HTTP1 message job completion exception. id: $id info: ${e.javaClass.name} ${e.message}" }
+        } else {
+            log.info("The HTTP1 message job completion. id: $id")
         }
         processUnhandledRequest()
     }
