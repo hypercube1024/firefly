@@ -86,7 +86,7 @@ class HttpClientConnectionFactory(
         val proxyConfig = httpConfig.proxyConfig
         requireNotNull(proxyConfig)
         Assert.hasText(proxyConfig.host, "The proxy host must be not null")
-        Assert.isTrue(proxyConfig.port > 0, "The proxy port must be ")
+        Assert.isTrue(proxyConfig.port > 0, "The proxy port must be greater than 0")
 
         return InetSocketAddress(proxyConfig.host, proxyConfig.port)
     }
