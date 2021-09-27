@@ -227,7 +227,7 @@ class TestHttpClient {
     fun testProxy() = runBlocking {
         val proxyConfig = ProxyConfig()
         proxyConfig.host = "127.0.0.1"
-        proxyConfig.port = 7890
+        proxyConfig.port = 1091
         val httpConfig = HttpConfig()
         httpConfig.proxyConfig = proxyConfig
         val client = HttpClientFactory.create(httpConfig)

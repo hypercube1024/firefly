@@ -15,9 +15,8 @@ import com.fireflysource.net.http.common.exception.MissingRemotePortException
 import com.fireflysource.net.http.common.model.HttpURI
 import com.fireflysource.net.http.common.model.isCloseConnection
 import com.fireflysource.net.tcp.TcpClientConnectionFactory
-import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP1
-import com.fireflysource.net.tcp.aio.ApplicationProtocol.HTTP2
+import com.fireflysource.net.tcp.aio.defaultSupportedProtocols
 import com.fireflysource.net.tcp.aio.isSecureProtocol
 import com.fireflysource.net.tcp.aio.schemaDefaultPort
 import kotlinx.coroutines.*
@@ -40,7 +39,7 @@ class AsyncHttpClientConnectionManager(
     }
 
     private val connectionPoolMap = ConcurrentHashMap<Address, HttpClientConnectionPool>()
-    private val httpProxyClientConnectionFactory = HttpProxyClientConnectionFactory(config, connectionFactory)
+    private val httpClientConnectionFactory = HttpClientConnectionFactory(config, connectionFactory)
     private val scope =
         CoroutineScope(CoroutineName("Firefly-HTTP-client-connection-manager") + CoroutineDispatchers.singleThread)
 
@@ -239,40 +238,11 @@ class AsyncHttpClientConnectionManager(
 
     private fun createHttpClientConnection(
         address: Address,
-        supportedProtocols: List<String> = listOf()
+        supportedProtocols: List<String> = defaultSupportedProtocols
     ): CompletableFuture<HttpClientConnection> {
-        return if (config.proxyConfig == null) {
-            createTcpConnection(address, supportedProtocols).thenCompose { createHttpClientConnection(it) }
-        } else {
-            scope.async {
-                httpProxyClientConnectionFactory.createHttpClientConnection(
-                    address.socketAddress.hostName,
-                    address.socketAddress.port,
-                    address.secure,
-                    supportedProtocols
-                )
-            }.asCompletableFuture()
-        }
+        return scope.async { httpClientConnectionFactory.createHttpClientConnection(address, supportedProtocols) }
+            .asCompletableFuture()
     }
-
-
-    private fun createHttpClientConnection(connection: TcpConnection): CompletableFuture<HttpClientConnection> {
-        return if (connection.isSecureConnection) {
-            connection.beginHandshake().thenApply { applicationProtocol ->
-                when (applicationProtocol) {
-                    HTTP2.value -> createHttp2ClientConnection(connection)
-                    else -> createHttp1ClientConnection(connection)
-                }
-            }
-        } else CompletableFuture.completedFuture(createHttp1ClientConnection(connection))
-    }
-
-    private fun createTcpConnection(address: Address, supportedProtocols: List<String> = listOf()) =
-        connectionFactory.connect(address.socketAddress, address.secure, supportedProtocols)
-
-    private fun createHttp1ClientConnection(connection: TcpConnection) = Http1ClientConnection(config, connection)
-
-    private fun createHttp2ClientConnection(connection: TcpConnection) = Http2ClientConnection(config, connection)
 
     override fun init() {
         connectionFactory.start()
@@ -284,8 +254,6 @@ class AsyncHttpClientConnectionManager(
         connectionFactory.stop()
         scope.cancel()
     }
-
-    private data class Address(val socketAddress: InetSocketAddress, val secure: Boolean)
 }
 
 sealed class ClientRequestMessage
