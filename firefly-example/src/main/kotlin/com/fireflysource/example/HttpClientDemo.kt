@@ -2,10 +2,9 @@ package com.fireflysource.example
 
 import com.fireflysource.fx
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 
 
-fun main(): Unit = runBlocking {
+suspend fun main() {
     // http://localhost:8080/hello-world
     // http://nghttp2.org
 

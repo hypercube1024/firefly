@@ -2,6 +2,7 @@ package com.fireflysource.net.http.client.impl
 
 import com.fireflysource.common.`object`.Assert
 import com.fireflysource.common.codec.base64.Base64
+import com.fireflysource.common.string.StringUtils
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientConnection
 import com.fireflysource.net.http.client.impl.exception.HttpTunnelHandshakeException
@@ -33,11 +34,15 @@ class HttpClientConnectionFactory(
         address: Address,
         supportedProtocols: List<String> = defaultSupportedProtocols
     ): HttpClientConnection {
-        return if (httpConfig.proxyConfig == null) {
-            createDirectHttpClientConnection(address, supportedProtocols.ifEmpty { defaultSupportedProtocols })
-        } else {
+        return if (isProxyEnabled()) {
             createProxyHttpClientConnection(address, supportedProtocols.ifEmpty { defaultSupportedProtocols })
+        } else {
+            createDirectHttpClientConnection(address, supportedProtocols.ifEmpty { defaultSupportedProtocols })
         }
+    }
+
+    private fun isProxyEnabled(): Boolean {
+        return httpConfig.proxyConfig != null && StringUtils.hasText(httpConfig.proxyConfig.host) && httpConfig.proxyConfig.port > 0
     }
 
     private suspend fun createDirectHttpClientConnection(
