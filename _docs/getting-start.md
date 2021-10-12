@@ -14,7 +14,7 @@ title: Getting Started
 
 <a id="markdown-what-is-firefly" name="what-is-firefly"></a>
 # What is Firefly?
-[![Build Status](https://travis-ci.org/hypercube1024/firefly.svg?branch=master)](https://travis-ci.org/hypercube1024/firefly)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/hypercube1024/firefly/CI)](https://github.com/hypercube1024/firefly)
 [![Maven Central](https://img.shields.io/maven-central/v/com.fireflysource/firefly-net)](https://search.maven.org/artifact/com.fireflysource/firefly-net/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
