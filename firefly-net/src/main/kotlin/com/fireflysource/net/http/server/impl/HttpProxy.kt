@@ -30,19 +30,20 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 log.info("HTTP tunnel handshake success. target: $targetAddress")
                 connection.coroutineScope.launch {
                     var targetConnection = tcpClient.connect(targetAddress).await()
-                    val readJob = launch {
+                    val readFromClientJob = launch {
                         while (true) {
                             val r = runCatching {
                                 val data = connection.read().await()
                                 val size = targetConnection.write(data).await()
                                 log.debug("write to target: $size")
                             }
-                            log.debug("read job: $r")
-                            if (r.isFailure)
+                            if (r.isFailure) {
+                                log.error("read from client job failure", r.exceptionOrNull())
                                 break
+                            }
                         }
                     }
-                    val writeJob = launch {
+                    val writeToClientJob = launch {
                         while (true) {
                             val r = runCatching {
                                 val data = targetConnection.read().await()
@@ -50,15 +51,20 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                                 connection.flush().await()
                                 log.debug("write to client: $size")
                             }
-                            log.debug("write job: $r")
-                            if (r.isFailure)
+                            if (r.isFailure) {
+                                log.error("write to client job failure", r.exceptionOrNull())
                                 break
+                            }
                         }
                     }
-                    readJob.join()
-                    log.info("HTTP tunnel read job exit.")
-                    writeJob.join()
-                    log.info("HTTP tunnel write job exit.")
+                    runCatching {
+                        readFromClientJob.join()
+                        log.info("HTTP tunnel read job exit.")
+                        writeToClientJob.join()
+                        log.info("HTTP tunnel write job exit.")
+                    }
+                    targetConnection.closeAsync()
+                    connection.closeAsync()
                 }.asVoidFuture()
             }
             .router().path("*").asyncHandler { ctx ->
