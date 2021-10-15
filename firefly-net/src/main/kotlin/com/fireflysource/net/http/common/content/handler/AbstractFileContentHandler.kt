@@ -32,7 +32,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
             }
         }
 
-        suspend fun read(): Boolean {
+        suspend fun write(): Boolean {
             var closed = false
             when (val writeFileMessage = inputChannel.receive()) {
                 is WriteFileRequest -> {
@@ -56,7 +56,7 @@ abstract class AbstractFileContentHandler<T>(val path: Path, vararg options: Ope
 
         writeMessageLoop@ while (true) {
             val closed = try {
-                read()
+                write()
             } catch (e: Exception) {
                 log.error(e) { "read file exception." }
                 closeFileChannel()
