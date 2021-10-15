@@ -1,43 +1,76 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.coroutine.asVoidFuture
+import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 
-class HttpProxy(httpConfig: HttpConfig) {
+class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
+
+    companion object {
+        private val log = SystemLogger.create(HttpProxy::class.java)
+    }
 
     private val server = HttpServerFactory.create(httpConfig)
     private val tcpClient = TcpClientFactory.create()
 
     init {
         server
-            .onAcceptHttpTunnel { CompletableFuture.completedFuture(true) }
+            .onAcceptHttpTunnel { request ->
+                log.info("Accept http tunnel handshake. uri: ${request.uri}")
+                CompletableFuture.completedFuture(true)
+            }
             .onHttpTunnelHandshakeComplete { connection, targetAddress ->
+                log.info("HTTP tunnel handshake success. target: $targetAddress")
                 connection.coroutineScope.launch {
                     var targetConnection = tcpClient.connect(targetAddress).await()
                     val readJob = launch {
                         while (true) {
-                            val data = connection.read().await()
-                            targetConnection.write(data)
+                            val r = runCatching {
+                                val data = connection.read().await()
+                                val size = targetConnection.write(data).await()
+                                log.debug("write to target: $size")
+                            }
+                            log.debug("read job: $r")
+                            if (r.isFailure)
+                                break
                         }
                     }
                     val writeJob = launch {
                         while (true) {
-                            val data = targetConnection.read().await()
-                            connection.write(data)
+                            val r = runCatching {
+                                val data = targetConnection.read().await()
+                                val size = connection.write(data).await()
+                                connection.flush().await()
+                                log.debug("write to client: $size")
+                            }
+                            log.debug("write job: $r")
+                            if (r.isFailure)
+                                break
                         }
                     }
                     readJob.join()
+                    log.info("HTTP tunnel read job exit.")
                     writeJob.join()
+                    log.info("HTTP tunnel write job exit.")
                 }.asVoidFuture()
             }
             .router().path("*").asyncHandler { ctx ->
 
             }
+    }
+
+    fun listen(address: SocketAddress) {
+        server.listen(address)
+    }
+
+    fun listen(host: String, port: Int) {
+        server.listen(host, port)
     }
 }
