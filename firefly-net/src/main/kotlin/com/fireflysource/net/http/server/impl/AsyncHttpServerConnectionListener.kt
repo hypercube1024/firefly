@@ -15,6 +15,7 @@ import com.fireflysource.net.http.server.impl.router.AsyncRoutingContext
 import com.fireflysource.net.tcp.TcpConnection
 import com.fireflysource.net.websocket.server.WebSocketManager
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler
+import java.net.InetSocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
 import java.util.function.Function
@@ -33,7 +34,7 @@ class AsyncHttpServerConnectionListener(
     private val onAcceptHttpTunnel: Function<HttpServerRequest, CompletableFuture<Boolean>>,
     private val onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>>,
     private val onRefuseHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>>,
-    private val onHttpTunnelHandshakeComplete: Function<TcpConnection, CompletableFuture<Void>>
+    private val onHttpTunnelHandshakeComplete: BiFunction<TcpConnection, InetSocketAddress, CompletableFuture<Void>>
 ) : HttpServerConnection.Listener.Adapter() {
 
     override fun onHeaderComplete(ctx: RoutingContext): CompletableFuture<Void> {
@@ -90,8 +91,8 @@ class AsyncHttpServerConnectionListener(
         return onRefuseHttpTunnelHandshakeResponse.apply(context)
     }
 
-    override fun onHttpTunnelHandshakeComplete(connection: TcpConnection): CompletableFuture<Void> {
-        return onHttpTunnelHandshakeComplete.apply(connection)
+    override fun onHttpTunnelHandshakeComplete(connection: TcpConnection, address: InetSocketAddress): CompletableFuture<Void> {
+        return onHttpTunnelHandshakeComplete.apply(connection, address)
     }
 
     private fun handleRouterNotFound(ctx: RoutingContext): CompletableFuture<Void> {

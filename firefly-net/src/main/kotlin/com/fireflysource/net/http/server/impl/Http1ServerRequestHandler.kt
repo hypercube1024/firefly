@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
 class Http1ServerRequestHandler(private val connection: Http1ServerConnection) : HttpParser.RequestHandler {
@@ -64,7 +65,11 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
     }
 
     private fun newRequest(message: StartRequest): MetaData.Request {
-        return MetaData.Request(message.method, HttpURI(message.uri), message.version, HttpFields())
+        val httpURI = if (message.method == HttpMethod.CONNECT.value) {
+            if (!message.uri.contains("://")) HttpURI("https://${message.uri}")
+            else HttpURI(message.uri)
+        } else HttpURI(message.uri)
+        return MetaData.Request(message.method, httpURI, message.version, HttpFields())
     }
 
     private fun addHeader(request: MetaData.Request?, message: ParsedHeader) {
@@ -181,7 +186,8 @@ class Http1ServerRequestHandler(private val connection: Http1ServerConnection) :
 
     private suspend fun switchHttpTunnel(ctx: RoutingContext) {
         connectionListener.onAcceptHttpTunnelHandshakeResponse(ctx).await()
-        connectionListener.onHttpTunnelHandshakeComplete(connection.tcpConnection)
+        val address = InetSocketAddress(ctx.request.uri.host, ctx.request.uri.port)
+        connectionListener.onHttpTunnelHandshakeComplete(connection.tcpConnection, address)
     }
 
     private suspend fun refuseHttpTunnelRequest(ctx: RoutingContext) {

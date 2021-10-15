@@ -109,7 +109,7 @@ public interface HttpServer extends LifeCycle, Cloneable {
      * @param function Invoke this function when the HTTP tunnel handshake is complete.
      * @return The HTTP server.
      */
-    HttpServer onHttpTunnelHandshakeComplete(Function<TcpConnection, CompletableFuture<Void>> function);
+    HttpServer onHttpTunnelHandshakeComplete(BiFunction<TcpConnection, InetSocketAddress, CompletableFuture<Void>> function);
 
     /**
      * Set the TLS engine factory.

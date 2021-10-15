@@ -5,6 +5,7 @@ import com.fireflysource.net.http.common.HttpConnection;
 import com.fireflysource.net.tcp.TcpConnection;
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionHandler;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -95,9 +96,10 @@ public interface HttpServerConnection extends HttpConnection {
          * When the HTTP tunnel handshake is complete, invokes this method.
          *
          * @param connection The client TCP connection.
+         * @param address The target address.
          * @return The future result.
          */
-        CompletableFuture<Void> onHttpTunnelHandshakeComplete(TcpConnection connection);
+        CompletableFuture<Void> onHttpTunnelHandshakeComplete(TcpConnection connection, InetSocketAddress address);
 
         /**
          * The empty listener implement.
@@ -140,7 +142,7 @@ public interface HttpServerConnection extends HttpConnection {
             }
 
             @Override
-            public CompletableFuture<Void> onHttpTunnelHandshakeComplete(TcpConnection connection) {
+            public CompletableFuture<Void> onHttpTunnelHandshakeComplete(TcpConnection connection, InetSocketAddress address) {
                 return Result.DONE;
             }
         }

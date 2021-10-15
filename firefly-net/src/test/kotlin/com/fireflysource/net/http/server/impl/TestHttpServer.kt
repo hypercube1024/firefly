@@ -303,7 +303,8 @@ class TestHttpServer : AbstractHttpServerTestBase() {
                 println("Accept http tunnel request. $request")
                 CompletableFuture.completedFuture(true)
             }
-            .onHttpTunnelHandshakeComplete { connection ->
+            .onHttpTunnelHandshakeComplete { connection, address ->
+                println("target address: $address")
                 connection.write(BufferUtils.toBuffer("1234"))
                     .thenCompose { connection.closeAsync() }
             }
@@ -345,7 +346,8 @@ class TestHttpServer : AbstractHttpServerTestBase() {
                 println("Accept http tunnel request. $request")
                 CompletableFuture.completedFuture(false)
             }
-            .onHttpTunnelHandshakeComplete { connection ->
+            .onHttpTunnelHandshakeComplete { connection, address ->
+                println("target address: $address")
                 connection.write(BufferUtils.toBuffer("1234"))
                     .thenCompose { connection.closeAsync() }
             }

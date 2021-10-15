@@ -25,6 +25,7 @@ import com.fireflysource.net.websocket.server.WebSocketManager
 import com.fireflysource.net.websocket.server.WebSocketServerConnectionBuilder
 import com.fireflysource.net.websocket.server.impl.AsyncWebSocketManager
 import com.fireflysource.net.websocket.server.impl.AsyncWebSocketServerConnectionBuilder
+import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
@@ -82,8 +83,8 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
     private var onAcceptHttpTunnel: Function<HttpServerRequest, CompletableFuture<Boolean>> = Function {
         CompletableFuture.completedFuture(false)
     }
-    private var onHttpTunnelHandshakeComplete: Function<TcpConnection, CompletableFuture<Void>> = Function {
-        it.closeAsync()
+    private var onHttpTunnelHandshakeComplete: BiFunction<TcpConnection, InetSocketAddress, CompletableFuture<Void>> = BiFunction { connection, _ ->
+        connection.closeAsync()
     }
     private var onAcceptHttpTunnelHandshakeResponse: Function<RoutingContext, CompletableFuture<Void>> =
         Function { ctx -> ctx.response200ConnectionEstablished() }
@@ -151,7 +152,7 @@ class AsyncHttpServer(val config: HttpConfig = HttpConfig()) : HttpServer, Abstr
         return this
     }
 
-    override fun onHttpTunnelHandshakeComplete(function: Function<TcpConnection, CompletableFuture<Void>>): HttpServer {
+    override fun onHttpTunnelHandshakeComplete(function: BiFunction<TcpConnection, InetSocketAddress, CompletableFuture<Void>>): HttpServer {
         this.onHttpTunnelHandshakeComplete = function
         return this
     }
