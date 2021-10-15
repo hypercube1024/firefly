@@ -1,7 +1,9 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.coroutine.asVoidFuture
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.router.asyncHandler
@@ -19,6 +21,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
 
     private val server = HttpServerFactory.create(httpConfig)
     private val tcpClient = TcpClientFactory.create()
+    private val httpClient = HttpClientFactory.create(httpConfig)
 
     init {
         server
@@ -68,7 +71,14 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 }.asVoidFuture()
             }
             .router().path("*").asyncHandler { ctx ->
-
+                val response = httpClient.request(ctx.method, ctx.uri)
+                    .addAll(ctx.httpFields)
+                    .body(BufferUtils.merge(ctx.body))
+                    .submit().await()
+                ctx.setStatus(response.status)
+                ctx.response.httpFields.addAll(response.httpFields)
+                ctx.write(BufferUtils.merge(response.body))
+                ctx.end()
             }
     }
 

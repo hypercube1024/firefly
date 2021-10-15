@@ -10,13 +10,18 @@ suspend fun main() {
 
     val client = createProxyHttpClient("localhost", 1678)
 
-    repeat(3) {
-        val response = client
-            .get("https://www.baidu.com/")
-            .submit().await()
+    repeat(1) {
+        val response = client.get("https://www.baidu.com/").submit().await()
         println("${response.status} ${response.reason}")
         println(response.httpFields)
         println(response.stringBody.length)
+        println("-------------------------------------------")
+        println()
         delay(2000)
     }
+
+    val response = client.get("http://www.fireflysource.com/").submit().await()
+    println("${response.status} ${response.reason}")
+    println(response.httpFields)
+    println(response.stringBody)
 }

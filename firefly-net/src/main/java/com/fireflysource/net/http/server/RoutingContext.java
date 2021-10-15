@@ -405,7 +405,6 @@ public interface RoutingContext {
      */
     default RoutingContext addCSV(String header, String... values) {
         getResponse().getHttpFields().addCSV(header, values);
-
         return this;
     }
 
