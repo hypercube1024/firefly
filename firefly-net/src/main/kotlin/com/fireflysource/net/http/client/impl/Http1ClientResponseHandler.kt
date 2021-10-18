@@ -71,7 +71,6 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun contentComplete(): Boolean {
-        contentHandler = null
         return false
     }
 

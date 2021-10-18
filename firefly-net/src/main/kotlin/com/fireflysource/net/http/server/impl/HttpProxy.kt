@@ -1,22 +1,31 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.coroutine.asVoidFuture
-import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.client.HttpClientContentHandlerFactory
 import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.http.client.impl.content.provider.FileContentProvider
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.server.HttpServerContentProviderFactory
 import com.fireflysource.net.http.server.HttpServerFactory
+import com.fireflysource.net.http.server.impl.content.handler.FileContentHandler
 import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.net.SocketAddress
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
 
     companion object {
         private val log = SystemLogger.create(HttpProxy::class.java)
+        private val tempPath = System.getProperty("java.io.tmpdir")
     }
 
     private val server = HttpServerFactory.create(httpConfig)
@@ -24,6 +33,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
     private val httpClient = HttpClientFactory.create(httpConfig)
 
     init {
+
         server
             .onAcceptHttpTunnel { request ->
                 log.info("Accept http tunnel handshake. uri: ${request.uri}")
@@ -70,15 +80,58 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                     connection.closeAsync()
                 }.asVoidFuture()
             }
+            .onHeaderComplete { ctx ->
+                if (ctx.expect100Continue()) ctx.response100Continue() else {
+                    val path = Paths.get(tempPath, "http-proxy-server-body-${UUID.randomUUID()}")
+                    val handler = FileContentHandler(
+                        path,
+                        StandardOpenOption.CREATE_NEW,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.WRITE
+                    )
+                    ctx.contentHandler(handler)
+                    Result.DONE
+                }
+            }
             .router().path("*").asyncHandler { ctx ->
-                val response = httpClient.request(ctx.method, ctx.uri)
-                    .addAll(ctx.httpFields)
-                    .body(BufferUtils.merge(ctx.body))
-                    .submit().await()
-                ctx.setStatus(response.status)
-                ctx.response.httpFields.addAll(response.httpFields)
-                ctx.write(BufferUtils.merge(response.body))
-                ctx.end()
+                val serverContentHandler = ctx.request.contentHandler as FileContentHandler
+                val clientBodyPath = Paths.get(tempPath, "http-proxy-client-body-${UUID.randomUUID()}")
+                try {
+                    log.debug {
+                        "server receives content path: ${serverContentHandler.path}, " +
+                                "length: ${Files.size(serverContentHandler.path)}"
+                    }
+
+                    val clientBodyContentHandler = HttpClientContentHandlerFactory.fileHandler(
+                        clientBodyPath,
+                        StandardOpenOption.CREATE_NEW,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.WRITE
+                    )
+                    val response = httpClient.request(ctx.method, ctx.uri)
+                        .addAll(ctx.httpFields)
+                        .contentProvider(FileContentProvider(serverContentHandler.path, StandardOpenOption.READ))
+                        .contentHandler(clientBodyContentHandler)
+                        .submit().await()
+                    log.debug {
+                        "client receives content path: $clientBodyPath, " +
+                                "length: ${Files.size(clientBodyPath)}, " +
+                                "response size: ${response.contentLength}"
+                    }
+
+                    ctx.setStatus(response.status)
+                    ctx.response.httpFields.addAll(response.httpFields)
+                    ctx.contentProvider(
+                        HttpServerContentProviderFactory.fileBody(
+                            clientBodyPath,
+                            StandardOpenOption.READ
+                        )
+                    )
+                    ctx.end().await()
+                } finally {
+                    Files.delete(serverContentHandler.path)
+                    Files.delete(clientBodyPath)
+                }
             }
     }
 
