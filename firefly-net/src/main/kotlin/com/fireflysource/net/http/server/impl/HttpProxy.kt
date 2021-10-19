@@ -1,6 +1,7 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.coroutine.asVoidFuture
+import com.fireflysource.common.io.deleteIfExistsAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientContentHandlerFactory
@@ -46,7 +47,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
             }
             .onHttpTunnelHandshakeComplete { connection, targetAddress ->
                 log.info("HTTP tunnel handshake success. target: $targetAddress")
-                connection.coroutineScope.launch { this.buildHttpTunnel(connection, targetAddress) }.asVoidFuture()
+                connection.coroutineScope.launch { buildHttpTunnel(this, connection, targetAddress) }.asVoidFuture()
             }
             .onHeaderComplete { ctx ->
                 if (ctx.expect100Continue()) {
@@ -106,17 +107,21 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                     )
                     ctx.end().await()
                 } finally {
-                    Files.delete(serverContentHandler.path)
-                    Files.delete(clientBodyPath)
+                    deleteIfExistsAsync(serverContentHandler.path)
+                    deleteIfExistsAsync(clientBodyPath)
                 }
             }
     }
 
-    private suspend fun CoroutineScope.buildHttpTunnel(connection: TcpConnection, targetAddress: InetSocketAddress) {
+    private suspend fun buildHttpTunnel(
+        coroutineScope: CoroutineScope,
+        connection: TcpConnection,
+        targetAddress: InetSocketAddress
+    ) {
         val targetConnection = tcpClient.connect(targetAddress).await()
-        val readFromClientJob = launch {
+        val readFromClientJob = coroutineScope.launch {
             while (true) {
-                val r = runCatching {
+                val r = this.runCatching {
                     val data = connection.read().await()
                     val size = targetConnection.write(data).await()
                     log.debug("write to target: $size")
@@ -127,9 +132,9 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 }
             }
         }
-        val writeToClientJob = launch {
+        val writeToClientJob = coroutineScope.launch {
             while (true) {
-                val r = runCatching {
+                val r = this.runCatching {
                     val data = targetConnection.read().await()
                     val size = connection.write(data).await()
                     connection.flush().await()
@@ -141,7 +146,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 }
             }
         }
-        runCatching {
+        coroutineScope.runCatching {
             readFromClientJob.join()
             log.info("HTTP tunnel read job exit.")
             writeToClientJob.join()
