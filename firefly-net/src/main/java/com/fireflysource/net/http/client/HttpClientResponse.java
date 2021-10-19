@@ -84,4 +84,18 @@ public interface HttpClientResponse {
      * @return The HTTP body raw binary data.
      */
     List<ByteBuffer> getBody();
+
+    /**
+     * Set the HTTP body content handler.
+     *
+     * @param contentHandler The HTTP body content handler.
+     */
+    void setContentHandler(HttpClientContentHandler contentHandler);
+
+    /**
+     * Get the HTTP body content handler.
+     *
+     * @return The HTTP body content handler.
+     */
+    HttpClientContentHandler getContentHandler();
 }

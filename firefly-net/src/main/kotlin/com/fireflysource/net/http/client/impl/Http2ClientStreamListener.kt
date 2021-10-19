@@ -3,7 +3,6 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.model.*
@@ -16,7 +15,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
 class Http2ClientStreamListener(
-    request: HttpClientRequest,
+    private val request: HttpClientRequest,
     private val future: CompletableFuture<HttpClientResponse>
 ) : Stream.Listener.Adapter() {
 
@@ -29,12 +28,9 @@ class Http2ClientStreamListener(
         }
     }
 
-    private val headerConsumer = request.headerComplete
-    private val contentHandler: HttpClientContentHandler? = request.contentHandler
     private val expectServerAcceptsContent: Boolean = request.httpFields.expectServerAcceptsContent()
-
     private val response =
-        AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), contentHandler)
+        AsyncHttpClientResponse(MetaData.Response(HttpVersion.HTTP_2, 0, HttpFields()), request.contentHandler)
     private val metaDataResponse = response.response
     val serverAccepted = if (expectServerAcceptsContent) CompletableFuture() else defaultServerAccepted
     private val trailer = HttpFields()
@@ -42,6 +38,7 @@ class Http2ClientStreamListener(
     private var receivedData = false
 
     private fun onMessageComplete() {
+        val contentHandler = request.contentHandler
         if (contentHandler != null) {
             contentHandler.closeAsync()
                 .thenAccept { future.complete(response) }
@@ -55,7 +52,7 @@ class Http2ClientStreamListener(
                 metaDataResponse.status = metaData.status
                 metaDataResponse.reason = metaData.reason
                 metaDataResponse.fields.addAll(metaData.fields)
-                headerConsumer.accept(response)
+                request.headerComplete.accept(request, response)
             }
             is MetaData.Request -> handleError(stream, "The HTTP2 client must receive response metadata.")
             else -> {
@@ -110,7 +107,7 @@ class Http2ClientStreamListener(
     override fun onData(stream: Stream, frame: DataFrame, result: Consumer<Result<Void>>) {
         try {
             receivedData = true
-            contentHandler?.accept(frame.data, response)
+            request.contentHandler?.accept(frame.data, response)
             if (frame.isEndStream) onMessageComplete()
         } finally {
             result.accept(Result.SUCCESS)

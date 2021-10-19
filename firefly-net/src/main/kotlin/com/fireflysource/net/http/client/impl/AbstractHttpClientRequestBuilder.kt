@@ -8,7 +8,7 @@ import com.fireflysource.net.http.common.model.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
+import java.util.function.BiConsumer
 import java.util.function.Supplier
 
 @Suppress("ReplacePutWithAssignment")
@@ -176,7 +176,8 @@ abstract class AbstractHttpClientRequestBuilder(
         return this
     }
 
-    override fun onHeaderComplete(headerConsumer: Consumer<HttpClientResponse>): HttpClientRequestBuilder {
+    override fun onHeaderComplete(headerComplete: BiConsumer<HttpClientRequest, HttpClientResponse>): HttpClientRequestBuilder {
+        httpRequest.headerComplete = headerComplete
         return this
     }
 

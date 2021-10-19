@@ -11,7 +11,7 @@ import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
+import java.util.function.BiConsumer
 import java.util.function.Supplier
 
 class AsyncHttpClientRequest : HttpClientRequest {
@@ -32,7 +32,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var contentProvider: HttpClientContentProvider? = null
     private var contentHandler: HttpClientContentHandler? = null
     private var http2Settings: Map<Int, Int>? = null
-    private var headerConsumer: Consumer<HttpClientResponse> = Consumer { }
+    private var headerComplete: BiConsumer<HttpClientRequest, HttpClientResponse> = BiConsumer { _, _ -> }
 
     override fun getMethod(): String = method
 
@@ -118,12 +118,12 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun getHttp2Settings(): Map<Int, Int>? = http2Settings
 
-    override fun setHeaderComplete(headerConsumer: Consumer<HttpClientResponse>) {
-        this.headerConsumer = headerConsumer
+    override fun setHeaderComplete(headerComplete: BiConsumer<HttpClientRequest, HttpClientResponse>) {
+        this.headerComplete = headerComplete
     }
 
-    override fun getHeaderComplete(): Consumer<HttpClientResponse> {
-        return headerConsumer
+    override fun getHeaderComplete(): BiConsumer<HttpClientRequest, HttpClientResponse> {
+        return headerComplete
     }
 }
 

@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -273,10 +273,10 @@ public interface HttpClientRequestBuilder {
     /**
      * Set the HTTP header response complete callback.
      *
-     * @param headerConsumer The HTTP header response complete callback.
+     * @param headerComplete The HTTP header response complete callback.
      * @return RequestBuilder
      */
-    HttpClientRequestBuilder onHeaderComplete(Consumer<HttpClientResponse> headerConsumer);
+    HttpClientRequestBuilder onHeaderComplete(BiConsumer<HttpClientRequest, HttpClientResponse> headerComplete);
 
     /**
      * Submit the HTTP request to the server using the connection pool.

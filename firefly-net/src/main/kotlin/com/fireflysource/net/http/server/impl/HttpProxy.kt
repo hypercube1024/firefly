@@ -1,19 +1,24 @@
 package com.fireflysource.net.http.server.impl
 
 import com.fireflysource.common.coroutine.asVoidFuture
+import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.deleteIfExistsAsync
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentHandlerFactory
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
-import com.fireflysource.net.http.common.content.handler.AbstractFileContentHandler
+import com.fireflysource.net.http.common.model.HttpHeader
+import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.server.HttpServerContentHandlerFactory
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory
 import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.impl.content.handler.ByteBufferContentHandler
+import com.fireflysource.net.http.server.impl.content.handler.FileContentHandler
 import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpConnection
@@ -23,6 +28,7 @@ import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.*
@@ -55,41 +61,62 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 } else if (ctx.method == HttpMethod.CONNECT.value) {
                     Result.DONE
                 } else {
-                    val path = Paths.get(tempPath, "http-proxy-server-body-${UUID.randomUUID()}")
-                    val handler = HttpServerContentHandlerFactory.fileHandler(
-                        path,
-                        StandardOpenOption.CREATE_NEW,
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE
-                    )
-                    ctx.contentHandler(handler)
+                    setServerContentHandler(ctx, httpConfig)
                     Result.DONE
                 }
             }
             .router().path("*").asyncHandler { ctx ->
-                val serverContentHandler = ctx.request.contentHandler as AbstractFileContentHandler<RoutingContext>
-                val clientBodyPath = Paths.get(tempPath, "http-proxy-client-body-${UUID.randomUUID()}")
+                var serverBodyPath: Path? = null
+                var clientBodyPath: Path? = null
+
                 try {
-                    log.debug {
-                        "server receives content path: ${serverContentHandler.path}, " +
-                                "length: ${Files.size(serverContentHandler.path)}"
+                    fun createFileHandler(): HttpClientContentHandler {
+                        clientBodyPath =
+                            Paths.get(tempPath, "com.fireflysource.http.proxy", "client-body-${UUID.randomUUID()}")
+                        return HttpClientContentHandlerFactory.fileHandler(
+                            clientBodyPath,
+                            StandardOpenOption.CREATE_NEW,
+                            StandardOpenOption.READ,
+                            StandardOpenOption.WRITE
+                        )
                     }
 
-                    val clientBodyContentHandler = HttpClientContentHandlerFactory.fileHandler(
-                        clientBodyPath,
-                        StandardOpenOption.CREATE_NEW,
-                        StandardOpenOption.READ,
-                        StandardOpenOption.WRITE
-                    )
-                    val response = httpClient.request(ctx.method, ctx.uri)
-                        .addAll(ctx.httpFields)
-                        .contentProvider(
+                    val clientContentProvider = when (val serverContentHandler = ctx.request.contentHandler) {
+                        is FileContentHandler -> {
+                            serverBodyPath = serverContentHandler.path
                             HttpClientContentProviderFactory.fileBody(
                                 serverContentHandler.path,
                                 StandardOpenOption.READ
                             )
+                        }
+                        is ByteBufferContentHandler -> HttpClientContentProviderFactory.bytesBody(
+                            BufferUtils.merge(
+                                serverContentHandler.getByteBuffers()
+                            )
                         )
-                        .contentHandler(clientBodyContentHandler)
+                        else -> throw IllegalStateException("The HTTP proxy content handler type error.")
+                    }
+
+                    val response = httpClient.request(ctx.method, ctx.uri)
+                        .addAll(ctx.httpFields)
+                        .contentProvider(clientContentProvider)
+                        .onHeaderComplete { request, response ->
+                            val maxResponseBody = 10 * 1024 * 1024L
+                            val clientBodyContentHandler =
+                                if (response.contentLength > maxResponseBody) {
+                                    createFileHandler()
+                                } else if (response.httpFields.contains(
+                                        HttpHeader.TRANSFER_ENCODING,
+                                        HttpHeaderValue.CHUNKED.value
+                                    )
+                                ) {
+                                    createFileHandler()
+                                } else {
+                                    HttpClientContentHandlerFactory.bytesHandler(maxResponseBody)
+                                }
+                            request.contentHandler = clientBodyContentHandler
+                            response.contentHandler = clientBodyContentHandler
+                        }
                         .submit().await()
                     log.debug {
                         "client receives content path: $clientBodyPath, " +
@@ -99,18 +126,68 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
 
                     ctx.setStatus(response.status)
                     ctx.response.httpFields.addAll(response.httpFields)
-                    ctx.contentProvider(
-                        HttpServerContentProviderFactory.fileBody(
-                            clientBodyPath,
-                            StandardOpenOption.READ
-                        )
-                    )
+                    when (val responseContentHandler = response.contentHandler) {
+                        is com.fireflysource.net.http.client.impl.content.handler.FileContentHandler -> {
+                            ctx.contentProvider(
+                                HttpServerContentProviderFactory.fileBody(
+                                    clientBodyPath,
+                                    StandardOpenOption.READ
+                                )
+                            )
+                        }
+                        is com.fireflysource.net.http.client.impl.content.handler.ByteBufferContentHandler -> {
+                            ctx.contentProvider(
+                                HttpServerContentProviderFactory.bytesBody(
+                                    BufferUtils.merge(
+                                        responseContentHandler.getByteBuffers()
+                                    )
+                                )
+                            )
+                        }
+                        else -> throw IllegalStateException("The HTTP client response content handler type error.")
+                    }
                     ctx.end().await()
                 } finally {
-                    deleteIfExistsAsync(serverContentHandler.path)
-                    deleteIfExistsAsync(clientBodyPath)
+                    val serverPath = serverBodyPath
+                    if (serverPath != null) {
+                        deleteIfExistsAsync(serverPath)
+                    }
+                    val clientPath = clientBodyPath
+                    if (clientPath != null) {
+                        deleteIfExistsAsync(clientPath)
+                    }
                 }
             }
+    }
+
+    private fun setServerContentHandler(ctx: RoutingContext, httpConfig: HttpConfig) {
+        fun setFileHandler() {
+            val path =
+                Paths.get(tempPath, "com.fireflysource.http.proxy", "server-body-${UUID.randomUUID()}")
+            val handler = HttpServerContentHandlerFactory.fileHandler(
+                path,
+                StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.READ,
+                StandardOpenOption.WRITE
+            )
+            ctx.contentHandler(handler)
+        }
+
+        fun setBytesHandler() {
+            ctx.contentHandler(HttpServerContentHandlerFactory.bytesHandler(httpConfig.maxRequestBodySize))
+        }
+
+        if (ctx.contentLength <= 0) {
+            if (ctx.httpFields.contains(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)) {
+                setFileHandler()
+            } else {
+                setBytesHandler()
+            }
+        } else if (ctx.contentLength > httpConfig.maxRequestBodySize) {
+            setFileHandler()
+        } else {
+            setBytesHandler()
+        }
     }
 
     private suspend fun buildHttpTunnel(

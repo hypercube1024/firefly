@@ -8,7 +8,7 @@ import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
@@ -177,14 +177,14 @@ public interface HttpClientRequest {
     /**
      * Set the HTTP header response complete callback.
      *
-     * @param headerConsumer The HTTP header response complete callback.
+     * @param headerComplete The HTTP header response complete callback.
      */
-    void setHeaderComplete(Consumer<HttpClientResponse> headerConsumer);
+    void setHeaderComplete(BiConsumer<HttpClientRequest, HttpClientResponse> headerComplete);
 
     /**
      * Get the HTTP header response complete callback.
      *
      * @return The HTTP header response complete callback.
      */
-    Consumer<HttpClientResponse> getHeaderComplete();
+    BiConsumer<HttpClientRequest, HttpClientResponse> getHeaderComplete();
 }

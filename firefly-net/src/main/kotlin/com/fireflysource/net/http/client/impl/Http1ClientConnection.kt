@@ -111,8 +111,7 @@ class Http1ClientConnection(
             }
 
             handler.init(
-                message.httpClientRequest.headerComplete,
-                message.contentHandler,
+                message.httpClientRequest,
                 message.expectServerAcceptsContent,
                 message.isHttpTunnel
             )
@@ -121,7 +120,7 @@ class Http1ClientConnection(
                 generateRequestAndWaitServerAccept(message)
                 waitResponse(message)
             } else {
-                // avoid the request can not response the server error code if the I/O exception happened during the client sends data.
+                // avoid the request can not respond the server error code if the I/O exception happened during the client sends data.
                 val result = coroutineScope.async { waitResponse(message) }
                 generateRequest(message)
                 result.await()

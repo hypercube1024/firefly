@@ -1,6 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.net.http.client.HttpClientContentHandler
+import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.common.exception.BadMessageException
 import com.fireflysource.net.http.common.model.*
@@ -8,24 +8,21 @@ import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
-import java.util.function.Consumer
 import java.util.function.Supplier
 
 class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     private val response: MetaData.Response = MetaData.Response(HttpVersion.HTTP_1_1, 0, HttpFields())
-    private var contentHandler: HttpClientContentHandler? = null
     private var expectServerAcceptsContent = false
     private var httpClientResponse: AsyncHttpClientResponse? = null
     private val trailers = HttpFields()
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
     private var isServerAcceptedContent: Boolean = false
     private var isHttpTunnel: Boolean = false
-    private var headerConsumer: Consumer<HttpClientResponse> = Consumer {}
+    private var httpRequest: HttpClientRequest? = null
 
-    fun init(headerConsumer: Consumer<HttpClientResponse>, contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean, isHttpTunnel: Boolean) {
-        this.headerConsumer = headerConsumer
-        this.contentHandler = contentHandler
+    fun init(httpRequest: HttpClientRequest, expectServerAcceptsContent: Boolean, isHttpTunnel: Boolean) {
+        this.httpRequest = httpRequest
         this.expectServerAcceptsContent = expectServerAcceptsContent
         this.isHttpTunnel = isHttpTunnel
     }
@@ -58,19 +55,21 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     override fun headerComplete(): Boolean {
-        val httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), contentHandler)
+        val httpClientResponse = AsyncHttpClientResponse(MetaData.Response(response), httpRequest?.contentHandler)
         this.httpClientResponse = httpClientResponse
         return if (isHttpTunnel) {
             responseChannel.trySend(httpClientResponse)
             true
         } else {
-            headerConsumer.accept(httpClientResponse)
+            val request = httpRequest
+            requireNotNull(request)
+            request.headerComplete.accept(request, httpClientResponse)
             false
         }
     }
 
     override fun content(buffer: ByteBuffer): Boolean {
-        contentHandler?.accept(buffer, httpClientResponse)
+        httpRequest?.contentHandler?.accept(buffer, httpClientResponse)
         return false
     }
 
@@ -100,7 +99,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     suspend fun complete(): HttpClientResponse {
-        contentHandler?.closeAsync()?.await()
+        httpRequest?.contentHandler?.closeAsync()?.await()
         return responseChannel.receive()
     }
 
@@ -108,7 +107,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
 
     fun reset() {
         response.recycle()
-        contentHandler = null
+        httpRequest = null
         trailers.clear()
     }
 }

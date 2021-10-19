@@ -14,7 +14,7 @@ import java.util.function.Supplier
 
 class AsyncHttpClientResponse(
     val response: MetaData.Response,
-    private val contentHandler: HttpClientContentHandler?
+    private var contentHandler: HttpClientContentHandler?
 ) : HttpClientResponse {
 
     private val cookieList: List<Cookie> by lazy {
@@ -54,6 +54,14 @@ class AsyncHttpClientResponse(
         .map { it as ByteBufferContentHandler }
         .map { it.getByteBuffers(getContentEncoding()) }
         .orElse(listOf())
+
+    override fun getContentHandler(): HttpClientContentHandler? {
+        return contentHandler
+    }
+
+    override fun setContentHandler(contentHandler: HttpClientContentHandler?) {
+        this.contentHandler = contentHandler
+    }
 
     private fun getContentEncoding(): Optional<ContentEncoding> {
         return Optional.ofNullable(this.httpFields[HttpHeader.CONTENT_ENCODING])
