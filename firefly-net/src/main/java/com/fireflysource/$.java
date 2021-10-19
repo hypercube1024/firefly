@@ -9,6 +9,7 @@ import com.fireflysource.net.http.client.HttpClientFactory;
 import com.fireflysource.net.http.common.HttpConfig;
 import com.fireflysource.net.http.server.HttpServer;
 import com.fireflysource.net.http.server.HttpServerFactory;
+import com.fireflysource.net.http.server.impl.HttpProxy;
 import com.fireflysource.net.tcp.TcpClient;
 import com.fireflysource.net.tcp.TcpClientFactory;
 import com.fireflysource.net.tcp.TcpServer;
@@ -121,6 +122,25 @@ public interface $ {
      */
     static HttpServer createHttpServer(HttpConfig httpConfig) {
         return HttpServerFactory.create(httpConfig);
+    }
+
+    /**
+     * Create a new HTTP proxy.
+     *
+     * @return The HTTP proxy.
+     */
+    static HttpProxy createHttpProxy() {
+        return HttpServerFactory.createHttpProxy();
+    }
+
+    /**
+     * Create a new HTTP proxy.
+     *
+     * @param httpConfig The HTTP config.
+     * @return The HTTP proxy.
+     */
+    static HttpProxy createHttpProxy(HttpConfig httpConfig) {
+        return HttpServerFactory.createHttpProxy(httpConfig);
     }
 
     /**

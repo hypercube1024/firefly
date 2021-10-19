@@ -9,7 +9,6 @@ import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.io.useAwait
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.Connection
-import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
 import com.fireflysource.net.http.client.HttpClientResponse
@@ -524,7 +523,6 @@ class Http1ClientConnection(
         val response: CompletableFuture<HttpClientResponse>,
         val request: MetaData.Request = toMetaDataRequest(httpClientRequest),
         val contentProvider: HttpClientContentProvider? = httpClientRequest.contentProvider,
-        val contentHandler: HttpClientContentHandler = httpClientRequest.contentHandler,
         val expectServerAcceptsContent: Boolean = httpClientRequest.httpFields.expectServerAcceptsContent(),
         val expectUpgradeHttp2: Boolean = expectUpgradeHttp2(httpClientRequest),
         val expectUpgradeWebSocket: Boolean = expectUpgradeWebsocket(httpClientRequest),

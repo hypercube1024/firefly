@@ -1,13 +1,13 @@
 package com.fireflysource.example
 
+import com.fireflysource.fx
 import com.fireflysource.net.http.client.HttpClient
 import com.fireflysource.net.http.client.HttpClientResponse
-import com.fireflysource.net.http.server.impl.HttpProxy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 
 suspend fun main() {
-    val proxy = HttpProxy()
+    val proxy = fx.createHttpProxy()
     proxy.listen("localhost", 1678)
 
     val client = createProxyHttpClient("localhost", 1678)

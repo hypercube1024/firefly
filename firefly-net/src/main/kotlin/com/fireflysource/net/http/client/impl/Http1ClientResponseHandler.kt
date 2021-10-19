@@ -99,8 +99,9 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     }
 
     suspend fun complete(): HttpClientResponse {
+        val response = responseChannel.receive()
         httpRequest?.contentHandler?.closeAsync()?.await()
-        return responseChannel.receive()
+        return response
     }
 
     fun isServerAcceptedContent(): Boolean = isServerAcceptedContent

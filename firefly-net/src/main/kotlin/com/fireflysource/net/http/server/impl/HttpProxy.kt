@@ -3,6 +3,7 @@ package com.fireflysource.net.http.server.impl
 import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.deleteIfExistsAsync
+import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.*
@@ -24,13 +25,14 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 import java.net.SocketAddress
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
-class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
+class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
 
     companion object {
         private val log = SystemLogger.create(HttpProxy::class.java)
@@ -64,6 +66,11 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
             .router().path("*").asyncHandler { ctx ->
                 buildNonSecureHttpHandler(ctx)
             }
+        val tempDir = Paths.get(tempPath, "com.fireflysource.http.proxy")
+        if (!Files.exists(tempDir)) {
+            Files.createDirectory(tempDir)
+        }
+        start()
     }
 
     private suspend fun buildNonSecureHttpHandler(ctx: RoutingContext) {
@@ -242,5 +249,14 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
 
     fun listen(host: String, port: Int) {
         server.listen(host, port)
+    }
+
+    override fun init() {
+    }
+
+    override fun destroy() {
+        server.stop()
+        tcpClient.stop()
+        httpClient.stop()
     }
 }

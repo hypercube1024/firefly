@@ -5,8 +5,11 @@ import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.sys.Result
 import com.fireflysource.net.http.client.HttpClientFactory
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.ProxyConfig
 import com.fireflysource.net.http.common.model.HttpMethod
 import com.fireflysource.net.http.common.model.HttpStatus
+import com.fireflysource.net.http.server.HttpServerContentProviderFactory
+import com.fireflysource.net.http.server.HttpServerFactory
 import com.fireflysource.net.http.server.impl.router.asyncBlockingHandler
 import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
@@ -379,6 +382,80 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
         tcpClient.stop()
         httpServer.stop()
+    }
+
+    @ParameterizedTest
+    @MethodSource("testParametersProvider")
+    @DisplayName("should send request via the http proxy successfully.")
+    fun testHttpProxy(protocol: String, schema: String): Unit = runBlocking {
+        val count = 1
+
+        val httpServer = createHttpServer(protocol, schema)
+        httpServer
+            .router().path("/hello/*").asyncHandler { ctx ->
+                assertTrue(getCurrentRoutingContext() != null)
+                ctx.write("into router -> ")
+                ctx.next().await()
+                ctx.end("end router.")
+            }
+            .router().get("/hello/:foo").handler { ctx ->
+                val p = ctx.getPathParameter("foo")
+                ctx.write("visit foo: $p |").next()
+            }
+            .router().get("/hello/*").handler { ctx ->
+                val p = ctx.getPathParameter(0)
+                ctx.write("visit pattern: $p |").next()
+            }
+            .router().method(HttpMethod.GET).pathRegex("/hello/([a-z]+)").handler { ctx ->
+                val p = ctx.getPathParameterByRegexGroup(1)
+                ctx.write("regex group: $p |").next()
+            }
+            .router().get("/hello/test").handler { ctx ->
+                ctx.write("visit test ").next()
+            }
+            .router().get("/length/test").handler { ctx ->
+                ctx.contentProvider(HttpServerContentProviderFactory.stringBody("1234567", StandardCharsets.UTF_8))
+                    .end()
+            }
+            .listen(address)
+
+        val proxyAddress = InetSocketAddress("localhost", Random.nextInt(10000, 20000))
+        val proxy = HttpServerFactory.createHttpProxy()
+        proxy.listen(proxyAddress)
+
+        val clientHttpConfig = HttpConfig()
+        val proxyConfig = ProxyConfig()
+        proxyConfig.host = proxyAddress.hostName
+        proxyConfig.port = proxyAddress.port
+        clientHttpConfig.proxyConfig = proxyConfig
+        val httpClient = HttpClientFactory.create(clientHttpConfig)
+        val time = runBlocking {
+            measureTimeMillis {
+                val futures = (1..count)
+                    .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
+                futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+                CompletableFuture.allOf(*futures.toTypedArray()).await()
+                val allDone = futures.all { it.isDone }
+                assertTrue(allDone)
+
+                val response = futures[0].await()
+
+                assertEquals(HttpStatus.OK_200, response.status)
+                assertEquals(
+                    "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
+                    response.stringBody
+                )
+                println(response)
+
+                val lengthResponse = httpClient.get("$schema://${address.hostName}:${address.port}/length/test").submit().await()
+                assertEquals(HttpStatus.OK_200, lengthResponse.status)
+                assertEquals("1234567", lengthResponse.stringBody)
+                println(lengthResponse)
+            }
+        }
+
+        finish(count, time, httpClient, httpServer)
+        proxy.stop()
     }
 
     @Test
