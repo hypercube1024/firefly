@@ -110,8 +110,13 @@ class Http1ClientConnection(
                 """.trimMargin()
             }
 
-            handler.init(message.contentHandler, message.expectServerAcceptsContent, message.isHttpTunnel)
-            val exit = if (message.expectServerAcceptsContent) {
+            handler.init(
+                message.httpClientRequest.headerComplete,
+                message.contentHandler,
+                message.expectServerAcceptsContent,
+                message.isHttpTunnel
+            )
+            if (message.expectServerAcceptsContent) {
                 // flush content data after the server response 100 continue.
                 generateRequestAndWaitServerAccept(message)
                 waitResponse(message)
@@ -121,8 +126,6 @@ class Http1ClientConnection(
                 generateRequest(message)
                 result.await()
             }
-
-            exit
         } catch (e: IOException) {
             log.info { "The TCP connection IO exception. id: $id info: ${e.javaClass.name} ${e.message}" }
             completeResponseExceptionally(message, e)

@@ -1,9 +1,6 @@
 package com.fireflysource.net.http.client.impl
 
-import com.fireflysource.net.http.client.HttpClientContentHandler
-import com.fireflysource.net.http.client.HttpClientContentProvider
-import com.fireflysource.net.http.client.HttpClientRequest
-import com.fireflysource.net.http.client.HttpClientRequestBuilder
+import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.client.impl.content.provider.ByteBufferContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
@@ -11,6 +8,7 @@ import com.fireflysource.net.http.common.model.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 @Suppress("ReplacePutWithAssignment")
@@ -175,6 +173,10 @@ abstract class AbstractHttpClientRequestBuilder(
 
     override fun upgradeHttp2(): HttpClientRequestBuilder {
         HttpProtocolNegotiator.addHttp2UpgradeHeader(httpRequest)
+        return this
+    }
+
+    override fun onHeaderComplete(headerConsumer: Consumer<HttpClientResponse>): HttpClientRequestBuilder {
         return this
     }
 

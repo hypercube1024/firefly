@@ -29,6 +29,7 @@ class Http2ClientStreamListener(
         }
     }
 
+    private val headerConsumer = request.headerComplete
     private val contentHandler: HttpClientContentHandler? = request.contentHandler
     private val expectServerAcceptsContent: Boolean = request.httpFields.expectServerAcceptsContent()
 
@@ -54,6 +55,7 @@ class Http2ClientStreamListener(
                 metaDataResponse.status = metaData.status
                 metaDataResponse.reason = metaData.reason
                 metaDataResponse.fields.addAll(metaData.fields)
+                headerConsumer.accept(response)
             }
             is MetaData.Request -> handleError(stream, "The HTTP2 client must receive response metadata.")
             else -> {

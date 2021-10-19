@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.model.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -172,4 +173,18 @@ public interface HttpClientRequest {
      * @return The HTTP2 settings.
      */
     Map<Integer, Integer> getHttp2Settings();
+
+    /**
+     * Set the HTTP header response complete callback.
+     *
+     * @param headerConsumer The HTTP header response complete callback.
+     */
+    void setHeaderComplete(Consumer<HttpClientResponse> headerConsumer);
+
+    /**
+     * Get the HTTP header response complete callback.
+     *
+     * @return The HTTP header response complete callback.
+     */
+    Consumer<HttpClientResponse> getHeaderComplete();
 }

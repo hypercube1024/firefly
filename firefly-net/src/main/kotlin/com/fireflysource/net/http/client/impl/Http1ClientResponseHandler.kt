@@ -8,6 +8,7 @@ import com.fireflysource.net.http.common.v1.decoder.HttpParser
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import java.nio.ByteBuffer
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 class Http1ClientResponseHandler : HttpParser.ResponseHandler {
@@ -20,8 +21,10 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
     private val responseChannel: Channel<AsyncHttpClientResponse> = Channel(Channel.UNLIMITED)
     private var isServerAcceptedContent: Boolean = false
     private var isHttpTunnel: Boolean = false
+    private var headerConsumer: Consumer<HttpClientResponse> = Consumer {}
 
-    fun init(contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean, isHttpTunnel: Boolean) {
+    fun init(headerConsumer: Consumer<HttpClientResponse>, contentHandler: HttpClientContentHandler, expectServerAcceptsContent: Boolean, isHttpTunnel: Boolean) {
+        this.headerConsumer = headerConsumer
         this.contentHandler = contentHandler
         this.expectServerAcceptsContent = expectServerAcceptsContent
         this.isHttpTunnel = isHttpTunnel
@@ -61,6 +64,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
             responseChannel.trySend(httpClientResponse)
             true
         } else {
+            headerConsumer.accept(httpClientResponse)
             false
         }
     }

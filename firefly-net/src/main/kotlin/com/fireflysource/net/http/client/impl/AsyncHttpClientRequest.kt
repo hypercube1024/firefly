@@ -3,6 +3,7 @@ package com.fireflysource.net.http.client.impl
 import com.fireflysource.net.http.client.HttpClientContentHandler
 import com.fireflysource.net.http.client.HttpClientContentProvider
 import com.fireflysource.net.http.client.HttpClientRequest
+import com.fireflysource.net.http.client.HttpClientResponse
 import com.fireflysource.net.http.client.impl.content.handler.StringContentHandler
 import com.fireflysource.net.http.client.impl.content.provider.MultiPartContentProvider
 import com.fireflysource.net.http.client.impl.content.provider.StringContentProvider
@@ -10,6 +11,7 @@ import com.fireflysource.net.http.common.codec.CookieGenerator
 import com.fireflysource.net.http.common.codec.UrlEncoded
 import com.fireflysource.net.http.common.model.*
 import java.nio.charset.StandardCharsets
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 class AsyncHttpClientRequest : HttpClientRequest {
@@ -30,6 +32,7 @@ class AsyncHttpClientRequest : HttpClientRequest {
     private var contentProvider: HttpClientContentProvider? = null
     private var contentHandler: HttpClientContentHandler? = null
     private var http2Settings: Map<Int, Int>? = null
+    private var headerConsumer: Consumer<HttpClientResponse> = Consumer { }
 
     override fun getMethod(): String = method
 
@@ -115,6 +118,13 @@ class AsyncHttpClientRequest : HttpClientRequest {
 
     override fun getHttp2Settings(): Map<Int, Int>? = http2Settings
 
+    override fun setHeaderComplete(headerConsumer: Consumer<HttpClientResponse>) {
+        this.headerConsumer = headerConsumer
+    }
+
+    override fun getHeaderComplete(): Consumer<HttpClientResponse> {
+        return headerConsumer
+    }
 }
 
 fun toMetaDataRequest(request: HttpClientRequest): MetaData.Request {

@@ -4,13 +4,15 @@ import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.http.client.HttpClientContentHandlerFactory
+import com.fireflysource.net.http.client.HttpClientContentProviderFactory
 import com.fireflysource.net.http.client.HttpClientFactory
-import com.fireflysource.net.http.client.impl.content.provider.FileContentProvider
 import com.fireflysource.net.http.common.HttpConfig
+import com.fireflysource.net.http.common.content.handler.AbstractFileContentHandler
 import com.fireflysource.net.http.common.model.HttpMethod
+import com.fireflysource.net.http.server.HttpServerContentHandlerFactory
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory
 import com.fireflysource.net.http.server.HttpServerFactory
-import com.fireflysource.net.http.server.impl.content.handler.FileContentHandler
+import com.fireflysource.net.http.server.RoutingContext
 import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.tcp.TcpClientFactory
 import com.fireflysource.net.tcp.TcpConnection
@@ -53,7 +55,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                     Result.DONE
                 } else {
                     val path = Paths.get(tempPath, "http-proxy-server-body-${UUID.randomUUID()}")
-                    val handler = FileContentHandler(
+                    val handler = HttpServerContentHandlerFactory.fileHandler(
                         path,
                         StandardOpenOption.CREATE_NEW,
                         StandardOpenOption.READ,
@@ -64,7 +66,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                 }
             }
             .router().path("*").asyncHandler { ctx ->
-                val serverContentHandler = ctx.request.contentHandler as FileContentHandler
+                val serverContentHandler = ctx.request.contentHandler as AbstractFileContentHandler<RoutingContext>
                 val clientBodyPath = Paths.get(tempPath, "http-proxy-client-body-${UUID.randomUUID()}")
                 try {
                     log.debug {
@@ -80,7 +82,12 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()) {
                     )
                     val response = httpClient.request(ctx.method, ctx.uri)
                         .addAll(ctx.httpFields)
-                        .contentProvider(FileContentProvider(serverContentHandler.path, StandardOpenOption.READ))
+                        .contentProvider(
+                            HttpClientContentProviderFactory.fileBody(
+                                serverContentHandler.path,
+                                StandardOpenOption.READ
+                            )
+                        )
                         .contentHandler(clientBodyContentHandler)
                         .submit().await()
                     log.debug {
