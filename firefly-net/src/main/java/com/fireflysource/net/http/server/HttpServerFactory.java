@@ -1,8 +1,8 @@
 package com.fireflysource.net.http.server;
 
 import com.fireflysource.net.http.common.HttpConfig;
+import com.fireflysource.net.http.server.impl.AsyncHttpProxy;
 import com.fireflysource.net.http.server.impl.AsyncHttpServer;
-import com.fireflysource.net.http.server.impl.HttpProxy;
 
 abstract public class HttpServerFactory {
 
@@ -15,10 +15,10 @@ abstract public class HttpServerFactory {
     }
 
     public static HttpProxy createHttpProxy() {
-        return new HttpProxy();
+        return new AsyncHttpProxy();
     }
 
     public static HttpProxy createHttpProxy(HttpConfig config) {
-        return new HttpProxy(config);
+        return new AsyncHttpProxy(config);
     }
 }

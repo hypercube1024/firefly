@@ -39,6 +39,9 @@ public class HttpConfig implements Cloneable {
     private long maxRequestBodySize = (4 * 1024) + (200 * 1024 * 1024);
     private int uploadFileSizeThreshold = 4 * 1024 * 1024;
 
+    // HTTP proxy config
+    private long httpProxyBodySizeThreshold = 10 * 1024 * 1024;
+
 
     public TcpChannelGroup getTcpChannelGroup() {
         return tcpChannelGroup;
@@ -214,6 +217,14 @@ public class HttpConfig implements Cloneable {
 
     public void setClientRetryCount(int clientRetryCount) {
         this.clientRetryCount = clientRetryCount;
+    }
+
+    public long getHttpProxyBodySizeThreshold() {
+        return httpProxyBodySizeThreshold;
+    }
+
+    public void setHttpProxyBodySizeThreshold(long httpProxyBodySizeThreshold) {
+        this.httpProxyBodySizeThreshold = httpProxyBodySizeThreshold;
     }
 
     @Override

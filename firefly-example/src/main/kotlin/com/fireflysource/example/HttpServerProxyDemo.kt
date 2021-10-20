@@ -14,7 +14,6 @@ suspend fun main() {
     testHttpsProxy(client)
     delay(1000)
     testHttpProxy(client)
-
 }
 
 suspend fun testHttpsProxy(client: HttpClient) {

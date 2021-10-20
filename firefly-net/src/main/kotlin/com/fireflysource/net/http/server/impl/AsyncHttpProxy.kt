@@ -11,10 +11,7 @@ import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
 import com.fireflysource.net.http.common.model.HttpMethod
-import com.fireflysource.net.http.server.HttpServerContentHandlerFactory
-import com.fireflysource.net.http.server.HttpServerContentProviderFactory
-import com.fireflysource.net.http.server.HttpServerFactory
-import com.fireflysource.net.http.server.RoutingContext
+import com.fireflysource.net.http.server.*
 import com.fireflysource.net.http.server.impl.content.handler.ByteBufferContentHandler
 import com.fireflysource.net.http.server.impl.content.handler.FileContentHandler
 import com.fireflysource.net.http.server.impl.router.asyncHandler
@@ -32,16 +29,17 @@ import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
-class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
+class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(), HttpProxy {
 
     companion object {
-        private val log = SystemLogger.create(HttpProxy::class.java)
+        private val log = SystemLogger.create(AsyncHttpProxy::class.java)
         private val tempPath = System.getProperty("java.io.tmpdir")
     }
 
     private val server = HttpServerFactory.create(httpConfig)
     private val tcpClient = TcpClientFactory.create()
     private val httpClient = HttpClientFactory.create(httpConfig)
+    private val httpProxyBodySizeThreshold = httpConfig.httpProxyBodySizeThreshold
 
     init {
         server
@@ -59,13 +57,11 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
                 } else if (ctx.method == HttpMethod.CONNECT.value) {
                     Result.DONE
                 } else {
-                    setServerContentHandler(ctx, httpConfig)
+                    setServerContentHandler(ctx)
                     Result.DONE
                 }
             }
-            .router().path("*").asyncHandler { ctx ->
-                buildNonSecureHttpHandler(ctx)
-            }
+            .router().path("*").asyncHandler { buildNonSecureHttpHandler(it) }
         val tempDir = Paths.get(tempPath, "com.fireflysource.http.proxy")
         if (!Files.exists(tempDir)) {
             Files.createDirectory(tempDir)
@@ -109,9 +105,8 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
                 .addAll(ctx.httpFields)
                 .contentProvider(clientContentProvider)
                 .onHeaderComplete { request, response ->
-                    val maxResponseBody = 10 * 1024 * 1024L
                     val clientBodyContentHandler =
-                        if (response.contentLength > maxResponseBody) {
+                        if (response.contentLength > httpProxyBodySizeThreshold) {
                             createFileHandler()
                         } else if (response.httpFields.contains(
                                 HttpHeader.TRANSFER_ENCODING,
@@ -120,7 +115,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
                         ) {
                             createFileHandler()
                         } else {
-                            HttpClientContentHandlerFactory.bytesHandler(maxResponseBody)
+                            HttpClientContentHandlerFactory.bytesHandler(httpProxyBodySizeThreshold)
                         }
                     request.contentHandler = clientBodyContentHandler
                     response.contentHandler = clientBodyContentHandler
@@ -170,7 +165,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
         }
     }
 
-    private fun setServerContentHandler(ctx: RoutingContext, httpConfig: HttpConfig) {
+    private fun setServerContentHandler(ctx: RoutingContext) {
         fun setFileHandler() {
             val path =
                 Paths.get(tempPath, "com.fireflysource.http.proxy", "server-body-${UUID.randomUUID()}")
@@ -184,7 +179,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
         }
 
         fun setBytesHandler() {
-            ctx.contentHandler(HttpServerContentHandlerFactory.bytesHandler(httpConfig.maxRequestBodySize))
+            ctx.contentHandler(HttpServerContentHandlerFactory.bytesHandler(httpProxyBodySizeThreshold))
         }
 
         if (ctx.contentLength <= 0) {
@@ -193,7 +188,7 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
             } else {
                 setBytesHandler()
             }
-        } else if (ctx.contentLength > httpConfig.maxRequestBodySize) {
+        } else if (ctx.contentLength > httpProxyBodySizeThreshold) {
             setFileHandler()
         } else {
             setBytesHandler()
@@ -243,12 +238,8 @@ class HttpProxy(httpConfig: HttpConfig = HttpConfig()): AbstractLifeCycle() {
         connection.closeAsync().await()
     }
 
-    fun listen(address: SocketAddress) {
+    override fun listen(address: SocketAddress) {
         server.listen(address)
-    }
-
-    fun listen(host: String, port: Int) {
-        server.listen(host, port)
     }
 
     override fun init() {
