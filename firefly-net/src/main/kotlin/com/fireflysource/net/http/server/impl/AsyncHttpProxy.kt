@@ -173,13 +173,9 @@ class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(
             ctx.contentHandler(HttpServerContentHandlerFactory.bytesHandler(httpProxyBodySizeThreshold))
         }
 
-        if (ctx.contentLength <= 0) {
-            if (ctx.httpFields.contains(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)) {
-                setFileHandler()
-            } else {
-                setBytesHandler()
-            }
-        } else if (ctx.contentLength > httpProxyBodySizeThreshold) {
+        if (ctx.contentLength > httpProxyBodySizeThreshold) {
+            setFileHandler()
+        } else if (ctx.httpFields.contains(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)) {
             setFileHandler()
         } else {
             setBytesHandler()
