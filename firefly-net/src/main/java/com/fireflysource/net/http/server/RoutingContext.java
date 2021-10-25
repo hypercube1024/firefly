@@ -409,6 +409,17 @@ public interface RoutingContext {
     }
 
     /**
+     * Add HTTP response fields.
+     *
+     * @param fields The HTTP response fields.
+     * @return The routing context.
+     */
+    default RoutingContext addAll(HttpFields fields) {
+        getResponse().getHttpFields().addAll(fields);
+        return this;
+    }
+
+    /**
      * Set the HTTP trailer fields.
      *
      * @param supplier The HTTP trailer fields supplier.

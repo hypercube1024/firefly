@@ -1,15 +1,13 @@
 package com.fireflysource.net.http.server.impl
 
+import com.fireflysource.common.concurrent.exceptionallyAccept
 import com.fireflysource.common.coroutine.asVoidFuture
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.common.io.deleteIfExistsAsync
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
-import com.fireflysource.net.http.client.HttpClientContentHandler
-import com.fireflysource.net.http.client.HttpClientContentHandlerFactory
-import com.fireflysource.net.http.client.HttpClientContentProviderFactory
-import com.fireflysource.net.http.client.HttpClientFactory
+import com.fireflysource.net.http.client.*
 import com.fireflysource.net.http.common.HttpConfig
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.common.model.HttpHeaderValue
@@ -40,6 +38,7 @@ class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(
         private val tempPath = System.getProperty("java.io.tmpdir")
         private const val httpBodyDir = "com.fireflysource.http.proxy"
         private const val httpServerBodyPathKey = "httpProxyServerContentPath"
+        private const val httpClientBodyPathKey = "httpProxyClientContentPath"
     }
 
     private val server = HttpServerFactory.create(httpConfig)
@@ -72,59 +71,58 @@ class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(
         if (!Files.exists(tempDir)) {
             Files.createDirectory(tempDir)
         }
+        log.info("HTTP proxy content temp file path: $tempDir")
         start()
     }
 
     private suspend fun buildNonSecureHttpHandler(ctx: RoutingContext) {
-        val serverBodyPath: Path? = ctx.getAttribute(httpServerBodyPathKey)?.let { it as Path }
-        var clientBodyPath: Path? = null
-
         try {
-            fun createFileHandler(): HttpClientContentHandler {
-                clientBodyPath =
-                    Paths.get(tempPath, httpBodyDir, "client-body-${UUID.randomUUID()}")
-                return HttpClientContentHandlerFactory.fileHandler(
-                    clientBodyPath,
-                    StandardOpenOption.CREATE_NEW,
-                    StandardOpenOption.READ,
-                    StandardOpenOption.WRITE
-                )
-            }
-
             val response = httpClient.request(ctx.method, ctx.uri)
                 .addAll(ctx.httpFields)
                 .contentProvider(createClientContentProvider(ctx.request.contentHandler))
-                .onHeaderComplete { request, response ->
-                    val clientBodyContentHandler =
-                        if (response.contentLength > httpProxyBodySizeThreshold) {
-                            createFileHandler()
-                        } else if (response.httpFields.contains(
-                                HttpHeader.TRANSFER_ENCODING,
-                                HttpHeaderValue.CHUNKED.value
-                            )
-                        ) {
-                            createFileHandler()
-                        } else {
-                            HttpClientContentHandlerFactory.bytesHandler(httpProxyBodySizeThreshold)
-                        }
-                    request.contentHandler = clientBodyContentHandler
-                    response.contentHandler = clientBodyContentHandler
-                }
+                .onHeaderComplete { request, response -> setClientContentHandler(request, response, ctx) }
                 .submit().await()
 
             ctx.setStatus(response.status)
-            ctx.response.httpFields.addAll(response.httpFields)
-            ctx.contentProvider(createServerContentProvider(response.contentHandler, clientBodyPath))
-            ctx.end().await()
+                .addAll(response.httpFields)
+                .contentProvider(createServerContentProvider(response.contentHandler))
+                .end().await()
         } finally {
-            serverBodyPath?.let {
-                deleteIfExistsAsync(it).asCompletableFuture()
-                    .thenAccept { success -> log.debug("delete server body temp file. $success") }
-            }
-            clientBodyPath?.let {
-                deleteIfExistsAsync(it).asCompletableFuture()
-                    .thenAccept { success -> log.debug("delete client body temp file. $success") }
-            }
+            clearBodyTempFile(ctx)
+        }
+    }
+
+    private fun setClientContentHandler(
+        request: HttpClientRequest,
+        response: HttpClientResponse,
+        ctx: RoutingContext
+    ) {
+        val clientBodyContentHandler = createClientContentHandler(response, ctx)
+        request.contentHandler = clientBodyContentHandler
+        response.contentHandler = clientBodyContentHandler
+    }
+
+    private fun createClientContentHandler(
+        response: HttpClientResponse,
+        ctx: RoutingContext
+    ): HttpClientContentHandler {
+        fun createFileHandler(): HttpClientContentHandler {
+            val clientBodyPath =
+                Paths.get(tempPath, httpBodyDir, "client-body-${UUID.randomUUID()}")
+            ctx.setAttribute(httpClientBodyPathKey, clientBodyPath)
+            return HttpClientContentHandlerFactory.fileHandler(
+                clientBodyPath,
+                StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.READ,
+                StandardOpenOption.WRITE
+            )
+        }
+        return if (response.contentLength > httpProxyBodySizeThreshold) {
+            createFileHandler()
+        } else if (response.httpFields.contains(HttpHeader.TRANSFER_ENCODING, HttpHeaderValue.CHUNKED.value)) {
+            createFileHandler()
+        } else {
+            HttpClientContentHandlerFactory.bytesHandler(httpProxyBodySizeThreshold)
         }
     }
 
@@ -140,19 +138,17 @@ class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(
             else -> throw IllegalStateException("The HTTP proxy content handler type error.")
         }
 
-    private fun createServerContentProvider(
-        responseContentHandler: HttpClientContentHandler,
-        clientBodyPath: Path?
-    ) = when (responseContentHandler) {
-        is com.fireflysource.net.http.client.impl.content.handler.FileContentHandler -> HttpServerContentProviderFactory.fileBody(
-            clientBodyPath,
-            StandardOpenOption.READ
-        )
-        is com.fireflysource.net.http.client.impl.content.handler.ByteBufferContentHandler -> HttpServerContentProviderFactory.bytesBody(
-            BufferUtils.merge(responseContentHandler.getByteBuffers())
-        )
-        else -> throw IllegalStateException("The HTTP client response content handler type error.")
-    }
+    private fun createServerContentProvider(clientContentHandler: HttpClientContentHandler) =
+        when (clientContentHandler) {
+            is com.fireflysource.net.http.client.impl.content.handler.FileContentHandler -> HttpServerContentProviderFactory.fileBody(
+                clientContentHandler.path,
+                StandardOpenOption.READ
+            )
+            is com.fireflysource.net.http.client.impl.content.handler.ByteBufferContentHandler -> HttpServerContentProviderFactory.bytesBody(
+                BufferUtils.merge(clientContentHandler.getByteBuffers())
+            )
+            else -> throw IllegalStateException("The HTTP client response content handler type error.")
+        }
 
 
     private fun setServerContentHandler(ctx: RoutingContext) {
@@ -179,6 +175,19 @@ class AsyncHttpProxy(httpConfig: HttpConfig = HttpConfig()) : AbstractLifeCycle(
             setFileHandler()
         } else {
             setBytesHandler()
+        }
+    }
+
+    private fun clearBodyTempFile(ctx: RoutingContext) {
+        ctx.getAttribute(httpServerBodyPathKey)?.let {
+            deleteIfExistsAsync(it as Path).asCompletableFuture()
+                .thenAccept { success -> log.debug("delete server body temp file. $success") }
+                .exceptionallyAccept { e -> log.error(e) { "delete server body temp file exception." } }
+        }
+        ctx.getAttribute(httpClientBodyPathKey)?.let {
+            deleteIfExistsAsync(it as Path).asCompletableFuture()
+                .thenAccept { success -> log.debug("delete client body temp file. $success") }
+                .exceptionallyAccept { e -> log.error(e) { "delete client body temp file exception." } }
         }
     }
 
