@@ -61,7 +61,7 @@
 
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.6.0</kotlin.version>
-        <kotlin.coroutine.version>1.5.2</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.6.0-RC</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.5</kotlin.compiler.languageVersion>
@@ -74,18 +74,18 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.12.3</jackson.version>
+        <jackson.version>2.12.5</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.6</openjsse.version>
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.12</spring.reactor.version>
+        <spring.reactor.version>2020.0.13</spring.reactor.version>
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
-        <junit.version>5.8.0</junit.version>
-        <mockito.version>3.12.4</mockito.version>
+        <junit.version>5.8.1</junit.version>
+        <mockito.version>4.1.0</mockito.version>
     </properties>
 
     <dependencyManagement>
