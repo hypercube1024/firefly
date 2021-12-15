@@ -8,7 +8,7 @@ import com.fireflysource.serialization.SerializationServiceFactory.json
 import com.fireflysource.wechat.enterprise.group.bot.model.GroupBotMessageResult
 import com.fireflysource.wechat.enterprise.group.bot.model.MessageBuilder
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -55,7 +55,7 @@ class TestGroupBotMessageService {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send wechat enterprise group bot message successfully.")
-    fun test(path: String, expectedResult: GroupBotMessageResult) = runBlocking {
+    fun test(path: String, expectedResult: GroupBotMessageResult) = runTest {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
         val webHookUrl = "https://$host:$port$path"

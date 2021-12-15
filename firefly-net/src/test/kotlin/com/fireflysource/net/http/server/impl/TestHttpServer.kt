@@ -15,7 +15,7 @@ import com.fireflysource.net.http.server.impl.router.asyncHandler
 import com.fireflysource.net.http.server.impl.router.getCurrentRoutingContext
 import com.fireflysource.net.tcp.TcpClientFactory
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -35,7 +35,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should visit router chain successfully.")
-    fun testRouterChain(protocol: String, schema: String) {
+    fun testRouterChain(protocol: String, schema: String) = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -64,24 +64,22 @@ class TestHttpServer : AbstractHttpServerTestBase() {
             .listen(address)
 
         val httpClient = HttpClientFactory.create()
-        val time = runBlocking {
-            measureTimeMillis {
-                val futures = (1..count)
-                    .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
-                futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
-                CompletableFuture.allOf(*futures.toTypedArray()).await()
-                val allDone = futures.all { it.isDone }
-                assertTrue(allDone)
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
 
-                val response = futures[0].await()
+            val response = futures[0].await()
 
-                assertEquals(HttpStatus.OK_200, response.status)
-                assertEquals(
-                    "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
-                    response.stringBody
-                )
-                println(response)
-            }
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals(
+                "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
+                response.stringBody
+            )
+            println(response)
         }
 
         finish(count, time, httpClient, httpServer)
@@ -90,7 +88,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should enable and disable router successfully.")
-    fun testEnableAndDisableRouter(protocol: String, schema: String): Unit = runBlocking {
+    fun testEnableAndDisableRouter(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -134,7 +132,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should get and set attributes successfully.")
-    fun testContextAttributes(protocol: String, schema: String): Unit = runBlocking {
+    fun testContextAttributes(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -182,7 +180,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response 500 when the router does not commit.")
-    fun testRouterNotCommit(protocol: String, schema: String): Unit = runBlocking {
+    fun testRouterNotCommit(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -215,7 +213,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response 400 when the resource not found.")
-    fun testResourceNotFound(protocol: String, schema: String): Unit = runBlocking {
+    fun testResourceNotFound(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -244,7 +242,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response 500 when the router happens exception.")
-    fun testRouterException(protocol: String, schema: String): Unit = runBlocking {
+    fun testRouterException(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -278,7 +276,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should response 400 when the host header is missing.")
-    fun testNoHostHeader(): Unit = runBlocking {
+    fun testNoHostHeader(): Unit = runTest {
         val httpServer = createHttpServer("http1", "http")
         httpServer
             .router().get("/testNoHost").handler { it.end("ok") }
@@ -299,7 +297,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should establish HTTP tunnel successfully.")
-    fun testHttpTunnel(): Unit = runBlocking {
+    fun testHttpTunnel(): Unit = runTest {
         val httpServer = createHttpServer("http1", "http")
         httpServer
             .onAcceptHttpTunnel { request ->
@@ -342,7 +340,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should establish HTTP tunnel failure.")
-    fun testHttpTunnelFailure(): Unit = runBlocking {
+    fun testHttpTunnelFailure(): Unit = runTest {
         val httpServer = createHttpServer("http1", "http")
         httpServer
             .onAcceptHttpTunnel { request ->
@@ -387,7 +385,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send request via the http proxy successfully.")
-    fun testHttpProxy(protocol: String, schema: String): Unit = runBlocking {
+    fun testHttpProxy(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -429,29 +427,28 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         proxyConfig.port = proxyAddress.port
         clientHttpConfig.proxyConfig = proxyConfig
         val httpClient = HttpClientFactory.create(clientHttpConfig)
-        val time = runBlocking {
-            measureTimeMillis {
-                val futures = (1..count)
-                    .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
-                futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
-                CompletableFuture.allOf(*futures.toTypedArray()).await()
-                val allDone = futures.all { it.isDone }
-                assertTrue(allDone)
+        val time = measureTimeMillis {
+            val futures = (1..count)
+                .map { httpClient.get("$schema://${address.hostName}:${address.port}/hello/bar").submit() }
+            futures.forEach { f -> f.exceptionallyAccept { println(it.message) } }
+            CompletableFuture.allOf(*futures.toTypedArray()).await()
+            val allDone = futures.all { it.isDone }
+            assertTrue(allDone)
 
-                val response = futures[0].await()
+            val response = futures[0].await()
 
-                assertEquals(HttpStatus.OK_200, response.status)
-                assertEquals(
-                    "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
-                    response.stringBody
-                )
-                println(response)
+            assertEquals(HttpStatus.OK_200, response.status)
+            assertEquals(
+                "into router -> visit foo: bar |visit pattern: bar |regex group: bar |end router.",
+                response.stringBody
+            )
+            println(response)
 
-                val lengthResponse = httpClient.get("$schema://${address.hostName}:${address.port}/length/test").submit().await()
-                assertEquals(HttpStatus.OK_200, lengthResponse.status)
-                assertEquals("1234567", lengthResponse.stringBody)
-                println(lengthResponse)
-            }
+            val lengthResponse =
+                httpClient.get("$schema://${address.hostName}:${address.port}/length/test").submit().await()
+            assertEquals(HttpStatus.OK_200, lengthResponse.status)
+            assertEquals("1234567", lengthResponse.stringBody)
+            println(lengthResponse)
         }
 
         finish(count, time, httpClient, httpServer)
@@ -459,7 +456,7 @@ class TestHttpServer : AbstractHttpServerTestBase() {
     }
 
     @Test
-    fun testCopy() {
+    fun testCopy() = runTest {
         val httpServer = createHttpServer("http1", "http")
         httpServer.router().get("/testCopy")
             .asyncBlockingHandler {
@@ -482,23 +479,22 @@ class TestHttpServer : AbstractHttpServerTestBase() {
         newHttpServer.enableSecureConnection().listen(newAddress)
 
         val httpClient = HttpClientFactory.create()
-        runBlocking {
-            var response = httpClient.get("http://${address.hostName}:${address.port}/testCopy").submit().await()
-            assertEquals("Origin server", response.stringBody)
-            println(response)
 
-            response = httpClient.get("http://${address.hostName}:${address.port}/blockingTask").submit().await()
-            assertEquals("Blocking task", response.stringBody)
-            println(response)
+        var response = httpClient.get("http://${address.hostName}:${address.port}/testCopy").submit().await()
+        assertEquals("Origin server", response.stringBody)
+        println(response)
 
-            response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/testCopy").submit().await()
-            assertEquals("Origin server", response.stringBody)
-            println(response)
+        response = httpClient.get("http://${address.hostName}:${address.port}/blockingTask").submit().await()
+        assertEquals("Blocking task", response.stringBody)
+        println(response)
 
-            response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/blockingTask").submit().await()
-            assertEquals("Blocking task", response.stringBody)
-            println(response)
-        }
+        response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/testCopy").submit().await()
+        assertEquals("Origin server", response.stringBody)
+        println(response)
+
+        response = httpClient.get("https://${newAddress.hostName}:${newAddress.port}/blockingTask").submit().await()
+        assertEquals("Blocking task", response.stringBody)
+        println(response)
 
         httpClient.stop()
         httpServer.stop()

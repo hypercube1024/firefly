@@ -2,6 +2,7 @@ package com.fireflysource.common.coroutine
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -24,7 +25,7 @@ class TestCoroutineLocal {
 
     @Test
     @DisplayName("should get the coroutine local value across the many coroutines.")
-    fun test(): Unit = runBlocking {
+    fun test(): Unit = runTest {
         val dispatcher: CoroutineDispatcher = dispatchExecutor.asCoroutineDispatcher()
         val key = "index"
         val jobs = List(5) { i ->
@@ -81,7 +82,7 @@ class TestCoroutineLocal {
 
     @Test
     @DisplayName("should cancel the channel")
-    fun testCancelChannel(): Unit = runBlocking {
+    fun testCancelChannel(): Unit = runTest {
         val count = AtomicInteger()
         val channel = Channel<Int>()
         val job = computeAsync {

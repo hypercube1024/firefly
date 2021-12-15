@@ -15,7 +15,7 @@ import com.fireflysource.net.tcp.TcpServerFactory
 import com.fireflysource.net.tcp.aio.AioTcpChannelGroup
 import com.fireflysource.net.tcp.onAcceptAsync
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -58,7 +58,7 @@ class TestAsyncHttpClientConnectionManager {
     }
 
     @Test
-    fun test() = runBlocking {
+    fun test() = runTest {
         val config = HttpConfig()
         val connectionFactory = TcpClientConnectionFactory(
             AioTcpChannelGroup("async-http-client"),

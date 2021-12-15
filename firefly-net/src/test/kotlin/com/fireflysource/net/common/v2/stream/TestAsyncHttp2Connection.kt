@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -367,7 +367,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should send data frame successfully after the stream creates.")
-    fun testData(): Unit = runBlocking {
+    fun testData(): Unit = runTest {
         val host = "localhost"
         val port = 4027
         val tcpConfig = TcpConfig(30, true)
@@ -444,7 +444,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should create a new stream successfully")
-    fun testNewStream() = runBlocking {
+    fun testNewStream() = runTest {
         val host = "localhost"
         val port = 4023
         val tcpConfig = TcpConfig(30, true)
@@ -558,7 +558,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should send go away frame successfully")
-    fun testGoAway() = runBlocking {
+    fun testGoAway() = runTest {
         val host = "localhost"
         val port = 4022
         val tcpConfig = TcpConfig(30, false)
@@ -603,7 +603,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should send settings frame successfully")
-    fun testSettings() = runBlocking {
+    fun testSettings() = runTest {
         val host = "localhost"
         val port = 4021
         val channel = Channel<SettingsFrame>(UNLIMITED)
@@ -662,7 +662,7 @@ class TestAsyncHttp2Connection {
 
         http2Connection.settings(settingsFrame) { println("send settings success. $it") }
 
-        val receivedSettings = withTimeout(2000) { channel.receive() }
+        val receivedSettings = channel.receive()//withTimeout(2000) { channel.receive() }
         assertEquals(settingsFrame.settings, receivedSettings.settings)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
@@ -673,7 +673,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should send ping frame successfully")
-    fun testPing() = runBlocking {
+    fun testPing() = runTest {
         val host = "localhost"
         val port = 4020
         val count = 10L
@@ -718,7 +718,7 @@ class TestAsyncHttp2Connection {
             http2Connection.ping(pingFrame) { println("send ping success. $it") }
         }
 
-        val pingCount = withTimeout(2000) { channel.receive() }
+        val pingCount = channel.receive()//withTimeout(20000) { channel.receive() }
         assertTrue(pingCount > 0)
 
         http2Connection.close(ErrorCode.NO_ERROR.code, "exit test") {}
@@ -729,7 +729,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should receive reset frame when the stream idle timeout")
-    fun testStreamIdleTimeout(): Unit = runBlocking {
+    fun testStreamIdleTimeout(): Unit = runTest {
         val host = "localhost"
         val port = 4100
         val tcpConfig = TcpConfig(30, false)
@@ -810,7 +810,7 @@ class TestAsyncHttp2Connection {
 
     @Test
     @DisplayName("should set the stream idle timeout successfully")
-    fun testSetStreamIdleTimeout(): Unit = runBlocking {
+    fun testSetStreamIdleTimeout(): Unit = runTest {
         val host = "localhost"
         val port = 4101
         val tcpConfig = TcpConfig(30, false)

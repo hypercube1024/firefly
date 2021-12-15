@@ -11,7 +11,7 @@ import com.fireflysource.net.websocket.common.model.WebSocketBehavior
 import com.fireflysource.net.websocket.common.model.WebSocketPolicy
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -54,7 +54,7 @@ class TestAsyncWebSocketConnection {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send and receive websocket messages successfully.")
-    fun test(extension: String, tls: Boolean) = runBlocking {
+    fun test(extension: String, tls: Boolean) = runTest {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
 

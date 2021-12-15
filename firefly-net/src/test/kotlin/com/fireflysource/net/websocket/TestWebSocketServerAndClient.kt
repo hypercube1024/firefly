@@ -7,7 +7,7 @@ import com.fireflysource.net.websocket.common.frame.Frame
 import com.fireflysource.net.websocket.common.frame.TextFrame
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.params.ParameterizedTest
@@ -50,7 +50,7 @@ class TestWebSocketServerAndClient {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should receive websocket messages successfully.")
-    fun test(extensions: String, scheme: String) = runBlocking {
+    fun test(extensions: String, scheme: String) = runTest {
         val host = "localhost"
         val port = Random.nextInt(10000, 20000)
         val count = 100

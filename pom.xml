@@ -60,8 +60,8 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.6.0</kotlin.version>
-        <kotlin.coroutine.version>1.6.0-RC</kotlin.coroutine.version>
+        <kotlin.version>1.6.10</kotlin.version>
+        <kotlin.coroutine.version>1.6.0-RC2</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.5</kotlin.compiler.languageVersion>
@@ -169,6 +169,11 @@
                 <artifactId>kotlinx-coroutines-reactor</artifactId>
                 <version>${kotlin.coroutine.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlinx</groupId>
+                <artifactId>kotlinx-coroutines-test</artifactId>
+                <version>${kotlin.coroutine.version}</version>
+            </dependency>
 
             <!-- junit -->
             <dependency>
@@ -270,6 +275,11 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

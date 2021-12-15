@@ -9,7 +9,7 @@ import com.fireflysource.net.http.common.model.HttpStatus
 import com.fireflysource.net.http.common.model.MimeTypes
 import com.fireflysource.net.http.server.impl.AbstractHttpServerTestBase
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
@@ -23,7 +23,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should allow request successfully.")
-    fun testSimpleRequest(protocol: String, schema: String): Unit = runBlocking {
+    fun testSimpleRequest(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -60,7 +60,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response expose headers successfully.")
-    fun testExposeHeaders(protocol: String, schema: String): Unit = runBlocking {
+    fun testExposeHeaders(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -99,7 +99,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should not allow origin via simple request.")
-    fun testNotAllowOriginSimpleRequest(protocol: String, schema: String): Unit = runBlocking {
+    fun testNotAllowOriginSimpleRequest(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -134,7 +134,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response preflight request successfully.")
-    fun testPreflightRequest(protocol: String, schema: String): Unit = runBlocking {
+    fun testPreflightRequest(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -194,7 +194,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should block by preflight request when the headers do not allow to access.")
-    fun testNotAllowHeader(protocol: String, schema: String): Unit = runBlocking {
+    fun testNotAllowHeader(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -252,7 +252,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should block by preflight request when the methods do not allow to access.")
-    fun testNotAllowMethod(protocol: String, schema: String): Unit = runBlocking {
+    fun testNotAllowMethod(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)
@@ -311,7 +311,7 @@ class TestCorsHandler : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should not allow origin via preflight.")
-    fun testNotAllowOriginPreflight(protocol: String, schema: String): Unit = runBlocking {
+    fun testNotAllowOriginPreflight(protocol: String, schema: String): Unit = runTest {
         val count = 1
 
         val httpServer = createHttpServer(protocol, schema)

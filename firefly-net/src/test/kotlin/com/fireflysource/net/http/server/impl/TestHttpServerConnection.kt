@@ -11,7 +11,7 @@ import com.fireflysource.net.http.common.model.*
 import com.fireflysource.net.http.server.HttpServerContentProviderFactory.stringBody
 import com.fireflysource.net.http.server.impl.content.provider.DefaultContentProvider
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -31,7 +31,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should receive request and response texts successfully.")
-    fun test(protocol: String, schema: String): Unit = runBlocking {
+    fun test(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -77,7 +77,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response texts with content length successfully.")
-    fun testResponseContentLength(protocol: String, schema: String): Unit = runBlocking {
+    fun testResponseContentLength(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -109,7 +109,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should receive query strings and form inputs successfully.")
-    fun testQueryStringsAndFormInputs(protocol: String, schema: String): Unit = runBlocking {
+    fun testQueryStringsAndFormInputs(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -154,7 +154,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response default html successfully.")
-    fun testContentProvider(protocol: String, schema: String): Unit = runBlocking {
+    fun testContentProvider(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -188,7 +188,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response trailer successfully.")
-    fun testTrailer(protocol: String, schema: String): Unit = runBlocking {
+    fun testTrailer(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -230,7 +230,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should redirect successfully.")
-    fun testRedirect(protocol: String, schema: String): Unit = runBlocking {
+    fun testRedirect(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -259,7 +259,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should get cookies and set cookies successfully.")
-    fun testCookies(protocol: String, schema: String): Unit = runBlocking {
+    fun testCookies(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -298,7 +298,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should receive gbk content successfully.")
-    fun testGBK(protocol: String, schema: String): Unit = runBlocking {
+    fun testGBK(protocol: String, schema: String): Unit = runTest {
         val count = 100
         val charset = Charset.forName("GBK")
 
@@ -331,7 +331,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should accept 100 continue.")
-    fun testAccept100Continue(protocol: String, schema: String): Unit = runBlocking {
+    fun testAccept100Continue(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -363,7 +363,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should not accept 100 continue and receive the error status successfully.")
-    fun testNotAccept100Continue(protocol: String, schema: String): Unit = runBlocking {
+    fun testNotAccept100Continue(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -400,7 +400,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should upgrade http2 protocol successfully.")
-    fun testUpgradeHttp2(): Unit = runBlocking {
+    fun testUpgradeHttp2(): Unit = runTest {
         val count = 30
 
         val httpServer = createHttpServer("http1", "http")
@@ -428,7 +428,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should trigger window update successfully.")
-    fun testBufferedWindowUpdate(): Unit = runBlocking {
+    fun testBufferedWindowUpdate(): Unit = runTest {
         val count = 1
         val content = (1..30_000_000).joinToString("") { "a" }
         val httpConfig = HttpConfig()
@@ -463,7 +463,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should receive multi part content successfully.")
-    fun testMultiPartContent(protocol: String, schema: String): Unit = runBlocking {
+    fun testMultiPartContent(protocol: String, schema: String): Unit = runTest {
         val count = 100
 
         val httpServer = createHttpServer(protocol, schema)
@@ -513,7 +513,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should send request by non persistence connection successfully.")
-    fun testClientShortConnection(): Unit = runBlocking {
+    fun testClientShortConnection(): Unit = runTest {
         val count = 30
 
         val httpServer = createHttpServer("http1", "http")
@@ -550,7 +550,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
 
     @Test
     @DisplayName("should close connection by server successfully.")
-    fun testCloseConnectionByServer(): Unit = runBlocking {
+    fun testCloseConnectionByServer(): Unit = runTest {
         val count = 30
 
         val httpServer = createHttpServer("http1", "http")
@@ -587,7 +587,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response 413 when the multi-part too large.")
-    fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runBlocking {
+    fun testMultiPartTooLarge(protocol: String, schema: String): Unit = runTest {
         val count = 20 // TODO http1 client close connection exception
 
         val httpConfig = HttpConfig()
@@ -647,7 +647,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should response 413 when the http body too large.")
-    fun testHttpBodyTooLarge(protocol: String, schema: String): Unit = runBlocking {
+    fun testHttpBodyTooLarge(protocol: String, schema: String): Unit = runTest {
         val count = 20 // TODO http1 client close connection exception
 
         val content = (1..30_000_000).joinToString("") { "a" }

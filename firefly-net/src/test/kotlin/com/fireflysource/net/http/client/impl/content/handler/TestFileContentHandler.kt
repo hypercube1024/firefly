@@ -4,7 +4,7 @@ import com.fireflysource.common.io.readFileBytesAsync
 import com.fireflysource.net.http.client.HttpClientContentHandlerFactory.fileHandler
 import com.fireflysource.net.http.client.HttpClientResponse
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -37,7 +37,7 @@ class TestFileContentHandler {
 
     @Test
     @DisplayName("should write data to file successfully")
-    fun test() = runBlocking {
+    fun test() = runTest {
         val handler = fileHandler(tmpFile, WRITE)
         arrayOf(
             ByteBuffer.wrap("hello".toByteArray()),

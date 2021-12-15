@@ -3,7 +3,7 @@ package com.fireflysource.net.http.client.impl.content.provider
 import com.fireflysource.common.io.BufferUtils
 import com.fireflysource.net.http.client.HttpClientContentProviderFactory.bytesBody
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -27,7 +27,7 @@ class TestByteBufferContentProvider {
 
     @Test
     @DisplayName("should read buffer successfully")
-    fun testRead() = runBlocking {
+    fun testRead() = runTest {
         val content = BufferUtils.allocate(12)
         val pos = BufferUtils.flipToFill(content)
         content.putInt(333)

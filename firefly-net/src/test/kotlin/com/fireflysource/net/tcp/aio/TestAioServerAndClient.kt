@@ -10,8 +10,12 @@ import com.fireflysource.net.tcp.secure.conscrypt.NoCheckConscryptSSLContextFact
 import com.fireflysource.net.tcp.secure.conscrypt.SelfSignedCertificateConscryptSSLContextFactory
 import com.fireflysource.net.tcp.secure.wildfly.NoCheckWildflySSLContextFactory
 import com.fireflysource.net.tcp.secure.wildfly.SelfSignedCertificateWildflySSLContextFactory
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -66,7 +70,7 @@ class TestAioServerAndClient {
     @ParameterizedTest
     @MethodSource("testParametersProvider")
     @DisplayName("should send and receive messages successfully.")
-    fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean, securityProvider: String) = runBlocking {
+    fun test(bufType: String, enableSecure: Boolean, enableBuffer: Boolean, securityProvider: String) = runTest {
         val host = "localhost"
         val port = Random.nextInt(30000, 50000)
 
@@ -214,7 +218,7 @@ class TestAioServerAndClient {
 
     @Test
     @DisplayName("should close when the connection is timeout.")
-    fun testTimeout() = runBlocking {
+    fun testTimeout() = runTest {
         val host = "localhost"
         val port = Random.nextInt(10000, 50000)
 
@@ -256,7 +260,7 @@ class TestAioServerAndClient {
 
     @Test
     @DisplayName("should close connection successfully.")
-    fun testClose(): Unit = runBlocking {
+    fun testClose(): Unit = runTest {
         val host = "localhost"
         val port = Random.nextInt(10000, 50000)
 

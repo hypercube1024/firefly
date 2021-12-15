@@ -11,7 +11,7 @@ import com.fireflysource.net.http.common.model.HttpFields
 import com.fireflysource.net.http.common.model.HttpHeader
 import com.fireflysource.net.http.server.RoutingContext
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -25,7 +25,7 @@ class TestMultiPartContentHandler {
 
     @Test
     @DisplayName("should handle multi part content successfully.")
-    fun test(): Unit = runBlocking {
+    fun test(): Unit = runTest {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
@@ -65,7 +65,7 @@ class TestMultiPartContentHandler {
 
     @Test
     @DisplayName("should get the bad message exception.")
-    fun testEof(): Unit = runBlocking {
+    fun testEof(): Unit = runTest {
         val provider = MultiPartContentProvider()
         val ctx = mockRoutingContext(provider)
         val handler = MultiPartContentHandler()
@@ -86,7 +86,7 @@ class TestMultiPartContentHandler {
 
     @Test
     @DisplayName("should save content to temp file successfully")
-    fun testFileSizeThreshold(): Unit = runBlocking {
+    fun testFileSizeThreshold(): Unit = runTest {
         val provider = MultiPartContentProvider()
         val buffer = createMultiPartContent(provider)
         val ctx = mockRoutingContext(provider)
