@@ -491,7 +491,7 @@ public class UrlEncoded extends MultiMap<String> implements Cloneable {
 
         int totalLength = 0;
 
-        try (ByteArrayOutputStream2 output = new ByteArrayOutputStream2();) {
+        try (ByteArrayOutputStream2 output = new ByteArrayOutputStream2()) {
             int size = 0;
 
             while ((c = in.read()) > 0) {

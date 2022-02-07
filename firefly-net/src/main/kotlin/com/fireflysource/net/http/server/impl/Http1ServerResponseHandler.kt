@@ -37,8 +37,8 @@ class Http1ServerResponseHandler(private val http1ServerConnection: Http1ServerC
             when (val message = responseChannel.receive()) {
                 is Header -> generateHeader(message)
                 is Http1OutputBuffer -> generateContent(message)
-                is Http1OutputBuffers -> generateContent(message)
                 is Http1OutputBufferList -> generateContent(message)
+                is Http1OutputBuffers -> generateContent(message)
                 is EndResponse -> completeContent(message)
                 is EndResponseHandler -> {
                     log.info { "Exit the server response handler. id: ${http1ServerConnection.id}" }

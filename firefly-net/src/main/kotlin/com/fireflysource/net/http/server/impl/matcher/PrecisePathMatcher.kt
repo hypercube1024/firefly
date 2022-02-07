@@ -18,7 +18,7 @@ class PrecisePathMatcher : AbstractPreciseMatcher() {
         return super.match(path)
     }
 
-    override fun getMatchType(): MatchType? {
+    override fun getMatchType(): MatchType {
         return MatchType.PATH
     }
 

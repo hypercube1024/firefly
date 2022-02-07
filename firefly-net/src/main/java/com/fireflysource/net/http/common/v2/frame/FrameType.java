@@ -21,7 +21,7 @@ public enum FrameType {
 
     private final int type;
 
-    private FrameType(int type) {
+    FrameType(int type) {
         this.type = type;
         Types.types.put(type, this);
     }

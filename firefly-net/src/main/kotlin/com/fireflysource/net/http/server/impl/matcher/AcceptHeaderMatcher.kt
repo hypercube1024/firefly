@@ -12,7 +12,7 @@ import java.util.*
 
 class AcceptHeaderMatcher : AbstractPreciseMatcher() {
 
-    override fun getMatchType(): MatchType? {
+    override fun getMatchType(): MatchType {
         return MatchType.ACCEPT
     }
 
@@ -24,7 +24,7 @@ class AcceptHeaderMatcher : AbstractPreciseMatcher() {
 
         return acceptMIMETypes
             .map { findRouters(it) }
-            .filter { !it.isNullOrEmpty() }
+            .filter { !it.isEmpty() }
             .map { Matcher.MatchResult(it, emptyMap(), matchType) }
             .firstOrNull()
     }

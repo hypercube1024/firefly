@@ -100,7 +100,7 @@ class HttpGeneratorServerHTTPTest {
         private String val;
         private int[] supportedHttpVersions;
 
-        private ConnectionType(String val, int... supportedHttpVersions) {
+        ConnectionType(String val, int... supportedHttpVersions) {
             this.val = val;
             this.supportedHttpVersions = supportedHttpVersions;
         }

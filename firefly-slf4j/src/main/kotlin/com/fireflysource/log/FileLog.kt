@@ -372,7 +372,7 @@ class FileLog : Log {
             if (stackTraceElement.className == "com.fireflysource.log.ClassNameLogWrap")
                 arr[6]
             else stackTraceElement
-        } else stackTraceElement
+        } else null
     }
 
     private fun write(logItem: LogItem) {

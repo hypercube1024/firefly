@@ -571,7 +571,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                 val allDone = futures.all { it.isDone }
                 assertTrue(allDone)
                 val response = futures[0].await()
-                val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                val failureCount = futures.count { it.isCompletedExceptionally }
                 println("exception: $failureCount")
                 println(response)
                 assertEquals(HttpStatus.OK_200, response.status)
@@ -629,7 +629,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     CompletableFuture.allOf(*futures.toTypedArray()).await()
                     val allDone = futures.all { it.isDone }
                     assertTrue(allDone)
-                    val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                    val failureCount = futures.count { it.isCompletedExceptionally }
                     println("failure count: $failureCount")
 
                     val response = futures[0].await()
@@ -672,7 +672,7 @@ class TestHttpServerConnection : AbstractHttpServerTestBase() {
                     CompletableFuture.allOf(*futures.toTypedArray()).await()
                     val allDone = futures.all { it.isDone }
                     assertTrue(allDone)
-                    val failureCount = futures.filter { it.isCompletedExceptionally }.count()
+                    val failureCount = futures.count { it.isCompletedExceptionally }
                     println("failure count: $failureCount")
 
                     val response = futures[0].await()

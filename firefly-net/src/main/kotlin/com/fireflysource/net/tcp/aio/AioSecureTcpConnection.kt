@@ -64,12 +64,13 @@ class AioSecureTcpConnection(
         while (true) {
             when (val message = encryptedOutChannel.receive()) {
                 is OutputBuffer -> encryptAndFlushBuffer(message)
-                is OutputBuffers -> encryptAndFlushBuffers(message)
                 is OutputBufferList -> encryptAndFlushBuffers(message)
+                is OutputBuffers -> encryptAndFlushBuffers(message)
                 is ShutdownOutput -> {
                     shutdownOutput(message)
                     break
                 }
+                else -> {}
             }
         }
     }.invokeOnCompletion { cause ->
@@ -77,8 +78,8 @@ class AioSecureTcpConnection(
         encryptedOutChannel.consumeAll { message ->
             when (message) {
                 is OutputBuffer -> message.result.accept(Result.createFailedResult(-1, e))
-                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
                 is OutputBufferList -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
                 is ShutdownOutput -> message.result.accept(Result.createFailedResult(e))
                 else -> {
                 }

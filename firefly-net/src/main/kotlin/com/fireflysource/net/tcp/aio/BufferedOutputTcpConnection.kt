@@ -39,13 +39,14 @@ class BufferedOutputTcpConnection(
         while (true) {
             when (val message = outputMessageChannel.receive()) {
                 is OutputBuffer -> appendOutputBuffer(message)
-                is OutputBuffers -> appendOutputBuffers(message)
                 is OutputBufferList -> appendOutputBuffers(message)
+                is OutputBuffers -> appendOutputBuffers(message)
                 is FlushOutput -> flushBuffer(message)
                 is ShutdownOutput -> {
                     shutdownOutput(message)
                     break
                 }
+                else -> {}
             }
         }
     }.invokeOnCompletion { cause ->
@@ -53,8 +54,8 @@ class BufferedOutputTcpConnection(
         outputMessageChannel.consumeAll { message ->
             when (message) {
                 is OutputBuffer -> message.result.accept(Result.createFailedResult(-1, e))
-                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
                 is OutputBufferList -> message.result.accept(Result.createFailedResult(-1, e))
+                is OutputBuffers -> message.result.accept(Result.createFailedResult(-1, e))
                 is ShutdownOutput -> message.result.accept(Result.createFailedResult(e))
                 is FlushOutput -> message.result.accept(Result.createFailedResult(e))
                 else -> {

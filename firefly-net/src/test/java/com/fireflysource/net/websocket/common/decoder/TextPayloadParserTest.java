@@ -80,7 +80,7 @@ public class TextPayloadParserTest {
     @Test
     public void testMediumMaskedText() throws Exception {
         StringBuffer sb = new StringBuffer();
-        ;
+
         for (int i = 0; i < 14; i++) {
             sb.append("Hell\uFF4f Medium W\uFF4Frld ");
         }

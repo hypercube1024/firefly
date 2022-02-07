@@ -10,7 +10,7 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
     private static final ILoggerFactory loggerFactory = new LogFactoryImpl();
     private static final String loggerFactoryClassStr = LogFactoryImpl.class.getName();
 
-    public static final StaticLoggerBinder getSingleton() {
+    public static StaticLoggerBinder getSingleton() {
         return SINGLETON;
     }
 

@@ -1186,7 +1186,7 @@ class TestLazyList {
         assertTrue(arr.getClass().isArray());
         assertTrue(arr instanceof String[]);
 
-        String strs[] = (String[]) arr;
+        String[] strs = (String[]) arr;
         assertEquals(1, strs.length);
         assertEquals("a", strs[0]);
     }
@@ -1205,7 +1205,7 @@ class TestLazyList {
         assertTrue(arr.getClass().isArray());
         assertTrue(arr instanceof String[]);
 
-        String strs[] = (String[]) arr;
+        String[] strs = (String[]) arr;
         assertEquals(3, strs.length);
         assertEquals("a", strs[0]);
         assertEquals("b", strs[1]);
@@ -1227,7 +1227,7 @@ class TestLazyList {
         assertTrue(arr.getClass().isArray());
         assertTrue(arr instanceof int[]);
 
-        int nums[] = (int[]) arr;
+        int[] nums = (int[]) arr;
         assertEquals(4, nums.length);
         assertEquals(22, nums[0]);
         assertEquals(333, nums[1]);
@@ -1250,7 +1250,7 @@ class TestLazyList {
         assertTrue(arr.getClass().isArray());
         assertTrue(arr instanceof String[]);
 
-        String strs[] = (String[]) arr;
+        String[] strs = (String[]) arr;
         assertEquals(3, strs.length);
         assertEquals("a", strs[0]);
         assertEquals("b", strs[1]);
@@ -1693,7 +1693,7 @@ class TestLazyList {
      */
     @Test
     void testArray2List_NullInput() {
-        Object input[] = null;
+        Object[] input = null;
         Object list = ArrayUtils.asMutableList(input);
         assertNotNull(list);
         assertTrue(list instanceof List);
@@ -1765,9 +1765,9 @@ class TestLazyList {
      */
     @Test
     void testAddToArray_NullInput_NullItem() {
-        Object input[] = null;
+        Object[] input = null;
 
-        Object arr[] = ArrayUtils.addToArray(input, null, Object.class);
+        Object[] arr = ArrayUtils.addToArray(input, null, Object.class);
         assertNotNull(arr);
         if (STRICT) {
             // Adding null item to array should result in nothing added?
@@ -1786,9 +1786,9 @@ class TestLazyList {
         assumeTrue(STRICT);
 
         // Harsh test case.
-        Object input[] = null;
+        Object[] input = null;
 
-        Object arr[] = ArrayUtils.addToArray(input, null, null);
+        Object[] arr = ArrayUtils.addToArray(input, null, null);
         assertNotNull(arr);
         if (STRICT) {
             // Adding null item to array should result in nothing added?
@@ -1803,9 +1803,9 @@ class TestLazyList {
      */
     @Test
     void testAddToArray_NullInput_SimpleItem() {
-        Object input[] = null;
+        Object[] input = null;
 
-        Object arr[] = ArrayUtils.addToArray(input, "a", String.class);
+        Object[] arr = ArrayUtils.addToArray(input, "a", String.class);
         assertNotNull(arr);
         assertEquals(1, arr.length);
         assertEquals("a", arr[0]);
@@ -1885,9 +1885,9 @@ class TestLazyList {
      */
     @Test
     void testRemoveFromArray_NullInput_NullItem() {
-        Object input[] = null;
+        Object[] input = null;
 
-        Object arr[] = ArrayUtils.removeFromArray(input, null);
+        Object[] arr = ArrayUtils.removeFromArray(input, null);
         assertNull(arr);
     }
 
@@ -1896,9 +1896,9 @@ class TestLazyList {
      */
     @Test
     void testRemoveFromArray_NullInput_SimpleItem() {
-        Object input[] = null;
+        Object[] input = null;
 
-        Object arr[] = ArrayUtils.removeFromArray(input, "a");
+        Object[] arr = ArrayUtils.removeFromArray(input, "a");
         assertNull(arr);
     }
 

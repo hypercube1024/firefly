@@ -84,7 +84,7 @@ class AsyncHttpServerRequest(
         }
     }
 
-    override fun getContentHandler(): HttpServerContentHandler? = this.contentHandler
+    override fun getContentHandler(): HttpServerContentHandler = this.contentHandler
 
     override fun setContentHandler(contentHandler: HttpServerContentHandler) {
         this.contentHandler = contentHandler

@@ -77,8 +77,8 @@ abstract class AbstractAioTcpConnection(
             outputMessageChannel.consumeAll { message ->
                 when (message) {
                     is OutputBuffer -> message.result.accept(createFailedResult(-1, e))
-                    is OutputBuffers -> message.result.accept(createFailedResult(-1, e))
                     is OutputBufferList -> message.result.accept(createFailedResult(-1, e))
+                    is OutputBuffers -> message.result.accept(createFailedResult(-1, e))
                     is ShutdownOutput -> message.result.accept(createFailedResult(e))
                     else -> {
                     }
@@ -101,11 +101,11 @@ abstract class AbstractAioTcpConnection(
 
         private suspend fun write(output: OutputDataMessage): Long = when (output) {
             is OutputBuffer -> socketChannel.writeAwait(output.buffer, writeTimeout, timeUnit).toLong()
-            is OutputBuffers -> socketChannel.writeAwait(
+            is OutputBufferList -> socketChannel.writeAwait(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
                 writeTimeout, timeUnit
             )
-            is OutputBufferList -> socketChannel.writeAwait(
+            is OutputBuffers -> socketChannel.writeAwait(
                 output.buffers, output.getCurrentOffset(), output.getCurrentLength(),
                 writeTimeout, timeUnit
             )
@@ -143,8 +143,8 @@ abstract class AbstractAioTcpConnection(
             fun complete() {
                 when (output) {
                     is OutputBuffer -> output.result.accept(Result(true, totalLength.toInt(), null))
-                    is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                     is OutputBufferList -> output.result.accept(Result(true, totalLength, null))
+                    is OutputBuffers -> output.result.accept(Result(true, totalLength, null))
                 }
             }
 
@@ -161,8 +161,8 @@ abstract class AbstractAioTcpConnection(
         private fun failed(outputBuffers: OutputDataMessage, exception: Exception?) {
             when (outputBuffers) {
                 is OutputBuffer -> outputBuffers.result.accept(Result(false, -1, exception))
-                is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
                 is OutputBufferList -> outputBuffers.result.accept(Result(false, -1, exception))
+                is OutputBuffers -> outputBuffers.result.accept(Result(false, -1, exception))
             }
         }
 

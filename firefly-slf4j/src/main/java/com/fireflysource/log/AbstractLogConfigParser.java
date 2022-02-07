@@ -123,7 +123,7 @@ public abstract class AbstractLogConfigParser implements LogConfigParser {
             fileLog.setMaxSplitTime(DEFAULT_MAX_SPLIT_TIME);
         }
 
-        System.out.println("initialize log " + fileLog.toString());
+        System.out.println("initialize log " + fileLog);
         return fileLog;
     }
 

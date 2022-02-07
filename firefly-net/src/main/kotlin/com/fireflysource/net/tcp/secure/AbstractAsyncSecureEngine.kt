@@ -176,8 +176,8 @@ abstract class AbstractAsyncSecureEngine(
 
         fun wrap() = when (outAppBuffer) {
             is OutputBuffer -> sslEngine.wrap(outAppBuffer.buffer, packetBuffer)
-            is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
             is OutputBufferList -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
+            is OutputBuffers -> sslEngine.wrap(outAppBuffer.buffers, packetBuffer)
         }
 
         wrap@ while (true) {
