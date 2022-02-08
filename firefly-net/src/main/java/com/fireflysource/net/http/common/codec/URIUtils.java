@@ -20,7 +20,8 @@ import java.nio.charset.StandardCharsets;
  * formatting.
  * </p>
  */
-public class URIUtils implements Cloneable {
+@SuppressWarnings("unused")
+public class URIUtils {
 
     public static final String SLASH = "/";
     public static final String HTTP = "http";

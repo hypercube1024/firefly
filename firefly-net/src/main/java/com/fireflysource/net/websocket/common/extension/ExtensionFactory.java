@@ -12,9 +12,10 @@ import com.fireflysource.net.websocket.common.model.ExtensionConfig;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 public abstract class ExtensionFactory implements Iterable<Class<? extends Extension>> {
-    private ServiceLoader<Extension> extensionLoader = ServiceLoader.load(Extension.class);
-    private Map<String, Class<? extends Extension>> availableExtensions;
+    private static final ServiceLoader<Extension> extensionLoader = ServiceLoader.load(Extension.class);
+    private final Map<String, Class<? extends Extension>> availableExtensions;
 
     public ExtensionFactory() {
         availableExtensions = new HashMap<>();

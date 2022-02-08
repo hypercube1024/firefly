@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 
+import static com.fireflysource.net.websocket.common.extension.AbstractExtension.getFlags;
+
 /**
  * Parsing of a frames in WebSocket land.
  */
@@ -43,7 +45,7 @@ public class Parser {
     // payload specific
     private ByteBuffer payload;
     private int payloadLength;
-    private PayloadProcessor maskProcessor = new DeMaskProcessor();
+    private final PayloadProcessor maskProcessor = new DeMaskProcessor();
 
     /**
      * Is there an extension using RSV flag?
@@ -59,8 +61,8 @@ public class Parser {
 
     private IncomingFrames incomingFramesHandler;
 
-    public Parser(WebSocketPolicy wspolicy) {
-        this.policy = wspolicy;
+    public Parser(WebSocketPolicy policy) {
+        this.policy = policy;
     }
 
     private void assertSanePayloadLength(long len) {
@@ -94,22 +96,8 @@ public class Parser {
         }
     }
 
-    public void configureFromExtensions(List<? extends Extension> exts) {
-        // default
-        flagsInUse = 0x00;
-
-        // configure from list of extensions in use
-        for (Extension ext : exts) {
-            if (ext.isRsv1User()) {
-                flagsInUse = (byte) (flagsInUse | 0x40);
-            }
-            if (ext.isRsv2User()) {
-                flagsInUse = (byte) (flagsInUse | 0x20);
-            }
-            if (ext.isRsv3User()) {
-                flagsInUse = (byte) (flagsInUse | 0x10);
-            }
-        }
+    public void configureFromExtensions(List<? extends Extension> extensions) {
+        flagsInUse = getFlags(extensions);
     }
 
     public IncomingFrames getIncomingFramesHandler() {

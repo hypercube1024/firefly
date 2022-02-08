@@ -7,8 +7,10 @@ import com.fireflysource.net.websocket.common.frame.Frame;
 import com.fireflysource.net.websocket.common.model.*;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unused")
 public abstract class AbstractExtension implements Extension {
 
     private static final LazyLogger log = SystemLogger.create(AbstractExtension.class);
@@ -117,6 +119,22 @@ public abstract class AbstractExtension implements Extension {
 
     public void setPolicy(WebSocketPolicy policy) {
         this.policy = policy;
+    }
+
+    public static byte getFlags(List<? extends Extension> extensions) {
+        byte flags = 0x00;
+        for (Extension ext : extensions) {
+            if (ext.isRsv1User()) {
+                flags = (byte) (flags | 0x40);
+            }
+            if (ext.isRsv2User()) {
+                flags = (byte) (flags | 0x20);
+            }
+            if (ext.isRsv3User()) {
+                flags = (byte) (flags | 0x10);
+            }
+        }
+        return flags;
     }
 
     @Override

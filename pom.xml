@@ -80,7 +80,7 @@
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.30</slf4j.api.version>
-        <spring.reactor.version>2020.0.13</spring.reactor.version>
+        <spring.reactor.version>2020.0.15</spring.reactor.version>
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
