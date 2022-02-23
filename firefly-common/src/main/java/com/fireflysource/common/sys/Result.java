@@ -15,6 +15,7 @@ public class Result<T> {
 
     public static final CompletableFuture<Void> DONE = doneFuture();
     public static final Result<Void> SUCCESS = new Result<>(true, null, null);
+    @SuppressWarnings("rawtypes")
     private static final Consumer EMPTY = createEmptyConsumer();
 
     private final boolean success;
