@@ -8,8 +8,7 @@ suspend fun main() {
     // http://localhost:8080/hello-world
     // http://nghttp2.org
 
-    val count = 1
-    (1..count).forEach {
+    repeat(1) {
         val response = fx.httpClient()
             .get("http://nghttp2.org/")
             .putQueryString("name", "PT_$it")

@@ -25,7 +25,7 @@ public class SystemLogger {
         try {
             String className = clazz.getSimpleName();
             return JavassistClassProxyFactory.INSTANCE.createProxy(system, ((handler, originalInstance, args) -> {
-                try (MDC.MDCCloseable mdc = MDC.putCloseable("class", className)) {
+                try (MDC.MDCCloseable ignored = MDC.putCloseable("class", className)) {
                     return handler.invoke(originalInstance, args);
                 }
             }), null);
