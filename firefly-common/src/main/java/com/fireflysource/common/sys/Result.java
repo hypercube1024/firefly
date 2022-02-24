@@ -33,9 +33,7 @@ public class Result<T> {
     }
 
     public static CompletableFuture<Void> doneFuture() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        future.complete(null);
-        return future;
+        return CompletableFuture.completedFuture(null);
     }
 
     @SuppressWarnings("unchecked")
