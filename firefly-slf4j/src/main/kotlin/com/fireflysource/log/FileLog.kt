@@ -23,9 +23,9 @@ import java.util.concurrent.CancellationException
 class FileLog : Log {
 
     companion object {
-        private val stackTrace =
-            java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
-
+        private val stackTrace = java.lang.Boolean.getBoolean("com.fireflysource.log.FileLog.debugMode")
+        private val fileBufferSize = Integer.getInteger("com.fireflysource.log.FileLog.bufferSize", 8192)
+        private val fileFlushInterval = java.lang.Long.getLong("com.fireflysource.log.FileLog.flushInterval", 500)
         val executor = newSingleThreadExecutor()
         private val fileLogThreadScope: CoroutineScope =
             CoroutineScope(executor.asCoroutineDispatcher() + CoroutineName("FireflyFileLogThread"))
@@ -71,7 +71,7 @@ class FileLog : Log {
     }
     private val flushTickJob = fileLogThreadScope.launch {
         while (true) {
-            delay(500)
+            delay(fileFlushInterval)
             channel.trySend(Flush)
         }
     }
@@ -192,12 +192,12 @@ class FileLog : Log {
         ) {
             close()
             Files.move(logPath, Paths.get(path, getLogBakName(fileLastModifiedDateTime)))
-            fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true))
+            fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true), fileBufferSize)
         }
 
         private fun createLogOutputIfNull(logName: String) {
             if (fileOutputStream == null) {
-                fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true))
+                fileOutputStream = BufferedOutputStream(FileOutputStream(File(path, logName), true), fileBufferSize)
             }
         }
 
@@ -395,16 +395,10 @@ class FileLog : Log {
     }
 
     override fun toString(): String {
-        return "FileLog{" +
-                "level=" + level +
-                ", path='" + path + '\''.toString() +
-                ", name='" + name + '\''.toString() +
-                ", consoleOutput=" + consoleOutput +
-                ", fileOutput=" + fileOutput +
-                ", maxFileSize=" + maxFileSize +
-                ", charset=" + charset +
-                ", maxSplitTime=" + maxSplitTime.value +
-                '}'.toString()
+        return "FileLog{level=$level, path='$path', name='$name', consoleOutput=$consoleOutput, " +
+                "fileOutput=$fileOutput, maxFileSize=$maxFileSize, " +
+                "fileBufferSize=$fileBufferSize, fileFlushInterval=$fileFlushInterval, " +
+                "charset=$charset, maxSplitTime=${maxSplitTime.value}}"
     }
 
 }
