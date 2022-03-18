@@ -8,6 +8,7 @@ import com.fireflysource.common.sys.SystemLogger;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.locks.Lock;
 
 import static com.fireflysource.common.sys.Result.runCaching;
 
@@ -77,6 +78,29 @@ public class BlockingTask<T> implements ForkJoinPool.ManagedBlocker {
         Result<T> result = runBlockingTask(queue::take, () -> {
             T t = queue.poll();
             return new Result<>(t != null, t, null);
+        });
+        return result.getValue();
+    }
+
+    public static <T> T blockingLock(final Lock lock, Callable<T> callable) {
+        Result<T> result = runBlockingTask(() -> {
+            try {
+                lock.lock();
+                return callable.call();
+            } finally {
+                lock.unlock();
+            }
+        }, () -> {
+            boolean success = lock.tryLock();
+            if (success) {
+                try {
+                    return new Result<>(true, callable.call(), null);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                return new Result<>(false, null, null);
+            }
         });
         return result.getValue();
     }
