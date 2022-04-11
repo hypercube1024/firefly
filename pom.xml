@@ -74,13 +74,13 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.13.2</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.6</openjsse.version>
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.28.0-GA</javassist.version>
         <slf4j.api.version>1.7.36</slf4j.api.version>
-        <spring.reactor.version>2020.0.16</spring.reactor.version>
+        <io.reactor.version>2020.0.17</io.reactor.version>
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
@@ -133,7 +133,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>${spring.reactor.version}</version>
+                <version>${io.reactor.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -212,7 +212,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>2.13.2.2</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
