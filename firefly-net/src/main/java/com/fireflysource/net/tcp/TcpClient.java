@@ -70,7 +70,7 @@ public interface TcpClient extends LifeCycle {
     TcpClient bufferSize(int bufferSize);
 
     /**
-     * Create a TCP connection to the server.
+     * Create a TCP connection.
      *
      * @param address The server address.
      * @return The TCP connection.
