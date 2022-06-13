@@ -60,16 +60,16 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.6.20</kotlin.version>
-        <kotlin.coroutine.version>1.6.1</kotlin.coroutine.version>
+        <kotlin.version>1.7.0</kotlin.version>
+        <kotlin.coroutine.version>1.6.2</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
-        <kotlin.compiler.languageVersion>1.6</kotlin.compiler.languageVersion>
-        <kotlin.compiler.apiVersion>1.6</kotlin.compiler.apiVersion>
+        <kotlin.compiler.languageVersion>1.7</kotlin.compiler.languageVersion>
+        <kotlin.compiler.apiVersion>1.7</kotlin.compiler.apiVersion>
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.6.10</dokka.version>
+        <dokka.version>1.6.21</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
@@ -85,7 +85,7 @@
 
         <!-- test lib -->
         <junit.version>5.8.2</junit.version>
-        <mockito.version>4.3.1</mockito.version>
+        <mockito.version>4.6.1</mockito.version>
     </properties>
 
     <dependencyManagement>
