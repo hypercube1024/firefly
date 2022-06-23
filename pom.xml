@@ -61,7 +61,7 @@
 
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.7.0</kotlin.version>
-        <kotlin.coroutine.version>1.6.2</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.6.3</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.7</kotlin.compiler.languageVersion>
@@ -69,18 +69,18 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.6.21</dokka.version>
+        <dokka.version>1.7.0</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.13.2</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.6</openjsse.version>
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
-        <javassist.version>3.28.0-GA</javassist.version>
+        <javassist.version>3.29.0-GA</javassist.version>
         <slf4j.api.version>1.7.36</slf4j.api.version>
-        <io.reactor.version>2020.0.17</io.reactor.version>
+        <io.reactor.version>2020.0.20</io.reactor.version>
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
@@ -212,7 +212,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.13.2.2</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
