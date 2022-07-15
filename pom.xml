@@ -61,7 +61,7 @@
 
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.7.10</kotlin.version>
-        <kotlin.coroutine.version>1.6.3</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.6.4</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.7</kotlin.compiler.languageVersion>
@@ -69,7 +69,7 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.7.0</dokka.version>
+        <dokka.version>1.7.10</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
@@ -80,7 +80,7 @@
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.29.0-GA</javassist.version>
         <slf4j.api.version>1.7.36</slf4j.api.version>
-        <io.reactor.version>2020.0.20</io.reactor.version>
+        <io.reactor.version>2020.0.21</io.reactor.version>
         <jctools.version>3.3.0</jctools.version>
 
         <!-- test lib -->
