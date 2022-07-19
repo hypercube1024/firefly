@@ -34,30 +34,39 @@ class NioUdpWorker(
 
     override fun run() {
         while (true) {
-            val count = selector.select()
+            var hasCancelledKeys = false
+            val count = if (hasCancelledKeys) {
+                val selectedKeyNowCount = selector.selectNow()
+                if (selectedKeyNowCount > 0) selectedKeyNowCount else selector.select()
+            } else selector.select()
+
             if (count == 0)
                 continue
 
             val iterator = selector.selectedKeys().iterator()
             while (iterator.hasNext()) {
                 val selectedKey = iterator.next()
-                val result = runCatching {
-                    val udpConnection = selectedKey.attachment()
-                    if (udpConnection !is AbstractNioUdpConnection) {
-                        throw UdpAttachmentTypeException("attachment type exception. ${udpConnection::class.java.name}")
-                    }
-                    when {
-                        selectedKey.isReadable -> {
-
+                if (selectedKey.isValid) {
+                    val result = runCatching {
+                        val udpConnection = selectedKey.attachment()
+                        if (udpConnection !is AbstractNioUdpConnection) {
+                            throw UdpAttachmentTypeException("attachment type exception. ${udpConnection::class.java.name}")
                         }
-                        selectedKey.isWritable -> {
+                        when {
+                            selectedKey.isReadable -> {
 
+                            }
+                            selectedKey.isWritable -> {
+
+                            }
                         }
+                        Unit
                     }
-                    Unit
-                }
-                if (result.isFailure) {
-                    log.error { "process nio selected key failure. $result" }
+                    if (result.isFailure) {
+                        log.error { "handle nio selected key failure. $result" }
+                    }
+                } else {
+
                 }
                 iterator.remove()
             }

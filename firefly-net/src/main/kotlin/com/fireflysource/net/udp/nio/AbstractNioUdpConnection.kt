@@ -10,6 +10,7 @@ import com.fireflysource.net.udp.UdpCoroutineDispatcher
 import com.fireflysource.net.udp.buffer.CancelSelectionKey
 import com.fireflysource.net.udp.buffer.InputBuffer
 import com.fireflysource.net.udp.buffer.InputMessage
+import com.fireflysource.net.udp.buffer.InvalidSelectionKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -61,6 +62,9 @@ abstract class AbstractNioUdpConnection(
 
                 }
                 input is CancelSelectionKey -> {
+
+                }
+                input is InvalidSelectionKey -> {
 
                 }
             }

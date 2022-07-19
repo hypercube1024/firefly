@@ -9,3 +9,5 @@ sealed interface InputMessage
 value class InputBuffer(val bufferFuture: CompletableFuture<ByteBuffer>) : InputMessage
 
 object CancelSelectionKey : InputMessage
+
+object InvalidSelectionKey : InputMessage
