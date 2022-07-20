@@ -33,40 +33,48 @@ class NioUdpWorker(
     }
 
     override fun run() {
-        while (true) {
-            var hasCancelledKeys = false
+        var hasCancelledKeys = false
+
+        fun selectKeys(): Int {
             val count = if (hasCancelledKeys) {
                 val selectedKeyNowCount = selector.selectNow()
                 if (selectedKeyNowCount > 0) selectedKeyNowCount else selector.select()
             } else selector.select()
+            hasCancelledKeys = false
+            return count
+        }
 
+        while (true) {
+            val count = selectKeys()
             if (count == 0)
                 continue
 
             val iterator = selector.selectedKeys().iterator()
             while (iterator.hasNext()) {
                 val selectedKey = iterator.next()
-                if (selectedKey.isValid) {
-                    val result = runCatching {
-                        val udpConnection = selectedKey.attachment()
-                        if (udpConnection !is AbstractNioUdpConnection) {
-                            throw UdpAttachmentTypeException("attachment type exception. ${udpConnection::class.java.name}")
-                        }
+                val result = runCatching {
+                    val udpConnection = selectedKey.attachment()
+                    if (udpConnection !is AbstractNioUdpConnection) {
+                        throw UdpAttachmentTypeException("attachment type exception. ${udpConnection::class.java.name}")
+                    }
+                    if (selectedKey.isValid) {
                         when {
                             selectedKey.isReadable -> {
-
+                                val length = udpConnection.readComplete()
+                                if (length < 0) {
+                                    selectedKey.cancel()
+                                    hasCancelledKeys = true
+                                }
                             }
-                            selectedKey.isWritable -> {
-
-                            }
+                            selectedKey.isWritable -> udpConnection.writeComplete()
                         }
-                        Unit
+                    } else {
+                        udpConnection.sendInvalidSelectionKeyMessage()
                     }
-                    if (result.isFailure) {
-                        log.error { "handle nio selected key failure. $result" }
-                    }
-                } else {
-
+                    Unit
+                }
+                if (result.isFailure) {
+                    log.error { "handle nio selected key failure. $result" }
                 }
                 iterator.remove()
             }

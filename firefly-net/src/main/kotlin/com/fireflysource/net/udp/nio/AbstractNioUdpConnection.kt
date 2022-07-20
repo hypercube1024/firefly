@@ -2,6 +2,8 @@ package com.fireflysource.net.udp.nio
 
 import com.fireflysource.common.coroutine.consumeAll
 import com.fireflysource.common.io.BufferUtils
+import com.fireflysource.common.io.flipToFill
+import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
@@ -22,10 +24,10 @@ import java.util.function.Consumer
 abstract class AbstractNioUdpConnection(
     id: Int,
     maxIdleTime: Long,
-    datagramChannel: DatagramChannel,
     dispatcher: CoroutineDispatcher,
     inputBufferSize: Int,
-    private val nioUdpCoroutineDispatcher: UdpCoroutineDispatcher = NioUdpCoroutineDispatcher(id, dispatcher)
+    private val nioUdpCoroutineDispatcher: UdpCoroutineDispatcher = NioUdpCoroutineDispatcher(id, dispatcher),
+    private val datagramChannel: DatagramChannel,
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), UdpConnection,
     UdpCoroutineDispatcher by nioUdpCoroutineDispatcher {
 
@@ -35,6 +37,7 @@ abstract class AbstractNioUdpConnection(
     }
 
     private val closeResultChannel: Channel<Consumer<Result<Void>>> = Channel(Channel.UNLIMITED)
+    private val inputMessageHandler = InputMessageHandler(inputBufferSize)
 
     private inner class InputMessageHandler(inputBufferSize: Int) {
         private val inputMessageChannel: Channel<InputMessage> = Channel(Channel.UNLIMITED)
@@ -69,5 +72,31 @@ abstract class AbstractNioUdpConnection(
                 }
             }
         }
+
+        fun sendInvalidSelectionKeyMessage() {
+            val result = inputMessageChannel.trySend(InvalidSelectionKey)
+            if (result.isFailure) {
+                log.error { "send invalid selection key message failure" }
+            }
+        }
+
+        fun readComplete() {
+            val pos = inputBuffer.flipToFill()
+            val result = runCatching { datagramChannel.read(inputBuffer) }
+            inputBuffer.flipToFlush(pos)
+            // TODO
+        }
+    }
+
+    fun sendInvalidSelectionKeyMessage() {
+        inputMessageHandler.sendInvalidSelectionKeyMessage()
+    }
+
+    fun readComplete(): Int {
+        return 0
+    }
+
+    fun writeComplete() {
+
     }
 }
