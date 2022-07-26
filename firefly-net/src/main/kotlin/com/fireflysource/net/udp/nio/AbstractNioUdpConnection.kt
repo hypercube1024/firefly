@@ -92,11 +92,19 @@ abstract class AbstractNioUdpConnection(
         inputMessageHandler.sendInvalidSelectionKeyMessage()
     }
 
-    fun readComplete(): Int {
-        return 0
+    fun readComplete(): ReadResult {
+        return ReadResult.CONTINUE_READ
     }
 
-    fun writeComplete() {
-
+    fun writeComplete(): WriteResult {
+        return WriteResult.CONTINUE_WRITE
     }
+}
+
+enum class ReadResult {
+    REMOTE_CLOSE, SUSPEND_READ, CONTINUE_READ
+}
+
+enum class WriteResult {
+    REMOTE_CLOSE, SUSPEND_WRITE, CONTINUE_WRITE
 }

@@ -58,15 +58,23 @@ class NioUdpWorker(
                         throw UdpAttachmentTypeException("attachment type exception. ${udpConnection::class.java.name}")
                     }
                     if (selectedKey.isValid) {
-                        when {
-                            selectedKey.isReadable -> {
-                                val length = udpConnection.readComplete()
-                                if (length < 0) {
-                                    selectedKey.cancel()
-                                    hasCancelledKeys = true
+                        var isReadCancel = false
+                        var isWriteCancel = false
+                        if (selectedKey.isReadable) {
+                            when (udpConnection.readComplete()) {
+                                ReadResult.REMOTE_CLOSE -> {
+                                    isReadCancel = true
                                 }
+                                ReadResult.SUSPEND_READ -> TODO()
+                                ReadResult.CONTINUE_READ -> TODO()
                             }
-                            selectedKey.isWritable -> udpConnection.writeComplete()
+                        }
+                        if (selectedKey.isWritable) {
+                            when (udpConnection.writeComplete()) {
+                                WriteResult.REMOTE_CLOSE -> TODO()
+                                WriteResult.SUSPEND_WRITE -> TODO()
+                                WriteResult.CONTINUE_WRITE -> TODO()
+                            }
                         }
                     } else {
                         udpConnection.sendInvalidSelectionKeyMessage()
