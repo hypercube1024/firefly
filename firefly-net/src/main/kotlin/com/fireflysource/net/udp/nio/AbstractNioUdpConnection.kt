@@ -9,15 +9,14 @@ import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
 import com.fireflysource.net.udp.UdpConnection
 import com.fireflysource.net.udp.UdpCoroutineDispatcher
-import com.fireflysource.net.udp.buffer.CancelSelectionKey
-import com.fireflysource.net.udp.buffer.InputBuffer
-import com.fireflysource.net.udp.buffer.InputMessage
-import com.fireflysource.net.udp.buffer.InvalidSelectionKey
+import com.fireflysource.net.udp.buffer.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.DatagramChannel
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
@@ -28,6 +27,7 @@ abstract class AbstractNioUdpConnection(
     inputBufferSize: Int,
     private val nioUdpCoroutineDispatcher: UdpCoroutineDispatcher = NioUdpCoroutineDispatcher(id, dispatcher),
     private val datagramChannel: DatagramChannel,
+    private val nioUdpWorker: NioUdpWorker,
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), UdpConnection,
     UdpCoroutineDispatcher by nioUdpCoroutineDispatcher {
 
@@ -42,12 +42,29 @@ abstract class AbstractNioUdpConnection(
     private inner class InputMessageHandler(inputBufferSize: Int) {
         private val inputMessageChannel: Channel<InputMessage> = Channel(Channel.UNLIMITED)
         private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
+        private val readRequestQueue = LinkedList<InputBuffer>()
         private var readTimeout = maxIdleTime
+        private var registeredRead = false
 
 
         private fun readJob() = coroutineScope.launch {
             while (true) {
-                handleInputMessage(inputMessageChannel.receive())
+                when (val msg = inputMessageChannel.receive()) {
+                    is InputBuffer -> {
+                        readRequestQueue.offer(msg)
+                        if (!registeredRead) {
+                            nioUdpWorker.registerRead(datagramChannel, this@AbstractNioUdpConnection).await()
+                            registeredRead = true
+                        }
+                    }
+                    is CancelSelectionKey -> {
+
+                    }
+                    is InvalidSelectionKey -> {
+
+                    }
+                    ReadComplete -> TODO()
+                }
             }
         }.invokeOnCompletion { cause ->
             val e = cause ?: ClosedChannelException()
@@ -57,20 +74,6 @@ abstract class AbstractNioUdpConnection(
                 }
             }
             closeResultChannel.consumeAll { it.accept(Result.SUCCESS) }
-        }
-
-        private suspend fun handleInputMessage(input: InputMessage) {
-            when {
-                input is InputBuffer -> {
-
-                }
-                input is CancelSelectionKey -> {
-
-                }
-                input is InvalidSelectionKey -> {
-
-                }
-            }
         }
 
         fun sendInvalidSelectionKeyMessage() {

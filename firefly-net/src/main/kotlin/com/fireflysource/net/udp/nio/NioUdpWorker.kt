@@ -4,8 +4,15 @@ import com.fireflysource.common.concurrent.ExecutorServiceUtils.shutdownAndAwait
 import com.fireflysource.common.coroutine.CoroutineDispatchers.newSingleThreadExecutor
 import com.fireflysource.common.lifecycle.AbstractLifeCycle
 import com.fireflysource.common.sys.SystemLogger
+import com.fireflysource.net.udp.UdpConnection
+import com.fireflysource.net.udp.buffer.NioWorkerMessage
+import com.fireflysource.net.udp.buffer.RegisterRead
 import com.fireflysource.net.udp.exception.UdpAttachmentTypeException
+import org.jctools.queues.MpscLinkedQueue
+import java.nio.channels.DatagramChannel
+import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 class NioUdpWorker(
@@ -19,6 +26,7 @@ class NioUdpWorker(
 
     private val executor = newSingleThreadExecutor("firefly-nio-udp-worker-thread-$id")
     private val selector = Selector.open()
+    private val workerMessageQueue = MpscLinkedQueue<NioWorkerMessage>()
 
     override fun init() {
         executor.execute(this)
@@ -46,6 +54,7 @@ class NioUdpWorker(
 
         while (true) {
             val count = selectKeys()
+            handleNioUdpWorkerMessages()
             if (count == 0)
                 continue
 
@@ -85,6 +94,25 @@ class NioUdpWorker(
                     log.error { "handle nio selected key failure. $result" }
                 }
                 iterator.remove()
+            }
+        }
+    }
+
+    fun registerRead(datagramChannel: DatagramChannel, udpConnection: UdpConnection): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+        workerMessageQueue.offer(RegisterRead(datagramChannel, udpConnection, future))
+        selector.wakeup()
+        return future
+    }
+
+    private fun handleNioUdpWorkerMessages() {
+        while (true) {
+            val message = workerMessageQueue.poll() ?: break
+            when(message) {
+                is RegisterRead -> {
+                    message.datagramChannel.register(selector, SelectionKey.OP_READ, message.udpConnection)
+                    message.future.complete(null)
+                }
             }
         }
     }
