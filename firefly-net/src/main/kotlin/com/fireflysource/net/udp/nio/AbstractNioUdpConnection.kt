@@ -14,9 +14,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import org.jctools.queues.SpscLinkedQueue
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.DatagramChannel
-import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
@@ -42,7 +42,7 @@ abstract class AbstractNioUdpConnection(
     private inner class InputMessageHandler(inputBufferSize: Int) {
         private val inputMessageChannel: Channel<InputMessage> = Channel(Channel.UNLIMITED)
         private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
-        private val readRequestQueue = LinkedList<InputBuffer>()
+        private val readRequestQueue = SpscLinkedQueue<InputBuffer>()
         private var readTimeout = maxIdleTime
         private var registeredRead = false
 
@@ -63,7 +63,9 @@ abstract class AbstractNioUdpConnection(
                     is InvalidSelectionKey -> {
 
                     }
-                    ReadComplete -> TODO()
+                    is ReadComplete -> {
+
+                    }
                 }
             }
         }.invokeOnCompletion { cause ->

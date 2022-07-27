@@ -27,31 +27,19 @@ class NioUdpWorker(
     private val executor = newSingleThreadExecutor("firefly-nio-udp-worker-thread-$id")
     private val selector = Selector.open()
     private val workerMessageQueue = MpscLinkedQueue<NioWorkerMessage>()
+    private var hasCancelledKeys = false
 
     override fun init() {
         executor.execute(this)
     }
 
     override fun destroy() {
-        val closeResult = runCatching {
-            selector.close()
-        }
+        val closeResult = runCatching { selector.close() }
         log.info { "Nio UDP worker selector close result: $closeResult" }
         shutdownAndAwaitTermination(executor, 5, seconds)
     }
 
     override fun run() {
-        var hasCancelledKeys = false
-
-        fun selectKeys(): Int {
-            val count = if (hasCancelledKeys) {
-                val selectedKeyNowCount = selector.selectNow()
-                if (selectedKeyNowCount > 0) selectedKeyNowCount else selector.select()
-            } else selector.select()
-            hasCancelledKeys = false
-            return count
-        }
-
         while (true) {
             val count = selectKeys()
             handleNioUdpWorkerMessages()
@@ -105,10 +93,19 @@ class NioUdpWorker(
         return future
     }
 
+    private fun selectKeys(): Int {
+        val count = if (hasCancelledKeys) {
+            val selectedKeyNowCount = selector.selectNow()
+            if (selectedKeyNowCount > 0) selectedKeyNowCount else selector.select()
+        } else selector.select()
+        hasCancelledKeys = false
+        return count
+    }
+
     private fun handleNioUdpWorkerMessages() {
         while (true) {
             val message = workerMessageQueue.poll() ?: break
-            when(message) {
+            when (message) {
                 is RegisterRead -> {
                     message.datagramChannel.register(selector, SelectionKey.OP_READ, message.udpConnection)
                     message.future.complete(null)
