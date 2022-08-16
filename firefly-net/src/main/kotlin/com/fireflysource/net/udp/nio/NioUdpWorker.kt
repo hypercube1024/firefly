@@ -68,15 +68,19 @@ class NioUdpWorker(
                         }
                         if (selectedKey.isWritable) {
                             when (udpConnection.writeComplete()) {
-                                WriteResult.REMOTE_CLOSE -> TODO()
+                                WriteResult.REMOTE_CLOSE -> {
+                                    isWriteCancel = true
+                                }
                                 WriteResult.SUSPEND_WRITE -> TODO()
                                 WriteResult.CONTINUE_WRITE -> TODO()
                             }
                         }
+                        if (isReadCancel && isWriteCancel) {
+
+                        }
                     } else {
                         udpConnection.sendInvalidSelectionKeyMessage()
                     }
-                    Unit
                 }
                 if (result.isFailure) {
                     log.error { "handle nio selected key failure. $result" }
