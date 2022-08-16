@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.DatagramChannel
+import java.nio.channels.SelectionKey
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -44,6 +45,7 @@ abstract class AbstractNioUdpConnection(
         private var readTimeout = maxIdleTime
         private var registeredRead = false
         private var readWaterline = 0
+        private var selectionKey: SelectionKey? = null
 
 
         private fun readJob() = coroutineScope.launch {
@@ -52,7 +54,7 @@ abstract class AbstractNioUdpConnection(
                     is InputBuffer -> {
                         readRequestQueue.offer(msg)
                         if (!registeredRead) {
-                            nioUdpWorker.registerRead(datagramChannel, this@AbstractNioUdpConnection).await()
+                            selectionKey = nioUdpWorker.registerRead(datagramChannel, this@AbstractNioUdpConnection).await()
                             registeredRead = true
                         }
                     }
