@@ -13,7 +13,6 @@ import com.fireflysource.net.udp.buffer.NioWorkerMessage
 import com.fireflysource.net.udp.buffer.RegisterRead
 import com.fireflysource.net.udp.exception.UdpAttachmentTypeException
 import org.jctools.queues.MpscLinkedQueue
-import java.nio.channels.DatagramChannel
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.util.concurrent.CompletableFuture
@@ -55,8 +54,6 @@ class NioUdpWorker(
                 val selectedKey = iterator.next()
 
 
-
-
                 val result = runCatching {
                     val udpConnection = selectedKey.attachment()
                     if (udpConnection !is AbstractNioUdpConnection) {
@@ -84,6 +81,7 @@ class NioUdpWorker(
                     fun writeComplete(): WriteResult {
                         return WriteResult.CONTINUE_WRITE
                     }
+
                     fun cancelSelectedKey() {
                         selectedKey.cancel()
                         selector.selectNow()
@@ -133,9 +131,9 @@ class NioUdpWorker(
         }
     }
 
-    fun registerRead(datagramChannel: DatagramChannel, udpConnection: UdpConnection): CompletableFuture<SelectionKey> {
+    fun registerRead(udpConnection: UdpConnection): CompletableFuture<SelectionKey> {
         val future = CompletableFuture<SelectionKey>()
-        workerMessageQueue.offer(RegisterRead(datagramChannel, udpConnection, future))
+        workerMessageQueue.offer(RegisterRead(udpConnection, future))
         selector.wakeup()
         return future
     }
@@ -149,8 +147,16 @@ class NioUdpWorker(
             val message = workerMessageQueue.poll() ?: break
             when (message) {
                 is RegisterRead -> {
-                    val key = message.datagramChannel.register(selector, SelectionKey.OP_READ, message.udpConnection)
-                    message.future.complete(key)
+                    if (message.udpConnection is AbstractNioUdpConnection) {
+                        val udpConnection = message.udpConnection
+                        val datagramChannel = message.udpConnection.datagramChannel
+                        val key = datagramChannel.register(
+                            selector,
+                            SelectionKey.OP_READ,
+                            udpConnection
+                        )
+                        message.future.complete(key)
+                    }
                 }
             }
         }

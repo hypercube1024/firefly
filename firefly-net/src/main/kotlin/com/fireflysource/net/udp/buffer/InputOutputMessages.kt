@@ -2,7 +2,6 @@ package com.fireflysource.net.udp.buffer
 
 import com.fireflysource.net.udp.UdpConnection
 import java.nio.ByteBuffer
-import java.nio.channels.DatagramChannel
 import java.nio.channels.SelectionKey
 import java.util.concurrent.CompletableFuture
 
@@ -22,7 +21,6 @@ value class ReadComplete(val buffer: ByteBuffer): InputMessage
 sealed interface NioWorkerMessage
 
 data class RegisterRead(
-    val datagramChannel: DatagramChannel,
     val udpConnection: UdpConnection,
     val future: CompletableFuture<SelectionKey>
 ) : NioWorkerMessage

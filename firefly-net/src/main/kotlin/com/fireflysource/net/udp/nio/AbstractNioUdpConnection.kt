@@ -43,50 +43,28 @@ abstract class AbstractNioUdpConnection(
         private val readRequestQueue = LinkedList<InputBuffer>()
         private val readCompleteQueue = LinkedList<ByteBuffer>()
         private var readTimeout = maxIdleTime
-        private var registeredRead = false
         private var readWaterline = 0
         private var selectionKey: SelectionKey? = null
 
+        init {
+            readJob()
+        }
+
 
         private fun readJob() = coroutineScope.launch {
+            selectionKey = nioUdpWorker.registerRead(this@AbstractNioUdpConnection).await()
             while (true) {
                 when (val msg = inputMessageChannel.receive()) {
-                    is InputBuffer -> {
-                        readRequestQueue.offer(msg)
-                        if (!registeredRead) {
-                            selectionKey = nioUdpWorker.registerRead(datagramChannel, this@AbstractNioUdpConnection).await()
-                            registeredRead = true
-                        }
-                    }
-
+                    is InputBuffer -> offerReadRequest(msg)
+                    is ReadComplete -> offerReadComplete(msg.buffer)
                     is CancelSelectionKey -> {
-                        registeredRead = false
+                        selectionKey = null
                     }
-
                     is InvalidSelectionKey -> {
-                        registeredRead = false
+                        selectionKey = null
                     }
-
                     is UnregisterRead -> {
 
-                    }
-
-                    is ReadComplete -> {
-                        val input = readRequestQueue.poll()
-                        if (input != null) {
-                            val buffer = readCompleteQueue.poll()
-                            if (buffer != null) {
-                                readWaterline -= buffer.remaining()
-                                input.bufferFuture.complete(buffer)
-                                readWaterline += msg.buffer.remaining()
-                                readCompleteQueue.offer(msg.buffer)
-                            } else {
-                                input.bufferFuture.complete(msg.buffer)
-                            }
-                        } else {
-                            readWaterline += msg.buffer.remaining()
-                            readCompleteQueue.offer(msg.buffer)
-                        }
                     }
                 }
             }
@@ -98,6 +76,35 @@ abstract class AbstractNioUdpConnection(
                 }
             }
             closeResultChannel.consumeAll { it.accept(Result.SUCCESS) }
+        }
+
+        private fun offerReadComplete(buffer: ByteBuffer) {
+            if (readCompleteQueue.offer(buffer)) {
+                readWaterline += buffer.remaining()
+                updateReadQueue()
+            }
+        }
+
+        private fun pollReadComplete(): ByteBuffer? {
+            val buffer = readCompleteQueue.poll()
+            if (buffer != null) {
+                readWaterline -= buffer.remaining()
+            }
+            return buffer
+        }
+
+        private fun offerReadRequest(request: InputBuffer) {
+            if (readRequestQueue.offer(request)) {
+                updateReadQueue()
+            }
+        }
+
+        private fun updateReadQueue() {
+            while (!readRequestQueue.isEmpty() && !readCompleteQueue.isEmpty()) {
+                val readRequest = readRequestQueue.poll()!!
+                val buffer: ByteBuffer = pollReadComplete()!!
+                readRequest.bufferFuture.complete(buffer)
+            }
         }
 
         fun sendInvalidSelectionKeyMessage() {
