@@ -52,7 +52,7 @@ class NioUdpWorker(
             val iterator = selector.selectedKeys().iterator()
             while (iterator.hasNext()) {
                 val selectedKey = iterator.next()
-
+                iterator.remove()
 
                 val result = runCatching {
                     val udpConnection = selectedKey.attachment()
@@ -67,14 +67,23 @@ class NioUdpWorker(
                         inputBuffer.flipToFlush(pos)
 
                         return if (result.isSuccess) {
-                            if (result.getOrDefault(0) >= 0) {
-                                udpConnection.sendReadCompleteMessage(inputBuffer.copy())
-                                ReadResult.CONTINUE_READ
-                            } else {
-                                ReadResult.REMOTE_CLOSE
+                            val length = result.getOrDefault(0)
+                            when {
+                                length > 0 -> {
+                                    udpConnection.sendReadCompleteMessage(inputBuffer.copy())
+                                    ReadResult.CONTINUE_READ
+                                }
+
+                                length == 0 -> {
+                                    ReadResult.CONTINUE_READ
+                                }
+
+                                else -> {
+                                    ReadResult.REMOTE_CLOSE
+                                }
                             }
                         } else {
-                            ReadResult.CONTINUE_READ
+                            ReadResult.REMOTE_CLOSE
                         }
                     }
 
@@ -90,6 +99,7 @@ class NioUdpWorker(
                     if (selectedKey.isValid) {
                         if (selectedKey.isReadable) {
                             when (readComplete()) {
+                                ReadResult.CONTINUE_READ -> TODO()
                                 ReadResult.REMOTE_CLOSE -> {
                                     val unregisterReadResult = runCatching {
                                         selectedKey.interestOps(selectedKey.interestOps() and SelectionKey.OP_READ.inv())
@@ -105,7 +115,6 @@ class NioUdpWorker(
                                 }
 
                                 ReadResult.SUSPEND_READ -> TODO()
-                                ReadResult.CONTINUE_READ -> TODO()
                                 ReadResult.READ_EXCEPTION -> TODO()
                             }
                         }
@@ -126,20 +135,24 @@ class NioUdpWorker(
                 if (result.isFailure) {
                     log.error { "handle nio selected key failure. $result" }
                 }
-                iterator.remove()
             }
         }
     }
 
     fun registerRead(udpConnection: UdpConnection): CompletableFuture<SelectionKey> {
         val future = CompletableFuture<SelectionKey>()
-        workerMessageQueue.offer(RegisterRead(udpConnection, future))
-        selector.wakeup()
+        sendMessage(RegisterRead(udpConnection, future))
         return future
     }
 
     private fun selectKeys(): Int {
         return selector.select()
+    }
+
+    private fun sendMessage(message: NioWorkerMessage) {
+        if (workerMessageQueue.offer(message)) {
+            selector.wakeup()
+        }
     }
 
     private fun handleNioUdpWorkerMessages() {

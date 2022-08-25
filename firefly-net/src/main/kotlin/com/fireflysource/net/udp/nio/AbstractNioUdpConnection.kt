@@ -107,50 +107,28 @@ abstract class AbstractNioUdpConnection(
             }
         }
 
-        fun sendInvalidSelectionKeyMessage() {
-            val result = inputMessageChannel.trySend(InvalidSelectionKey)
-            if (result.isFailure) {
-                log.error { "send InvalidSelectionKey message failure" }
-            }
-        }
-
-        fun sendCancelSelectionKeyMessage() {
-            val result = inputMessageChannel.trySend(CancelSelectionKey)
-            if (result.isFailure) {
-                log.error { "send CancelSelectionKey message failure" }
-            }
-        }
-
-        fun sendUnregisterReadMessage() {
-            val result = inputMessageChannel.trySend(UnregisterRead)
-            if (result.isFailure) {
-                log.error { "send UnregisterRead message failure" }
-            }
-        }
-
-        fun sendReadCompleteMessage(buffer: ByteBuffer) {
-            val result = inputMessageChannel.trySend(ReadComplete(buffer))
-            if (result.isFailure) {
-                log.error { "send ReadComplete message failure" }
+        fun sendMessage(message: InputMessage) {
+            if (inputMessageChannel.trySend(message).isFailure) {
+                log.error("send input message failure. $message")
             }
         }
 
     }
 
     fun sendInvalidSelectionKeyMessage() {
-        inputMessageHandler.sendInvalidSelectionKeyMessage()
+        inputMessageHandler.sendMessage(InvalidSelectionKey)
     }
 
     fun sendCancelSelectionKeyMessage() {
-        inputMessageHandler.sendCancelSelectionKeyMessage()
+        inputMessageHandler.sendMessage(CancelSelectionKey)
     }
 
     fun sendUnregisterReadMessage() {
-        inputMessageHandler.sendUnregisterReadMessage()
+        inputMessageHandler.sendMessage(UnregisterRead)
     }
 
     fun sendReadCompleteMessage(buffer: ByteBuffer) {
-        inputMessageHandler.sendReadCompleteMessage(buffer)
+        inputMessageHandler.sendMessage(ReadComplete(buffer))
     }
 
 
