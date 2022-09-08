@@ -67,7 +67,7 @@ Add maven dependency in your pom.xml.
 <dependencics>
     <dependency>
         <groupId>com.fireflysource</groupId>
-        <artifactId>firefly</artifactId>
+        <artifactId>firefly-net</artifactId>
         <version>{{ site.data.global.releaseVersion }}</version>
     </dependency>
 
