@@ -1,9 +1,6 @@
 package com.fireflysource.net.udp.nio
 
 import com.fireflysource.common.coroutine.consumeAll
-import com.fireflysource.common.io.BufferUtils
-import com.fireflysource.common.io.flipToFill
-import com.fireflysource.common.io.flipToFlush
 import com.fireflysource.common.sys.Result
 import com.fireflysource.common.sys.SystemLogger
 import com.fireflysource.net.AbstractConnection
@@ -14,9 +11,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import org.jctools.queues.SpscLinkedQueue
+import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.DatagramChannel
+import java.nio.channels.SelectionKey
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
@@ -26,7 +25,7 @@ abstract class AbstractNioUdpConnection(
     dispatcher: CoroutineDispatcher,
     inputBufferSize: Int,
     private val nioUdpCoroutineDispatcher: UdpCoroutineDispatcher = NioUdpCoroutineDispatcher(id, dispatcher),
-    private val datagramChannel: DatagramChannel,
+    val datagramChannel: DatagramChannel,
     private val nioUdpWorker: NioUdpWorker,
 ) : AbstractConnection(id, System.currentTimeMillis(), maxIdleTime), UdpConnection,
     UdpCoroutineDispatcher by nioUdpCoroutineDispatcher {
@@ -41,29 +40,30 @@ abstract class AbstractNioUdpConnection(
 
     private inner class InputMessageHandler(inputBufferSize: Int) {
         private val inputMessageChannel: Channel<InputMessage> = Channel(Channel.UNLIMITED)
-        private val inputBuffer = BufferUtils.allocateDirect(inputBufferSize)
-        private val readRequestQueue = SpscLinkedQueue<InputBuffer>()
+        private val readRequestQueue = LinkedList<InputBuffer>()
+        private val readCompleteQueue = LinkedList<ByteBuffer>()
         private var readTimeout = maxIdleTime
-        private var registeredRead = false
+        private var readWaterline = 0
+        private var selectionKey: SelectionKey? = null
+
+        init {
+            readJob()
+        }
 
 
         private fun readJob() = coroutineScope.launch {
+            selectionKey = nioUdpWorker.registerRead(this@AbstractNioUdpConnection).await()
             while (true) {
                 when (val msg = inputMessageChannel.receive()) {
-                    is InputBuffer -> {
-                        readRequestQueue.offer(msg)
-                        if (!registeredRead) {
-                            nioUdpWorker.registerRead(datagramChannel, this@AbstractNioUdpConnection).await()
-                            registeredRead = true
-                        }
-                    }
+                    is InputBuffer -> offerReadRequest(msg)
+                    is ReadComplete -> offerReadComplete(msg.buffer)
                     is CancelSelectionKey -> {
-
+                        selectionKey = null
                     }
                     is InvalidSelectionKey -> {
-
+                        selectionKey = null
                     }
-                    is ReadComplete -> {
+                    is UnregisterRead -> {
 
                     }
                 }
@@ -78,38 +78,66 @@ abstract class AbstractNioUdpConnection(
             closeResultChannel.consumeAll { it.accept(Result.SUCCESS) }
         }
 
-        fun sendInvalidSelectionKeyMessage() {
-            val result = inputMessageChannel.trySend(InvalidSelectionKey)
-            if (result.isFailure) {
-                log.error { "send invalid selection key message failure" }
+        private fun offerReadComplete(buffer: ByteBuffer) {
+            if (readCompleteQueue.offer(buffer)) {
+                readWaterline += buffer.remaining()
+                updateReadQueue()
             }
         }
 
-        fun readComplete() {
-            val pos = inputBuffer.flipToFill()
-            val result = runCatching { datagramChannel.read(inputBuffer) }
-            inputBuffer.flipToFlush(pos)
-            // TODO
+        private fun pollReadComplete(): ByteBuffer? {
+            val buffer = readCompleteQueue.poll()
+            if (buffer != null) {
+                readWaterline -= buffer.remaining()
+            }
+            return buffer
         }
+
+        private fun offerReadRequest(request: InputBuffer) {
+            if (readRequestQueue.offer(request)) {
+                updateReadQueue()
+            }
+        }
+
+        private fun updateReadQueue() {
+            while (!readRequestQueue.isEmpty() && !readCompleteQueue.isEmpty()) {
+                val readRequest = readRequestQueue.poll()!!
+                val buffer: ByteBuffer = pollReadComplete()!!
+                readRequest.bufferFuture.complete(buffer)
+            }
+        }
+
+        fun sendMessage(message: InputMessage) {
+            if (inputMessageChannel.trySend(message).isFailure) {
+                log.error("send input message failure. $message")
+            }
+        }
+
     }
 
     fun sendInvalidSelectionKeyMessage() {
-        inputMessageHandler.sendInvalidSelectionKeyMessage()
+        inputMessageHandler.sendMessage(InvalidSelectionKey)
     }
 
-    fun readComplete(): ReadResult {
-        return ReadResult.CONTINUE_READ
+    fun sendCancelSelectionKeyMessage() {
+        inputMessageHandler.sendMessage(CancelSelectionKey)
     }
 
-    fun writeComplete(): WriteResult {
-        return WriteResult.CONTINUE_WRITE
+    fun sendUnregisterReadMessage() {
+        inputMessageHandler.sendMessage(UnregisterRead)
     }
+
+    fun sendReadCompleteMessage(buffer: ByteBuffer) {
+        inputMessageHandler.sendMessage(ReadComplete(buffer))
+    }
+
+
 }
 
 enum class ReadResult {
-    REMOTE_CLOSE, SUSPEND_READ, CONTINUE_READ
+    REMOTE_CLOSE, SUSPEND_READ, CONTINUE_READ, READ_EXCEPTION
 }
 
 enum class WriteResult {
-    REMOTE_CLOSE, SUSPEND_WRITE, CONTINUE_WRITE
+    REMOTE_CLOSE, SUSPEND_WRITE, CONTINUE_WRITE, WRITE_EXCEPTION
 }
