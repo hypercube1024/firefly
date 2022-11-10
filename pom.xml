@@ -60,7 +60,7 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.7.20</kotlin.version>
+        <kotlin.version>1.7.21</kotlin.version>
         <kotlin.coroutine.version>1.6.4</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
@@ -69,7 +69,7 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.7.10</dokka.version>
+        <dokka.version>1.7.20</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
