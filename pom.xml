@@ -74,18 +74,18 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.14.0</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <openjsse.version>1.1.6</openjsse.version>
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
         <javassist.version>3.29.2-GA</javassist.version>
         <slf4j.api.version>1.7.36</slf4j.api.version>
-        <io.reactor.version>2020.0.23</io.reactor.version>
+        <io.reactor.version>2022.0.1</io.reactor.version>
         <jctools.version>4.0.1</jctools.version>
 
         <!-- test lib -->
         <junit.version>5.9.1</junit.version>
-        <mockito.version>4.8.0</mockito.version>
+        <mockito.version>4.10.0</mockito.version>
     </properties>
 
     <dependencyManagement>
