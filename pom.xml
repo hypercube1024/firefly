@@ -60,7 +60,7 @@
         <java.release.version>8</java.release.version>
 
         <!-- Kotlin compiler configuration -->
-        <kotlin.version>1.7.21</kotlin.version>
+        <kotlin.version>1.8.0</kotlin.version>
         <kotlin.coroutine.version>1.6.4</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
