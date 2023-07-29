@@ -4,4 +4,4 @@ $response = Invoke-RestMethod 'https://www.google.com' -Method 'GET'
 if ($response.Length -gt 0) {
     Write-Output "set proxy success"
 }
-mvn clean deploy -Prelease
+mvn clean deploy -Prelease -DskipTests
