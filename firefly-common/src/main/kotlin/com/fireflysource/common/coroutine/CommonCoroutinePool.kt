@@ -28,13 +28,16 @@ object CoroutineDispatchers {
     val ioBlockingPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
 
+    val ioBlockingPoolQueueSize: Int =
+        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolQueueSize", 50)
+
 
     val ioBlockingThreadPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
             availableProcessors, ioBlockingPoolSize,
             ioBlockingPoolKeepAliveTime, TimeUnit.SECONDS,
-            LinkedTransferQueue()
+            LinkedBlockingQueue(ioBlockingPoolQueueSize)
         ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) }
     }
 
