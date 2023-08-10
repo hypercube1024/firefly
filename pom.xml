@@ -61,7 +61,7 @@
 
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.9.0</kotlin.version>
-        <kotlin.coroutine.version>1.7.2</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.7.3</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.9</kotlin.compiler.languageVersion>
