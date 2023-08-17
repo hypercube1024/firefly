@@ -33,7 +33,7 @@ class AsyncHttpServerRequest(
 
     init {
         val query: String? = request.uri.query
-        if (query != null && query.isNotBlank()) {
+        if (!query.isNullOrBlank()) {
             queryStringMap = UrlEncoded(query)
         }
         val contentType = request.fields[HttpHeader.CONTENT_TYPE]

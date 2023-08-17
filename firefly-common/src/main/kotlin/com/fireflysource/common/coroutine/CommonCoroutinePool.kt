@@ -18,8 +18,6 @@ object CoroutineDispatchers {
 
     val defaultPoolSize: Int =
         Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolSize", availableProcessors)
-    val defaultPoolKeepAliveTime: Long =
-        Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolKeepAliveTime", 30).toLong()
 
     val ioBlockingPoolSize: Int = Integer.getInteger(
         "com.fireflysource.common.coroutine.ioBlockingPoolSize",
@@ -28,13 +26,16 @@ object CoroutineDispatchers {
     val ioBlockingPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
 
+    val ioBlockingPoolQueueSize: Int =
+        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolQueueSize", 50)
+
 
     val ioBlockingThreadPool: ExecutorService by lazy {
         val threadId = AtomicInteger()
         ThreadPoolExecutor(
             availableProcessors, ioBlockingPoolSize,
             ioBlockingPoolKeepAliveTime, TimeUnit.SECONDS,
-            LinkedTransferQueue()
+            LinkedBlockingQueue(ioBlockingPoolQueueSize)
         ) { runnable -> Thread(runnable, "firefly-io-blocking-pool-" + threadId.getAndIncrement()) }
     }
 
@@ -71,16 +72,6 @@ object CoroutineDispatchers {
         return FinalizableExecutorService(executor)
     }
 
-    fun newFixedThreadExecutor(name: String, poolSize: Int, maxPoolSize: Int = poolSize): ExecutorService {
-        val executor = ThreadPoolExecutor(
-            poolSize,
-            maxPoolSize,
-            defaultPoolKeepAliveTime, TimeUnit.SECONDS,
-            LinkedTransferQueue()
-        ) { runnable -> Thread(runnable, name) }
-        return FinalizableExecutorService(executor)
-    }
-
     fun newComputationThreadExecutor(name: String, asyncMode: Boolean = true): ExecutorService {
         val executor = ForkJoinPool(defaultPoolSize, { pool ->
             val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
@@ -92,10 +83,6 @@ object CoroutineDispatchers {
 
     fun newSingleThreadDispatcher(name: String): CoroutineDispatcher {
         return newSingleThreadExecutor(name).asCoroutineDispatcher()
-    }
-
-    fun newFixedThreadDispatcher(name: String, poolSize: Int, maxPoolSize: Int = poolSize): CoroutineDispatcher {
-        return newFixedThreadExecutor(name, poolSize, maxPoolSize).asCoroutineDispatcher()
     }
 
     fun newComputationThreadDispatcher(name: String, asyncMode: Boolean = true): CoroutineDispatcher {

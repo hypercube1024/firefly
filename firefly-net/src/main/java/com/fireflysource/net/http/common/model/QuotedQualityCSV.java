@@ -85,8 +85,8 @@ public class QuotedQualityCSV extends QuotedCSV implements Iterable<String> {
             Double q;
             try {
                 q = (keepQuotes && buffer.charAt(paramValue) == '"')
-                        ? new Double(buffer.substring(paramValue + 1, buffer.length() - 1))
-                        : new Double(buffer.substring(paramValue));
+                        ? Double.parseDouble(buffer.substring(paramValue + 1, buffer.length() - 1))
+                        : Double.parseDouble(buffer.substring(paramValue));
             } catch (Exception e) {
                 q = ZERO;
             }

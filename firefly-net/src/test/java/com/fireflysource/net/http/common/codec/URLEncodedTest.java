@@ -94,7 +94,7 @@ class URLEncodedTest {
     @Test
     void testUrlEncodedStream()
             throws Exception {
-        String[][] charsets = new String[][]
+        @SuppressWarnings("InjectedReferences") String[][] charsets = new String[][]
                 {
                         {__UTF8, null, "%30"},
                         {__ISO_8859_1, __ISO_8859_1, "%30"},

@@ -12,7 +12,7 @@ abstract class AbstractPreciseMatcher : AbstractMatcher<String>(), Matcher {
 
     override fun match(value: String): Matcher.MatchResult? {
         val routers = routersMap[value]
-        return if (routers != null && routers.isNotEmpty()) {
+        return if (!routers.isNullOrEmpty()) {
             Matcher.MatchResult(routers, emptyMap(), matchType)
         } else null
     }
