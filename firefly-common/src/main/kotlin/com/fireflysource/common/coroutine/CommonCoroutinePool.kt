@@ -19,13 +19,10 @@ object CoroutineDispatchers {
     val defaultPoolSize: Int =
         Integer.getInteger("com.fireflysource.common.coroutine.defaultPoolSize", availableProcessors)
 
-    val ioBlockingPoolSize: Int = Integer.getInteger(
-        "com.fireflysource.common.coroutine.ioBlockingPoolSize",
-        64.coerceAtLeast(availableProcessors * 8)
-    )
+    val ioBlockingPoolSize: Int =
+        Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolSize", 200)
     val ioBlockingPoolKeepAliveTime: Long =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolKeepAliveTime", 30).toLong()
-
     val ioBlockingPoolQueueSize: Int =
         Integer.getInteger("com.fireflysource.common.coroutine.ioBlockingPoolQueueSize", 50)
 
@@ -90,10 +87,10 @@ object CoroutineDispatchers {
     }
 
     fun stopAll() {
-        shutdownAndAwaitTermination(computationThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(singleThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(ioBlockingThreadPool, awaitTerminationTimeout, TimeUnit.SECONDS)
-        shutdownAndAwaitTermination(scheduler, awaitTerminationTimeout, TimeUnit.SECONDS)
+        shutdownAndAwaitTermination(computationThreadPool, awaitTerminationTimeout)
+        shutdownAndAwaitTermination(singleThreadPool, awaitTerminationTimeout)
+        shutdownAndAwaitTermination(ioBlockingThreadPool, awaitTerminationTimeout)
+        shutdownAndAwaitTermination(scheduler, awaitTerminationTimeout)
     }
 }
 
@@ -102,7 +99,7 @@ val applicationCleaner: Cleaner = Cleaner.create()
 class ExecutorCleanTask(private val executor: ExecutorService) : Runnable {
     override fun run() {
         if (!executor.isShutdown) {
-            shutdownAndAwaitTermination(executor, awaitTerminationTimeout, TimeUnit.SECONDS)
+            shutdownAndAwaitTermination(executor, awaitTerminationTimeout)
         }
     }
 }

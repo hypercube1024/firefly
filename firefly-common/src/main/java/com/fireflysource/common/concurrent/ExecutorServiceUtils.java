@@ -16,6 +16,18 @@ abstract public class ExecutorServiceUtils {
      * interrupted, whichever happens first.
      *
      * @param pool    The thread pool that will shutdown.
+     * @param timeout The maximum time to wait. The time unit is second.
+     */
+    public static void shutdownAndAwaitTermination(ExecutorService pool, long timeout) {
+        shutdownAndAwaitTermination(pool, timeout, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Blocks until all tasks have completed execution after a shutdown
+     * request, or the timeout occurs, or the current thread is
+     * interrupted, whichever happens first.
+     *
+     * @param pool    The thread pool that will shutdown.
      * @param timeout The maximum time to wait.
      * @param unit    The time unit of the timeout argument.
      */
