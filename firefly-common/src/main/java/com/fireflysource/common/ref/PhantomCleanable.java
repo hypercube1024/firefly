@@ -1,5 +1,7 @@
 package com.fireflysource.common.ref;
 
+import com.fireflysource.common.concurrent.AutoLock;
+
 import java.lang.ref.PhantomReference;
 import java.util.Objects;
 
@@ -25,6 +27,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      * The list of PhantomCleanable; synchronizes insert and remove.
      */
     private final PhantomCleanable<?> list;
+    private final AutoLock lock = new AutoLock();
 
     /**
      * Constructs new {@code PhantomCleanable} with
@@ -53,12 +56,12 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      * Insert this PhantomCleanable after the list head.
      */
     private void insert() {
-        synchronized (list) {
+        lock.lock(() -> {
             prev = list;
             next = list.next;
             next.prev = this;
             list.next = this;
-        }
+        });
     }
 
     /**
@@ -68,7 +71,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      * it had already been removed before
      */
     private boolean remove() {
-        synchronized (list) {
+        return lock.lock(() -> {
             if (next != this) {
                 next.prev = prev;
                 prev.next = next;
@@ -77,7 +80,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
                 return true;
             }
             return false;
-        }
+        });
     }
 
     /**
@@ -86,9 +89,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      * @return true if the list is empty
      */
     boolean isListEmpty() {
-        synchronized (list) {
-            return list == list.next;
-        }
+        return lock.lock(() -> list == list.next);
     }
 
     /**

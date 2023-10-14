@@ -1,5 +1,6 @@
 package com.fireflysource.common.jni;
 
+import com.fireflysource.common.concurrent.AutoLock;
 import com.fireflysource.common.slf4j.LazyLogger;
 import com.fireflysource.common.sys.SystemLogger;
 
@@ -15,6 +16,7 @@ public class JniLibLoader {
 
     private static final LazyLogger logger = SystemLogger.create(JniLibLoader.class);
     private static final Set<String> loadedLibs = new HashSet<>();
+    private static final AutoLock lock = new AutoLock();
 
     /**
      * Load JNI lib by lib name.
@@ -31,23 +33,25 @@ public class JniLibLoader {
      *
      * @param libPath The lib file path of the lib file.
      */
-    public static synchronized void loadByLibPath(String libPath) {
-        if (libPath.startsWith("/")) {
-            throw new IllegalArgumentException("The lib path must be not start with /");
-        }
+    public static void loadByLibPath(String libPath) {
+        lock.lock(() -> {
+            if (libPath.startsWith("/")) {
+                throw new IllegalArgumentException("The lib path must be not start with /");
+            }
 
-        if (loadedLibs.contains(libPath)) {
-            logger.info("The lib is loaded. path: {}", libPath);
-            return;
-        }
+            if (loadedLibs.contains(libPath)) {
+                logger.info("The lib is loaded. path: {}", libPath);
+                return;
+            }
 
-        File file = createLibTempFile(libPath);
-        copyLibToTempFile(libPath, file);
+            File file = createLibTempFile(libPath);
+            copyLibToTempFile(libPath, file);
 
-        logger.info("Start to load lib. path: {}", libPath);
-        System.load(getLibCanonicalPath(libPath, file));
-        loadedLibs.add(libPath);
-        logger.info("Load lib success. path: {}", libPath);
+            logger.info("Start to load lib. path: {}", libPath);
+            System.load(getLibCanonicalPath(libPath, file));
+            loadedLibs.add(libPath);
+            logger.info("Load lib success. path: {}", libPath);
+        });
     }
 
     public static String getLibPath(String libName) {
