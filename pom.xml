@@ -85,7 +85,6 @@
 
         <!-- test lib -->
         <junit.version>5.10.1</junit.version>
-        <mockito.version>5.7.0</mockito.version>
     </properties>
 
     <dependencyManagement>
@@ -182,13 +181,6 @@
                 <version>${junit.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- security -->
@@ -468,6 +460,14 @@
             <activation>
                 <jdk>1.8</jdk>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
+                    <version>4.11.0</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -626,6 +626,14 @@
             <activation>
                 <jdk>[11,16)</jdk>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
+                    <version>5.7.0</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -792,7 +800,7 @@
                 <dependency>
                     <groupId>org.mockito</groupId>
                     <artifactId>mockito-core</artifactId>
-                    <version>5.5.0</version>
+                    <version>5.7.0</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
