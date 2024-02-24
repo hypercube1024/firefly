@@ -61,7 +61,7 @@
 
         <!-- Kotlin compiler configuration -->
         <kotlin.version>1.9.20</kotlin.version>
-        <kotlin.coroutine.version>1.7.3</kotlin.coroutine.version>
+        <kotlin.coroutine.version>1.8.0</kotlin.coroutine.version>
         <kotlin.compiler.incremental>false</kotlin.compiler.incremental>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <kotlin.compiler.languageVersion>1.9</kotlin.compiler.languageVersion>
@@ -74,16 +74,16 @@
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
         <!-- The third party lib -->
-        <jackson.version>2.15.3</jackson.version>
+        <jackson.version>2.15.4</jackson.version>
         <conscrypt.version>2.5.2</conscrypt.version>
         <wildfly-openssl.version>2.1.4.Final</wildfly-openssl.version>
-        <javassist.version>3.29.2-GA</javassist.version>
+        <javassist.version>3.30.2-GA</javassist.version>
         <slf4j.api.version>1.7.36</slf4j.api.version>
-        <io.reactor.version>2022.0.12</io.reactor.version>
-        <jctools.version>4.0.1</jctools.version>
+        <io.reactor.version>2023.0.3</io.reactor.version>
+        <jctools.version>4.0.3</jctools.version>
 
         <!-- test lib -->
-        <junit.version>5.10.1</junit.version>
+        <junit.version>5.10.2</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -1176,7 +1176,7 @@
                     <dependency>
                         <groupId>org.mockito</groupId>
                         <artifactId>mockito-core</artifactId>
-                        <version>5.8.0</version>
+                        <version>5.10.0</version>
                         <scope>test</scope>
                     </dependency>
                 </dependencies>
@@ -1348,7 +1348,7 @@
                     <dependency>
                         <groupId>org.mockito</groupId>
                         <artifactId>mockito-core</artifactId>
-                        <version>5.8.0</version>
+                        <version>5.10.0</version>
                         <scope>test</scope>
                     </dependency>
                 </dependencies>
