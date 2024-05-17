@@ -16,7 +16,7 @@ abstract public class AbstractAsyncActor<T> extends AbstractActor<T> {
 
     @Override
     public void onReceive(T message) {
-        pause();
+        pauseInMessageProcessThread();
         onReceiveAsync(message).handle((result, throwable) -> {
             resume();
             return Result.DONE;

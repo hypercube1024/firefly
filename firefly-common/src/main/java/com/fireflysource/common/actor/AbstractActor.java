@@ -36,7 +36,7 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
     }
 
     @Override
-    public boolean send(T message) {
+    public boolean offer(T message) {
         if (mailbox.offerUserMessage(message)) {
             dispatch();
             return true;
@@ -73,14 +73,15 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
     @Override
     public void run() {
         while (true) {
-            handleSystemMessages();
+            boolean systemMailboxEmpty = handleSystemMessages();
 
             if (actorState == ActorState.PAUSE) {
                 break;
             }
 
-            boolean empty = handleUserMessages();
-            if (empty) {
+            boolean userMailboxEmpty = handleUserMessages();
+
+            if (systemMailboxEmpty && userMailboxEmpty) {
                 break;
             }
         }
@@ -124,7 +125,14 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
         return empty;
     }
 
-    private void handleSystemMessages() {
+    protected void pauseInMessageProcessThread() {
+        if (actorState == ActorState.RUNNING) {
+            actorState = ActorState.PAUSE;
+        }
+    }
+
+    private boolean handleSystemMessages() {
+        boolean empty;
         SystemMessage systemMessage = mailbox.pollSystemMessage();
         if (systemMessage != null) {
             switch (systemMessage) {
@@ -147,7 +155,11 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
                     }
                     break;
             }
+            empty = false;
+        } else {
+            empty = true;
         }
+        return empty;
     }
 
     private void sendSystemMessage(SystemMessage message) {
