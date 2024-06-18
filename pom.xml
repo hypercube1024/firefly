@@ -69,7 +69,7 @@
         <kotlin.code.style>official</kotlin.code.style>
 
         <!-- Kotlin doc configuration -->
-        <dokka.version>1.9.10</dokka.version>
+        <dokka.version>1.9.20</dokka.version>
         <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
         <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
 
@@ -324,7 +324,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.11</version>
+                    <version>0.8.12</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.maven.reporting</groupId>

@@ -30,7 +30,7 @@ public class TestActor {
             log("Today sales amount: " + amount);
             return null;
         }));
-        store.send(closeMessage);
+        store.offer(closeMessage);
 
         CompletableFuture.allOf(results.stream().map(r -> r.handle((ignore, throwable) -> {
             Optional.ofNullable(throwable).map(Throwable::getMessage).ifPresent(System.out::println);
@@ -41,13 +41,13 @@ public class TestActor {
 
     private void stock(StoreActor store, String name, long price, int count) {
         IntStream.range(0, count).parallel()
-                 .forEach(i -> store.send(new StoreActor.StockMessage(new StoreActor.Product(name, price))));
+                 .forEach(i -> store.offer(new StoreActor.StockMessage(new StoreActor.Product(name, price))));
     }
 
     private List<CompletableFuture<Void>> purchase(StoreActor store, String name, long price, int count) {
         return IntStream.range(0, count).parallel().boxed().map(i -> {
             StoreActor.PurchaseMessage purchaseMessage = new StoreActor.PurchaseMessage(new StoreActor.Product(name, price));
-            store.send(purchaseMessage);
+            store.offer(purchaseMessage);
             return purchaseMessage.result.thenAccept(ignore -> log("purchase " + name + " success."));
         }).collect(Collectors.toList());
     }

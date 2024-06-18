@@ -15,11 +15,11 @@ public interface Actor<T> {
     String getAddress();
 
     /**
-     * Send message to this actor.
+     * Offer message to this actor's mailbox.
      *
      * @param message The message.
-     * @return If true, send message success.
+     * @return If true, offer message success.
      */
-    boolean send(T message);
+    boolean offer(T message);
 
 }

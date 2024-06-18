@@ -36,7 +36,7 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
     }
 
     @Override
-    public boolean send(T message) {
+    public boolean offer(T message) {
         if (mailbox.offerUserMessage(message)) {
             dispatch();
             return true;
@@ -73,14 +73,15 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
     @Override
     public void run() {
         while (true) {
-            handleSystemMessages();
+            boolean systemMailboxEmpty = handleSystemMessages();
 
             if (actorState == ActorState.PAUSE) {
                 break;
             }
 
-            boolean empty = handleUserMessages();
-            if (empty) {
+            boolean userMailboxEmpty = handleUserMessages();
+
+            if (systemMailboxEmpty && userMailboxEmpty) {
                 break;
             }
         }
@@ -124,7 +125,14 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
         return empty;
     }
 
-    private void handleSystemMessages() {
+    protected void pauseInMessageProcessThread() {
+        if (actorState == ActorState.RUNNING) {
+            actorState = ActorState.PAUSE;
+        }
+    }
+
+    private boolean handleSystemMessages() {
+        boolean empty;
         SystemMessage systemMessage = mailbox.pollSystemMessage();
         if (systemMessage != null) {
             switch (systemMessage) {
@@ -147,7 +155,11 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
                     }
                     break;
             }
+            empty = false;
+        } else {
+            empty = true;
         }
+        return empty;
     }
 
     private void sendSystemMessage(SystemMessage message) {
@@ -221,8 +233,6 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
     public static class MailboxImpl<T> implements Mailbox<T, AbstractActor.SystemMessage> {
         private final Queue<T> userMessageQueue;
         private final Queue<AbstractActor.SystemMessage> systemMessageQueue;
-        private final AtomicInteger unhandledUserMessageCount = new AtomicInteger(0);
-        private final AtomicInteger unhandledSystemMessageCount = new AtomicInteger(0);
 
         public MailboxImpl(Queue<T> userMessageQueue, Queue<SystemMessage> systemMessageQueue) {
             this.userMessageQueue = userMessageQueue;
@@ -231,48 +241,32 @@ abstract public class AbstractActor<T> implements Runnable, Actor<T>, ActorInter
 
         @Override
         public AbstractActor.SystemMessage pollSystemMessage() {
-            AbstractActor.SystemMessage systemMessage = systemMessageQueue.poll();
-            if (systemMessage != null) {
-                unhandledSystemMessageCount.decrementAndGet();
-            }
-            return systemMessage;
+            return systemMessageQueue.poll();
         }
 
         @Override
         public boolean offerSystemMessage(AbstractActor.SystemMessage systemMessage) {
-            boolean success = systemMessageQueue.offer(systemMessage);
-            if (success) {
-                unhandledSystemMessageCount.incrementAndGet();
-            }
-            return success;
+            return systemMessageQueue.offer(systemMessage);
         }
 
         @Override
         public boolean hasSystemMessage() {
-            return unhandledSystemMessageCount.get() > 0;
+            return systemMessageQueue.peek() != null;
         }
 
         @Override
         public T pollUserMessage() {
-            T message = userMessageQueue.poll();
-            if (message != null) {
-                unhandledUserMessageCount.decrementAndGet();
-            }
-            return message;
+            return userMessageQueue.poll();
         }
 
         @Override
         public boolean offerUserMessage(T userMessage) {
-            boolean success = userMessageQueue.offer(userMessage);
-            if (success) {
-                unhandledUserMessageCount.incrementAndGet();
-            }
-            return success;
+            return userMessageQueue.offer(userMessage);
         }
 
         @Override
         public boolean hasUserMessage() {
-            return unhandledUserMessageCount.get() > 0;
+            return userMessageQueue.peek() != null;
         }
     }
 }
