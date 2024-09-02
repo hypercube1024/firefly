@@ -31,7 +31,7 @@ class Http1ClientResponseHandler : HttpParser.ResponseHandler {
         return 4096
     }
 
-    override fun startResponse(version: HttpVersion, status: Int, reason: String): Boolean {
+    override fun startResponse(version: HttpVersion, status: Int, reason: String?): Boolean {
         fun updateResponseLine() {
             response.httpVersion = version
             response.status = status
